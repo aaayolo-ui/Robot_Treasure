@@ -1,0 +1,36 @@
+# Keil MDK generated files
+
+# Build output
+Objects/
+Listings/
+Output/
+Debug/
+
+# Keil project temporary files
+*.uvguix.*
+*.uvoptx
+*.uvprojx.user
+
+# Compiled files
+*.axf
+*.hex
+*.bin
+*.elf
+*.o
+*.obj
+*.lib
+
+# Listing files
+*.lst
+*.map
+
+# Backup files
+*.bak
+*.tmp
+
+# VS Code
+.vscode/
+
+# System files
+.DS_Store
+Thumbs.db
