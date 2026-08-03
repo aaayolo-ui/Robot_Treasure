@@ -1,0 +1,5 @@
+﻿# 3D CAD models
+*.step binary
+*.STEP binary
+*.stp binary
+*.STP binary
