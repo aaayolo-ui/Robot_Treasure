@@ -34,3 +34,9 @@ Debug/
 # System files
 .DS_Store
 Thumbs.db
+
+# 驱动程序和商家上位机
+*.exe
+
+# 临时或完整商家资料包
+硬件资料（部分已有）/V3/
