@@ -20,6 +20,18 @@ Debug/
 *.obj
 *.lib
 
+# Keil per-target build intermediates (keep .uvprojx, .ioc, source, and RTE config)
+**/MDK-ARM/*/*.crf
+**/MDK-ARM/*/*.d
+**/MDK-ARM/*/*.dep
+**/MDK-ARM/*/*.htm
+**/MDK-ARM/*/*.lnp
+**/MDK-ARM/*/*.sct
+**/MDK-ARM/*/*.axf
+**/MDK-ARM/*/*.hex
+**/MDK-ARM/*/*.bin
+**/MDK-ARM/*/*.map
+
 # Listing files
 *.lst
 *.map
