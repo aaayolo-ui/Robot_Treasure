@@ -1,0 +1,22 @@
+--cpu Cortex-M3
+"board_io_uart_test\startup_stm32f103xe.o"
+"board_io_uart_test\main.o"
+"board_io_uart_test\stm32f1xx_it.o"
+"board_io_uart_test\stm32f1xx_hal_msp.o"
+"board_io_uart_test\stm32f1xx_hal_gpio_ex.o"
+"board_io_uart_test\stm32f1xx_hal_uart.o"
+"board_io_uart_test\stm32f1xx_hal.o"
+"board_io_uart_test\stm32f1xx_hal_rcc.o"
+"board_io_uart_test\stm32f1xx_hal_rcc_ex.o"
+"board_io_uart_test\stm32f1xx_hal_gpio.o"
+"board_io_uart_test\stm32f1xx_hal_dma.o"
+"board_io_uart_test\stm32f1xx_hal_cortex.o"
+"board_io_uart_test\stm32f1xx_hal_pwr.o"
+"board_io_uart_test\stm32f1xx_hal_flash.o"
+"board_io_uart_test\stm32f1xx_hal_flash_ex.o"
+"board_io_uart_test\stm32f1xx_hal_exti.o"
+"board_io_uart_test\system_stm32f1xx.o"
+--strict --scatter "Board_IO_UART_Test\Board_IO_UART_Test.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list "Board_IO_UART_Test.map" -o Board_IO_UART_Test\Board_IO_UART_Test.axf
