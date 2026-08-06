@@ -46,3 +46,28 @@ void EncoderA_Reset(void)
   previous_count = 0U;
   total_count = 0;
 }
+
+int32_t EncoderA_CalculateRpmX10(int16_t delta_count, uint32_t elapsed_ms)
+{
+  int64_t numerator;
+  int64_t denominator;
+
+  if (elapsed_ms == 0U)
+  {
+    return 0;
+  }
+
+  numerator = (int64_t)delta_count * 600000LL;
+  denominator = (int64_t)ENCODER_A_COUNTS_PER_REV * (int64_t)elapsed_ms;
+
+  if (numerator >= 0)
+  {
+    numerator += denominator / 2LL;
+  }
+  else
+  {
+    numerator -= denominator / 2LL;
+  }
+
+  return (int32_t)(numerator / denominator);
+}

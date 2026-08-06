@@ -9,6 +9,35 @@
 
 static uint32_t encoder_last_report_tick;
 
+static void App_PrintEncoderData(uint32_t elapsed_ms,
+                                 int16_t delta,
+                                 int32_t total,
+                                 int32_t rpm_x10)
+{
+  int64_t rpm_value;
+  int64_t rpm_abs;
+  long rpm_integer;
+  long rpm_decimal;
+
+  rpm_value = (int64_t)rpm_x10;
+  rpm_abs = (rpm_value < 0) ? -rpm_value : rpm_value;
+  rpm_integer = (long)(rpm_abs / 10LL);
+  rpm_decimal = (long)(rpm_abs % 10LL);
+
+  if (rpm_value < 0)
+  {
+    UartDebug_Printf("Encoder dt: %lu ms, delta: %d, total: %ld, RPM: -%ld.%ld\r\n",
+                     (unsigned long)elapsed_ms, (int)delta, (long)total,
+                     rpm_integer, rpm_decimal);
+  }
+  else
+  {
+    UartDebug_Printf("Encoder dt: %lu ms, delta: %d, total: %ld, RPM: %ld.%ld\r\n",
+                     (unsigned long)elapsed_ms, (int)delta, (long)total,
+                     rpm_integer, rpm_decimal);
+  }
+}
+
 void App_EncoderTest_Init(void)
 {
   Key_Init();
@@ -25,11 +54,19 @@ void App_EncoderTest_Init(void)
   UartDebug_SendString("KEY2: reverse 20 percent\r\n");
   UartDebug_SendString("WK_UP: stop\r\n");
   UartDebug_SendString("Encoder raw delta is printed every 500 ms.\r\n");
+  UartDebug_SendString("Encoder calibration: 1560 counts/rev\r\n");
+  UartDebug_SendString("RPM sample period: approximately 500 ms\r\n");
+  UartDebug_SendString("RPM is calculated from the actual elapsed time.\r\n");
+  UartDebug_SendString("RPM unit resolution: 0.1 RPM\r\n");
 }
 
 void App_EncoderTest_Task(void)
 {
+  uint32_t now;
+  uint32_t elapsed_ms;
   int16_t delta;
+  int32_t total;
+  int32_t rpm_x10;
 
   switch (Key_GetEvent())
   {
@@ -50,12 +87,15 @@ void App_EncoderTest_Task(void)
       break;
   }
 
-  if ((HAL_GetTick() - encoder_last_report_tick) >= ENCODER_REPORT_PERIOD_MS)
+  now = HAL_GetTick();
+  if ((uint32_t)(now - encoder_last_report_tick) >= ENCODER_REPORT_PERIOD_MS)
   {
-    encoder_last_report_tick = HAL_GetTick();
+    elapsed_ms = (uint32_t)(now - encoder_last_report_tick);
+    encoder_last_report_tick = now;
     delta = EncoderA_GetDelta();
-    UartDebug_Printf("Encoder delta/500ms: %d, total: %ld\r\n",
-                     (int)delta, (long)EncoderA_GetTotal());
+    total = EncoderA_GetTotal();
+    rpm_x10 = EncoderA_CalculateRpmX10(delta, elapsed_ms);
+    App_PrintEncoderData(elapsed_ms, delta, total, rpm_x10);
   }
 
   HAL_Delay(1U);
