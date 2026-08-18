@@ -1,6 +1,6 @@
 # Robot_Treasure 硬件接线与接口
 
-本目录是项目级的实体接线、STM32 引脚占用与扩展规划的唯一维护入口；不属于任何单一测试工程，也不存放硬件驱动代码。当前灰度方向参考工程为 [`Gray12_VehicleDirection_Test`](../../STM32/Keil_Project/Gray12_VehicleDirection_Test)，已完成 11C 灰度安装方向与车辆横向误差符号实机确认；AI-1811 单模块基础 UART 读取参考工程为 [`Laser12B_AI1811_Raw_Uart_Test`](../../STM32/Keil_Project/Laser12B_AI1811_Raw_Uart_Test)。
+本目录是项目级的实体接线、STM32 引脚占用与扩展规划的唯一维护入口；不属于任何单一测试工程，也不存放硬件驱动代码。当前灰度方向参考工程为 [`Gray12_VehicleDirection_Test`](../../STM32/Keil_Project/Gray12_VehicleDirection_Test)，已完成 11C 灰度安装方向与车辆横向误差符号实机确认；AI-1811 单模块基础 UART 读取参考工程为 [`Laser12B_AI1811_Raw_Uart_Test`](../../STM32/Keil_Project/Laser12B_AI1811_Raw_Uart_Test)；普通红外 12A 单路基础读取参考工程为 [`Infrared_Raw_Test`](../../STM32/Keil_Project/Infrared_Raw_Test)。
 
 ## 当前基线
 
@@ -21,6 +21,7 @@
 - 11D-1 已实机确认车辆前进方向：B/FL→ELEC_REV、A/FR→ELEC_REV、D/RL→ELEC_FWD、C/RR→ELEC_FWD；车辆后退使用相反电气方向。
 - 前进时原始编码器符号对应逻辑符号为 B/D=+1、A/C=-1。11D-2 已实机确认新车头下的前进直行：左侧分组 B+D、右侧分组 A+C，四轮独立速度 PI 在目标最终 80 RPM 下稳定至约 77～79 RPM，整体左右平均转速差约 0.2 RPM，无长期 PI 饱和；后退、转向和循迹闭环仍待独立验证。
 - PWM=180/999 的单轮测试下，四路均可连续转动；没有 B 专用固定 PWM 补偿。旧测试工程及其历史阶段记录可能使用旧车头映射，不能直接作为当前轮位控制基线。
+- 12A 已实机确认普通红外单路接口为 `VCC→3.3V`、`GND→GND`、`OUT→PB14`；PB14 使用 `GPIO Input`、`GPIO_NOPULL`，低电平表示 `DETECTED`、高电平表示 `CLEAR`。该引脚仅为基础测试接口，不是最终整车永久分配。
 
 ## 文档导航
 
