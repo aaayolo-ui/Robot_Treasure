@@ -1,0 +1,7 @@
+#ifndef APP_INFRARED_LINE_FOLLOW_OBSTACLE_REVERSE_H
+#define APP_INFRARED_LINE_FOLLOW_OBSTACLE_REVERSE_H
+
+void App_InfraredLineFollowObstacleReverse_Init(void);
+void App_InfraredLineFollowObstacleReverse_Task(void);
+
+#endif /* APP_INFRARED_LINE_FOLLOW_OBSTACLE_REVERSE_H */
