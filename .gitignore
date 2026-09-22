@@ -31,6 +31,7 @@ Debug/
 **/MDK-ARM/*/*.hex
 **/MDK-ARM/*/*.bin
 **/MDK-ARM/*/*.map
+**/MDK-ARM/build_check.log
 
 # Listing files
 *.lst
