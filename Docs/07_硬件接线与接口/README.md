@@ -2,7 +2,7 @@
 
 本目录是项目级的实体接线、STM32 引脚占用与扩展规划的唯一维护入口；不属于任何单一测试工程，也不存放硬件驱动代码。
 当前灰度方向参考工程为 [`Gray12_VehicleDirection_Test`](../../STM32/Keil_Project/Gray12_VehicleDirection_Test)，已完成 11C 灰度安装方向与车辆横向误差符号实机确认。
-AI-1811 单模块基础 UART 读取参考工程为 [`Laser12B_AI1811_Raw_Uart_Test`](../../STM32/Keil_Project/Laser12B_AI1811_Raw_Uart_Test)。
+AI-1811 单模块基础 UART 读取的历史参考工程为 [`Laser12B_AI1811_Raw_Uart_Test`](../../STM32/Keil_Project/Laser12B_AI1811_Raw_Uart_Test)；当前整车不再使用该模块，原 PA3 占用已经释放。
 普通红外已由 [`Infrared_Raw_Test`](../../STM32/Keil_Project/Infrared_Raw_Test) 完成 12A 基础读取，并由 [`Infrared13A_ObstacleReverse_Test`](../../STM32/Keil_Project/Infrared13A_ObstacleReverse_Test) 完成基础障碍触发后退联动验证。
 
 ## 当前基线
@@ -26,10 +26,11 @@ AI-1811 单模块基础 UART 读取参考工程为 [`Laser12B_AI1811_Raw_Uart_Te
 - PWM=180/999 的单轮测试下，四路均可连续转动；没有 B 专用固定 PWM 补偿。旧测试工程及其历史阶段记录可能使用旧车头映射，不能直接作为当前轮位控制基线。
 - 12A/13A 已实机确认普通红外单路接口为 `VCC→3.3V`、`GND→GND`、`OUT→PB14`；PB14 使用 `GPIO Input`、`GPIO_NOPULL`，低电平表示 `DETECTED`、高电平表示 `CLEAR`。
   13A 已验证连续障碍检测可触发一次“停车约 200 ms→30 RPM 后退约 1 s→自动停车”的基础联动；该引脚仍仅为测试接口，不是最终整车永久分配。
+- 当前计划保留 PB14 作为前向红外，并新增左/后/右三路普通红外：左 `PA3`、后 `PB15`、右 `PA11`。三路新增分配均尚未接线验证；PA11、PB15 接线前还须确认开发板实体引出。
 
 ## 文档导航
 
-- [01_已验证硬件接线总表.md](01_已验证硬件接线总表.md)：已连接且已使用或验证的供电、模块与信号接线，包括 AI-1811 单模块基础接收接口。
+- [01_已验证硬件接线总表.md](01_已验证硬件接线总表.md)：已连接且已使用或验证的供电、模块与信号接线；AI-1811 条目仅保留历史验证事实，并注明当前已拆除。
 - [02_STM32引脚占用总表.md](02_STM32引脚占用总表.md)：以最新参考工程 `.ioc` 为准的 STM32 引脚占用。
 - [03_后续硬件扩展预留.md](03_后续硬件扩展预留.md)：尚未接入或尚未验证的硬件计划，不能当作现状使用。
 
