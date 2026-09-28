@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 /* TUNING AREA - PI output PWM, not commanded speed. Timer period is 999;
- * this experiment caps PI output at 300 as in the verified wheel-speed tests.
+ * the current competition setting caps PI output at 800.
  * START_MIN/RUNNING_MIN are lower floors while a nonzero target is active. */
-#define WHEEL_SPEED_PI_PWM_MAX          300L
+#define WHEEL_SPEED_PI_PWM_MAX          800L
 #define WHEEL_SPEED_PI_PWM_START_MIN    100L
 #define WHEEL_SPEED_PI_PWM_RUNNING_MIN  50L
 #define WHEEL_SPEED_PI_RUNNING_RPM_X10  50L

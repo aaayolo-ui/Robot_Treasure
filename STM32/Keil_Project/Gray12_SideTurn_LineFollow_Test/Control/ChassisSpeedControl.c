@@ -96,6 +96,24 @@ void ChassisSpeedControl_Stop(void)
   speed_control_disabled = 0U;
 }
 
+void ChassisSpeedControl_Brake(void)
+{
+  ChassisWheelId_t wheel;
+
+  /* Assert the TB6612 short brake before doing any controller bookkeeping.
+   * Even a few milliseconds of software work first adds avoidable travel. */
+  Chassis_Brake();
+  ChassisSpeedControl_ResetAll();
+  for (wheel = CHASSIS_WHEEL_FRONT_LEFT; wheel < CHASSIS_WHEEL_COUNT; wheel++)
+  {
+    WheelSpeedPi_SetEnabled(&controllers[wheel], 0U);
+  }
+  speed_control_enabled = 0U;
+  speed_control_disabled = 0U;
+  stall_detected = 0U;
+  stall_wheel = CHASSIS_WHEEL_COUNT;
+}
+
 void ChassisSpeedControl_SetWheelTargets(int32_t fl_rpm_x10,
                                           int32_t fr_rpm_x10,
                                           int32_t rl_rpm_x10,
@@ -105,6 +123,15 @@ void ChassisSpeedControl_SetWheelTargets(int32_t fl_rpm_x10,
   WheelSpeedPi_SetTarget(&controllers[CHASSIS_WHEEL_FRONT_RIGHT], fr_rpm_x10);
   WheelSpeedPi_SetTarget(&controllers[CHASSIS_WHEEL_REAR_LEFT], rl_rpm_x10);
   WheelSpeedPi_SetTarget(&controllers[CHASSIS_WHEEL_REAR_RIGHT], rr_rpm_x10);
+}
+
+void ChassisSpeedControl_ResetPiState(void)
+{
+  /* Keep the current enable/driver state, but discard targets and integral
+   * history before a large commanded-speed step. */
+  ChassisSpeedControl_ResetAll();
+  stall_detected = 0U;
+  stall_wheel = CHASSIS_WHEEL_COUNT;
 }
 
 void ChassisSpeedControl_SetMotionTarget(ChassisMotion_t motion,
@@ -176,9 +203,12 @@ void ChassisSpeedControl_Update(uint32_t elapsed_ms)
       stall_elapsed_ms[wheel] += elapsed_ms;
       if (stall_elapsed_ms[wheel] >= CHASSIS_SPEED_STALL_TIMEOUT_MS)
       {
+        /* Stop all four wheels with the active brake immediately. Stop()
+         * leaves STBY on but coasts, and loses distance before the app sees
+         * this fault. Brake() resets the detector, so retain the source after. */
+        ChassisSpeedControl_Brake();
         stall_wheel = wheel;
         stall_detected = 1U;
-        ChassisSpeedControl_Stop();
         return;
       }
     }
@@ -187,6 +217,18 @@ void ChassisSpeedControl_Update(uint32_t elapsed_ms)
       stall_elapsed_ms[wheel] = 0U;
     }
   }
+}
+
+void ChassisSpeedControl_ClearStall(void)
+{
+  ChassisWheelId_t wheel;
+
+  for (wheel = CHASSIS_WHEEL_FRONT_LEFT; wheel < CHASSIS_WHEEL_COUNT; wheel++)
+  {
+    stall_elapsed_ms[wheel] = 0U;
+  }
+  stall_detected = 0U;
+  stall_wheel = CHASSIS_WHEEL_COUNT;
 }
 
 const WheelSpeedPi_t *ChassisSpeedControl_GetController(ChassisWheelId_t wheel)

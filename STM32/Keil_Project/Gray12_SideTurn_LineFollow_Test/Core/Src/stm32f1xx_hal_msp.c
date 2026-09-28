@@ -401,6 +401,9 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
+    HAL_NVIC_SetPriority(UART5_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(UART5_IRQn);
   }
 
 }
@@ -433,6 +436,7 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
   }
   else if(huart->Instance==UART5)
   {
+    HAL_NVIC_DisableIRQ(UART5_IRQn);
     __HAL_RCC_UART5_CLK_DISABLE();
     HAL_GPIO_DeInit(GPIOC, GPIO_PIN_12);
     HAL_GPIO_DeInit(GPIOD, GPIO_PIN_2);

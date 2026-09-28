@@ -32,6 +32,7 @@ void Motor_Forward(MotorId_t motor, uint16_t pwm);
 void Motor_Reverse(MotorId_t motor, uint16_t pwm);
 void Motor_Stop(MotorId_t motor);
 void Motor_StopAll(void);
+void MotorDriver_BrakeAll(void);
 
 uint16_t Motor_GetPwm(MotorId_t motor);
 MotorDirection_t Motor_GetDirection(MotorId_t motor);

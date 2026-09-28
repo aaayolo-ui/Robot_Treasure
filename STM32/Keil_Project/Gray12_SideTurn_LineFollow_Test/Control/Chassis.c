@@ -160,6 +160,19 @@ void Chassis_Stop(void)
   }
 }
 
+void Chassis_Brake(void)
+{
+  ChassisWheelId_t wheel;
+
+  MotorDriver_BrakeAll();
+  chassis_motion = CHASSIS_MOTION_STOP;
+  chassis_pwm = 0U;
+  for (wheel = CHASSIS_WHEEL_FRONT_LEFT; wheel < CHASSIS_WHEEL_COUNT; wheel++)
+  {
+    wheel_logical_pwm[wheel] = 0;
+  }
+}
+
 void Chassis_SetWheelLogicalPwm(ChassisWheelId_t wheel, int32_t logical_pwm)
 {
   int64_t absolute_pwm;

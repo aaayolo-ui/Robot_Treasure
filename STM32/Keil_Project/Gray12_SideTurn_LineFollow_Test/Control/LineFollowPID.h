@@ -7,21 +7,21 @@
  * KP/KI/KD use front NCHD12 position error, including in dual-sensor mode.
  * KH uses front-minus-rear error and therefore affects the two-sensor heading
  * correction only. These are not wheel-speed PI gains. */
-#define LINE_FOLLOW_PID_CONTROL_PERIOD_MS         50U
-/* Current cruise target: 100.0 RPM. One RPM is represented by 10. */
-#define LINE_FOLLOW_PID_BASE_RPM_X10             1000L
+#define LINE_FOLLOW_PID_CONTROL_PERIOD_MS         20U
+/* Current cruise target: 200.0 RPM. One RPM is represented by 10. */
+#define LINE_FOLLOW_PID_BASE_RPM_X10              2200L
 #define LINE_FOLLOW_PID_PARAMETER_SCALE         1000L
 /* Gray outer-loop reference only; these gains still need on-car tuning. */
-#define LINE_FOLLOW_PID_DEFAULT_KP_X1000          90L /* front position P */
-#define LINE_FOLLOW_PID_DEFAULT_KI_X1000           5L /* position I: off */
-#define LINE_FOLLOW_PID_DEFAULT_KD_X1000           2L /* position D */
+#define LINE_FOLLOW_PID_DEFAULT_KP_X1000          75L /* front position P */
+#define LINE_FOLLOW_PID_DEFAULT_KI_X1000           8L /* position I */
+#define LINE_FOLLOW_PID_DEFAULT_KD_X1000           7L /* position D */
 #define LINE_FOLLOW_PID_DEFAULT_KH_X1000           5L /* front/rear heading P */
 #define LINE_FOLLOW_PID_KP_STEP_X1000              1L
 #define LINE_FOLLOW_PID_KI_STEP_X1000              1L
 #define LINE_FOLLOW_PID_KD_STEP_X1000              1L
 #define LINE_FOLLOW_PID_KH_STEP_X1000              1L
 #define LINE_FOLLOW_PID_KP_MIN_X1000               0L
-#define LINE_FOLLOW_PID_KP_MAX_X1000             100L
+#define LINE_FOLLOW_PID_KP_MAX_X1000             1000L
 #define LINE_FOLLOW_PID_KI_MIN_X1000               0L
 #define LINE_FOLLOW_PID_KI_MAX_X1000              50L
 #define LINE_FOLLOW_PID_KD_MIN_X1000               0L
@@ -30,7 +30,7 @@
 #define LINE_FOLLOW_PID_KH_MAX_X1000              50L
 #define LINE_FOLLOW_PID_INTEGRAL_LIMIT           10000L
 #define LINE_FOLLOW_PID_D_LIMIT_RPM_X10          40L
-#define LINE_FOLLOW_PID_MAX_CORRECTION_RPM_X10   120L
+#define LINE_FOLLOW_PID_MAX_CORRECTION_RPM_X10   500L
 
 typedef enum
 {

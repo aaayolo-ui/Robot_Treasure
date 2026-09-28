@@ -7,11 +7,11 @@
 #define SMOOTH_ENABLE_BASE_RAMP       1U
 #define SMOOTH_ENABLE_CURVE_SLOWDOWN  1U
 #define SMOOTH_ENABLE_STEER_SLEW      1U
-#define SMOOTH_BASE_STEP_RPM_X10     20L
-#define SMOOTH_STEER_STEP_RPM_X10    80L /* 8 RPM per 50 ms; faster P5/P8 response */
+#define SMOOTH_BASE_STEP_RPM_X10     120L
+#define SMOOTH_STEER_STEP_RPM_X10    250L /* 25 RPM per 20 ms control period */
 #define SMOOTH_CURVE_START_ERROR    100L
 #define SMOOTH_CURVE_FULL_ERROR     300L
-#define SMOOTH_CURVE_MIN_BASE_X10   500L /* 50.0 RPM at large error */
+#define SMOOTH_CURVE_MIN_BASE_X10   1200L /* 120.0 RPM at large error */
 
 static int32_t FollowSmoothing_Approach(int32_t current, int32_t target,
                                          int32_t step)

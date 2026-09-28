@@ -79,6 +79,17 @@ static void Motor_StopRaw(MotorId_t motor)
   motor_direction[motor] = MOTOR_DIRECTION_STOP;
 }
 
+static void Motor_BrakeRaw(MotorId_t motor)
+{
+  /* TB6612FNG short brake: STBY high and IN1/IN2 both high. */
+  Motor_SetCompare(motor, 0U);
+  HAL_GPIO_WritePin(motor_config[motor].in1_port,
+                    motor_config[motor].in1_pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(motor_config[motor].in2_port,
+                    motor_config[motor].in2_pin, GPIO_PIN_SET);
+  motor_direction[motor] = MOTOR_DIRECTION_STOP;
+}
+
 void MotorDriver_Init(void)
 {
   if (HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_1) != HAL_OK)
@@ -220,6 +231,20 @@ void Motor_StopAll(void)
   for (motor = MOTOR_ID_A; motor < MOTOR_ID_COUNT; motor++)
   {
     Motor_StopRaw(motor);
+  }
+}
+
+void MotorDriver_BrakeAll(void)
+{
+  MotorId_t motor;
+
+  if (motor_driver_enabled == 0U)
+  {
+    MotorDriver_Enable();
+  }
+  for (motor = MOTOR_ID_A; motor < MOTOR_ID_COUNT; motor++)
+  {
+    Motor_BrakeRaw(motor);
   }
 }
 

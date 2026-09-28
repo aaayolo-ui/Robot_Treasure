@@ -39,6 +39,7 @@ void Chassis_Backward(uint16_t pwm);
 void Chassis_TurnLeft(uint16_t pwm);
 void Chassis_TurnRight(uint16_t pwm);
 void Chassis_Stop(void);
+void Chassis_Brake(void);
 
 /* logical_pwm is positive for vehicle-forward wheel rotation. */
 void Chassis_SetWheelLogicalPwm(ChassisWheelId_t wheel, int32_t logical_pwm);

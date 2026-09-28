@@ -4,7 +4,8 @@
 #include <stdint.h>
 
 void TftRoutePage_Init(void);
-void TftRoutePage_Task(const char *state_text, uint8_t junction_count,
-                       uint8_t yaw_valid, int16_t yaw_x100);
+void TftRoutePage_Task(const char *state_text, const char *fault_text,
+                       uint8_t junction_count,
+                       uint8_t turn_angle_valid, int16_t turn_angle_x100);
 
 #endif /* TFT_ROUTE_PAGE_H */

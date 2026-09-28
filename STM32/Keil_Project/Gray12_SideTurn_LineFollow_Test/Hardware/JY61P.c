@@ -3,107 +3,209 @@
 
 extern UART_HandleTypeDef huart5;
 
-#define JY61P_FRAME_HEADER       0x55U
-#define JY61P_FRAME_ANGLE        0x53U
-#define JY61P_FRAME_LENGTH       11U
-#define JY61P_POLL_BYTES_MAX     32U
+#define JY61P_FRAME_SIZE       11U
+#define JY61P_FRAME_HEADER     0x55U
+#define JY61P_ANGLE_FRAME      0x53U
 
-static uint8_t jy61p_frame[JY61P_FRAME_LENGTH];
-static uint8_t jy61p_frame_index;
-static uint8_t jy61p_yaw_valid;
-static int16_t jy61p_yaw_x100;
-static uint32_t jy61p_last_update_ms;
+static uint8_t jy61p_rx_buffer[JY61P_FRAME_SIZE];
+static uint8_t jy61p_rx_byte;
+static uint8_t jy61p_rx_state;
+static uint8_t jy61p_rx_index;
+static volatile JY61P_Data_t jy61p_data;
 
-static uint8_t JY61P_FrameChecksumValid(void)
+static int16_t JY61P_ReadS16(uint8_t low, uint8_t high)
+{
+  return (int16_t)(((uint16_t)high << 8U) | (uint16_t)low);
+}
+
+static int16_t JY61P_RawAngleToX100(int16_t raw_angle)
+{
+  return (int16_t)(((int32_t)raw_angle * 18000L) / 32768L);
+}
+
+static void JY61P_ResetParser(void)
+{
+  jy61p_rx_state = 0U;
+  jy61p_rx_index = 0U;
+}
+
+static void JY61P_ArmReceive(void)
+{
+  if (HAL_UART_Receive_IT(&huart5, &jy61p_rx_byte, 1U) != HAL_OK)
+  {
+    jy61p_data.uart_error_count++;
+  }
+}
+
+void JY61P_ReceiveByte(uint8_t rx_data)
 {
   uint8_t index;
   uint8_t checksum = 0U;
 
-  for (index = 0U; index < (JY61P_FRAME_LENGTH - 1U); index++)
+  if (jy61p_rx_state == 0U)
   {
-    checksum = (uint8_t)(checksum + jy61p_frame[index]);
-  }
-  return (checksum == jy61p_frame[JY61P_FRAME_LENGTH - 1U]) ? 1U : 0U;
-}
-
-static void JY61P_ParseByte(uint8_t value)
-{
-  int16_t raw_yaw;
-
-  if (jy61p_frame_index == 0U)
-  {
-    if (value == JY61P_FRAME_HEADER)
+    if (rx_data == JY61P_FRAME_HEADER)
     {
-      jy61p_frame[jy61p_frame_index++] = value;
+      jy61p_rx_buffer[0] = rx_data;
+      jy61p_rx_index = 1U;
+      jy61p_rx_state = 1U;
     }
     return;
   }
 
-  if ((jy61p_frame_index == 1U) && (value != JY61P_FRAME_ANGLE))
+  if (jy61p_rx_state == 1U)
   {
-    jy61p_frame_index = (value == JY61P_FRAME_HEADER) ? 1U : 0U;
-    if (jy61p_frame_index != 0U)
+    if (rx_data == JY61P_ANGLE_FRAME)
     {
-      jy61p_frame[0] = value;
+      jy61p_rx_buffer[1] = rx_data;
+      jy61p_rx_index = 2U;
+      jy61p_rx_state = 2U;
+    }
+    else if (rx_data == JY61P_FRAME_HEADER)
+    {
+      /* Keep the new header and wait for its frame type. */
+      jy61p_rx_buffer[0] = rx_data;
+      jy61p_rx_index = 1U;
+    }
+    else
+    {
+      JY61P_ResetParser();
     }
     return;
   }
 
-  jy61p_frame[jy61p_frame_index++] = value;
-  if (jy61p_frame_index < JY61P_FRAME_LENGTH)
+  jy61p_rx_buffer[jy61p_rx_index++] = rx_data;
+  if (jy61p_rx_index < JY61P_FRAME_SIZE)
   {
     return;
   }
 
-  if (JY61P_FrameChecksumValid() != 0U)
+  for (index = 0U; index < (JY61P_FRAME_SIZE - 1U); index++)
   {
-    raw_yaw = (int16_t)(((uint16_t)jy61p_frame[7] << 8) |
-                        (uint16_t)jy61p_frame[6]);
-    jy61p_yaw_x100 = (int16_t)(((int32_t)raw_yaw * 18000L) / 32768L);
-    jy61p_last_update_ms = HAL_GetTick();
-    jy61p_yaw_valid = 1U;
+    checksum = (uint8_t)(checksum + jy61p_rx_buffer[index]);
   }
-  jy61p_frame_index = 0U;
+
+  if (checksum == jy61p_rx_buffer[JY61P_FRAME_SIZE - 1U])
+  {
+    /* JY61P angles are signed. int16_t is required for negative angles. */
+    jy61p_data.roll_x100 = JY61P_RawAngleToX100(
+        JY61P_ReadS16(jy61p_rx_buffer[2], jy61p_rx_buffer[3]));
+    jy61p_data.pitch_x100 = JY61P_RawAngleToX100(
+        JY61P_ReadS16(jy61p_rx_buffer[4], jy61p_rx_buffer[5]));
+    jy61p_data.yaw_x100 = JY61P_RawAngleToX100(
+        JY61P_ReadS16(jy61p_rx_buffer[6], jy61p_rx_buffer[7]));
+    jy61p_data.frame_count++;
+    jy61p_data.last_update_ms = HAL_GetTick();
+    jy61p_data.valid = 1U;
+  }
+  else
+  {
+    jy61p_data.checksum_error_count++;
+  }
+
+  JY61P_ResetParser();
 }
 
 void JY61P_Init(void)
 {
-  jy61p_frame_index = 0U;
-  jy61p_yaw_valid = 0U;
-  jy61p_yaw_x100 = 0;
-  jy61p_last_update_ms = 0U;
+  jy61p_data.roll_x100 = 0;
+  jy61p_data.pitch_x100 = 0;
+  jy61p_data.yaw_x100 = 0;
+  jy61p_data.frame_count = 0U;
+  jy61p_data.checksum_error_count = 0U;
+  jy61p_data.uart_error_count = 0U;
+  jy61p_data.last_update_ms = 0U;
+  jy61p_data.valid = 0U;
+  JY61P_ResetParser();
+  JY61P_ArmReceive();
 }
 
 void JY61P_Task(void)
 {
-  uint8_t byte;
-  uint8_t count;
-
-  for (count = 0U; count < JY61P_POLL_BYTES_MAX; count++)
+  /* UART5 normally rearms reception from the byte-complete interrupt. If a
+   * blocking UART error left HAL idle, restart it from the main loop. */
+  if (huart5.RxState == HAL_UART_STATE_READY)
   {
-    if (__HAL_UART_GET_FLAG(&huart5, UART_FLAG_RXNE) == RESET)
-    {
-      break;
-    }
-    if (HAL_UART_Receive(&huart5, &byte, 1U, 0U) != HAL_OK)
-    {
-      break;
-    }
-    JY61P_ParseByte(byte);
+    JY61P_ArmReceive();
   }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance != UART5)
+  {
+    return;
+  }
+
+  JY61P_ReceiveByte(jy61p_rx_byte);
+  JY61P_ArmReceive();
+}
+
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance != UART5)
+  {
+    return;
+  }
+
+  jy61p_data.uart_error_count++;
+  JY61P_ResetParser();
+  if (huart5.RxState == HAL_UART_STATE_READY)
+  {
+    JY61P_ArmReceive();
+  }
+}
+
+void JY61P_GetData(JY61P_Data_t *out)
+{
+  if (out == 0)
+  {
+    return;
+  }
+  *out = jy61p_data;
+}
+
+uint8_t JY61P_IsValid(void)
+{
+  return jy61p_data.valid;
+}
+
+uint32_t JY61P_GetFrameCount(void)
+{
+  return jy61p_data.frame_count;
+}
+
+uint32_t JY61P_GetChecksumErrorCount(void)
+{
+  return jy61p_data.checksum_error_count;
+}
+
+uint32_t JY61P_GetUartErrorCount(void)
+{
+  return jy61p_data.uart_error_count;
+}
+
+uint8_t JY61P_GetPitchX100(int16_t *pitch_x100)
+{
+  if ((pitch_x100 == 0) || (jy61p_data.valid == 0U))
+  {
+    return 0U;
+  }
+  *pitch_x100 = jy61p_data.pitch_x100;
+  return 1U;
 }
 
 uint8_t JY61P_GetYawX100(int16_t *yaw_x100)
 {
-  if ((yaw_x100 == 0) || (jy61p_yaw_valid == 0U))
+  if ((yaw_x100 == 0) || (jy61p_data.valid == 0U))
   {
     return 0U;
   }
-  *yaw_x100 = jy61p_yaw_x100;
+  *yaw_x100 = jy61p_data.yaw_x100;
   return 1U;
 }
 
 uint32_t JY61P_GetLastUpdateMs(void)
 {
-  return jy61p_last_update_ms;
+  return jy61p_data.last_update_ms;
 }
