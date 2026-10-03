@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>密室夺宝 双车追逃仿真</title>
+<style>
+:root{color-scheme:light dark;--bg:#f5f7fa;--fg:#172331;--muted:#536171;--line:#566270;--panel:#fff;--border:#d5dce4;--blue:#2468be;--red:#cf3547;--gold:#b28a12}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.65 "Microsoft YaHei",system-ui,sans-serif}main{max-width:960px;margin:auto;padding:24px}h1{margin:0;font-size:25px;font-weight:600}p{margin:8px 0 18px}.muted{color:var(--muted)}.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end;margin:20px 0 12px}label{display:flex;flex-direction:column;gap:4px}select,button{font:inherit;color:var(--fg);background:var(--panel);border:1px solid var(--border);border-radius:6px;min-height:42px;padding:6px 12px}button{cursor:pointer}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}.scenario{flex:1;min-width:min(100%,240px)}.status{display:flex;flex-wrap:wrap;gap:12px 24px;margin:12px 0}.status span{white-space:nowrap}.legend{display:flex;gap:22px;flex-wrap:wrap}.blue{color:var(--blue)}.red{color:var(--red)}svg{display:block;width:100%;background:var(--panel);border-radius:8px;margin:14px 0}.timeline{display:flex;align-items:center;gap:12px}.timeline input{flex:1;min-width:0}.time{font-variant-numeric:tabular-nums;white-space:nowrap}.detail{min-height:3.3em;margin:12px 0;color:var(--muted)}table{border-collapse:collapse;width:100%;font-size:14px}td,th{text-align:left;border-bottom:1px solid var(--border);padding:8px 4px}th{font-weight:500}.tables{overflow:auto}h2{font-size:18px;font-weight:500;margin-top:24px}.note{font-size:13px;color:var(--muted)}@media(prefers-color-scheme:dark){:root{--bg:#111820;--fg:#e5eaf0;--muted:#afbcc9;--line:#8393a3;--panel:#17212c;--border:#334455;--blue:#65a7ff;--red:#ff7185;--gold:#e0b94c}}@media(max-width:480px){main{padding:16px}h1{font-size:21px}.controls button{flex:1}.status{gap:6px 16px}select{max-width:100%}}
+@media(max-width:480px){.scenario{flex-basis:100%;min-width:0}.controls button{white-space:nowrap}.controls>label:last-child{flex:1 1 100%}}
+:root{--blue:#006ee6;--red:#df6500;--line:#a3acb6}.legend .sample{display:inline-block;vertical-align:middle;width:32px;border-top:4px solid currentColor;margin-right:7px}.legend .red .sample{border-top-style:dashed}.trail-control{flex-direction:row;align-items:center;margin:10px 0}.trail-control select{font-size:13px;min-height:34px}.metrics{font-size:13px;color:var(--muted)}@media(prefers-color-scheme:dark){:root{--blue:#62b5ff;--red:#ffad4a;--line:#536170}}
+.map-options{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:14px}.map-options label{flex-direction:row;align-items:center}.map-options input{width:18px;height:18px}.map-options a{color:var(--blue)}.map-viewport{overflow:auto;max-width:100%;border-radius:8px}.map-viewport.annotated svg{min-width:860px}.node-legend{display:flex;flex-wrap:wrap;gap:5px 16px;font-size:13px}.node-legend[hidden]{display:none}.map-info{padding:12px 16px;background:var(--panel);border:1px solid var(--border);border-radius:8px;font-size:13px;overflow-wrap:anywhere}.map-info h3{font-size:16px;margin:0 0 6px}.map-info p{margin:6px 0}.map-info ul{padding-left:20px;margin:8px 0}.map-info button{font-size:13px;min-height:32px;margin:3px 8px 3px 0}.node-picker{margin:10px 0;font-size:13px}.node-picker select{max-width:100%;font-size:13px}.annotation-node:focus,.annotation-segment:focus{outline:2px solid var(--blue)}
+</style>
+</head>
+<body>
+<main>
+<h1>密室夺宝 双车追逃仿真</h1>
+<p id="intro" class="muted"></p>
+<div class="controls">
+  <label class="scenario">对抗场景<select id="scenario" aria-label="选择对抗场景"></select></label>
+  <button id="play" type="button">播放</button>
+  <button id="restart" type="button">回到开局</button>
+  <button id="contact" type="button">跳到抓捕时刻</button>
+  <label>回放速度<select id="speed"><option value="1" selected>1 倍</option><option value="4">4 倍</option><option value="8">8 倍</option><option value="16">16 倍</option></select></label>
+</div>
+<div class="status" id="status" aria-live="polite"></div>
+<div class="legend"><span class="blue"><i class="sample"></i>● 警方：蓝色实线</span><span class="red"><i class="sample"></i>◆ 小偷：橙色虚线</span><span>■ 宝藏</span></div>
+<label class="trail-control">轨迹长度<select id="trail"><option value="all">从开局到当前</option><option value="15">最近 15 秒</option><option value="0">隐藏轨迹</option></select></label>
+<div class="map-options">
+  <label><input id="show-nodes" type="checkbox" checked>显示节点编号</label>
+  <label><input id="show-segments" type="checkbox">显示路段信息</label>
+  <a id="download-map">导出地图 JSON</a>
+</div>
+<p class="note">长度沿用原地图，尚未实地标定。开启标注后手机可左右滑动地图；短路段只显示编号，点击查看长度和方向。</p>
+<div id="node-legend" class="node-legend" aria-label="节点类型图例"></div>
+<div class="map-viewport" id="map-viewport"><svg id="map" role="group" aria-label="两车沿黑线运动的比赛回放"></svg></div>
+<label class="node-picker">定位到节点<select id="node-picker"><option value="">点击地图节点或在此选择</option></select></label>
+<div id="map-info" class="map-info" aria-live="polite">节点与 N001 等编号默认显示；点击节点查看对应关系，开启“显示路段信息”可查看路段。出生点、宝藏点和普通网格点的定位依据会分别注明。</div>
+<p id="hide-location" class="note"></p>
+<div class="timeline"><input id="timeline" type="range" min="0" value="0" step="1" aria-label="回放时间"><span id="time" class="time"></span></div>
+<p id="detail" class="detail"></p>
+<p id="metrics" class="metrics"></p>
+<p class="note">画面显示双方位置仅用于复盘。扇形表示两格或三格的有限检测，橙色圆环标记藏身目标，浅橙点线表示当前逃跑计划。路线核查只使用已检测的位置，无法排除未检测到的交会。地图黑线是道路。</p>
+<h2>当前参数和结果</h2>
+<p id="parameters" class="note"></p>
+<div class="tables"><table><thead><tr><th>场景</th><th>警 / 偷速度</th><th>运行数</th><th>警方胜</th><th>小偷胜</th><th>平均持续</th><th>逃跑最长直行</th></tr></thead><tbody id="summary"></tbody></table></div>
+<p class="note">这是启发式策略原型，结果只适用于当前模型和参数。未模拟循迹误差、掉宝、身体转动包络及实际传感器误差分布。修改 config.json 后运行 simulate.py 可重新生成回放。</p>
+</main>
+<script id="report-data" type="application/json">__REPORT_DATA__</script>
+<script>__ANNOTATION_SCRIPT__</script>
+<script>
+"use strict";
+(() => {
+  const report=JSON.parse(document.getElementById("report-data").textContent);
+  const el=id=>document.getElementById(id), select=el("scenario"), svg=el("map"), slider=el("timeline");
+  const ns="http://www.w3.org/2000/svg", phases=["路口决策","转向等待","沿线行驶","取宝确认","短暂守候","停靠警戒","预先调整行进方向","前进／后退换向等待"];
+  const reasons=["最快路线取宝","固定回路","沿已选路线撤离","检测后立即追踪","检测后预测拦截","短暂守候","覆盖未检查藏点","提前封堵出口","向下一分岔转移","前往藏身点","藏身警戒","朝向撤离方向","检测后沿路线撤离","按预定路线巡逻","按预设路线规避","漏检后沿最后轨迹查找","检查未覆盖死路","转移到下一个藏点"];
+  const outcomes={police:"警方胜",thief:"小偷胜",draw:"平局",judge:"需裁判判定"};
+  const endReasons={capture_before_pickup:"取宝前接触抓捕",capture_after_pickup:"取宝后接触抓捕并缴得",police_pickup:"警方先取宝",survived_timeout:"小偷持宝到限时",no_treasure_timeout:"到限时无人取宝",simultaneous_pickup:"同时取宝，模型不擅自判胜"};
+  let match=report.replays[0], index=0, playing=false, lastStamp=null, replayTime=0;
+  const annotations=createMapAnnotations(report.annotations, {
+    nodesSwitch:el("show-nodes"),segmentsSwitch:el("show-segments"),legend:el("node-legend"),
+    info:el("map-info"),picker:el("node-picker"),download:el("download-map"),viewport:el("map-viewport")
+  }, ()=>render(), ()=>{playing=false;el("play").textContent="播放";});
+  report.replays.forEach((m,i)=>{const option=document.createElement("option");option.value=i;option.textContent=m.label;select.append(option);});
+  for(const row of report.summary){const tr=document.createElement("tr");for(const value of [row.scenario,`${row.police_speed_m_s} / ${row.thief_speed_m_s} m/s`,row.runs,row.police_wins,row.thief_wins,`${row.mean_duration_s.toFixed(1)} s`,`${row.mean_max_escape_straight_m.toFixed(2)} m`]){const td=document.createElement("td");td.textContent=value;tr.append(td);}el("summary").append(tr);}
+  const c=report.config;
+  el("intro").textContent=`转弯、后退换向均 ${c.turn90_s} 秒，取宝不停。警方统一三格检测，沿选定巡查段持续扫描，检出立即追踪；场景中的“两格／三格”指小偷检测距离。小偷沿选定路线撤到下一个藏点，检测到新危险时才切换路线。`;
+  const directions={N:"北",E:"东",S:"南",W:"西"},channels={left:"左侧",right:"右侧",front:"前方",rear:"后方"};
+  function node(tag,attrs={},text){const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;svg.append(n);return n;}
+  function render(){
+    const f=match.frames[index], width=Math.max(280,svg.getBoundingClientRect().width), k=(width-64)/11, height=9*k+76;
+    const X=x=>32+x*k, Y=y=>44+y*k;
+    svg.setAttribute("viewBox",`0 0 ${width} ${height}`);svg.setAttribute("height",height);svg.replaceChildren();
+    node("title",{},`${match.label}，第 ${f[0].toFixed(1)} 秒`);
+    if(match.vision==="limited")for(const off of [2,9]){
+      const x=X(f[off]),y=Y(f[off+1]),r=(off===2?match.police_sensor_range_m:match.sensor_range_m)/report.map.grid_spacing_m*k;
+      const half=c.sensor_half_angle_deg*Math.PI/180,color=off===2?"var(--blue)":"var(--red)";
+      for(let a=0;a<Math.PI*2-.01;a+=Math.PI/2){const p=[x+r*Math.cos(a-half),y+r*Math.sin(a-half)],q=[x+r*Math.cos(a+half),y+r*Math.sin(a+half)];node("path",{d:`M${x},${y}L${p[0]},${p[1]}A${r},${r} 0 0 1 ${q[0]},${q[1]}Z`,fill:color,opacity:.045});}
+    }
+    for(const [y,a,b] of report.map.horizontal_segments)node("line",{x1:X(a),x2:X(b),y1:Y(y),y2:Y(y),stroke:"var(--line)","stroke-width":3});
+    for(const [x,a,b] of report.map.vertical_segments)node("line",{x1:X(x),x2:X(x),y1:Y(a),y2:Y(b),stroke:"var(--line)","stroke-width":3});
+    for(const [x,y,axis] of report.map.endpoint_caps){const d=Math.min(10,k*.2);node("line",{x1:X(x)-(axis==="horizontal"?d:0),x2:X(x)+(axis==="horizontal"?d:0),y1:Y(y)-(axis==="vertical"?d:0),y2:Y(y)+(axis==="vertical"?d:0),stroke:"var(--line)","stroke-width":3});}
+    const plan=f[20]>=0?match.escape_plans[f[20]]:null;
+    if(plan){const points=plan.nodes.map(name=>{const [x,y]=name.slice(1,-1).split(",").map(Number);return `${X(x)},${Y(y)}`;}).join(" ");node("polyline",{id:"escape-plan",points,fill:"none",stroke:"var(--red)","stroke-width":2,"stroke-dasharray":"2 5",opacity:.65});}
+    const trail=el("trail").value,trace=match.frames.slice(0,index+1).filter(p=>trail==="all"||p[0]>=f[0]-Number(trail));
+    if(trail!=="0")for(const off of [2,9]){
+      const police=off===2,color=police?"var(--blue)":"var(--red)",points=trace.map(p=>`${X(p[off])},${Y(p[off+1])}`).join(" ");
+      node("polyline",{id:police?"police-trail":"thief-trail",points,fill:"none",stroke:color,"stroke-width":police?6:3.5,"stroke-dasharray":police?"none":"10 7","stroke-linejoin":"round","stroke-linecap":"round",opacity:1});
+    }
+    if(f[16]!==null){
+      const hx=X(f[16]),hy=Y(f[17]);
+      node("circle",{id:"hide-target",cx:hx,cy:hy,r:15,fill:"none",stroke:"var(--red)","stroke-width":2,"stroke-dasharray":"4 3"});
+      if(!el("show-nodes").checked)node("text",{x:hx,y:hy-22,"text-anchor":"middle",fill:"var(--red)","font-size":12},"藏身点");
+    }
+    const tx=X(5.5),ty=Y(0);node("text",{x:tx,y:17,"text-anchor":"middle",fill:"var(--fg)","font-size":13},"宝藏中心 T");
+    if(f[1]===0)node("rect",{x:tx-5,y:ty-5,width:10,height:10,fill:"var(--gold)"});
+    annotations.draw({node,X,Y,k,width,height,vehicles:[[f[2],f[3]],[f[9],f[10]]]});
+    el("hide-location").textContent=f[16]!==null?`当前藏点：${annotations.reference(`(${f[16]},${f[17]})`)}。新藏点仅选真实拐角或路口，至少保留两条环路出口。`:"尚未选定停靠藏点。";
+    for(const [off,label,color] of [[2,"警","var(--blue)"],[9,"偷","var(--red)"]]){
+      const x=X(f[off]),y=Y(f[off+1]);
+      if(off===2)node("circle",{cx:x,cy:y,r:8,fill:color,stroke:"var(--panel)","stroke-width":2});
+      else node("polygon",{points:`${x},${y-9} ${x+9},${y} ${x},${y+9} ${x-9},${y}`,fill:color,stroke:"var(--panel)","stroke-width":2});
+      node("text",{x:x+12,y:y+5,fill:color,"font-size":12},label);
+      if(f[1]===(off===2?1:2))node("rect",{x:x-4,y:y-18,width:8,height:8,fill:"var(--gold)"});
+    }
+    const ended=index===match.frames.length-1,owner=["尚未取得","警方持有","小偷持有"][f[1]];
+    const captured=ended&&match.end_reason.startsWith("capture_");
+    el("contact").disabled=!match.end_reason.startsWith("capture_");
+    if(captured){node("circle",{id:"contact-marker",cx:(X(f[2])+X(f[9]))/2,cy:(Y(f[3])+Y(f[10]))/2,r:Math.max(16,c.capture_center_distance_m/report.map.grid_spacing_m*k/2),fill:"none",stroke:"var(--red)","stroke-width":3});}
+    el("status").replaceChildren();for(const text of [owner,match.vision==="fixed"?"预存地图 · 固定路线":"预存地图 · 有限检测",ended?`${outcomes[match.winner]} · ${endReasons[match.end_reason]}`:"比赛进行中"]){const s=document.createElement("span");s.textContent=text;el("status").append(s);}
+    el("time").textContent=`${f[0].toFixed(1)} / ${match.duration_s.toFixed(1)} s`;
+    const detection=match.vision==="fixed"?"固定路线不读取对手检测":`警方${f[7]?"已检出对手":"暂未检出对手"}，小偷${f[14]?"已检出对手":"暂未检出对手"}`;
+    el("detail").textContent=`警方：${reasons[f[6]]}，${phases[f[5]]}，${f[26]?"后退":"前进"}方向；小偷：${reasons[f[13]]}，${phases[f[12]]}，${f[27]?"后退":"前进"}方向。${detection}。${f[21]?`小偷${channels[f[21]]}红外检出。`:""}${f[22]?`优先向${directions[f[22]]}侧区块转移，先检查路线交会风险。`:`区域优先向${directions[f[23]]}侧转移，依据预计来路或最近检测。`}${plan?`当前采用${plan.mode==="relocate"?"下一藏点转移":plan.mode==="smart"?"智能规划":"预设节点"}路线，终点 ${annotations.reference(plan.nodes.at(-1))}，经过 ${plan.topology.branch_count} 个不同分岔。`:""}${captured?"已达到二维接触距离，立即判警方获胜，检测盲区也不免除抓捕。":""}`;
+    el("parameters").textContent=`警方直行 ${match.police_speed_m_s} m/s；小偷直行 ${match.thief_speed_m_s} m/s；90°转向 ${c.turn90_s} s；掉头／后退换向 ${c.uturn_s} s；${c.pickup_s===0?"经过宝藏点取宝，不减速、不停车":`取宝停靠 ${c.pickup_s} s`}；警方检测 3 格（${match.police_sensor_range_m} m），小偷检测 ${Math.round(match.sensor_range_m/report.map.grid_spacing_m)} 格（${match.sensor_range_m} m），半角 ${c.sensor_half_angle_deg}°，每 ${(c.sensor_period_s*1000).toFixed(0)} ms 检测一次，漏检 ${Math.round(c.miss_probability*100)}%。二维中心距离 ${c.capture_center_distance_m} m 内即判抓捕。藏点仅选真实拐角或路口，所在直道至多 ${c.hide_max_straight_cells} 格，至少两条环路出口，排除只有一个外部出口的封闭环路。警方检出封闭环路内目标时优先比较赶到出口堵截的时间；警方优先覆盖未检查的候选位置，长直道按整段巡查，未检出不取消路线；丢失目标沿最后方向查到直道末端，不回追已越过的旧坐标，再从当前位置恢复巡查；完整可见死路连续三次未检出后跳过驶入，新的检出优先追踪。沿线抵达下一地图节点再换路，已开始的动作需要完成。自身位置假设已知，尚未实车验证；搜索和藏点选择均为启发式，未证明全局最优。`;
+    if(f[6]===6){
+      const patrol=(match.search_sweeps||[]).filter(e=>e.event==="observation_goal" && e.t<=f[0]+.001).at(-1);
+      if(patrol?.route?.length>1) el("detail").textContent+=`警方正在完成${patrol.kind==="straight_sweep"?"长直道扫描":"巡查"}：${annotations.reference(patrol.route[0])} → ${annotations.reference(patrol.node)}；未检出不会取消本段，实际检出优先追踪。`;
+    }
+    if(f[6]===7){
+      const block=match.events.filter(e=>e.event==="pocket_exit_target" && e.t<=f[0]+.001).at(-1);
+      if(block) el("detail").textContent+=`警方正在封堵单出口环路的 ${annotations.reference(block.gate)}；依据最后检出位置选路，到口短时守候，出现新线索立即更新。`;
+    }
+    const pm=match.metrics.P,bm=match.metrics.B;
+    el("metrics").textContent=`本局全程统计：警方掉头 ${pm.uturns} 次；小偷掉头 ${bm.uturns} 次、藏身停靠约 ${bm.hide_s.toFixed(1)} 秒、行驶 ${bm.distance_m.toFixed(2)} 米；逃跑阶段最长连续直行 ${match.max_escape_straight_m.toFixed(2)} 米。`;
+    slider.value=index;
+  }
+  function reset(){playing=false;el("play").textContent="播放";index=0;replayTime=0;lastStamp=null;slider.max=match.frames.length-1;render();}
+  select.addEventListener("change",()=>{match=report.replays[Number(select.value)];reset();});
+  el("restart").addEventListener("click",reset);
+  el("contact").addEventListener("click",()=>{playing=false;el("play").textContent="播放";index=match.frames.length-1;replayTime=match.duration_s;render();});
+  el("trail").addEventListener("change",render);
+  slider.addEventListener("input",()=>{playing=false;el("play").textContent="播放";index=Number(slider.value);replayTime=match.frames[index][0];render();});
+  el("play").addEventListener("click",()=>{if(index===match.frames.length-1)reset();playing=!playing;lastStamp=null;el("play").textContent=playing?"暂停":"播放";});
+  function tick(stamp){if(playing){if(lastStamp!==null)replayTime+=Math.min(.1,(stamp-lastStamp)/1000)*Number(el("speed").value);lastStamp=stamp;let next=index;while(next+1<match.frames.length&&match.frames[next+1][0]<=replayTime)next++;if(next!==index){index=next;render();}if(index===match.frames.length-1){playing=false;el("play").textContent="播放";}}else lastStamp=null;requestAnimationFrame(tick);}
+  new ResizeObserver(render).observe(svg);reset();requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

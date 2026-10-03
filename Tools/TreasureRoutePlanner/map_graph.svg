@@ -1,0 +1,291 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1150" height="1110" viewBox="0 0 1150 1110">
+<rect width="1150" height="1110" fill="white"/>
+<g font-family="Microsoft YaHei, sans-serif" fill="#202a35">
+<text x="56" y="65" font-size="34">密室夺宝 节点拓扑图</text>
+<text x="56" y="110" font-size="20">空心点为中间采样点，实心点为岔路；悬停可查看坐标与度数。</text>
+<line x1="90" y1="240" x2="172" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="240" x2="90" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="240" x2="254" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="240" x2="336" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="240" x2="254" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="240" x2="418" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="240" x2="500" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="240" x2="418" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="240" x2="500" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="240" x2="541.0" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="240" x2="664" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="240" x2="582" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="240" x2="746" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="240" x2="746" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="828" y1="240" x2="828" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="240" x2="828" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="240" x2="992" y2="240" stroke="#38414a" stroke-width="4"/>
+<line x1="992" y1="240" x2="992" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="322" x2="172" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="322" x2="90" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="322" x2="254" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="322" x2="336" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="322" x2="254" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="322" x2="418" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="322" x2="336" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="322" x2="418" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="322" x2="582" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="322" x2="500" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="322" x2="582" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="322" x2="746" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="322" x2="746" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="322" x2="992" y2="322" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="322" x2="910" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="404" x2="172" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="404" x2="90" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="404" x2="254" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="404" x2="172" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="404" x2="254" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="404" x2="418" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="404" x2="336" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="404" x2="664" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="404" x2="582" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="404" x2="746" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="404" x2="828" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="404" x2="746" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="404" x2="828" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="486" x2="418" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="486" x2="500" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="486" x2="500" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="486" x2="664" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="486" x2="582" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="486" x2="746" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="486" x2="664" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="486" x2="828" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="486" x2="828" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="486" x2="910" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="568" x2="172" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="568" x2="90" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="568" x2="254" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="568" x2="172" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="568" x2="336" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="568" x2="254" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="568" x2="336" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="568" x2="828" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="568" x2="746" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="568" x2="992" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="568" x2="910" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="650" x2="418" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="650" x2="336" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="650" x2="582" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="650" x2="582" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="650" x2="828" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="828" y1="650" x2="828" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="650" x2="828" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="650" x2="992" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="732" x2="172" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="732" x2="254" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="732" x2="418" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="732" x2="336" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="732" x2="500" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="732" x2="418" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="732" x2="500" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="732" x2="664" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="732" x2="582" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="732" x2="746" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="732" x2="664" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="732" x2="828" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="828" y1="732" x2="828" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="732" x2="992" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="732" x2="910" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="814" x2="172" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="814" x2="90" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="814" x2="254" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="814" x2="172" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="814" x2="336" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="814" x2="336" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="814" x2="582" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="814" x2="582" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="814" x2="746" y2="814" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="814" x2="746" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="896" x2="500" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="896" x2="582" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="896" x2="664" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="896" x2="582" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="896" x2="746" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="746" y1="896" x2="828" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="896" x2="828" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="896" x2="992" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="992" y1="896" x2="992" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="978" x2="254" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="978" x2="418" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="978" x2="500" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="978" x2="582" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="978" x2="664" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="978" x2="746" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="978" x2="828" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="978" x2="992" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="486" x2="90" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="650" x2="90" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="90" y1="896" x2="90" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="486" x2="172" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="650" x2="172" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="172" y1="896" x2="172" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="650" x2="254" y2="732" stroke="#38414a" stroke-width="4"/>
+<line x1="254" y1="896" x2="254" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="336" y1="896" x2="336" y2="978" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="568" x2="418" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="418" y1="814" x2="418" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="404" x2="500" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="500" y1="568" x2="500" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="582" y1="568" x2="582" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="664" y1="568" x2="664" y2="650" stroke="#38414a" stroke-width="4"/>
+<line x1="828" y1="322" x2="828" y2="404" stroke="#38414a" stroke-width="4"/>
+<line x1="828" y1="814" x2="828" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="910" y1="814" x2="910" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="992" y1="404" x2="992" y2="486" stroke="#38414a" stroke-width="4"/>
+<line x1="992" y1="486" x2="992" y2="568" stroke="#38414a" stroke-width="4"/>
+<line x1="992" y1="814" x2="992" y2="896" stroke="#38414a" stroke-width="4"/>
+<line x1="541.0" y1="240" x2="582" y2="240" stroke="#38414a" stroke-width="4"/>
+<circle cx="90" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(0,0) degree 2</title></circle>
+<circle cx="172" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(1,0) degree 2</title></circle>
+<circle cx="254" cy="240" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(2,0) degree 3</title></circle>
+<circle cx="336" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(3,0) degree 2</title></circle>
+<circle cx="418" cy="240" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(4,0) degree 3</title></circle>
+<circle cx="500" cy="240" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(5,0) degree 3</title></circle>
+<circle cx="582" cy="240" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,0) degree 3</title></circle>
+<circle cx="664" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(7,0) degree 2</title></circle>
+<circle cx="746" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(8,0) degree 2</title></circle>
+<circle cx="828" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(9,0) degree 2</title></circle>
+<circle cx="910" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(10,0) degree 2</title></circle>
+<circle cx="992" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,0) degree 2</title></circle>
+<circle cx="90" cy="322" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(0,1) degree 3</title></circle>
+<circle cx="172" cy="322" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(1,1) degree 2</title></circle>
+<circle cx="254" cy="322" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(2,1) degree 4</title></circle>
+<circle cx="336" cy="322" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(3,1) degree 3</title></circle>
+<circle cx="418" cy="322" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(4,1) degree 3</title></circle>
+<circle cx="500" cy="322" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(5,1) degree 3</title></circle>
+<circle cx="582" cy="322" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,1) degree 3</title></circle>
+<circle cx="664" cy="322" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(7,1) degree 1</title></circle>
+<circle cx="746" cy="322" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(8,1) degree 3</title></circle>
+<circle cx="910" cy="322" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(10,1) degree 2</title></circle>
+<circle cx="992" cy="322" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,1) degree 2</title></circle>
+<circle cx="90" cy="404" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(0,2) degree 3</title></circle>
+<circle cx="172" cy="404" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(1,2) degree 3</title></circle>
+<circle cx="254" cy="404" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(2,2) degree 3</title></circle>
+<circle cx="336" cy="404" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(3,2) degree 3</title></circle>
+<circle cx="418" cy="404" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(4,2) degree 2</title></circle>
+<circle cx="582" cy="404" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,2) degree 3</title></circle>
+<circle cx="664" cy="404" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(7,2) degree 2</title></circle>
+<circle cx="746" cy="404" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(8,2) degree 4</title></circle>
+<circle cx="828" cy="404" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(9,2) degree 3</title></circle>
+<circle cx="910" cy="404" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(10,2) degree 2</title></circle>
+<circle cx="336" cy="486" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(3,3) degree 2</title></circle>
+<circle cx="418" cy="486" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(4,3) degree 2</title></circle>
+<circle cx="500" cy="486" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(5,3) degree 3</title></circle>
+<circle cx="582" cy="486" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,3) degree 3</title></circle>
+<circle cx="664" cy="486" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(7,3) degree 3</title></circle>
+<circle cx="746" cy="486" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(8,3) degree 3</title></circle>
+<circle cx="828" cy="486" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(9,3) degree 2</title></circle>
+<circle cx="910" cy="486" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(10,3) degree 2</title></circle>
+<circle cx="90" cy="568" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(0,4) degree 3</title></circle>
+<circle cx="172" cy="568" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(1,4) degree 4</title></circle>
+<circle cx="254" cy="568" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(2,4) degree 3</title></circle>
+<circle cx="336" cy="568" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(3,4) degree 2</title></circle>
+<circle cx="746" cy="568" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(8,4) degree 2</title></circle>
+<circle cx="828" cy="568" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(9,4) degree 1</title></circle>
+<circle cx="910" cy="568" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(10,4) degree 3</title></circle>
+<circle cx="992" cy="568" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,4) degree 2</title></circle>
+<circle cx="336" cy="650" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(3,5) degree 3</title></circle>
+<circle cx="418" cy="650" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(4,5) degree 2</title></circle>
+<circle cx="500" cy="650" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(5,5) degree 2</title></circle>
+<circle cx="582" cy="650" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,5) degree 3</title></circle>
+<circle cx="746" cy="650" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(8,5) degree 2</title></circle>
+<circle cx="828" cy="650" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(9,5) degree 3</title></circle>
+<circle cx="910" cy="650" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(10,5) degree 3</title></circle>
+<circle cx="992" cy="650" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,5) degree 1</title></circle>
+<circle cx="90" cy="732" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(0,6) degree 2</title></circle>
+<circle cx="172" cy="732" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(1,6) degree 3</title></circle>
+<circle cx="254" cy="732" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(2,6) degree 2</title></circle>
+<circle cx="336" cy="732" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(3,6) degree 3</title></circle>
+<circle cx="418" cy="732" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(4,6) degree 3</title></circle>
+<circle cx="500" cy="732" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(5,6) degree 2</title></circle>
+<circle cx="582" cy="732" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,6) degree 3</title></circle>
+<circle cx="664" cy="732" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(7,6) degree 3</title></circle>
+<circle cx="746" cy="732" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(8,6) degree 2</title></circle>
+<circle cx="828" cy="732" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(9,6) degree 3</title></circle>
+<circle cx="910" cy="732" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(10,6) degree 2</title></circle>
+<circle cx="992" cy="732" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,6) degree 1</title></circle>
+<circle cx="90" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(0,7) degree 2</title></circle>
+<circle cx="172" cy="814" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(1,7) degree 3</title></circle>
+<circle cx="254" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(2,7) degree 2</title></circle>
+<circle cx="336" cy="814" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(3,7) degree 3</title></circle>
+<circle cx="500" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(5,7) degree 2</title></circle>
+<circle cx="582" cy="814" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,7) degree 3</title></circle>
+<circle cx="664" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(7,7) degree 2</title></circle>
+<circle cx="746" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(8,7) degree 2</title></circle>
+<circle cx="418" cy="896" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(4,8) degree 2</title></circle>
+<circle cx="500" cy="896" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(5,8) degree 2</title></circle>
+<circle cx="582" cy="896" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,8) degree 4</title></circle>
+<circle cx="664" cy="896" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(7,8) degree 2</title></circle>
+<circle cx="746" cy="896" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(8,8) degree 3</title></circle>
+<circle cx="828" cy="896" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(9,8) degree 3</title></circle>
+<circle cx="910" cy="896" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(10,8) degree 3</title></circle>
+<circle cx="992" cy="896" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(11,8) degree 3</title></circle>
+<circle cx="172" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(1,9) degree 2</title></circle>
+<circle cx="254" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(2,9) degree 2</title></circle>
+<circle cx="336" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(3,9) degree 2</title></circle>
+<circle cx="418" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(4,9) degree 2</title></circle>
+<circle cx="500" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(5,9) degree 2</title></circle>
+<circle cx="582" cy="978" r="5" fill="#38414a" stroke="#38414a" stroke-width="2"><title>(6,9) degree 3</title></circle>
+<circle cx="664" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(7,9) degree 2</title></circle>
+<circle cx="746" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(8,9) degree 1</title></circle>
+<circle cx="828" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(9,9) degree 1</title></circle>
+<circle cx="910" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(10,9) degree 2</title></circle>
+<circle cx="992" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,9) degree 2</title></circle>
+<circle cx="90" cy="486" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(0,3) degree 2</title></circle>
+<circle cx="90" cy="650" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(0,5) degree 2</title></circle>
+<circle cx="90" cy="896" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(0,8) degree 2</title></circle>
+<circle cx="90" cy="978" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(0,9) degree 1</title></circle>
+<circle cx="172" cy="486" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(1,3) degree 2</title></circle>
+<circle cx="172" cy="650" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(1,5) degree 2</title></circle>
+<circle cx="172" cy="896" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(1,8) degree 2</title></circle>
+<circle cx="254" cy="486" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(2,3) degree 1</title></circle>
+<circle cx="254" cy="650" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(2,5) degree 2</title></circle>
+<circle cx="254" cy="896" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(2,8) degree 1</title></circle>
+<circle cx="336" cy="896" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(3,8) degree 2</title></circle>
+<circle cx="418" cy="568" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(4,4) degree 1</title></circle>
+<circle cx="418" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(4,7) degree 2</title></circle>
+<circle cx="500" cy="404" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(5,2) degree 2</title></circle>
+<circle cx="500" cy="568" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(5,4) degree 2</title></circle>
+<circle cx="582" cy="568" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(6,4) degree 2</title></circle>
+<circle cx="664" cy="568" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(7,4) degree 2</title></circle>
+<circle cx="664" cy="650" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(7,5) degree 1</title></circle>
+<circle cx="828" cy="322" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(9,1) degree 2</title></circle>
+<circle cx="828" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(9,7) degree 2</title></circle>
+<circle cx="910" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(10,7) degree 2</title></circle>
+<circle cx="992" cy="404" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,2) degree 1</title></circle>
+<circle cx="992" cy="486" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,3) degree 2</title></circle>
+<circle cx="992" cy="814" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(11,7) degree 1</title></circle>
+<circle cx="541.0" cy="240" r="5" fill="white" stroke="#38414a" stroke-width="2"><title>(5.5,0) degree 2</title></circle>
+<circle cx="90" cy="978" r="10" fill="#e4bf38" stroke="#38414a"/><text x="105" y="963" font-size="22">P</text>
+<circle cx="992" cy="650" r="10" fill="#e4bf38" stroke="#38414a"/><text x="1007" y="635" font-size="22">B</text>
+<circle cx="541.0" cy="240" r="10" fill="#e4bf38" stroke="#38414a"/><text x="556.0" y="225" font-size="22">T</text>
+<text x="90" y="210" text-anchor="middle" font-size="18">0</text>
+<text x="172" y="210" text-anchor="middle" font-size="18">1</text>
+<text x="254" y="210" text-anchor="middle" font-size="18">2</text>
+<text x="336" y="210" text-anchor="middle" font-size="18">3</text>
+<text x="418" y="210" text-anchor="middle" font-size="18">4</text>
+<text x="500" y="210" text-anchor="middle" font-size="18">5</text>
+<text x="582" y="210" text-anchor="middle" font-size="18">6</text>
+<text x="664" y="210" text-anchor="middle" font-size="18">7</text>
+<text x="746" y="210" text-anchor="middle" font-size="18">8</text>
+<text x="828" y="210" text-anchor="middle" font-size="18">9</text>
+<text x="910" y="210" text-anchor="middle" font-size="18">10</text>
+<text x="992" y="210" text-anchor="middle" font-size="18">11</text>
+<text x="55" y="246" text-anchor="middle" font-size="18">0</text>
+<text x="55" y="328" text-anchor="middle" font-size="18">1</text>
+<text x="55" y="410" text-anchor="middle" font-size="18">2</text>
+<text x="55" y="492" text-anchor="middle" font-size="18">3</text>
+<text x="55" y="574" text-anchor="middle" font-size="18">4</text>
+<text x="55" y="656" text-anchor="middle" font-size="18">5</text>
+<text x="55" y="738" text-anchor="middle" font-size="18">6</text>
+<text x="55" y="820" text-anchor="middle" font-size="18">7</text>
+<text x="55" y="902" text-anchor="middle" font-size="18">8</text>
+<text x="55" y="984" text-anchor="middle" font-size="18">9</text>
+<text x="56" y="1070" font-size="20">121 个采样节点 · 139 条无向边 · 19 个独立环路 · 米制长度按网格推算</text></g></svg>

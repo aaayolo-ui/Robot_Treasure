@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+qa/*
+!qa/verify_annotations.cjs
+!qa/reference-map.json
+!qa/refuge-labels-audit.json
+!qa/annotations-desktop.jpg
+!qa/annotations-mobile.jpg
+!qa/pocket-fix.jpg

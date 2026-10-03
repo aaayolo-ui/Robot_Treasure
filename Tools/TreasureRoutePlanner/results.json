@@ -1,0 +1,6297 @@
+{
+  "assumptions": "按截图人工描图，尚未由现场地图确认。米制长度按相邻黑线中心距 0.3 m 的规则推算。",
+  "parameters": {
+    "speed_m_s": 0.35,
+    "turn90_s": 0.6,
+    "uturn_s": 1.2,
+    "pickup_s": "not measured; not included"
+  },
+  "structure": {
+    "node_count": 121,
+    "edge_count": 139,
+    "connected_components": 1,
+    "cycle_rank": 19,
+    "dead_ends": [
+      "(0,9)",
+      "(11,2)",
+      "(11,5)",
+      "(11,6)",
+      "(11,7)",
+      "(2,3)",
+      "(2,8)",
+      "(4,4)",
+      "(7,1)",
+      "(7,5)",
+      "(8,9)",
+      "(9,4)",
+      "(9,9)"
+    ],
+    "articulation_points": [
+      "(0,7)",
+      "(0,8)",
+      "(1,7)",
+      "(1,8)",
+      "(1,9)",
+      "(10,4)",
+      "(10,5)",
+      "(10,6)",
+      "(10,7)",
+      "(10,8)",
+      "(10,9)",
+      "(11,3)",
+      "(11,4)",
+      "(11,8)",
+      "(11,9)",
+      "(2,2)",
+      "(2,7)",
+      "(2,9)",
+      "(3,5)",
+      "(3,7)",
+      "(4,5)",
+      "(6,9)",
+      "(7,3)",
+      "(7,4)",
+      "(7,9)",
+      "(8,1)",
+      "(8,2)",
+      "(8,4)",
+      "(8,5)",
+      "(9,2)",
+      "(9,5)",
+      "(9,8)"
+    ],
+    "bridges": [
+      [
+        "(8,1)",
+        "(7,1)"
+      ],
+      [
+        "(11,3)",
+        "(11,2)"
+      ],
+      [
+        "(11,4)",
+        "(11,3)"
+      ],
+      [
+        "(10,4)",
+        "(11,4)"
+      ],
+      [
+        "(8,4)",
+        "(9,4)"
+      ],
+      [
+        "(8,5)",
+        "(8,4)"
+      ],
+      [
+        "(9,5)",
+        "(8,5)"
+      ],
+      [
+        "(2,2)",
+        "(2,3)"
+      ],
+      [
+        "(4,5)",
+        "(4,4)"
+      ],
+      [
+        "(3,5)",
+        "(4,5)"
+      ],
+      [
+        "(11,8)",
+        "(11,7)"
+      ],
+      [
+        "(10,9)",
+        "(9,9)"
+      ],
+      [
+        "(11,9)",
+        "(10,9)"
+      ],
+      [
+        "(11,8)",
+        "(11,9)"
+      ],
+      [
+        "(10,8)",
+        "(11,8)"
+      ],
+      [
+        "(10,6)",
+        "(11,6)"
+      ],
+      [
+        "(10,7)",
+        "(10,6)"
+      ],
+      [
+        "(10,8)",
+        "(10,7)"
+      ],
+      [
+        "(9,8)",
+        "(10,8)"
+      ],
+      [
+        "(0,8)",
+        "(0,9)"
+      ],
+      [
+        "(0,7)",
+        "(0,8)"
+      ],
+      [
+        "(1,7)",
+        "(0,7)"
+      ],
+      [
+        "(2,9)",
+        "(2,8)"
+      ],
+      [
+        "(1,9)",
+        "(2,9)"
+      ],
+      [
+        "(1,8)",
+        "(1,9)"
+      ],
+      [
+        "(1,7)",
+        "(1,8)"
+      ],
+      [
+        "(2,7)",
+        "(1,7)"
+      ],
+      [
+        "(3,7)",
+        "(2,7)"
+      ],
+      [
+        "(7,9)",
+        "(8,9)"
+      ],
+      [
+        "(6,9)",
+        "(7,9)"
+      ],
+      [
+        "(10,5)",
+        "(11,5)"
+      ],
+      [
+        "(7,4)",
+        "(7,5)"
+      ],
+      [
+        "(7,3)",
+        "(7,4)"
+      ],
+      [
+        "(8,2)",
+        "(9,2)"
+      ]
+    ]
+  },
+  "routes": {
+    "police": {
+      "distance": {
+        "mode": "distance",
+        "nodes": [
+          "(0,9)",
+          "(0,8)",
+          "(0,7)",
+          "(1,7)",
+          "(2,7)",
+          "(3,7)",
+          "(3,6)",
+          "(4,6)",
+          "(5,6)",
+          "(5,7)",
+          "(6,7)",
+          "(6,6)",
+          "(6,5)",
+          "(6,4)",
+          "(6,3)",
+          "(6,2)",
+          "(6,1)",
+          "(6,0)",
+          "(5.5,0)"
+        ],
+        "xy": [
+          [
+            0,
+            9
+          ],
+          [
+            0,
+            8
+          ],
+          [
+            0,
+            7
+          ],
+          [
+            1,
+            7
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            7
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            5
+          ],
+          [
+            6,
+            4
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            5.5,
+            0
+          ]
+        ],
+        "distance_m": 5.25,
+        "quarter_turns": 7,
+        "uturns": 0,
+        "initial_heading": "N",
+        "arrival_heading": "W",
+        "estimated_seconds": 19.2,
+        "legs": [
+          {
+            "from": "(0,9)",
+            "to": "(0,7)",
+            "heading": "N",
+            "action": "STRAIGHT",
+            "length_m": 0.6
+          },
+          {
+            "from": "(0,7)",
+            "to": "(3,7)",
+            "heading": "E",
+            "action": "RIGHT",
+            "length_m": 0.9
+          },
+          {
+            "from": "(3,7)",
+            "to": "(3,6)",
+            "heading": "N",
+            "action": "LEFT",
+            "length_m": 0.3
+          },
+          {
+            "from": "(3,6)",
+            "to": "(5,6)",
+            "heading": "E",
+            "action": "RIGHT",
+            "length_m": 0.6
+          },
+          {
+            "from": "(5,6)",
+            "to": "(5,7)",
+            "heading": "S",
+            "action": "RIGHT",
+            "length_m": 0.3
+          },
+          {
+            "from": "(5,7)",
+            "to": "(6,7)",
+            "heading": "E",
+            "action": "LEFT",
+            "length_m": 0.3
+          },
+          {
+            "from": "(6,7)",
+            "to": "(6,0)",
+            "heading": "N",
+            "action": "LEFT",
+            "length_m": 2.1
+          },
+          {
+            "from": "(6,0)",
+            "to": "(5.5,0)",
+            "heading": "W",
+            "action": "LEFT",
+            "length_m": 0.15
+          }
+        ],
+        "navigation_events": [
+          {
+            "node": "(0,9)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 1,
+            "exits": [
+              "N"
+            ]
+          },
+          {
+            "node": "(0,7)",
+            "incoming": "N",
+            "outgoing": "E",
+            "action": "RIGHT",
+            "degree": 2,
+            "exits": [
+              "E",
+              "S"
+            ]
+          },
+          {
+            "node": "(1,7)",
+            "incoming": "E",
+            "outgoing": "E",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(3,7)",
+            "incoming": "E",
+            "outgoing": "N",
+            "action": "LEFT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(3,6)",
+            "incoming": "N",
+            "outgoing": "E",
+            "action": "RIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(4,6)",
+            "incoming": "E",
+            "outgoing": "E",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(5,6)",
+            "incoming": "E",
+            "outgoing": "S",
+            "action": "RIGHT",
+            "degree": 2,
+            "exits": [
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(5,7)",
+            "incoming": "S",
+            "outgoing": "E",
+            "action": "LEFT",
+            "degree": 2,
+            "exits": [
+              "E",
+              "N"
+            ]
+          },
+          {
+            "node": "(6,7)",
+            "incoming": "E",
+            "outgoing": "N",
+            "action": "LEFT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,6)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,5)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,3)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,2)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,1)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,0)",
+            "incoming": "N",
+            "outgoing": "W",
+            "action": "LEFT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          }
+        ]
+      },
+      "time": {
+        "mode": "time",
+        "nodes": [
+          "(0,9)",
+          "(0,8)",
+          "(0,7)",
+          "(1,7)",
+          "(2,7)",
+          "(3,7)",
+          "(3,6)",
+          "(4,6)",
+          "(5,6)",
+          "(5,7)",
+          "(6,7)",
+          "(6,6)",
+          "(6,5)",
+          "(6,4)",
+          "(6,3)",
+          "(6,2)",
+          "(6,1)",
+          "(6,0)",
+          "(5.5,0)"
+        ],
+        "xy": [
+          [
+            0,
+            9
+          ],
+          [
+            0,
+            8
+          ],
+          [
+            0,
+            7
+          ],
+          [
+            1,
+            7
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            7
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            5
+          ],
+          [
+            6,
+            4
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            5.5,
+            0
+          ]
+        ],
+        "distance_m": 5.25,
+        "quarter_turns": 7,
+        "uturns": 0,
+        "initial_heading": "N",
+        "arrival_heading": "W",
+        "estimated_seconds": 19.2,
+        "legs": [
+          {
+            "from": "(0,9)",
+            "to": "(0,7)",
+            "heading": "N",
+            "action": "STRAIGHT",
+            "length_m": 0.6
+          },
+          {
+            "from": "(0,7)",
+            "to": "(3,7)",
+            "heading": "E",
+            "action": "RIGHT",
+            "length_m": 0.9
+          },
+          {
+            "from": "(3,7)",
+            "to": "(3,6)",
+            "heading": "N",
+            "action": "LEFT",
+            "length_m": 0.3
+          },
+          {
+            "from": "(3,6)",
+            "to": "(5,6)",
+            "heading": "E",
+            "action": "RIGHT",
+            "length_m": 0.6
+          },
+          {
+            "from": "(5,6)",
+            "to": "(5,7)",
+            "heading": "S",
+            "action": "RIGHT",
+            "length_m": 0.3
+          },
+          {
+            "from": "(5,7)",
+            "to": "(6,7)",
+            "heading": "E",
+            "action": "LEFT",
+            "length_m": 0.3
+          },
+          {
+            "from": "(6,7)",
+            "to": "(6,0)",
+            "heading": "N",
+            "action": "LEFT",
+            "length_m": 2.1
+          },
+          {
+            "from": "(6,0)",
+            "to": "(5.5,0)",
+            "heading": "W",
+            "action": "LEFT",
+            "length_m": 0.15
+          }
+        ],
+        "navigation_events": [
+          {
+            "node": "(0,9)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 1,
+            "exits": [
+              "N"
+            ]
+          },
+          {
+            "node": "(0,7)",
+            "incoming": "N",
+            "outgoing": "E",
+            "action": "RIGHT",
+            "degree": 2,
+            "exits": [
+              "E",
+              "S"
+            ]
+          },
+          {
+            "node": "(1,7)",
+            "incoming": "E",
+            "outgoing": "E",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(3,7)",
+            "incoming": "E",
+            "outgoing": "N",
+            "action": "LEFT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(3,6)",
+            "incoming": "N",
+            "outgoing": "E",
+            "action": "RIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(4,6)",
+            "incoming": "E",
+            "outgoing": "E",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(5,6)",
+            "incoming": "E",
+            "outgoing": "S",
+            "action": "RIGHT",
+            "degree": 2,
+            "exits": [
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(5,7)",
+            "incoming": "S",
+            "outgoing": "E",
+            "action": "LEFT",
+            "degree": 2,
+            "exits": [
+              "E",
+              "N"
+            ]
+          },
+          {
+            "node": "(6,7)",
+            "incoming": "E",
+            "outgoing": "N",
+            "action": "LEFT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,6)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,5)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,3)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,2)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,1)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,0)",
+            "incoming": "N",
+            "outgoing": "W",
+            "action": "LEFT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          }
+        ]
+      },
+      "number_of_shortest_paths": 1,
+      "shortest_alternatives": [
+        {
+          "mode": "distance",
+          "nodes": [
+            "(0,9)",
+            "(0,8)",
+            "(0,7)",
+            "(1,7)",
+            "(2,7)",
+            "(3,7)",
+            "(3,6)",
+            "(4,6)",
+            "(5,6)",
+            "(5,7)",
+            "(6,7)",
+            "(6,6)",
+            "(6,5)",
+            "(6,4)",
+            "(6,3)",
+            "(6,2)",
+            "(6,1)",
+            "(6,0)",
+            "(5.5,0)"
+          ],
+          "xy": [
+            [
+              0,
+              9
+            ],
+            [
+              0,
+              8
+            ],
+            [
+              0,
+              7
+            ],
+            [
+              1,
+              7
+            ],
+            [
+              2,
+              7
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              3,
+              6
+            ],
+            [
+              4,
+              6
+            ],
+            [
+              5,
+              6
+            ],
+            [
+              5,
+              7
+            ],
+            [
+              6,
+              7
+            ],
+            [
+              6,
+              6
+            ],
+            [
+              6,
+              5
+            ],
+            [
+              6,
+              4
+            ],
+            [
+              6,
+              3
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              5.5,
+              0
+            ]
+          ],
+          "distance_m": 5.25,
+          "quarter_turns": 7,
+          "uturns": 0,
+          "initial_heading": "N",
+          "arrival_heading": "W",
+          "estimated_seconds": 19.2,
+          "legs": [
+            {
+              "from": "(0,9)",
+              "to": "(0,7)",
+              "heading": "N",
+              "action": "STRAIGHT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(0,7)",
+              "to": "(3,7)",
+              "heading": "E",
+              "action": "RIGHT",
+              "length_m": 0.9
+            },
+            {
+              "from": "(3,7)",
+              "to": "(3,6)",
+              "heading": "N",
+              "action": "LEFT",
+              "length_m": 0.3
+            },
+            {
+              "from": "(3,6)",
+              "to": "(5,6)",
+              "heading": "E",
+              "action": "RIGHT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(5,6)",
+              "to": "(5,7)",
+              "heading": "S",
+              "action": "RIGHT",
+              "length_m": 0.3
+            },
+            {
+              "from": "(5,7)",
+              "to": "(6,7)",
+              "heading": "E",
+              "action": "LEFT",
+              "length_m": 0.3
+            },
+            {
+              "from": "(6,7)",
+              "to": "(6,0)",
+              "heading": "N",
+              "action": "LEFT",
+              "length_m": 2.1
+            },
+            {
+              "from": "(6,0)",
+              "to": "(5.5,0)",
+              "heading": "W",
+              "action": "LEFT",
+              "length_m": 0.15
+            }
+          ],
+          "navigation_events": [
+            {
+              "node": "(0,9)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 1,
+              "exits": [
+                "N"
+              ]
+            },
+            {
+              "node": "(0,7)",
+              "incoming": "N",
+              "outgoing": "E",
+              "action": "RIGHT",
+              "degree": 2,
+              "exits": [
+                "E",
+                "S"
+              ]
+            },
+            {
+              "node": "(1,7)",
+              "incoming": "E",
+              "outgoing": "E",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(3,7)",
+              "incoming": "E",
+              "outgoing": "N",
+              "action": "LEFT",
+              "degree": 3,
+              "exits": [
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(3,6)",
+              "incoming": "N",
+              "outgoing": "E",
+              "action": "RIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(4,6)",
+              "incoming": "E",
+              "outgoing": "E",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(5,6)",
+              "incoming": "E",
+              "outgoing": "S",
+              "action": "RIGHT",
+              "degree": 2,
+              "exits": [
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(5,7)",
+              "incoming": "S",
+              "outgoing": "E",
+              "action": "LEFT",
+              "degree": 2,
+              "exits": [
+                "E",
+                "N"
+              ]
+            },
+            {
+              "node": "(6,7)",
+              "incoming": "E",
+              "outgoing": "N",
+              "action": "LEFT",
+              "degree": 3,
+              "exits": [
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(6,6)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(6,5)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(6,3)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(6,2)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(6,1)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(6,0)",
+              "incoming": "N",
+              "outgoing": "W",
+              "action": "LEFT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "S",
+                "W"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "thief": {
+      "distance": {
+        "mode": "distance",
+        "nodes": [
+          "(11,5)",
+          "(10,5)",
+          "(10,4)",
+          "(10,3)",
+          "(9,3)",
+          "(8,3)",
+          "(7,3)",
+          "(6,3)",
+          "(6,2)",
+          "(6,1)",
+          "(6,0)",
+          "(5.5,0)"
+        ],
+        "xy": [
+          [
+            11,
+            5
+          ],
+          [
+            10,
+            5
+          ],
+          [
+            10,
+            4
+          ],
+          [
+            10,
+            3
+          ],
+          [
+            9,
+            3
+          ],
+          [
+            8,
+            3
+          ],
+          [
+            7,
+            3
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            5.5,
+            0
+          ]
+        ],
+        "distance_m": 3.15,
+        "quarter_turns": 4,
+        "uturns": 0,
+        "initial_heading": "W",
+        "arrival_heading": "W",
+        "estimated_seconds": 11.4,
+        "legs": [
+          {
+            "from": "(11,5)",
+            "to": "(10,5)",
+            "heading": "W",
+            "action": "STRAIGHT",
+            "length_m": 0.3
+          },
+          {
+            "from": "(10,5)",
+            "to": "(10,3)",
+            "heading": "N",
+            "action": "RIGHT",
+            "length_m": 0.6
+          },
+          {
+            "from": "(10,3)",
+            "to": "(6,3)",
+            "heading": "W",
+            "action": "LEFT",
+            "length_m": 1.2
+          },
+          {
+            "from": "(6,3)",
+            "to": "(6,0)",
+            "heading": "N",
+            "action": "RIGHT",
+            "length_m": 0.9
+          },
+          {
+            "from": "(6,0)",
+            "to": "(5.5,0)",
+            "heading": "W",
+            "action": "LEFT",
+            "length_m": 0.15
+          }
+        ],
+        "navigation_events": [
+          {
+            "node": "(11,5)",
+            "incoming": "W",
+            "outgoing": "W",
+            "action": "STRAIGHT",
+            "degree": 1,
+            "exits": [
+              "W"
+            ]
+          },
+          {
+            "node": "(10,5)",
+            "incoming": "W",
+            "outgoing": "N",
+            "action": "RIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "W"
+            ]
+          },
+          {
+            "node": "(10,4)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(10,3)",
+            "incoming": "N",
+            "outgoing": "W",
+            "action": "LEFT",
+            "degree": 2,
+            "exits": [
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(8,3)",
+            "incoming": "W",
+            "outgoing": "W",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "W"
+            ]
+          },
+          {
+            "node": "(7,3)",
+            "incoming": "W",
+            "outgoing": "W",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,3)",
+            "incoming": "W",
+            "outgoing": "N",
+            "action": "RIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,2)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,1)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,0)",
+            "incoming": "N",
+            "outgoing": "W",
+            "action": "LEFT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          }
+        ]
+      },
+      "time": {
+        "mode": "time",
+        "nodes": [
+          "(11,5)",
+          "(10,5)",
+          "(10,4)",
+          "(10,3)",
+          "(9,3)",
+          "(8,3)",
+          "(7,3)",
+          "(6,3)",
+          "(6,2)",
+          "(6,1)",
+          "(6,0)",
+          "(5.5,0)"
+        ],
+        "xy": [
+          [
+            11,
+            5
+          ],
+          [
+            10,
+            5
+          ],
+          [
+            10,
+            4
+          ],
+          [
+            10,
+            3
+          ],
+          [
+            9,
+            3
+          ],
+          [
+            8,
+            3
+          ],
+          [
+            7,
+            3
+          ],
+          [
+            6,
+            3
+          ],
+          [
+            6,
+            2
+          ],
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            0
+          ],
+          [
+            5.5,
+            0
+          ]
+        ],
+        "distance_m": 3.15,
+        "quarter_turns": 4,
+        "uturns": 0,
+        "initial_heading": "W",
+        "arrival_heading": "W",
+        "estimated_seconds": 11.4,
+        "legs": [
+          {
+            "from": "(11,5)",
+            "to": "(10,5)",
+            "heading": "W",
+            "action": "STRAIGHT",
+            "length_m": 0.3
+          },
+          {
+            "from": "(10,5)",
+            "to": "(10,3)",
+            "heading": "N",
+            "action": "RIGHT",
+            "length_m": 0.6
+          },
+          {
+            "from": "(10,3)",
+            "to": "(6,3)",
+            "heading": "W",
+            "action": "LEFT",
+            "length_m": 1.2
+          },
+          {
+            "from": "(6,3)",
+            "to": "(6,0)",
+            "heading": "N",
+            "action": "RIGHT",
+            "length_m": 0.9
+          },
+          {
+            "from": "(6,0)",
+            "to": "(5.5,0)",
+            "heading": "W",
+            "action": "LEFT",
+            "length_m": 0.15
+          }
+        ],
+        "navigation_events": [
+          {
+            "node": "(11,5)",
+            "incoming": "W",
+            "outgoing": "W",
+            "action": "STRAIGHT",
+            "degree": 1,
+            "exits": [
+              "W"
+            ]
+          },
+          {
+            "node": "(10,5)",
+            "incoming": "W",
+            "outgoing": "N",
+            "action": "RIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "W"
+            ]
+          },
+          {
+            "node": "(10,4)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(10,3)",
+            "incoming": "N",
+            "outgoing": "W",
+            "action": "LEFT",
+            "degree": 2,
+            "exits": [
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(8,3)",
+            "incoming": "W",
+            "outgoing": "W",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "W"
+            ]
+          },
+          {
+            "node": "(7,3)",
+            "incoming": "W",
+            "outgoing": "W",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,3)",
+            "incoming": "W",
+            "outgoing": "N",
+            "action": "RIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,2)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "N",
+              "S"
+            ]
+          },
+          {
+            "node": "(6,1)",
+            "incoming": "N",
+            "outgoing": "N",
+            "action": "STRAIGHT",
+            "degree": 3,
+            "exits": [
+              "N",
+              "S",
+              "W"
+            ]
+          },
+          {
+            "node": "(6,0)",
+            "incoming": "N",
+            "outgoing": "W",
+            "action": "LEFT",
+            "degree": 3,
+            "exits": [
+              "E",
+              "S",
+              "W"
+            ]
+          }
+        ]
+      },
+      "number_of_shortest_paths": 3,
+      "shortest_alternatives": [
+        {
+          "mode": "distance",
+          "nodes": [
+            "(11,5)",
+            "(10,5)",
+            "(10,4)",
+            "(10,3)",
+            "(9,3)",
+            "(8,3)",
+            "(7,3)",
+            "(6,3)",
+            "(6,2)",
+            "(6,1)",
+            "(6,0)",
+            "(5.5,0)"
+          ],
+          "xy": [
+            [
+              11,
+              5
+            ],
+            [
+              10,
+              5
+            ],
+            [
+              10,
+              4
+            ],
+            [
+              10,
+              3
+            ],
+            [
+              9,
+              3
+            ],
+            [
+              8,
+              3
+            ],
+            [
+              7,
+              3
+            ],
+            [
+              6,
+              3
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              5.5,
+              0
+            ]
+          ],
+          "distance_m": 3.15,
+          "quarter_turns": 4,
+          "uturns": 0,
+          "initial_heading": "W",
+          "arrival_heading": "W",
+          "estimated_seconds": 11.4,
+          "legs": [
+            {
+              "from": "(11,5)",
+              "to": "(10,5)",
+              "heading": "W",
+              "action": "STRAIGHT",
+              "length_m": 0.3
+            },
+            {
+              "from": "(10,5)",
+              "to": "(10,3)",
+              "heading": "N",
+              "action": "RIGHT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(10,3)",
+              "to": "(6,3)",
+              "heading": "W",
+              "action": "LEFT",
+              "length_m": 1.2
+            },
+            {
+              "from": "(6,3)",
+              "to": "(6,0)",
+              "heading": "N",
+              "action": "RIGHT",
+              "length_m": 0.9
+            },
+            {
+              "from": "(6,0)",
+              "to": "(5.5,0)",
+              "heading": "W",
+              "action": "LEFT",
+              "length_m": 0.15
+            }
+          ],
+          "navigation_events": [
+            {
+              "node": "(11,5)",
+              "incoming": "W",
+              "outgoing": "W",
+              "action": "STRAIGHT",
+              "degree": 1,
+              "exits": [
+                "W"
+              ]
+            },
+            {
+              "node": "(10,5)",
+              "incoming": "W",
+              "outgoing": "N",
+              "action": "RIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "W"
+              ]
+            },
+            {
+              "node": "(10,4)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(10,3)",
+              "incoming": "N",
+              "outgoing": "W",
+              "action": "LEFT",
+              "degree": 2,
+              "exits": [
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(8,3)",
+              "incoming": "W",
+              "outgoing": "W",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "W"
+              ]
+            },
+            {
+              "node": "(7,3)",
+              "incoming": "W",
+              "outgoing": "W",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(6,3)",
+              "incoming": "W",
+              "outgoing": "N",
+              "action": "RIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(6,2)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(6,1)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(6,0)",
+              "incoming": "N",
+              "outgoing": "W",
+              "action": "LEFT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "S",
+                "W"
+              ]
+            }
+          ]
+        },
+        {
+          "mode": "distance",
+          "nodes": [
+            "(11,5)",
+            "(10,5)",
+            "(10,4)",
+            "(10,3)",
+            "(9,3)",
+            "(8,3)",
+            "(8,2)",
+            "(8,1)",
+            "(8,0)",
+            "(7,0)",
+            "(6,0)",
+            "(5.5,0)"
+          ],
+          "xy": [
+            [
+              11,
+              5
+            ],
+            [
+              10,
+              5
+            ],
+            [
+              10,
+              4
+            ],
+            [
+              10,
+              3
+            ],
+            [
+              9,
+              3
+            ],
+            [
+              8,
+              3
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              8,
+              1
+            ],
+            [
+              8,
+              0
+            ],
+            [
+              7,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              5.5,
+              0
+            ]
+          ],
+          "distance_m": 3.15,
+          "quarter_turns": 4,
+          "uturns": 0,
+          "initial_heading": "W",
+          "arrival_heading": "W",
+          "estimated_seconds": 11.4,
+          "legs": [
+            {
+              "from": "(11,5)",
+              "to": "(10,5)",
+              "heading": "W",
+              "action": "STRAIGHT",
+              "length_m": 0.3
+            },
+            {
+              "from": "(10,5)",
+              "to": "(10,3)",
+              "heading": "N",
+              "action": "RIGHT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(10,3)",
+              "to": "(8,3)",
+              "heading": "W",
+              "action": "LEFT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(8,3)",
+              "to": "(8,0)",
+              "heading": "N",
+              "action": "RIGHT",
+              "length_m": 0.9
+            },
+            {
+              "from": "(8,0)",
+              "to": "(5.5,0)",
+              "heading": "W",
+              "action": "LEFT",
+              "length_m": 0.75
+            }
+          ],
+          "navigation_events": [
+            {
+              "node": "(11,5)",
+              "incoming": "W",
+              "outgoing": "W",
+              "action": "STRAIGHT",
+              "degree": 1,
+              "exits": [
+                "W"
+              ]
+            },
+            {
+              "node": "(10,5)",
+              "incoming": "W",
+              "outgoing": "N",
+              "action": "RIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "W"
+              ]
+            },
+            {
+              "node": "(10,4)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(10,3)",
+              "incoming": "N",
+              "outgoing": "W",
+              "action": "LEFT",
+              "degree": 2,
+              "exits": [
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(8,3)",
+              "incoming": "W",
+              "outgoing": "N",
+              "action": "RIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "W"
+              ]
+            },
+            {
+              "node": "(8,2)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 4,
+              "exits": [
+                "E",
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(8,1)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(8,0)",
+              "incoming": "N",
+              "outgoing": "W",
+              "action": "LEFT",
+              "degree": 2,
+              "exits": [
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(6,0)",
+              "incoming": "W",
+              "outgoing": "W",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "S",
+                "W"
+              ]
+            }
+          ]
+        },
+        {
+          "mode": "distance",
+          "nodes": [
+            "(11,5)",
+            "(10,5)",
+            "(10,4)",
+            "(10,3)",
+            "(9,3)",
+            "(8,3)",
+            "(8,2)",
+            "(7,2)",
+            "(6,2)",
+            "(6,1)",
+            "(6,0)",
+            "(5.5,0)"
+          ],
+          "xy": [
+            [
+              11,
+              5
+            ],
+            [
+              10,
+              5
+            ],
+            [
+              10,
+              4
+            ],
+            [
+              10,
+              3
+            ],
+            [
+              9,
+              3
+            ],
+            [
+              8,
+              3
+            ],
+            [
+              8,
+              2
+            ],
+            [
+              7,
+              2
+            ],
+            [
+              6,
+              2
+            ],
+            [
+              6,
+              1
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              5.5,
+              0
+            ]
+          ],
+          "distance_m": 3.15,
+          "quarter_turns": 6,
+          "uturns": 0,
+          "initial_heading": "W",
+          "arrival_heading": "W",
+          "estimated_seconds": 12.6,
+          "legs": [
+            {
+              "from": "(11,5)",
+              "to": "(10,5)",
+              "heading": "W",
+              "action": "STRAIGHT",
+              "length_m": 0.3
+            },
+            {
+              "from": "(10,5)",
+              "to": "(10,3)",
+              "heading": "N",
+              "action": "RIGHT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(10,3)",
+              "to": "(8,3)",
+              "heading": "W",
+              "action": "LEFT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(8,3)",
+              "to": "(8,2)",
+              "heading": "N",
+              "action": "RIGHT",
+              "length_m": 0.3
+            },
+            {
+              "from": "(8,2)",
+              "to": "(6,2)",
+              "heading": "W",
+              "action": "LEFT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(6,2)",
+              "to": "(6,0)",
+              "heading": "N",
+              "action": "RIGHT",
+              "length_m": 0.6
+            },
+            {
+              "from": "(6,0)",
+              "to": "(5.5,0)",
+              "heading": "W",
+              "action": "LEFT",
+              "length_m": 0.15
+            }
+          ],
+          "navigation_events": [
+            {
+              "node": "(11,5)",
+              "incoming": "W",
+              "outgoing": "W",
+              "action": "STRAIGHT",
+              "degree": 1,
+              "exits": [
+                "W"
+              ]
+            },
+            {
+              "node": "(10,5)",
+              "incoming": "W",
+              "outgoing": "N",
+              "action": "RIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "W"
+              ]
+            },
+            {
+              "node": "(10,4)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(10,3)",
+              "incoming": "N",
+              "outgoing": "W",
+              "action": "LEFT",
+              "degree": 2,
+              "exits": [
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(8,3)",
+              "incoming": "W",
+              "outgoing": "N",
+              "action": "RIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "W"
+              ]
+            },
+            {
+              "node": "(8,2)",
+              "incoming": "N",
+              "outgoing": "W",
+              "action": "LEFT",
+              "degree": 4,
+              "exits": [
+                "E",
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(6,2)",
+              "incoming": "W",
+              "outgoing": "N",
+              "action": "RIGHT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "N",
+                "S"
+              ]
+            },
+            {
+              "node": "(6,1)",
+              "incoming": "N",
+              "outgoing": "N",
+              "action": "STRAIGHT",
+              "degree": 3,
+              "exits": [
+                "N",
+                "S",
+                "W"
+              ]
+            },
+            {
+              "node": "(6,0)",
+              "incoming": "N",
+              "outgoing": "W",
+              "action": "LEFT",
+              "degree": 3,
+              "exits": [
+                "E",
+                "S",
+                "W"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "cycles": {
+    "upper_small": {
+      "mode": "cycle",
+      "nodes": [
+        "(5.5,0)",
+        "(5,0)",
+        "(5,1)",
+        "(6,1)",
+        "(6,0)",
+        "(5.5,0)"
+      ],
+      "xy": [
+        [
+          5.5,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ],
+      "distance_m": 1.2,
+      "quarter_turns": 4,
+      "uturns": 0,
+      "initial_heading": "W",
+      "arrival_heading": "W",
+      "estimated_seconds": 5.828571,
+      "legs": [
+        {
+          "from": "(5.5,0)",
+          "to": "(5,0)",
+          "heading": "W",
+          "action": "STRAIGHT",
+          "length_m": 0.15
+        },
+        {
+          "from": "(5,0)",
+          "to": "(5,1)",
+          "heading": "S",
+          "action": "LEFT",
+          "length_m": 0.3
+        },
+        {
+          "from": "(5,1)",
+          "to": "(6,1)",
+          "heading": "E",
+          "action": "LEFT",
+          "length_m": 0.3
+        },
+        {
+          "from": "(6,1)",
+          "to": "(6,0)",
+          "heading": "N",
+          "action": "LEFT",
+          "length_m": 0.3
+        },
+        {
+          "from": "(6,0)",
+          "to": "(5.5,0)",
+          "heading": "W",
+          "action": "LEFT",
+          "length_m": 0.15
+        }
+      ],
+      "navigation_events": [
+        {
+          "node": "(5,0)",
+          "incoming": "W",
+          "outgoing": "S",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(5,1)",
+          "incoming": "S",
+          "outgoing": "E",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,1)",
+          "incoming": "E",
+          "outgoing": "N",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,0)",
+          "incoming": "N",
+          "outgoing": "W",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        }
+      ],
+      "waypoints": [
+        [
+          5.5,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ]
+    },
+    "central": {
+      "mode": "cycle",
+      "nodes": [
+        "(5.5,0)",
+        "(5,0)",
+        "(5,1)",
+        "(5,2)",
+        "(5,3)",
+        "(5,4)",
+        "(5,5)",
+        "(6,5)",
+        "(6,4)",
+        "(6,3)",
+        "(6,2)",
+        "(6,1)",
+        "(6,0)",
+        "(5.5,0)"
+      ],
+      "xy": [
+        [
+          5.5,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          5,
+          2
+        ],
+        [
+          5,
+          3
+        ],
+        [
+          5,
+          4
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ],
+      "distance_m": 3.6,
+      "quarter_turns": 4,
+      "uturns": 0,
+      "initial_heading": "W",
+      "arrival_heading": "W",
+      "estimated_seconds": 12.685714,
+      "legs": [
+        {
+          "from": "(5.5,0)",
+          "to": "(5,0)",
+          "heading": "W",
+          "action": "STRAIGHT",
+          "length_m": 0.15
+        },
+        {
+          "from": "(5,0)",
+          "to": "(5,5)",
+          "heading": "S",
+          "action": "LEFT",
+          "length_m": 1.5
+        },
+        {
+          "from": "(5,5)",
+          "to": "(6,5)",
+          "heading": "E",
+          "action": "LEFT",
+          "length_m": 0.3
+        },
+        {
+          "from": "(6,5)",
+          "to": "(6,0)",
+          "heading": "N",
+          "action": "LEFT",
+          "length_m": 1.5
+        },
+        {
+          "from": "(6,0)",
+          "to": "(5.5,0)",
+          "heading": "W",
+          "action": "LEFT",
+          "length_m": 0.15
+        }
+      ],
+      "navigation_events": [
+        {
+          "node": "(5,0)",
+          "incoming": "W",
+          "outgoing": "S",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(5,1)",
+          "incoming": "S",
+          "outgoing": "S",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(5,3)",
+          "incoming": "S",
+          "outgoing": "S",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(5,5)",
+          "incoming": "S",
+          "outgoing": "E",
+          "action": "LEFT",
+          "degree": 2,
+          "exits": [
+            "E",
+            "N"
+          ]
+        },
+        {
+          "node": "(6,5)",
+          "incoming": "E",
+          "outgoing": "N",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,3)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,2)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,1)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,0)",
+          "incoming": "N",
+          "outgoing": "W",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        }
+      ],
+      "waypoints": [
+        [
+          5.5,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          5
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ]
+    },
+    "left_large": {
+      "mode": "cycle",
+      "nodes": [
+        "(5.5,0)",
+        "(5,0)",
+        "(4,0)",
+        "(4,1)",
+        "(3,1)",
+        "(2,1)",
+        "(2,2)",
+        "(1,2)",
+        "(0,2)",
+        "(0,3)",
+        "(0,4)",
+        "(1,4)",
+        "(2,4)",
+        "(3,4)",
+        "(3,5)",
+        "(3,6)",
+        "(3,7)",
+        "(3,8)",
+        "(3,9)",
+        "(4,9)",
+        "(5,9)",
+        "(6,9)",
+        "(6,8)",
+        "(6,7)",
+        "(6,6)",
+        "(6,5)",
+        "(6,4)",
+        "(6,3)",
+        "(6,2)",
+        "(6,1)",
+        "(6,0)",
+        "(5.5,0)"
+      ],
+      "xy": [
+        [
+          5.5,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          1,
+          4
+        ],
+        [
+          2,
+          4
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          3,
+          8
+        ],
+        [
+          3,
+          9
+        ],
+        [
+          4,
+          9
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ],
+      "distance_m": 9.0,
+      "quarter_turns": 10,
+      "uturns": 0,
+      "initial_heading": "W",
+      "arrival_heading": "W",
+      "estimated_seconds": 31.714286,
+      "legs": [
+        {
+          "from": "(5.5,0)",
+          "to": "(4,0)",
+          "heading": "W",
+          "action": "STRAIGHT",
+          "length_m": 0.45
+        },
+        {
+          "from": "(4,0)",
+          "to": "(4,1)",
+          "heading": "S",
+          "action": "LEFT",
+          "length_m": 0.3
+        },
+        {
+          "from": "(4,1)",
+          "to": "(2,1)",
+          "heading": "W",
+          "action": "RIGHT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(2,1)",
+          "to": "(2,2)",
+          "heading": "S",
+          "action": "LEFT",
+          "length_m": 0.3
+        },
+        {
+          "from": "(2,2)",
+          "to": "(0,2)",
+          "heading": "W",
+          "action": "RIGHT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(0,2)",
+          "to": "(0,4)",
+          "heading": "S",
+          "action": "LEFT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(0,4)",
+          "to": "(3,4)",
+          "heading": "E",
+          "action": "LEFT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(3,4)",
+          "to": "(3,9)",
+          "heading": "S",
+          "action": "RIGHT",
+          "length_m": 1.5
+        },
+        {
+          "from": "(3,9)",
+          "to": "(6,9)",
+          "heading": "E",
+          "action": "LEFT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(6,9)",
+          "to": "(6,0)",
+          "heading": "N",
+          "action": "LEFT",
+          "length_m": 2.7
+        },
+        {
+          "from": "(6,0)",
+          "to": "(5.5,0)",
+          "heading": "W",
+          "action": "LEFT",
+          "length_m": 0.15
+        }
+      ],
+      "navigation_events": [
+        {
+          "node": "(5,0)",
+          "incoming": "W",
+          "outgoing": "W",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(4,0)",
+          "incoming": "W",
+          "outgoing": "S",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(4,1)",
+          "incoming": "S",
+          "outgoing": "W",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(3,1)",
+          "incoming": "W",
+          "outgoing": "W",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(2,1)",
+          "incoming": "W",
+          "outgoing": "S",
+          "action": "LEFT",
+          "degree": 4,
+          "exits": [
+            "E",
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(2,2)",
+          "incoming": "S",
+          "outgoing": "W",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(1,2)",
+          "incoming": "W",
+          "outgoing": "W",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(0,2)",
+          "incoming": "W",
+          "outgoing": "S",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(0,4)",
+          "incoming": "S",
+          "outgoing": "E",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(1,4)",
+          "incoming": "E",
+          "outgoing": "E",
+          "action": "STRAIGHT",
+          "degree": 4,
+          "exits": [
+            "E",
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(2,4)",
+          "incoming": "E",
+          "outgoing": "E",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(3,4)",
+          "incoming": "E",
+          "outgoing": "S",
+          "action": "RIGHT",
+          "degree": 2,
+          "exits": [
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(3,5)",
+          "incoming": "S",
+          "outgoing": "S",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(3,6)",
+          "incoming": "S",
+          "outgoing": "S",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(3,7)",
+          "incoming": "S",
+          "outgoing": "S",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(3,9)",
+          "incoming": "S",
+          "outgoing": "E",
+          "action": "LEFT",
+          "degree": 2,
+          "exits": [
+            "E",
+            "N"
+          ]
+        },
+        {
+          "node": "(6,9)",
+          "incoming": "E",
+          "outgoing": "N",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,8)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 4,
+          "exits": [
+            "E",
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,7)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,6)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,5)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,3)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,2)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,1)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,0)",
+          "incoming": "N",
+          "outgoing": "W",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        }
+      ],
+      "waypoints": [
+        [
+          5.5,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          2,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          3,
+          9
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ]
+    },
+    "right_large": {
+      "mode": "cycle",
+      "nodes": [
+        "(6,3)",
+        "(7,3)",
+        "(8,3)",
+        "(9,3)",
+        "(10,3)",
+        "(10,4)",
+        "(10,5)",
+        "(9,5)",
+        "(9,6)",
+        "(9,7)",
+        "(9,8)",
+        "(8,8)",
+        "(7,8)",
+        "(6,8)",
+        "(6,7)",
+        "(6,6)",
+        "(6,5)",
+        "(6,4)",
+        "(6,3)"
+      ],
+      "xy": [
+        [
+          6,
+          3
+        ],
+        [
+          7,
+          3
+        ],
+        [
+          8,
+          3
+        ],
+        [
+          9,
+          3
+        ],
+        [
+          10,
+          3
+        ],
+        [
+          10,
+          4
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          9,
+          5
+        ],
+        [
+          9,
+          6
+        ],
+        [
+          9,
+          7
+        ],
+        [
+          9,
+          8
+        ],
+        [
+          8,
+          8
+        ],
+        [
+          7,
+          8
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ]
+      ],
+      "distance_m": 5.4,
+      "quarter_turns": 6,
+      "uturns": 0,
+      "initial_heading": "N",
+      "arrival_heading": "N",
+      "estimated_seconds": 19.028571,
+      "legs": [
+        {
+          "from": "(6,3)",
+          "to": "(10,3)",
+          "heading": "E",
+          "action": "RIGHT",
+          "length_m": 1.2
+        },
+        {
+          "from": "(10,3)",
+          "to": "(10,5)",
+          "heading": "S",
+          "action": "RIGHT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(10,5)",
+          "to": "(9,5)",
+          "heading": "W",
+          "action": "RIGHT",
+          "length_m": 0.3
+        },
+        {
+          "from": "(9,5)",
+          "to": "(9,8)",
+          "heading": "S",
+          "action": "LEFT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(9,8)",
+          "to": "(6,8)",
+          "heading": "W",
+          "action": "RIGHT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(6,8)",
+          "to": "(6,3)",
+          "heading": "N",
+          "action": "RIGHT",
+          "length_m": 1.5
+        }
+      ],
+      "navigation_events": [
+        {
+          "node": "(6,3)",
+          "incoming": "N",
+          "outgoing": "E",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(7,3)",
+          "incoming": "E",
+          "outgoing": "E",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(8,3)",
+          "incoming": "E",
+          "outgoing": "E",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(10,3)",
+          "incoming": "E",
+          "outgoing": "S",
+          "action": "RIGHT",
+          "degree": 2,
+          "exits": [
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(10,4)",
+          "incoming": "S",
+          "outgoing": "S",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(10,5)",
+          "incoming": "S",
+          "outgoing": "W",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(9,5)",
+          "incoming": "W",
+          "outgoing": "S",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(9,6)",
+          "incoming": "S",
+          "outgoing": "S",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(9,8)",
+          "incoming": "S",
+          "outgoing": "W",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(8,8)",
+          "incoming": "W",
+          "outgoing": "W",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,8)",
+          "incoming": "W",
+          "outgoing": "N",
+          "action": "RIGHT",
+          "degree": 4,
+          "exits": [
+            "E",
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,7)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,6)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,5)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        }
+      ],
+      "waypoints": [
+        [
+          6,
+          3
+        ],
+        [
+          10,
+          3
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          9,
+          5
+        ],
+        [
+          9,
+          8
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          6,
+          3
+        ]
+      ]
+    }
+  },
+  "scenarios": {
+    "police_slow_turn": {
+      "mode": "time",
+      "nodes": [
+        "(0,9)",
+        "(0,8)",
+        "(0,7)",
+        "(1,7)",
+        "(2,7)",
+        "(3,7)",
+        "(3,8)",
+        "(3,9)",
+        "(4,9)",
+        "(5,9)",
+        "(6,9)",
+        "(6,8)",
+        "(6,7)",
+        "(6,6)",
+        "(6,5)",
+        "(6,4)",
+        "(6,3)",
+        "(6,2)",
+        "(6,1)",
+        "(6,0)",
+        "(5.5,0)"
+      ],
+      "xy": [
+        [
+          0,
+          9
+        ],
+        [
+          0,
+          8
+        ],
+        [
+          0,
+          7
+        ],
+        [
+          1,
+          7
+        ],
+        [
+          2,
+          7
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          3,
+          8
+        ],
+        [
+          3,
+          9
+        ],
+        [
+          4,
+          9
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ],
+      "distance_m": 5.85,
+      "quarter_turns": 5,
+      "uturns": 0,
+      "initial_heading": "N",
+      "arrival_heading": "W",
+      "estimated_seconds": 21.714286,
+      "legs": [
+        {
+          "from": "(0,9)",
+          "to": "(0,7)",
+          "heading": "N",
+          "action": "STRAIGHT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(0,7)",
+          "to": "(3,7)",
+          "heading": "E",
+          "action": "RIGHT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(3,7)",
+          "to": "(3,9)",
+          "heading": "S",
+          "action": "RIGHT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(3,9)",
+          "to": "(6,9)",
+          "heading": "E",
+          "action": "LEFT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(6,9)",
+          "to": "(6,0)",
+          "heading": "N",
+          "action": "LEFT",
+          "length_m": 2.7
+        },
+        {
+          "from": "(6,0)",
+          "to": "(5.5,0)",
+          "heading": "W",
+          "action": "LEFT",
+          "length_m": 0.15
+        }
+      ],
+      "navigation_events": [
+        {
+          "node": "(0,9)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 1,
+          "exits": [
+            "N"
+          ]
+        },
+        {
+          "node": "(0,7)",
+          "incoming": "N",
+          "outgoing": "E",
+          "action": "RIGHT",
+          "degree": 2,
+          "exits": [
+            "E",
+            "S"
+          ]
+        },
+        {
+          "node": "(1,7)",
+          "incoming": "E",
+          "outgoing": "E",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(3,7)",
+          "incoming": "E",
+          "outgoing": "S",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(3,9)",
+          "incoming": "S",
+          "outgoing": "E",
+          "action": "LEFT",
+          "degree": 2,
+          "exits": [
+            "E",
+            "N"
+          ]
+        },
+        {
+          "node": "(6,9)",
+          "incoming": "E",
+          "outgoing": "N",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,8)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 4,
+          "exits": [
+            "E",
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,7)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,6)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,5)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,3)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,2)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,1)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,0)",
+          "incoming": "N",
+          "outgoing": "W",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        }
+      ]
+    },
+    "police_lower_route": {
+      "mode": "time",
+      "nodes": [
+        "(0,9)",
+        "(0,8)",
+        "(0,7)",
+        "(1,7)",
+        "(2,7)",
+        "(3,7)",
+        "(3,8)",
+        "(3,9)",
+        "(4,9)",
+        "(5,9)",
+        "(6,9)",
+        "(6,8)",
+        "(6,7)",
+        "(6,6)",
+        "(6,5)",
+        "(6,4)",
+        "(6,3)",
+        "(6,2)",
+        "(6,1)",
+        "(6,0)",
+        "(5.5,0)"
+      ],
+      "xy": [
+        [
+          0,
+          9
+        ],
+        [
+          0,
+          8
+        ],
+        [
+          0,
+          7
+        ],
+        [
+          1,
+          7
+        ],
+        [
+          2,
+          7
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          3,
+          8
+        ],
+        [
+          3,
+          9
+        ],
+        [
+          4,
+          9
+        ],
+        [
+          5,
+          9
+        ],
+        [
+          6,
+          9
+        ],
+        [
+          6,
+          8
+        ],
+        [
+          6,
+          7
+        ],
+        [
+          6,
+          6
+        ],
+        [
+          6,
+          5
+        ],
+        [
+          6,
+          4
+        ],
+        [
+          6,
+          3
+        ],
+        [
+          6,
+          2
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ],
+      "distance_m": 5.85,
+      "quarter_turns": 5,
+      "uturns": 0,
+      "initial_heading": "N",
+      "arrival_heading": "W",
+      "estimated_seconds": 19.714286,
+      "legs": [
+        {
+          "from": "(0,9)",
+          "to": "(0,7)",
+          "heading": "N",
+          "action": "STRAIGHT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(0,7)",
+          "to": "(3,7)",
+          "heading": "E",
+          "action": "RIGHT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(3,7)",
+          "to": "(3,9)",
+          "heading": "S",
+          "action": "RIGHT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(3,9)",
+          "to": "(6,9)",
+          "heading": "E",
+          "action": "LEFT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(6,9)",
+          "to": "(6,0)",
+          "heading": "N",
+          "action": "LEFT",
+          "length_m": 2.7
+        },
+        {
+          "from": "(6,0)",
+          "to": "(5.5,0)",
+          "heading": "W",
+          "action": "LEFT",
+          "length_m": 0.15
+        }
+      ],
+      "navigation_events": [
+        {
+          "node": "(0,9)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 1,
+          "exits": [
+            "N"
+          ]
+        },
+        {
+          "node": "(0,7)",
+          "incoming": "N",
+          "outgoing": "E",
+          "action": "RIGHT",
+          "degree": 2,
+          "exits": [
+            "E",
+            "S"
+          ]
+        },
+        {
+          "node": "(1,7)",
+          "incoming": "E",
+          "outgoing": "E",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(3,7)",
+          "incoming": "E",
+          "outgoing": "S",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(3,9)",
+          "incoming": "S",
+          "outgoing": "E",
+          "action": "LEFT",
+          "degree": 2,
+          "exits": [
+            "E",
+            "N"
+          ]
+        },
+        {
+          "node": "(6,9)",
+          "incoming": "E",
+          "outgoing": "N",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,8)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 4,
+          "exits": [
+            "E",
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,7)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,6)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,5)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,3)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,2)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(6,1)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,0)",
+          "incoming": "N",
+          "outgoing": "W",
+          "action": "LEFT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        }
+      ]
+    },
+    "thief_upper_route": {
+      "mode": "distance",
+      "nodes": [
+        "(11,5)",
+        "(10,5)",
+        "(10,4)",
+        "(10,3)",
+        "(9,3)",
+        "(8,3)",
+        "(8,2)",
+        "(8,1)",
+        "(8,0)",
+        "(7,0)",
+        "(6,0)",
+        "(5.5,0)"
+      ],
+      "xy": [
+        [
+          11,
+          5
+        ],
+        [
+          10,
+          5
+        ],
+        [
+          10,
+          4
+        ],
+        [
+          10,
+          3
+        ],
+        [
+          9,
+          3
+        ],
+        [
+          8,
+          3
+        ],
+        [
+          8,
+          2
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          5.5,
+          0
+        ]
+      ],
+      "distance_m": 3.15,
+      "quarter_turns": 4,
+      "uturns": 0,
+      "initial_heading": "W",
+      "arrival_heading": "W",
+      "estimated_seconds": 11.4,
+      "legs": [
+        {
+          "from": "(11,5)",
+          "to": "(10,5)",
+          "heading": "W",
+          "action": "STRAIGHT",
+          "length_m": 0.3
+        },
+        {
+          "from": "(10,5)",
+          "to": "(10,3)",
+          "heading": "N",
+          "action": "RIGHT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(10,3)",
+          "to": "(8,3)",
+          "heading": "W",
+          "action": "LEFT",
+          "length_m": 0.6
+        },
+        {
+          "from": "(8,3)",
+          "to": "(8,0)",
+          "heading": "N",
+          "action": "RIGHT",
+          "length_m": 0.9
+        },
+        {
+          "from": "(8,0)",
+          "to": "(5.5,0)",
+          "heading": "W",
+          "action": "LEFT",
+          "length_m": 0.75
+        }
+      ],
+      "navigation_events": [
+        {
+          "node": "(11,5)",
+          "incoming": "W",
+          "outgoing": "W",
+          "action": "STRAIGHT",
+          "degree": 1,
+          "exits": [
+            "W"
+          ]
+        },
+        {
+          "node": "(10,5)",
+          "incoming": "W",
+          "outgoing": "N",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(10,4)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "S"
+          ]
+        },
+        {
+          "node": "(10,3)",
+          "incoming": "N",
+          "outgoing": "W",
+          "action": "LEFT",
+          "degree": 2,
+          "exits": [
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(8,3)",
+          "incoming": "W",
+          "outgoing": "N",
+          "action": "RIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "N",
+            "W"
+          ]
+        },
+        {
+          "node": "(8,2)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 4,
+          "exits": [
+            "E",
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(8,1)",
+          "incoming": "N",
+          "outgoing": "N",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "N",
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(8,0)",
+          "incoming": "N",
+          "outgoing": "W",
+          "action": "LEFT",
+          "degree": 2,
+          "exits": [
+            "S",
+            "W"
+          ]
+        },
+        {
+          "node": "(6,0)",
+          "incoming": "W",
+          "outgoing": "W",
+          "action": "STRAIGHT",
+          "degree": 3,
+          "exits": [
+            "E",
+            "S",
+            "W"
+          ]
+        }
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "(0,0)",
+      "xy": [
+        0,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(0,1)",
+      "xy": [
+        0,
+        1
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(0,2)",
+      "xy": [
+        0,
+        2
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(0,3)",
+      "xy": [
+        0,
+        3
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(0,4)",
+      "xy": [
+        0,
+        4
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(0,5)",
+      "xy": [
+        0,
+        5
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(0,6)",
+      "xy": [
+        0,
+        6
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(0,7)",
+      "xy": [
+        0,
+        7
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(0,8)",
+      "xy": [
+        0,
+        8
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(0,9)",
+      "xy": [
+        0,
+        9
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(1,0)",
+      "xy": [
+        1,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(1,1)",
+      "xy": [
+        1,
+        1
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(1,2)",
+      "xy": [
+        1,
+        2
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(1,3)",
+      "xy": [
+        1,
+        3
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(1,4)",
+      "xy": [
+        1,
+        4
+      ],
+      "degree": 4
+    },
+    {
+      "id": "(1,5)",
+      "xy": [
+        1,
+        5
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(1,6)",
+      "xy": [
+        1,
+        6
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(1,7)",
+      "xy": [
+        1,
+        7
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(1,8)",
+      "xy": [
+        1,
+        8
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(1,9)",
+      "xy": [
+        1,
+        9
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(10,0)",
+      "xy": [
+        10,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(10,1)",
+      "xy": [
+        10,
+        1
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(10,2)",
+      "xy": [
+        10,
+        2
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(10,3)",
+      "xy": [
+        10,
+        3
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(10,4)",
+      "xy": [
+        10,
+        4
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(10,5)",
+      "xy": [
+        10,
+        5
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(10,6)",
+      "xy": [
+        10,
+        6
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(10,7)",
+      "xy": [
+        10,
+        7
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(10,8)",
+      "xy": [
+        10,
+        8
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(10,9)",
+      "xy": [
+        10,
+        9
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(11,0)",
+      "xy": [
+        11,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(11,1)",
+      "xy": [
+        11,
+        1
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(11,2)",
+      "xy": [
+        11,
+        2
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(11,3)",
+      "xy": [
+        11,
+        3
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(11,4)",
+      "xy": [
+        11,
+        4
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(11,5)",
+      "xy": [
+        11,
+        5
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(11,6)",
+      "xy": [
+        11,
+        6
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(11,7)",
+      "xy": [
+        11,
+        7
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(11,8)",
+      "xy": [
+        11,
+        8
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(11,9)",
+      "xy": [
+        11,
+        9
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(2,0)",
+      "xy": [
+        2,
+        0
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(2,1)",
+      "xy": [
+        2,
+        1
+      ],
+      "degree": 4
+    },
+    {
+      "id": "(2,2)",
+      "xy": [
+        2,
+        2
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(2,3)",
+      "xy": [
+        2,
+        3
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(2,4)",
+      "xy": [
+        2,
+        4
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(2,5)",
+      "xy": [
+        2,
+        5
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(2,6)",
+      "xy": [
+        2,
+        6
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(2,7)",
+      "xy": [
+        2,
+        7
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(2,8)",
+      "xy": [
+        2,
+        8
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(2,9)",
+      "xy": [
+        2,
+        9
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(3,0)",
+      "xy": [
+        3,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(3,1)",
+      "xy": [
+        3,
+        1
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(3,2)",
+      "xy": [
+        3,
+        2
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(3,3)",
+      "xy": [
+        3,
+        3
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(3,4)",
+      "xy": [
+        3,
+        4
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(3,5)",
+      "xy": [
+        3,
+        5
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(3,6)",
+      "xy": [
+        3,
+        6
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(3,7)",
+      "xy": [
+        3,
+        7
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(3,8)",
+      "xy": [
+        3,
+        8
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(3,9)",
+      "xy": [
+        3,
+        9
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(4,0)",
+      "xy": [
+        4,
+        0
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(4,1)",
+      "xy": [
+        4,
+        1
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(4,2)",
+      "xy": [
+        4,
+        2
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(4,3)",
+      "xy": [
+        4,
+        3
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(4,4)",
+      "xy": [
+        4,
+        4
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(4,5)",
+      "xy": [
+        4,
+        5
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(4,6)",
+      "xy": [
+        4,
+        6
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(4,7)",
+      "xy": [
+        4,
+        7
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(4,8)",
+      "xy": [
+        4,
+        8
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(4,9)",
+      "xy": [
+        4,
+        9
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(5,0)",
+      "xy": [
+        5,
+        0
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(5,1)",
+      "xy": [
+        5,
+        1
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(5,2)",
+      "xy": [
+        5,
+        2
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(5,3)",
+      "xy": [
+        5,
+        3
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(5,4)",
+      "xy": [
+        5,
+        4
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(5,5)",
+      "xy": [
+        5,
+        5
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(5,6)",
+      "xy": [
+        5,
+        6
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(5,7)",
+      "xy": [
+        5,
+        7
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(5,8)",
+      "xy": [
+        5,
+        8
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(5,9)",
+      "xy": [
+        5,
+        9
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(5.5,0)",
+      "xy": [
+        5.5,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(6,0)",
+      "xy": [
+        6,
+        0
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(6,1)",
+      "xy": [
+        6,
+        1
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(6,2)",
+      "xy": [
+        6,
+        2
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(6,3)",
+      "xy": [
+        6,
+        3
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(6,4)",
+      "xy": [
+        6,
+        4
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(6,5)",
+      "xy": [
+        6,
+        5
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(6,6)",
+      "xy": [
+        6,
+        6
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(6,7)",
+      "xy": [
+        6,
+        7
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(6,8)",
+      "xy": [
+        6,
+        8
+      ],
+      "degree": 4
+    },
+    {
+      "id": "(6,9)",
+      "xy": [
+        6,
+        9
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(7,0)",
+      "xy": [
+        7,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(7,1)",
+      "xy": [
+        7,
+        1
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(7,2)",
+      "xy": [
+        7,
+        2
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(7,3)",
+      "xy": [
+        7,
+        3
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(7,4)",
+      "xy": [
+        7,
+        4
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(7,5)",
+      "xy": [
+        7,
+        5
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(7,6)",
+      "xy": [
+        7,
+        6
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(7,7)",
+      "xy": [
+        7,
+        7
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(7,8)",
+      "xy": [
+        7,
+        8
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(7,9)",
+      "xy": [
+        7,
+        9
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(8,0)",
+      "xy": [
+        8,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(8,1)",
+      "xy": [
+        8,
+        1
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(8,2)",
+      "xy": [
+        8,
+        2
+      ],
+      "degree": 4
+    },
+    {
+      "id": "(8,3)",
+      "xy": [
+        8,
+        3
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(8,4)",
+      "xy": [
+        8,
+        4
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(8,5)",
+      "xy": [
+        8,
+        5
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(8,6)",
+      "xy": [
+        8,
+        6
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(8,7)",
+      "xy": [
+        8,
+        7
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(8,8)",
+      "xy": [
+        8,
+        8
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(8,9)",
+      "xy": [
+        8,
+        9
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(9,0)",
+      "xy": [
+        9,
+        0
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(9,1)",
+      "xy": [
+        9,
+        1
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(9,2)",
+      "xy": [
+        9,
+        2
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(9,3)",
+      "xy": [
+        9,
+        3
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(9,4)",
+      "xy": [
+        9,
+        4
+      ],
+      "degree": 1
+    },
+    {
+      "id": "(9,5)",
+      "xy": [
+        9,
+        5
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(9,6)",
+      "xy": [
+        9,
+        6
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(9,7)",
+      "xy": [
+        9,
+        7
+      ],
+      "degree": 2
+    },
+    {
+      "id": "(9,8)",
+      "xy": [
+        9,
+        8
+      ],
+      "degree": 3
+    },
+    {
+      "id": "(9,9)",
+      "xy": [
+        9,
+        9
+      ],
+      "degree": 1
+    }
+  ],
+  "edges": [
+    {
+      "a": "(0,0)",
+      "b": "(0,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,0)",
+      "b": "(1,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,1)",
+      "b": "(0,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,1)",
+      "b": "(1,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,2)",
+      "b": "(0,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,2)",
+      "b": "(1,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,3)",
+      "b": "(0,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,4)",
+      "b": "(0,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,4)",
+      "b": "(1,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,5)",
+      "b": "(0,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,6)",
+      "b": "(1,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,7)",
+      "b": "(0,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,7)",
+      "b": "(1,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(0,8)",
+      "b": "(0,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,0)",
+      "b": "(2,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,1)",
+      "b": "(2,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,2)",
+      "b": "(1,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,2)",
+      "b": "(2,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,3)",
+      "b": "(1,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,4)",
+      "b": "(1,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,4)",
+      "b": "(2,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,5)",
+      "b": "(1,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,6)",
+      "b": "(2,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,7)",
+      "b": "(1,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,7)",
+      "b": "(2,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,8)",
+      "b": "(1,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(1,9)",
+      "b": "(2,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,0)",
+      "b": "(11,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,0)",
+      "b": "(9,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,1)",
+      "b": "(10,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,1)",
+      "b": "(11,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,2)",
+      "b": "(9,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,3)",
+      "b": "(10,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,3)",
+      "b": "(9,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,4)",
+      "b": "(10,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,4)",
+      "b": "(11,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,5)",
+      "b": "(11,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,5)",
+      "b": "(9,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,6)",
+      "b": "(10,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,6)",
+      "b": "(11,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,7)",
+      "b": "(10,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,8)",
+      "b": "(11,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,8)",
+      "b": "(9,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,9)",
+      "b": "(11,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(10,9)",
+      "b": "(9,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(11,0)",
+      "b": "(11,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(11,2)",
+      "b": "(11,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(11,3)",
+      "b": "(11,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(11,7)",
+      "b": "(11,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(11,8)",
+      "b": "(11,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,0)",
+      "b": "(2,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,0)",
+      "b": "(3,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,1)",
+      "b": "(2,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,1)",
+      "b": "(3,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,2)",
+      "b": "(2,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,4)",
+      "b": "(2,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,4)",
+      "b": "(3,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,5)",
+      "b": "(2,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,7)",
+      "b": "(3,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(2,8)",
+      "b": "(2,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,0)",
+      "b": "(4,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,1)",
+      "b": "(3,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,1)",
+      "b": "(4,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,2)",
+      "b": "(3,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,2)",
+      "b": "(4,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,3)",
+      "b": "(4,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,4)",
+      "b": "(3,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,5)",
+      "b": "(3,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,5)",
+      "b": "(4,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,6)",
+      "b": "(3,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,6)",
+      "b": "(4,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,7)",
+      "b": "(3,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,8)",
+      "b": "(3,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(3,9)",
+      "b": "(4,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,0)",
+      "b": "(4,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,0)",
+      "b": "(5,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,1)",
+      "b": "(4,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,3)",
+      "b": "(5,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,4)",
+      "b": "(4,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,6)",
+      "b": "(4,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,6)",
+      "b": "(5,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,7)",
+      "b": "(4,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,8)",
+      "b": "(5,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(4,9)",
+      "b": "(5,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,0)",
+      "b": "(5,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,0)",
+      "b": "(5.5,0)",
+      "length_m": 0.15
+    },
+    {
+      "a": "(5,1)",
+      "b": "(5,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,1)",
+      "b": "(6,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,2)",
+      "b": "(5,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,3)",
+      "b": "(5,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,4)",
+      "b": "(5,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,5)",
+      "b": "(6,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,6)",
+      "b": "(5,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,7)",
+      "b": "(6,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,8)",
+      "b": "(6,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5,9)",
+      "b": "(6,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(5.5,0)",
+      "b": "(6,0)",
+      "length_m": 0.15
+    },
+    {
+      "a": "(6,0)",
+      "b": "(6,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,0)",
+      "b": "(7,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,1)",
+      "b": "(6,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,2)",
+      "b": "(6,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,2)",
+      "b": "(7,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,3)",
+      "b": "(6,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,3)",
+      "b": "(7,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,4)",
+      "b": "(6,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,5)",
+      "b": "(6,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,6)",
+      "b": "(6,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,6)",
+      "b": "(7,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,7)",
+      "b": "(6,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,8)",
+      "b": "(6,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,8)",
+      "b": "(7,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(6,9)",
+      "b": "(7,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,0)",
+      "b": "(8,0)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,1)",
+      "b": "(8,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,2)",
+      "b": "(8,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,3)",
+      "b": "(7,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,3)",
+      "b": "(8,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,4)",
+      "b": "(7,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,6)",
+      "b": "(7,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,6)",
+      "b": "(8,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,7)",
+      "b": "(8,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,8)",
+      "b": "(8,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(7,9)",
+      "b": "(8,9)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,0)",
+      "b": "(8,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,1)",
+      "b": "(8,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,2)",
+      "b": "(8,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,2)",
+      "b": "(9,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,3)",
+      "b": "(9,3)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,4)",
+      "b": "(8,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,4)",
+      "b": "(9,4)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,5)",
+      "b": "(9,5)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,6)",
+      "b": "(9,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,7)",
+      "b": "(8,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(8,8)",
+      "b": "(9,8)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(9,0)",
+      "b": "(9,1)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(9,1)",
+      "b": "(9,2)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(9,5)",
+      "b": "(9,6)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(9,6)",
+      "b": "(9,7)",
+      "length_m": 0.3
+    },
+    {
+      "a": "(9,7)",
+      "b": "(9,8)",
+      "length_m": 0.3
+    }
+  ]
+}
