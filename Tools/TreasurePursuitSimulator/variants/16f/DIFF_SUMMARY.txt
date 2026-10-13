@@ -1,0 +1,14 @@
+Task adds 26 files under variants/16f and one new Docs/14 document.
+No existing tracked or untracked user file edited by this task.
+Baseline SHA256: 368 / 368 unchanged.
+Scoped git diff is empty because all task outputs are NEW untracked files; no staging performed.
+Derived source differences below are between new copies and the unchanged inherited inputs:
+arm_adapter.py: +0/-0 lines versus inherited input; input itself unchanged
+arm_bridge.c: +0/-0 lines versus inherited input; input itself unchanged
+replay.template.html: +52/-31 lines versus inherited input; input itself unchanged
+test_ui.cjs: +21/-3 lines versus inherited input; input itself unchanged
+map_annotations.js: +2/-2 lines versus inherited input; input itself unchanged
+Geometry/kinematics tests: 18 passed, 0 failures, 0 errors (observed test runner).
+Replay end-contact checks: 5 passed; offline DOM/controls passed; HTTP HEAD: 200.
+Real browser layout and hardware were not tested.
+No git add, git commit, git push, MCU download or real motor operation performed.

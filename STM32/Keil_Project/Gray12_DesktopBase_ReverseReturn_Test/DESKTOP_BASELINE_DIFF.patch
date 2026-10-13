@@ -1,0 +1,717 @@
+--- desktop/User/App_LineFollowExperiment.c
++++ new/User/App_LineFollowExperiment.c
+@@ -6,6 +6,7 @@
+ #include "Key.h"
+ #include "LineFollowPID.h"
+ #include "FollowSmoothing.h"
++#include "TravelFrame.h"
+ #include "JY61P.h"
+ #include "nchd12.h"
+ #include "nchd12_rear.h"
+@@ -14,6 +15,9 @@
+ #include "UartDebug.h"
+ 
+ /* RPM targets use x10 units. Keep the user's cruise/turn settings separate. */
++#define ROUTE_REVERSE_AT_JUNCTION          5U
++#define ROUTE_TURN_HISTORY_CAPACITY (ROUTE_REVERSE_AT_JUNCTION - 1U)
++
+ #define ROUTE_LEAVE_START_RPM_X10          1000L
+ #define ROUTE_LEAVE_INITIAL_RPM_X10        1000L
+ #define ROUTE_LEAVE_RAMP_STEP_RPM_X10       10L
+@@ -99,6 +103,10 @@
+ static LineFollowPID_Controller_t line_follow_pid;
+ static FollowSmoothing_t follow_smoothing;
+ static uint8_t route_active;
++static uint8_t reverse_pending;
++static uint8_t return_turn_count;
++static RouteState_t outbound_turn_history[ROUTE_TURN_HISTORY_CAPACITY];
++static uint32_t last_reverse_watch_tick;
+ static uint8_t rear_hw_ready;
+ static uint8_t rear_valid_count;
+ static uint8_t junction_count;
+@@ -203,6 +211,11 @@
+       ((front_raw12 & ROUTE_RIGHT_OUTER_TWO_MASK) ==
+        ROUTE_RIGHT_OUTER_TWO_MASK) ? 1U : 0U;
+ 
++  /* Retrace the completed outbound turn; do not override it at a T. */
++  if ((TravelFrame_IsReverse() != 0U) && (return_turn_count != 0U))
++  {
++    return;
++  }
+   if ((front_raw12 == 0x0FFFU) || (right_seen != 0U))
+   {
+     if (turn_target_state != ROUTE_STATE_TURN_RIGHT)
+@@ -260,6 +273,28 @@
+        (unsigned)fault_wheel);
+ }
+ 
++static uint8_t Route_CheckReturnFinish(RouteGrayState_t state)
++{
++  /* All-black can be an intermediate junction. Accept the start line only
++   * after every recorded return turn is complete and normal line samples
++   * have rearmed FOLLOW beyond the last junction. Never finish mid-turn. */
++  if ((TravelFrame_IsReverse() != 0U) && (return_turn_count == 0U) &&
++      (junction_armed != 0U) && (junction_latched == 0U) &&
++      (front_was_valid != 0U) &&
++      ((route_state == ROUTE_STATE_FOLLOW) ||
++       ((route_state == ROUTE_STATE_FRONT_RECOVERY) &&
++        (front_resume_state == ROUTE_STATE_FOLLOW))) &&
++      (state == ROUTE_GRAY_ALL_BLACK))
++  {
++    Route_BrakeControl();
++    route_active = 0U;
++    route_state = ROUTE_STATE_DONE;
++    UartDebug_SendString("RETURN_DONE REMAINING=0 REAR_RAW12=FFF\r\n");
++    return 1U;
++  }
++  return 0U;
++}
++
+ static uint8_t Route_InitializeGray(void)
+ {
+   rear_hw_ready = 0U;
+@@ -278,12 +313,15 @@
+   return 1U;
+ }
+ 
++/* FRONT/REAR below mean leading/trailing in the travel frame.
++ * Reverse leading physical rear: P12 is travel-left, P1 travel-right.
++ * Reverse trailing physical front: P1 is travel-left, P12 travel-right. */
+ static RouteGrayState_t Route_ReadFront(RouteGraySample_t *sample)
+ {
+   uint16_t raw16;
+   RouteGrayState_t state;
+ 
+-  if (NCHD12_ReadRaw16(&raw16) != NCHD12_STATUS_OK)
++  if (TravelFrame_ReadLeading(&raw16) != NCHD12_STATUS_OK)
+   {
+     return ROUTE_GRAY_I2C_ERROR;
+   }
+@@ -309,7 +347,7 @@
+   uint16_t raw16;
+   RouteGrayState_t state;
+ 
+-  if (rear_hw_ready == 0U)
++  if ((TravelFrame_IsReverse() == 0U) && (rear_hw_ready == 0U))
+   {
+     if (NCHD12Rear_ConfigureInputs() != NCHD12_STATUS_OK)
+     {
+@@ -317,14 +355,14 @@
+     }
+     rear_hw_ready = 1U;
+   }
+-  if (NCHD12Rear_ReadRaw16(&raw16) != NCHD12_STATUS_OK)
++  if (TravelFrame_ReadTrailing(&raw16) != NCHD12_STATUS_OK)
+   {
+     rear_hw_ready = 0U;
+     return ROUTE_GRAY_I2C_ERROR;
+   }
+   sample->rear_raw12 = NCHD12_Extract12(raw16);
+   GrayPosition_Calculate(sample->rear_raw12, &sample->rear_position);
+-  /* Rear sensor contributes position/heading only; branch recognition is front-only. */
++  /* Logical trailing board contributes heading; leading board detects branches. */
+   state = Route_ClassifyPosition(&sample->rear_position, 0U);
+   if (state != ROUTE_GRAY_VALID)
+   {
+@@ -403,7 +441,7 @@
+       leave_target_rpm_x10 = ROUTE_LEAVE_START_RPM_X10;
+     }
+   }
+-  ChassisSpeedControl_SetWheelTargets(
++  TravelFrame_SetWheelTargets(
+       leave_target_rpm_x10, leave_target_rpm_x10,
+       leave_target_rpm_x10, leave_target_rpm_x10);
+   ChassisSpeedControl_Update(elapsed_ms);
+@@ -417,14 +455,14 @@
+   {
+     base = ROUTE_AFTER_TURN_START_RPM_X10;
+   }
+-  ChassisSpeedControl_SetWheelTargets(base, base, base, base);
++  TravelFrame_SetWheelTargets(base, base, base, base);
+   ChassisSpeedControl_Update(elapsed_ms);
+ }
+ 
+ #if ROUTE_TURN_APPROACH_DELAY_MS > 0U
+ static void Route_DriveTurnApproach(uint32_t elapsed_ms)
+ {
+-  ChassisSpeedControl_SetWheelTargets(
++  TravelFrame_SetWheelTargets(
+       ROUTE_TURN_APPROACH_RPM_X10, ROUTE_TURN_APPROACH_RPM_X10,
+       ROUTE_TURN_APPROACH_RPM_X10, ROUTE_TURN_APPROACH_RPM_X10);
+   ChassisSpeedControl_Update(elapsed_ms);
+@@ -558,6 +596,21 @@
+   int16_t delta = Route_TurnAngleDeltaX100(current_angle_x100,
+                                             turn_start_angle_x100);
+ 
++  if (TravelFrame_IsReverse() == 0U)
++  {
++    if (return_turn_count >= ROUTE_TURN_HISTORY_CAPACITY)
++    {
++      Route_StopFault("TURN_HISTORY_FULL");
++      return;
++    }
++    outbound_turn_history[return_turn_count++] = route_state;
++  }
++  else if (return_turn_count != 0U)
++  {
++    return_turn_count--;
++    UartDebug_Printf("RETURN_TURN_DONE REMAINING=%u\r\n",
++                     (unsigned)return_turn_count);
++  }
+   Route_ResetControl(1U);
+   leave_target_rpm_x10 = ROUTE_AFTER_TURN_START_RPM_X10;
+   route_state = ROUTE_STATE_AFTER_TURN_FORWARD;
+@@ -648,6 +701,10 @@
+     {
+       junction_armed = 1U;
+       junction_latched = 0U;
++      if ((TravelFrame_IsReverse() != 0U) && (return_turn_count == 0U))
++      {
++        UartDebug_SendString("RETURN_FINISH_ARMED WAIT_START_LINE\r\n");
++      }
+       UartDebug_Printf("JUNCTION_ARMED=%u\r\n", (unsigned)junction_count);
+     }
+   }
+@@ -684,7 +741,7 @@
+                                  control.final_correction_rpm_x10;
+   FollowSmoothing_Apply(&follow_smoothing, sample->position_error_x100,
+                          elapsed_ms, &control);
+-  ChassisSpeedControl_SetWheelTargets(control.left_target_rpm_x10,
++  TravelFrame_SetWheelTargets(control.left_target_rpm_x10,
+                                       control.right_target_rpm_x10,
+                                       control.left_target_rpm_x10,
+                                       control.right_target_rpm_x10);
+@@ -716,8 +773,23 @@
+   {
+     junction_count++;
+   }
+-  /* Brake/state transition precedes diagnostic output. */
+-  Route_EnterTurnApproach(now, elapsed_ms, branch);
++  /* Complete the preceding turns; reverse on arrival at the configured junction. */
++  if ((TravelFrame_IsReverse() == 0U) && (junction_count == ROUTE_REVERSE_AT_JUNCTION))
++  {
++    reverse_pending = 1U;
++    Route_EnterTurnStop(now);
++    UartDebug_SendString("FIFTH_JUNCTION_BRAKE_FOR_REVERSE\r\n");
++  }
++  else
++  {
++    if ((TravelFrame_IsReverse() != 0U) && (return_turn_count != 0U))
++    {
++      branch = (outbound_turn_history[return_turn_count - 1U] ==
++                ROUTE_STATE_TURN_LEFT) ?
++                ROUTE_GRAY_RIGHT_BLACK : ROUTE_GRAY_LEFT_BLACK;
++    }
++    Route_EnterTurnApproach(now, elapsed_ms, branch);
++  }
+   UartDebug_Printf("JUNCTION_DETECTED=%u FRONT=%s\r\n",
+                    (unsigned)junction_count, Route_GrayStateName(branch));
+ }
+@@ -728,6 +800,9 @@
+   uint32_t now;
+ 
+   Route_ResetControl(0U);
++  TravelFrame_SetReverse(0U);
++  reverse_pending = 0U;
++  return_turn_count = 0U;
+   route_active = 0U;
+   route_state = ROUTE_STATE_IDLE;
+   rear_valid_count = 0U;
+@@ -753,6 +828,11 @@
+     Route_StopFault("FRONT_I2C");
+     return;
+   }
++  if (rear_hw_ready == 0U)
++  {
++    Route_StopFault("REAR_REQUIRED_FOR_RETURN");
++    return;
++  }
+   front_state = Route_ReadFront(&sample);
+   UartDebug_Printf("START_FRONT=%s RAW12=%u ERROR=%d\r\n",
+                    Route_GrayStateName(front_state),
+@@ -779,6 +859,10 @@
+ 
+ void App_LineFollowExperiment_Init(void)
+ {
++  TravelFrame_SetReverse(0U);
++  reverse_pending = 0U;
++  return_turn_count = 0U;
++  last_reverse_watch_tick = 0U;
+   Key_Init();
+   ChassisSpeedControl_Init();
+   LineFollowPID_Reset(&line_follow_pid);
+@@ -808,16 +892,39 @@
+   last_front_watch_tick = run_start_tick;
+   turn_stop_frame_count = 0U;
+   JY61P_Init();
+-  UartDebug_SendString("Gray12_SideTurn_LineFollow_Test\r\n");
++  UartDebug_SendString("Gray12_DesktopBase_ReverseReturn_Test\r\n");
+   UartDebug_SendString("JY61P=UART5 9600 PC12_TX PD2_RX\r\n");
+   UartDebug_SendString("KEY2=start on ALL_BLACK KEY1/WK_UP=stop\r\n");
+   TftRoutePage_Init();
+ }
+ 
++/* Reuse a leading-board sample only within this task call. A travel-frame
++ * switch explicitly invalidates it before reading the new leading board. */
++typedef struct
++{
++  RouteGraySample_t sample;
++  RouteGrayState_t state;
++  uint8_t valid;
++} RouteLeadingCache_t;
++
++static RouteGrayState_t Route_ReadLeadingOnce(RouteGraySample_t *sample,
++                                               RouteLeadingCache_t *cache)
++{
++  if (cache->valid == 0U)
++  {
++    Route_ResetSample(&cache->sample);
++    cache->state = Route_ReadFront(&cache->sample);
++    cache->valid = 1U;
++  }
++  *sample = cache->sample;
++  return cache->state;
++}
++
+ void App_LineFollowExperiment_Task(void)
+ {
+   KeyEvent_t event = Key_GetEvent();
+   RouteGraySample_t sample;
++  RouteLeadingCache_t leading_cache;
+   uint32_t now = SystemTime_GetMs();
+   uint32_t elapsed_ms;
+   int16_t turn_angle_x100 = 0;
+@@ -825,10 +932,12 @@
+   uint8_t turn_angle_fresh;
+   uint8_t turn_gray_backup_hit;
+ 
++  leading_cache.valid = 0U;
+   UartDebug_Task();
+   JY61P_Task();
+   /* Use the axis verified on the real car: planar left/right turning changes YAW. */
+   turn_angle_valid = JY61P_GetYawX100(&turn_angle_x100);
++  turn_angle_x100 = TravelFrame_Yaw(turn_angle_x100);
+ 
+   if (route_active != 0U)
+   {
+@@ -845,6 +954,23 @@
+   {
+     Route_Start();
+     goto task_end;
++  }
++
++  /* Physical rear is now leading. Poll quickly, but finish eligibility is
++   * gated by completed return turns and a rearmed normal-line follow state.
++   * Intermediate all-black samples remain junction/turn observations. */
++  if ((route_active != 0U) && (TravelFrame_IsReverse() != 0U) &&
++      ((uint32_t)(now - last_reverse_watch_tick) >= ROUTE_JUNCTION_WATCH_PERIOD_MS))
++  {
++    last_reverse_watch_tick = now;
++    Route_ResetSample(&sample);
++    front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++    if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
++    if (front_state == ROUTE_GRAY_I2C_ERROR)
++    {
++      Route_StopFault("RETURN_REAR_I2C");
++      goto task_end;
++    }
+   }
+ 
+ #if ROUTE_TURN_APPROACH_DELAY_MS > 0U
+@@ -870,7 +996,8 @@
+   {
+     last_front_watch_tick = now;
+     Route_ResetSample(&sample);
+-    front_state = Route_ReadFront(&sample);
++    front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++    if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
+     if ((Route_IsJunctionCandidate(front_state) != 0U) &&
+         (junction_armed != 0U) &&
+         (junction_latched == 0U) &&
+@@ -916,7 +1043,8 @@
+         break;
+       }
+       Route_ResetSample(&sample);
+-      front_state = Route_ReadFront(&sample);
++      front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
+       if (front_state == ROUTE_GRAY_I2C_ERROR)
+       {
+         Route_EnterFrontRecovery(now, front_state);
+@@ -944,7 +1072,8 @@
+ 
+     case ROUTE_STATE_FOLLOW:
+       Route_ResetSample(&sample);
+-      front_state = Route_ReadFront(&sample);
++      front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
+       if ((Route_IsJunctionCandidate(front_state) != 0U) &&
+           (junction_armed != 0U) &&
+           (junction_latched == 0U) &&
+@@ -988,7 +1117,8 @@
+        * window. A temporary read failure does not discard the direction that
+        * was already latched when the junction was first detected. */
+       Route_ResetSample(&sample);
+-      front_state = Route_ReadFront(&sample);
++      front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
+       if (front_state != ROUTE_GRAY_I2C_ERROR)
+       {
+         Route_ConfirmTurnDirection(sample.front_raw12);
+@@ -1030,7 +1160,8 @@
+       /* While braking, use the remaining inertial movement only to retain the
+        * T-junction right-priority confirmation. Rear gray remains uninvolved. */
+       Route_ResetSample(&sample);
+-      front_state = Route_ReadFront(&sample);
++      front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
+       if (front_state != ROUTE_GRAY_I2C_ERROR)
+       {
+         Route_ConfirmTurnDirection(sample.front_raw12);
+@@ -1045,6 +1176,28 @@
+       if (((uint32_t)(now - route_state_tick) >= ROUTE_TURN_STOP_MS) &&
+           (turn_stop_stable_count >= ROUTE_TURN_STOP_STABLE_SAMPLES))
+       {
++        if (reverse_pending != 0U)
++        {
++          /* Only change travel direction after measured standstill. */
++          TravelFrame_SetReverse(1U);
++          leading_cache.valid = 0U;
++          reverse_pending = 0U;
++          Route_ResetSample(&sample);
++          front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++          if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
++          if (front_state != ROUTE_GRAY_VALID)
++          {
++            Route_StopFault("REVERSE_START_REQUIRES_REAR_LINE");
++            break;
++          }
++          leave_target_rpm_x10 = ROUTE_AFTER_TURN_START_RPM_X10;
++          Route_EnterFollow(now, 0U, leave_target_rpm_x10, 1U);
++          last_control_tick = now;
++          last_reverse_watch_tick = now;
++          (void)Route_RunFollow(&sample, elapsed_ms);
++          UartDebug_SendString("TRAVEL=REVERSE LEADING=REAR TRAILING=FRONT\r\n");
++          break;
++        }
+         if ((Route_IsTurnAngleFresh(now, turn_angle_valid) == 0U) ||
+             (JY61P_GetFrameCount() == turn_stop_frame_count))
+         {
+@@ -1085,7 +1238,8 @@
+       turn_angle_fresh = Route_IsTurnAngleFresh(now, turn_angle_valid);
+       turn_gray_backup_hit = 0U;
+       Route_ResetSample(&sample);
+-      front_state = Route_ReadFront(&sample);
++      front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
+       if (front_state != ROUTE_GRAY_I2C_ERROR)
+       {
+         /* Leave the original junction first, then arm the gray fallback. */
+@@ -1170,7 +1324,8 @@
+         break;
+       }
+       Route_ResetSample(&sample);
+-      front_state = Route_ReadFront(&sample);
++      front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
+       if (front_state == ROUTE_GRAY_I2C_ERROR)
+       {
+         Route_EnterFrontRecovery(now, front_state);
+@@ -1195,7 +1350,8 @@
+     case ROUTE_STATE_FRONT_RECOVERY:
+       Chassis_Brake();
+       Route_ResetSample(&sample);
+-      front_state = Route_ReadFront(&sample);
++      front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if (Route_CheckReturnFinish(front_state) != 0U) goto task_end;
+       if ((front_state == ROUTE_GRAY_I2C_ERROR) ||
+           ((front_resume_state != ROUTE_STATE_AFTER_TURN_FORWARD) &&
+            (front_state == ROUTE_GRAY_NO_LINE)) ||
+@@ -1281,8 +1437,13 @@
+   }
+ 
+ task_end:
+-  TftRoutePage_Task(Route_StateName(route_state), route_fault_reason,
+-                    junction_count,
+-                    turn_angle_valid,
+-                    turn_angle_valid != 0U ? turn_angle_x100 : 0);
+-}
++  /* Software-SPI drawing is blocking. Keep moving control passes free of
++   * display work in BOTH directions; refresh while stopped/braked only. */
++  if ((route_active == 0U) || (route_state == ROUTE_STATE_TURN_STOP) ||
++      (route_state == ROUTE_STATE_FRONT_RECOVERY) || (gyro_paused != 0U))
++  {
++    TftRoutePage_Task(Route_StateName(route_state), route_fault_reason,
++                      junction_count, turn_angle_valid,
++                      turn_angle_valid != 0U ? turn_angle_x100 : 0);
++  }
++}
+--- desktop/Gray12_SideTurn_LineFollow_Test.ioc
++++ new/Gray12_DesktopBase_ReverseReturn_Test.ioc
+@@ -230,8 +230,8 @@
+ ProjectManager.NoMain=false
+ ProjectManager.PreviousToolchain=
+ ProjectManager.ProjectBuild=false
+-ProjectManager.ProjectFileName=Gray12_SideTurn_LineFollow_Test.ioc
+-ProjectManager.ProjectName=Gray12_SideTurn_LineFollow_Test
++ProjectManager.ProjectFileName=Gray12_DesktopBase_ReverseReturn_Test.ioc
++ProjectManager.ProjectName=Gray12_DesktopBase_ReverseReturn_Test
+ ProjectManager.ProjectStructure=
+ ProjectManager.RegisterCallBack=
+ ProjectManager.StackSize=0x400
+--- desktop/MDK-ARM/Gray12_SideTurn_LineFollow_Test.uvprojx
++++ new/MDK-ARM/Gray12_DesktopBase_ReverseReturn_Test.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Gray12_SideTurn_LineFollow_Test</TargetName>
++      <TargetName>Gray12_DesktopBase_ReverseReturn_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Gray12_SideTurn_LineFollow_Test\</OutputDirectory>
+-          <OutputName>Gray12_SideTurn_LineFollow_Test</OutputName>
++          <OutputDirectory>Gray12_DesktopBase_ReverseReturn_Test\</OutputDirectory>
++          <OutputName>Gray12_DesktopBase_ReverseReturn_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -661,6 +661,16 @@
+               <FilePath>../Control/FollowSmoothing.c</FilePath>
+             </File>
+             <File>
++              <FileName>TravelFrame.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\Control\TravelFrame.c</FilePath>
++            </File>
++            <File>
++              <FileName>TravelFrame.h</FileName>
++              <FileType>5</FileType>
++              <FilePath>..\Control\TravelFrame.h</FilePath>
++            </File>
++            <File>
+               <FileName>FollowSmoothing.h</FileName>
+               <FileType>5</FileType>
+               <FilePath>../Control/FollowSmoothing.h</FilePath>
+@@ -750,7 +760,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
+         <targetInfos>
+-          <targetInfo name="Gray12_SideTurn_LineFollow_Test"/>
++          <targetInfo name="Gray12_DesktopBase_ReverseReturn_Test"/>
+         </targetInfos>
+       </component>
+     </components>
+--- desktop/README.md
++++ new/README.md
+@@ -1,95 +1,56 @@
+-# 12 路灰度最外侧双黑转弯循迹试验
++# 桌面原版：第五路口倒车返回测试
+ 
+-本工程独立复制 `Route15B_SmoothFollow_Test`，复用现有 NCHD12 I2C、前后灰度位置、四轮独立速度 PI、循迹 PID 与平顺控制。来自提供的 `TRACE.c`、`TracePid.c`、`LineFollow.c` 的可用思路是二值加权位置、状态驱动的循迹 PD、偏差降速、基准速度斜坡和转向变化率限制；原文件按 6 路 GPIO 和另一套电机接口编写，本工程按现有 12 路硬件接口实现这些逻辑。
++唯一基准：`C:/Users/Administrator/Desktop/Gray12_SideTurn_LineFollow_Test`。新工程独立复制源文件，桌面原版仅只读访问。`DESKTOP_SOURCE_SHA256.json` 保存复制前全部文件的 SHA-256，用于核对原版未变。
+ 
+-## 操作与转弯
++## 前进与倒车共用参数
+ 
+-- 前灰度 P12 在车左、P1 在车右；后灰度 P1 在车左、P12 在车右。转弯标志只看前灰度。黑色为 1。
+-- KEY2 仅在前灰度 12 路全黑 `0xFFF` 时起步。当前离开黑区速度为 100 RPM；看到普通有效线后直接进入循迹，不重启四轮速度环。4 秒还未离开则停车报错。
+-- 循迹中，前灰度最左侧 P11 **与** P12 同时识别黑线时向左转，最右侧 P1 **与** P2 同时识别黑线时向右转。PID 和四轮速度控制仍为 20 ms 周期，另设 5 ms 前灰度路口监测，避免高速时在相邻两个控制采样之间越过窄路口。识别后先以 100 RPM 受控前进 200 ms；进入该阶段时清除四轮速度 PI 积分，避免继续沿用高速输出。200 ms 到时后的第一项动作是 TB6612FNG 短路制动。制动至少保持 80 ms，并用四轮编码器确认连续 2 次均低于约 2 RPM 后才允许转向；800 ms 仍未停稳则保持制动并报错，绝不释放车轮继续运行。制动期间仍以前灰度确认方向，右侧双黑或全黑锁定右转。随后以四轮固定 PWM 500 原地转向，相对 YAW 达到 50.00°后结束。仅前灰度参与转向保底，后灰度不参与。停止原地转向后，当前灰度可循迹时立即恢复 PID，否则以 100 RPM 直行找线；1.2 秒仍找不到线则主动制动并报错。
+-- 其余有黑线的范围继续用灰度 PID：线在 P5 或 P8 时，将最终差速修正提高到 400%；线触及 P1～P4 或 P9～P12、但未满足最外侧双黑转弯条件时，也用 400%；其余中心位置用 300%。前灰度位置偏差始终进入位置 PID，后灰度有效时只额外形成前后差的航向修正。四轮速度 PI 不变。
+-- 停转并切回循迹的同一帧就读取后灰度；后灰度有效则立即启用前、后双灰度位置和航向 PID，不再等待 3 帧。后灰度暂时无效时先以前灰度循迹，后续有效后再切入双灰度，避免无效读数控制电机。
+-- 两次转弯之间要求至少 3 帧有效循迹线，以免同一黑区重复触发。转弯最长 4 秒；运行最长 180 秒。KEY1、WK_UP 或运行中 KEY2 停车。前灰度一次读错、瞬间丢线或宽黑会先主动制动并在 200 ms 内重读，恢复后重新启动速度环；持续异常、真实堵转等故障仍保持制动。
+-- JY61P 转向轴按实车验证结果使用 YAW：车身左右转动时 YAW 连续变化，显示正负方向与实际一致。UART5 使用 PC12 接模块 RX、PD2 接模块 TX，默认 9600 8N1；接收使用 UART5 中断，避免 TFT/I2C 占用主循环时漏帧。相对角计算可跨越 ±180° 边界。
+-- TFT 的 YAW 数值按 200 ms 周期（5 Hz）刷新；YAW 变化不再触发整页重画，只更新必要行。状态和路口计数变化仍立即显示，减少软件 SPI 阻塞灰度采样的时间。
+-- USART3 调试文字使用 1024 字节环形缓冲非阻塞发送；日志拥塞时允许丢弃调试字节，绝不允许日志等待延迟灰度检测、接近控制或主动制动。FOLLOW、LEAVE、转弯和所有异常退出统一使用主动制动，不再通过关闭 STBY 滑行。
+-- 5 ms 前灰度安全监测除捕获正常转弯外，也会对丢线、无法解释的宽黑和前灰度 I²C 错误立即主动制动；不再因单次异常永久停机。转向中 YAW 短暂过期时同样先制动，600 ms 内恢复新帧则继续完成原目标角。TFT 的 STATE 下方显示最终故障原因。
++| 项目 | 正向与倒车共同值 |
++|---|---|
++| 直线循迹基准 | 220 RPM |
++| 大偏差最低基准 | 120 RPM |
++| 起步、路口接近、转弯后找线 | 100 RPM |
++| 循迹/轮速控制周期 | 20 ms |
++| 领头灰度路口检测 | 5 ms 调度 |
++| 循迹 Kp/Ki/Kd/Kh（x1000） | 75 / 8 / 7 / 5 |
++| 原地转弯 | 固定 PWM 500；相对 YAW 50° |
++| 路口接近 | 200 ms |
++| 制动确认 | 至少 80 ms，连续两次四轮速度约不超过 2 RPM；800 ms 超时 |
+ 
+-## 调参位置
++上述参数来自桌面原版实际源码。速度斜坡、偏差降速、差速变化率、四轮 PI 和区域倍率也保持相同。倒车没有额外的 60 RPM 限速，也不额外裁剪控制器输出。相同 PWM/目标轮速不等于实物必然达到完全相同转速，实际负载和地面效果需实测。
+ 
+-| 文件 | 参数 | 控制对象 |
+-|---|---|---|
+-| `Control/LineFollowPID.h` | `KP/KI/KD` | 前灰度位置误差；后灰度不会抵消前灰度 P5/P8 的偏差 |
+-| `Control/LineFollowPID.h` | `KH` | 前后灰度误差之差，即双灰度航向修正 |
+-| `Algorithm/SpeedPI/WheelSpeedPi.h` | `WHEEL_FL_B_*` | B 电机，左前轮速度 PI |
+-| 同上 | `WHEEL_FR_A_*` | A 电机，右前轮速度 PI |
+-| 同上 | `WHEEL_RL_D_*` | D 电机，左后轮速度 PI |
+-| 同上 | `WHEEL_RR_C_*` | C 电机，右后轮速度 PI |
+-| `Control/FollowSmoothing.c` | `SMOOTH_*` | 循迹基准速度斜坡、弯道降速和差速变化率 |
+-| `User/App_LineFollowExperiment.c` | `ROUTE_*` | 起步、左右侧转向触发、P1或P12保底停转、原地转弯速度、YAW目标角、转弯后找线及超时；中心/侧面灰度 PID 修正倍率 |
++## 测试流程
+ 
+-灰度控制不是每块灰度各一套 PID：前灰度始终负责位置误差；后灰度有效时，前后之差负责航向修正。四轮速度 PI 则各有独立状态和独立增益入口。以下数值以当前源码为准；用户反馈当前循迹版本已能在地图上以不错的速度和准确度运行。
++1. 上电默认停止。前灰度位于全黑起始线，KEY2 启动；必须成功初始化前后灰度。
++2. 正常前进并完成前四个弯；识别第五个已解锁路口后立即制动，不执行第五个弯的转向或继续前进 200 ms。折返点由 `ROUTE_REVERSE_AT_JUNCTION=5U` 设置。
++3. 编码器确认四轮停稳后，将车尾作为行驶方向车头，切换倒车。后灰度必须读到普通有效线，否则保持制动并报 `REVERSE_START_REQUIRES_REAR_LINE`；此时全黑不会被当成终点。
++4. 物理后灰度负责位置、左右路口、转弯灰度保底；物理前灰度有效时提供双灰度航向纠偏。程序记录前四个已完成转向；倒车时按第4、3、2、1个弯的顺序，各自反向转回（去程左转则返程右转，反之亦然），防止 T 路口右转优先覆盖返程方向。每完成一次返程转向才移除一条记录；重新启动时清空记录。接近、制动、转弯、找线参数不变。
++5. 只有四个返程弯全部完成、进入循迹并连续读到三帧普通有效线重新解锁后，才允许物理后灰度 `0xFFF` 触发起始线停车 DONE。返程弯尚未完成时，全黑参与正常路口识别，不直接结束返程；转弯/转后找线中也不判终点。KEY1/WK_UP、运行中短按 KEY2 停车。
+ 
+-## 当前参数与测试边界
++地图约定：倒车完成第4、3、2、1个弯后，重新识别正常线，再遇到的全黑横线为起始线。程序根据灰度触发路口，记录的转向只决定左右，不使用编码器累计路程来触发转弯。若漏检/误检路口，或最后一段还有其他全黑横线，仍不能仅凭灰度证明绝对位置。
+ 
+-| 设置 | 当前值 | 修改位置 |
+-|---|---:|---|
+-| 起步直行目标 | 100 RPM | `ROUTE_LEAVE_START_RPM_X10=1000` |
+-| 起步初值/斜坡 | 100 RPM | `ROUTE_LEAVE_INITIAL_RPM_X10=1000` / `ROUTE_LEAVE_RAMP_STEP_RPM_X10=10` |
+-| 循迹直线基准 | 220 RPM | `LINE_FOLLOW_PID_BASE_RPM_X10=2200`；控制周期 20 ms |
+-| 大偏差时最低循迹基准 | 120 RPM | `SMOOTH_CURVE_MIN_BASE_X10=1200` |
+-| 中心边缘/普通中心/侧面修正倍率 | 400% / 300% / 400% | `ROUTE_PID_*_GAIN_PCT`，只放缩灰度 PID 差速输出 |
+-| 转弯后循迹初值 | 100 RPM | `ROUTE_AFTER_TURN_START_RPM_X10=1000` |
+-| 转弯后直行找线超时 | 1.2 s | `ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS=1200` |
+-| 原地转弯四轮统一PWM | 500 | `ROUTE_TURN_EQUAL_PWM=500`；四轮幅值完全相同，左右仅方向相反 |
+-| 高速路口监测周期 | 5 ms | `ROUTE_JUNCTION_WATCH_PERIOD_MS=5`；只提高前灰度转弯捕获频率，不改变 20 ms PID 周期或直线速度 |
+-| 前灰度瞬时异常恢复 | 最多 200 ms | `ROUTE_FRONT_RECOVERY_MS=200`；先主动制动，连续 2 次读数恢复后重新启动循迹；持续异常报故障 |
+-| 识别路口后的受控前进 | 200 ms，100 RPM | `ROUTE_TURN_APPROACH_DELAY_MS=200` / `ROUTE_TURN_APPROACH_RPM_X10=1000`；进入时清除四轮 PI 积分 |
+-| 识别路口后的主动制动 | 至少80 ms，最长800 ms | `ROUTE_TURN_STOP_MS=80` / `ROUTE_TURN_STOP_MAX_MS=800`；编码器连续2次低于约2 RPM才允许转向 |
+-| 停车后等待新YAW帧 | 最多500 ms | `ROUTE_TURN_GYRO_WAIT_MS=500`；短暂串口间隔不再直接故障 |
+-| 转向途中YAW断帧恢复 | 最多600 ms | `ROUTE_GYRO_RECOVERY_MS=600`；先主动制动，收到新帧后继续原目标角 |
+-| JY61P转向目标 | 50.00° | `ROUTE_TURN_TARGET_ANGLE_X100=5000`；使用实车验证的 YAW |
+-| 灰度外环 Kp/Ki/Kd/Kh | 0.075 / 0.008 / 0.007 / 0.005 | `Control/LineFollowPID.h`，系数按 x1000 写入 |
+-| 差速修正每 20 ms 最大变化 | 25 RPM | `Control/FollowSmoothing.c` 中 `SMOOTH_STEER_STEP_RPM_X10=250` |
+-| B/A/D/C 四轮速度 PI Kp/Ki | 各 0.80 / 0.25 | `Algorithm/SpeedPI/WheelSpeedPi.h`，系数按 x100 写入 |
+-| 速度 PI 的 PWM 上限 | 800 | `WHEEL_SPEED_PI_PWM_MAX`；硬件定时器周期为 999 |
+-| 起步/运行 PWM 下限 | 100 / 50 | `WHEEL_SPEED_PI_PWM_START_MIN` / `WHEEL_SPEED_PI_PWM_RUNNING_MIN` |
++串口 `RETURN_TURN_DONE REMAINING=3/2/1/0` 表示逐个完成返程转向；`RETURN_FINISH_ARMED WAIT_START_LINE` 表示已允许起点识别；`RETURN_DONE REMAINING=0 REAR_RAW12=FFF` 才表示终点全黑停车。
+ 
+-## 速度与转向流畅度调节
++## 倒车坐标与陀螺仪
+ 
+-数值名称带 `RPM_X10` 时，代码中的 `1000` 表示 100.0 RPM；角度名称带 `ANGLE_X100` 时，`5000` 表示 50.00°。建议每次只改一项并记录实车结果。
++倒车时逻辑 FL/FR/RL/RR 对应物理 RR/RL/FR/FL，物理轮速输出为 `(-rr,-rl,-fr,-fl)`。物理后灰度 P12 为行驶方向左侧、P1 为右侧；物理前灰度作尾随时 P1 为左侧、P12 为右侧，沿用逻辑领头/尾随的位置转换。
+ 
+-### 行驶速度
++行驶朝向 YAW = 物理 YAW + 180°并归一化。相对 YAW 差值与左右原地旋转符号不反转，原转弯 PWM 和 50°目标共用。直线仍为灰度控制，未增加原版没有的陀螺仪锁航向。
+ 
+-| 参数 | 当前值 | 作用与调大后的结果 | 位置 |
+-|---|---:|---|---|
+-| `LINE_FOLLOW_PID_BASE_RPM_X10` | 2200 | 正常循迹基准速度，即 220 RPM。调大后直线更快，但必须给轮速 PI 留出左右差速余量 | `Control/LineFollowPID.h` |
+-| `SMOOTH_CURVE_MIN_BASE_X10` | 1200 | 大偏差/弯道时最低基准速度为 120 RPM。调大后过弯更快但更容易冲出线；调小更稳 | `Control/FollowSmoothing.c` |
+-| `SMOOTH_BASE_STEP_RPM_X10` | 120 | 每 20 ms 基准速度最多改变 12 RPM。调大则加减速更快、冲击更明显 | `Control/FollowSmoothing.c` |
+-| `ROUTE_TURN_APPROACH_RPM_X10` | 1000 | 识别路口后的200 ms受控前进速度，即100 RPM | `User/App_LineFollowExperiment.c` |
+-| `ROUTE_TURN_APPROACH_DELAY_MS` | 200 ms | 路口进入时间；到时立即短路制动 | `User/App_LineFollowExperiment.c` |
+-| `ROUTE_AFTER_TURN_START_RPM_X10` | 1000 | 转弯结束后以 100 RPM 找线。调大恢复更快，但刚转完更容易再次冲线 | `User/App_LineFollowExperiment.c` |
+-| `ROUTE_LEAVE_INITIAL_RPM_X10` / `ROUTE_LEAVE_START_RPM_X10` | 1000 / 1000 | 起步和离开起点均为 100 RPM | `User/App_LineFollowExperiment.c` |
++## 响应优化
+ 
+-### 转向与循迹流畅度
++- 恢复桌面版 20 ms 控制周期，前后方向统一；不沿用此前工程的 50 ms 周期。
++- 倒车全黑安全检查按 5 ms 调度，不等循迹周期。FOLLOW 路口与失线检查也使用 5 ms 调度。
++- 同一主循环里的安全检查、路口判断、循迹只读取一次领头灰度并共享结果；下一轮重新采样，切换行驶方向立即作废缓存。
++- 同时保留硬件串口中断接收 YAW 和非阻塞调试日志。无新增延时等待。
++- 正反向行驶中都暂停阻塞式软件 SPI TFT 绘制，停车、制动等待或故障时更新。因此行驶中屏幕数值停留在上次显示，不是传感器停止采样。
++- 5 ms / 20 ms 是软件调度目标，实际最坏响应时间尚未实测；保留原来停稳确认以避免未停车就换向。
+ 
+-| 参数 | 当前值 | 作用与调大后的结果 | 位置 |
+-|---|---:|---|---|
+-| `ROUTE_TURN_EQUAL_PWM` | 500 | 原地转弯时四轮共同的固定 PWM 幅值。调大转得更有力更快，但惯性和过转增加 | `User/App_LineFollowExperiment.c` |
+-| `ROUTE_TURN_TARGET_ANGLE_X100` | 5000 | 陀螺仪相对转角停止值，当前为 50.00° | `User/App_LineFollowExperiment.c` |
+-| `ROUTE_TURN_STOP_MS` / `MAX_MS` | 80 / 800 ms | 80 ms只是最短制动时间；四轮未确认停稳时继续制动，800 ms仍未停稳则安全故障 | `User/App_LineFollowExperiment.c` |
+-| `SMOOTH_STEER_STEP_RPM_X10` | 250 | 每 20 ms 灰度差速修正最多变化 25 RPM | `Control/FollowSmoothing.c` |
+-| `LINE_FOLLOW_PID_DEFAULT_KP_X1000` | 75 | 灰度位置误差的主要纠偏力度。调大转向响应更强，过大则左右摆动 | `Control/LineFollowPID.h` |
+-| `LINE_FOLLOW_PID_DEFAULT_KI_X1000` | 8 | 消除持续的单侧偏差。调大可修正长期跑偏，过大易积累并慢性摆动 | `Control/LineFollowPID.h` |
+-| `LINE_FOLLOW_PID_DEFAULT_KD_X1000` | 7 | 抑制快速变化和过冲。适当调大可减小摆动 | `Control/LineFollowPID.h` |
+-| `LINE_FOLLOW_PID_DEFAULT_KH_X1000` | 5 | 前后灰度差形成的车身航向修正。调大可更快拉直车身，过大易蛇形摆动 | `Control/LineFollowPID.h` |
+-| `LINE_FOLLOW_PID_MAX_CORRECTION_RPM_X10` | 500 | 灰度 PID 区域倍率前最大修正为 50 RPM；当前区域倍率可能进一步放大 | `Control/LineFollowPID.h` |
+-| `ROUTE_PID_CENTER_EDGE_GAIN_PCT` / `CENTER` / `SIDE` | 400 / 300 / 400% | 依次对应 P5/P8、普通中间区、P1～P4/P9～P12 | `User/App_LineFollowExperiment.c` |
++## 验证与文件
+ 
+-### 四个轮子的速度 PI
++仅编译通过，尚未完成硬件验证。
+ 
+-`Algorithm/SpeedPI/WheelSpeedPi.h` 中 `WHEEL_FL_B_*`、`WHEEL_FR_A_*`、`WHEEL_RL_D_*`、`WHEEL_RR_C_*` 分别是左前 B、右前 A、左后 D、右后 C 电机。每个轮子的 `KP_X100=80`、`KI_X100=25` 控制该轮是否跟上目标 RPM，不是灰度循迹 PID。当前 `WHEEL_SPEED_PI_PWM_MAX=800`，起步/运行 PWM 下限为 100/50。
++ARMCC 5.06 全量编译：0 Error(s), 0 Warning(s)。日志位于 `MDK-ARM/build_check.log`，输出位于 `MDK-ARM/Gray12_DesktopBase_ReverseReturn_Test/`。未烧录、未运行电机。
+ 
+-这里的 PWM 是四轮 PI 每个控制周期计算的输出，不是固定给电机的 PWM。任何配置都不能越过当前 PI PWM 上限 800。串口故障行现在包含故障前状态、YAW帧年龄、有效帧数、校验错误、UART错误和堵转轮号；若仍出现停车，记录完整 `ROUTE_FAULT` 行即可区分堵转、JY61P漏帧或其他状态故障。
++详细静态检查见 `VERIFICATION.md`，全部新增文件见 `FILE_MANIFEST.md`，与桌面原版的主要修改见 `DESKTOP_BASELINE_DIFF.patch`。桌面基准和此前测试工程均不作为本工程编译的外部源文件引用。
+ 
+-用户反馈当前循迹版本已在地图上运行；本次仓库同步仅执行了编译检查，JY61P 重新接线后和四路红外避障尚未在本次验证。
++人工测试顺序：核对灰度左右语义和倒车轮速方向；验证第五路口制动换向、逆序经过前四个弯返回与全黑停车；再分别测试倒车左右分支、陀螺仪跨 ±180°、丢线及通信故障停车。记录从灰度变化到制动/转向输出的实测延迟及实际轮速后，才能确认性能。
+--- desktop/Control/TravelFrame.c
++++ new/Control/TravelFrame.c
+@@ -0,0 +1,52 @@
++#include "TravelFrame.h"
++#include "nchd12_rear.h"
++#include "ChassisSpeedControl.h"
++
++static uint8_t reverse_travel;
++
++void TravelFrame_SetReverse(uint8_t reverse)
++{
++  reverse_travel = (reverse != 0U) ? 1U : 0U;
++}
++
++uint8_t TravelFrame_IsReverse(void)
++{
++  return reverse_travel;
++}
++
++NCHD12_Status_t TravelFrame_ReadLeading(uint16_t *raw16)
++{
++  return (reverse_travel != 0U) ? NCHD12Rear_ReadRaw16(raw16) :
++                                 NCHD12_ReadRaw16(raw16);
++}
++
++NCHD12_Status_t TravelFrame_ReadTrailing(uint16_t *raw16)
++{
++  return (reverse_travel != 0U) ? NCHD12_ReadRaw16(raw16) :
++                                 NCHD12Rear_ReadRaw16(raw16);
++}
++
++void TravelFrame_SetWheelTargets(int32_t fl, int32_t fr, int32_t rl, int32_t rr)
++{
++  if (reverse_travel != 0U)
++  {
++    /* Same controller output as forward travel; only rotate coordinates. */
++    ChassisSpeedControl_SetWheelTargets(-rr, -rl, -fr, -fl);
++  }
++  else
++  {
++    ChassisSpeedControl_SetWheelTargets(fl, fr, rl, rr);
++  }
++}
++
++int16_t TravelFrame_Yaw(int16_t chassis_yaw)
++{
++  int32_t yaw = chassis_yaw;
++  if (reverse_travel != 0U)
++  {
++    yaw += 18000L;
++    if (yaw > 18000L) yaw -= 36000L;
++  }
++  /* Relative yaw and in-place left/right PWM retain their physical signs. */
++  return (int16_t)yaw;
++}
+--- desktop/Control/TravelFrame.h
++++ new/Control/TravelFrame.h
+@@ -0,0 +1,14 @@
++#ifndef TRAVEL_FRAME_H
++#define TRAVEL_FRAME_H
++
++#include "nchd12.h"
++
++/* Reverse travel is a 180-degree rotation of the chassis coordinates. */
++void TravelFrame_SetReverse(uint8_t reverse);
++uint8_t TravelFrame_IsReverse(void);
++NCHD12_Status_t TravelFrame_ReadLeading(uint16_t *raw16);
++NCHD12_Status_t TravelFrame_ReadTrailing(uint16_t *raw16);
++void TravelFrame_SetWheelTargets(int32_t fl, int32_t fr, int32_t rl, int32_t rr);
++int16_t TravelFrame_Yaw(int16_t chassis_yaw);
++
++#endif

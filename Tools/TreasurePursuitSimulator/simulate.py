@@ -23,6 +23,19 @@ REASONS = {"treasure": 0, "loop": 1, "escape": 2, "chase": 3, "intercept": 4, "h
            "search": 6, "cutoff": 7, "cruise": 8, "seek_hide": 9, "hide": 10,
            "prepare_hide": 11, "evade": 12, "patrol": 13, "preset_evade": 14}
 REASONS.update(trail=15, check_deadend=16, relocate=17)
+REASONS.update(local_search=18, local_deadend=19)
+
+
+def relative_sector(origin, point):
+    """World-aligned ego frame: +x east, +y north; axes are not quadrants."""
+    dx, dy = point[0] - origin[0], origin[1] - point[1]
+    if abs(dx) < EPS and abs(dy) < EPS:
+        return 'O'
+    if abs(dx) < EPS:
+        return 'N' if dy > 0 else 'S'
+    if abs(dy) < EPS:
+        return 'E' if dx > 0 else 'W'
+    return ('I' if dx > 0 else 'II') if dy > 0 else ('IV' if dx > 0 else 'III')
 
 
 def pose_heading(a, b):
@@ -67,6 +80,27 @@ def validate_config(config):
             raise ValueError(f"Invalid {key}")
     if not 0 <= config["miss_probability"] <= 1 or not 0 <= config["sensor_half_angle_deg"] <= 45:
         raise ValueError("Invalid sensor model")
+    profiles = config.get("motion_profiles", {})
+    measured = config.get("measured_motion", {})
+    for key in ("reverse_speed_ratio", "forward_to_reverse_s", "reverse_to_forward_s"):
+        if measured:
+            value = measured.get(key)
+            if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+                raise ValueError(f"Invalid measured motion {key}")
+    if not isinstance(profiles, dict) or any(role not in ("P", "B") for role in profiles):
+        raise ValueError("Invalid motion profile roles")
+    for profile in profiles.values():
+        if not isinstance(profile, dict):
+            raise ValueError("Invalid motion profile")
+        reference = profile.get("reference_speed_m_s")
+        if not isinstance(reference, (int, float)) or not math.isfinite(reference) or reference <= 0:
+            raise ValueError("Invalid motion profile reference speed")
+        roads = profile.get("edge_speed_m_s", {})
+        if not isinstance(roads, dict) or any(not isinstance(v, (int, float)) or not math.isfinite(v) or v <= 0 for v in roads.values()):
+            raise ValueError("Invalid calibrated road speed")
+        delay = profile.get("turn90_s", config["turn90_s"])
+        if not isinstance(delay, (int, float)) or not math.isfinite(delay) or delay < 0:
+            raise ValueError("Invalid calibrated turn time")
 
 
 class Routing:
@@ -74,6 +108,11 @@ class Routing:
     def __init__(self, track, config):
         self.track, self.config = track, config
         self.cache, self.distance, self.contact_cache = {}, {}, {}
+        for profile in config.get("motion_profiles", {}).values():
+            for edge in profile.get("edge_speed_m_s", {}):
+                parts = edge.split("|")
+                if len(parts) != 2 or parts[0] not in track.graph or parts[1] not in track.graph[parts[0]]:
+                    raise ValueError("Calibrated speed references a nonexistent road")
         self.runs = {0: {}, 1: {}}
         for axis in (0, 1):
             lines = self.runs[axis]
@@ -103,11 +142,48 @@ class Routing:
                         heapq.heappush(queue, (candidate, v))
             self.distance[source] = {v: ticks * track.spacing / 2 for v, ticks in best.items()}
 
-    def edge_time(self, u, v, facing, speed):
-        direction = heading(self.track.xy[u], self.track.xy[v])
+    def moving_speed(self, u, v, speed, role=None, reversing=False):
+        model = self.config.get("measured_motion", {})
+        if reversing is None:
+            return max(self.moving_speed(u, v, speed, role, False), self.moving_speed(u, v, speed, role, True))
+        if reversing and model:
+            # Existing edge profiles contain forward samples only.
+            return speed * model["reverse_speed_ratio"]
+        profile = self.config.get("motion_profiles", {}).get(role)
+        if profile is None:
+            return speed
+        measured = profile.get("edge_speed_m_s", {}).get(u + "|" + v)
+        return measured * speed / profile["reference_speed_m_s"] if measured is not None else speed
+
+    def maximum_speed(self, speed, role=None):
+        profile = self.config.get("motion_profiles", {}).get(role)
+        reverse = speed * self.config.get("measured_motion", {}).get("reverse_speed_ratio", 1)
+        values = profile.get("edge_speed_m_s", {}).values() if profile else []
+        return max([speed, reverse] + [v * speed / profile["reference_speed_m_s"] for v in values])
+
+    def turn_delay(self, facing, direction, role=None, reversing=False):
         action = turn(facing, direction)
-        delay = self.config["turn90_s"] if action in ("LEFT", "RIGHT") else self.config["uturn_s"] if action == "UTURN" else 0
-        return self.track.graph[u][v] * self.track.spacing / 2 / speed + delay, direction
+        profile = self.config.get("motion_profiles", {}).get(role, {})
+        if action in ("LEFT", "RIGHT"):
+            return profile.get("turn90_s", self.config["turn90_s"])
+        if action == "UTURN":
+            model = self.config.get("measured_motion", {})
+            if model:
+                if reversing is None:
+                    return min(model["forward_to_reverse_s"], model["reverse_to_forward_s"])
+                return model["reverse_to_forward_s" if reversing else "forward_to_reverse_s"]
+            return self.config["uturn_s"]
+        return 0
+
+    @staticmethod
+    def next_mode(facing, direction, reversing):
+        return None if reversing is None else bool(reversing) ^ (turn(facing, direction) == "UTURN")
+
+    def edge_time(self, u, v, facing, speed, role=None, reversing=False):
+        direction = heading(self.track.xy[u], self.track.xy[v])
+        delay = self.turn_delay(facing, direction, role, reversing)
+        mode = self.next_mode(facing, direction, reversing)
+        return self.track.graph[u][v] * self.track.spacing / 2 / self.moving_speed(u, v, speed, role, mode) + delay, direction
 
     def straight_connected(self, a, b):
         for axis in (0, 1):
@@ -136,11 +212,22 @@ class Routing:
             self.contact_cache[key] = selected
         return self.contact_cache[key]
 
-    def table(self, source, facing, speed):
-        key = source, facing, speed
+    def table(self, source, facing, speed, role=None, reversing=False):
+        if not self.config.get("measured_motion"):
+            reversing = False  # Equal-mode legacy costs need only one state.
+        key = source, facing, speed, role, reversing
         if key in self.cache:
             return self.cache[key]
-        initial = source, facing
+        if reversing is None:
+            # Unknown opponent body orientation: earliest of both possible modes.
+            alternatives = [self.table(source, facing, speed, role, mode) for mode in (False, True)]
+            times, first = {}, {}
+            for node in self.track.graph:
+                selected = min(alternatives, key=lambda table: table[0][node])
+                times[node], first[node] = selected[0][node], selected[1][node]
+            self.cache[key] = times, first
+            return times, first
+        initial = source, facing, reversing
         best, first = {initial: 0}, {initial: None}
         queue, serial = [(0, 0, initial)], 0
         times, next_nodes = {}, {}
@@ -148,12 +235,13 @@ class Routing:
             value, _, state = heapq.heappop(queue)
             if value != best[state]:
                 continue
-            u, direction = state
+            u, direction, mode = state
             if u not in times:
                 times[u], next_nodes[u] = value, first[state]
             for v in sorted(self.track.graph[u]):
-                duration, new_direction = self.edge_time(u, v, direction, speed)
-                new_state, candidate = (v, new_direction), value + duration
+                duration, new_direction = self.edge_time(u, v, direction, speed, role, mode)
+                new_mode = self.next_mode(direction, new_direction, mode) if self.config.get("measured_motion") else False
+                new_state, candidate = (v, new_direction, new_mode), value + duration
                 if candidate + EPS < best.get(new_state, math.inf):
                     best[new_state], first[new_state] = candidate, first[state] or v
                     serial += 1
@@ -161,12 +249,14 @@ class Routing:
         self.cache[key] = times, next_nodes
         return times, next_nodes
 
-    def route(self, source, facing, speed, target):
+    def route(self, source, facing, speed, target, role=None, reversing=False):
         nodes, times = [source], [0.0]
         while nodes[-1] != target:
-            _, first = self.table(nodes[-1], facing, speed)
+            _, first = self.table(nodes[-1], facing, speed, role, reversing)
             neighbor = first[target]
-            duration, facing = self.edge_time(nodes[-1], neighbor, facing, speed)
+            duration, direction = self.edge_time(nodes[-1], neighbor, facing, speed, role, reversing)
+            reversing = self.next_mode(facing, direction, reversing)
+            facing = direction
             nodes.append(neighbor)
             times.append(times[-1] + duration)
         return nodes, times, facing
@@ -181,15 +271,15 @@ class Routing:
         for first in sorted(self.track.graph[actor.node]):
             if first not in allowed:
                 continue
-            delay, facing = self.edge_time(actor.node, first, actor.facing, actor.speed)
-            initial = first, facing
+            delay, facing = self.edge_time(actor.node, first, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
+            initial = first, facing, self.next_mode(actor.facing, facing, actor.reversing) if self.config.get("measured_motion") else False
             best, previous = {initial: delay}, {initial: None}
             queue, serial, found = [(delay, 0, initial)], 0, set()
             while queue:
                 cost, _, state = heapq.heappop(queue)
                 if cost != best[state]:
                     continue
-                u, direction = state
+                u, direction, mode = state
                 if u in targets and u not in found:
                     chain, cursor = [], state
                     while cursor is not None:
@@ -202,20 +292,20 @@ class Routing:
                 for v in sorted(self.track.graph[u]):
                     if v not in allowed or v == actor.node:
                         continue
-                    seconds, new_direction = self.edge_time(u, v, direction, actor.speed)
+                    seconds, new_direction = self.edge_time(u, v, direction, actor.speed, role=actor.role, reversing=mode)
                     candidate = cost + seconds + (exposure(v) if exposure else 0)
-                    nxt = v, new_direction
+                    nxt = v, new_direction, self.next_mode(direction, new_direction, mode) if self.config.get("measured_motion") else False
                     if candidate + EPS < best.get(nxt, math.inf):
                         best[nxt], previous[nxt] = candidate, state
                         serial += 1
                         heapq.heappush(queue, (candidate, serial, nxt))
         return routes
 
-    def paths(self, source, facing, speed, horizon=None, limit=48):
+    def paths(self, source, facing, speed, horizon=None, limit=48, role=None, reversing=False):
         horizon = horizon or self.config["horizon_s"]
         leaves = []
 
-        def visit(path, times, direction, cap):
+        def visit(path, times, direction, mode, cap):
             if len(leaves) >= cap:
                 return
             u = path[-1]
@@ -230,18 +320,18 @@ class Routing:
             for v in neighbors:
                 if len(leaves) >= cap:
                     break
-                duration, new_direction = self.edge_time(u, v, direction, speed)
+                duration, new_direction = self.edge_time(u, v, direction, speed, role, mode)
                 if times[-1] + duration > horizon and len(path) > 1:
                     leaves.append((path, times))
                     continue
-                visit(path + [v], times + [times[-1] + duration], new_direction, cap)
+                visit(path + [v], times + [times[-1] + duration], new_direction, self.next_mode(direction, new_direction, mode), cap)
 
         # Reserve candidates for every legal first action, avoiding DFS bias.
         neighbors = sorted(self.track.graph[source])
         budget = max(1, limit // max(1, len(neighbors)))
         for neighbor in neighbors:
-            duration, new_direction = self.edge_time(source, neighbor, facing, speed)
-            visit([source, neighbor], [0.0, duration], new_direction, len(leaves) + budget)
+            duration, new_direction = self.edge_time(source, neighbor, facing, speed, role, reversing)
+            visit([source, neighbor], [0.0, duration], new_direction, self.next_mode(facing, new_direction, reversing), len(leaves) + budget)
         return [(p, t) for p, t in leaves if len(p) > 1]
 
 
@@ -262,6 +352,7 @@ class Robot:
     max_escape_straight_m: float = 0.0
     escape_heading: str | None = None
     body_facing: str | None = None
+    move_speed: float | None = None
 
     @property
     def reversing(self):
@@ -280,7 +371,8 @@ class Robot:
             return 0.0, 0.0
         a, b = track.xy[self.node], track.xy[self.target]
         distance = abs(b[0] - a[0]) + abs(b[1] - a[1])
-        return (b[0] - a[0]) / distance * self.speed / track.spacing, (b[1] - a[1]) / distance * self.speed / track.spacing
+        speed = self.move_speed if self.move_speed is not None else self.speed
+        return (b[0] - a[0]) / distance * speed / track.spacing, (b[1] - a[1]) / distance * speed / track.spacing
 
     def command(self, track, routing, neighbor, reason):
         self.reason = reason
@@ -291,12 +383,15 @@ class Robot:
             return
         if neighbor not in track.graph[self.node]:
             raise ValueError("Command must select an adjacent track node")
-        duration, direction = routing.edge_time(self.node, neighbor, self.facing, self.speed)
+        duration, direction = routing.edge_time(self.node, neighbor, self.facing, self.speed, self.role, self.reversing)
+        mode = routing.next_mode(self.facing, direction, self.reversing)
+        self.move_speed = routing.moving_speed(self.node, neighbor, self.speed, self.role, mode)
         action = turn(self.facing, direction)
         # Reversing switches wheel direction without rotating the chassis.
         body = self.body_facing or self.facing
-        self.body_facing = direction if action in ("LEFT", "RIGHT") else body
-        travel = track.graph[self.node][neighbor] * track.spacing / 2 / self.speed
+        self.body_facing = (DIRECTIONS[(DIRECTIONS.index(direction) + (2 if mode else 0)) % 4]
+                            if action in ("LEFT", "RIGHT") else body)
+        travel = track.graph[self.node][neighbor] * track.spacing / 2 / self.move_speed
         self.target, self.progress, self.facing = neighbor, 0.0, direction
         delay = max(0.0, duration - travel)
         if reason == "prepare_hide":
@@ -308,14 +403,15 @@ class Robot:
         if self.phase in ("hide", "wait", "pickup") or self.reason not in ("escape", "cruise", "evade", "preset_evade"):
             self.escape_heading, self.escape_straight_m = None, 0.0
         if self.phase == "move":
+            speed = self.move_speed if self.move_speed is not None else self.speed
             distance = track.graph[self.node][self.target] * track.spacing / 2
-            self.progress = min(1.0, self.progress + dt * self.speed / distance)
-            self.traveled_m += dt * self.speed
+            self.progress = min(1.0, self.progress + dt * speed / distance)
+            self.traveled_m += dt * speed
             if self.reason in ("escape", "cruise", "evade", "preset_evade"):
                 if self.escape_heading != self.facing:
                     self.escape_straight_m = 0.0
                 self.escape_heading = self.facing
-                self.escape_straight_m += dt * self.speed
+                self.escape_straight_m += dt * speed
                 self.max_escape_straight_m = max(self.max_escape_straight_m, self.escape_straight_m)
         self.remaining = max(0.0, self.remaining - dt)
 
@@ -324,7 +420,8 @@ class Robot:
             return
         if self.phase in ("turn", "reverse"):
             self.phase = "move"
-            self.remaining = track.graph[self.node][self.target] * track.spacing / 2 / self.speed
+            speed = self.move_speed if self.move_speed is not None else self.speed
+            self.remaining = track.graph[self.node][self.target] * track.spacing / 2 / speed
         elif self.phase == "move":
             self.last_node, self.node = self.node, self.target
             self.target, self.progress, self.phase = None, 0.0, "ready"
@@ -384,7 +481,7 @@ class Belief:
             self.weights = {measured: 1.0}
             self.states = {(measured, self.last_heading): 1.0}
         else:
-            radius = enemy_speed * max(0, now - self.last_time) + track.spacing
+            radius = routing.maximum_speed(enemy_speed, "B" if ego.role == "P" else "P") * max(0, now - self.last_time) + track.spacing
             steps = max(1, math.ceil(dt / config["sensor_period_s"] - EPS))
             step, propagated = dt / steps, self.states
             for _ in range(steps):
@@ -392,7 +489,7 @@ class Belief:
                 for (node, facing), probability in previous.items():
                     options = []
                     for neighbor in track.graph[node]:
-                        duration, direction = routing.edge_time(node, neighbor, facing, enemy_speed)
+                        duration, direction = routing.edge_time(node, neighbor, facing, enemy_speed, "B" if ego.role == "P" else "P", reversing=None)
                         preference = .03 if turn(facing, direction) == "UTURN" and len(track.graph[node]) > 1 else 1.0
                         options.append((neighbor, direction, duration, preference))
                     total = sum(option[3] for option in options)
@@ -493,7 +590,7 @@ class Game:
         self.trail_exits = set()
         self.deadend_goal = None
         self.deadend_checked = {track.resolve("P"): 0.0}
-        self.nominal_police = self.routing.route(track.resolve("P"), "N", config["police_speed_m_s"], track.resolve("T"))
+        self.nominal_police = self.routing.route(track.resolve("P"), "N", config["police_speed_m_s"], track.resolve("T"), "P")
         # A likely search continuation is straight ahead after reaching treasure.
         # This is a map-based prior, never the other robot's runtime route.
         approach, arrivals, facing = self.nominal_police
@@ -504,7 +601,7 @@ class Game:
             if not following:
                 break
             neighbor = following[0]
-            duration, _ = self.routing.edge_time(approach[-1], neighbor, facing, config["police_speed_m_s"])
+            duration, _ = self.routing.edge_time(approach[-1], neighbor, facing, config["police_speed_m_s"], "P")
             approach.append(neighbor)
             arrivals.append(arrivals[-1] + duration)
         self.nominal_approach = approach, arrivals, facing
@@ -534,6 +631,8 @@ class Game:
         self.deadend_arms = self.build_deadend_arms()
         self.search_sites = sorted(n for n in track.graph if landmark_type(track, n))
         self.search_covered, self.negative_counts = set(), {}
+        self.search_observed_at = {}
+        self.local_search = None
         self.arm_clear_counts = {}
         self.search_epoch, self.search_sweeps = 0, []
         self.search_edges = {}
@@ -593,8 +692,15 @@ class Game:
 
     def continue_search_route(self, actor):
         self.advance_search_route(actor)
+        target = self.search_route_target
+        if (target in self.deadend_arms and not self.beliefs['P'].seen
+                and self.arm_clear_counts.get(target, 0) >= 3):
+            self.search_sweeps.append({'t': round(self.now, 4), 'event': 'patrol_deadend_cleared', 'node': target})
+            self.search_route, self.search_route_target = [], None
+            self.plans.pop('P', None)
+            return None
         if self.search_route:
-            _, first = self.routing.table(actor.node, actor.facing, actor.speed)
+            _, first = self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
             return first[self.search_route[0]], "search", self.search_route_target
         if self.search_route_target is not None:
             self.search_sweeps.append({"t": round(self.now, 4), "event": "patrol_complete",
@@ -655,7 +761,7 @@ class Game:
             cards[source] = self.routing.goal_paths(actor, targets, self.cycle_core | {source})
             if not cards[source]:
                 target = min(self.cycle_core, key=lambda n: (self.routing.distance[source][n], n))
-                path, _, _ = self.routing.route(source, None, actor.speed, target)
+                path, _, _ = self.routing.route(source, None, actor.speed, target, role=actor.role)
                 cards[source] = [path] if len(path) > 1 else []
         return cards
 
@@ -754,18 +860,37 @@ class Game:
                                "direction": pose_heading(belief.last_xy, actor.xy(self.track)),
                                "source": "last_detection", "detected_at": belief.last_time}
 
+    def quadrant_escape_preference(self, path, actor, belief):
+        """Only use measured threat history; quadrant never overrides contact risk."""
+        if not self.config.get('regional_search_enabled') or belief.last_xy is None:
+            return (0, 0, 0)
+        origin, threat = self.track.xy[actor.node], belief.last_xy
+        dx, dy = threat[0]-origin[0], threat[1]-origin[1]
+        norm = math.hypot(dx, dy)
+        if norm < EPS:
+            return (0, 0, 0)
+        projections = [((self.track.xy[n][0]-origin[0])*dx +
+                        (self.track.xy[n][1]-origin[1])*dy)/norm for n in path[1:3]]
+        sector = relative_sector(origin, self.track.xy[path[-1]])
+        exits = sum(relative_sector(origin, self.track.xy[n]) == sector for n in self.hide_candidates)
+        return (int(max(projections, default=0) <= EPS), -round(max(projections, default=0), 3), min(4, exits))
+
     def patrol(self, actor):
         """Build a deterministic map sweep, independent of the opponent state."""
         if not self.fixed_patrol:
             unseen = set(self.track.graph) - set(self.nominal_police[0])
-            nodes, facing = [actor.node], actor.facing
+            nodes, facing, mode = [actor.node], actor.facing, actor.reversing
             while unseen:
-                times, _ = self.routing.table(nodes[-1], facing, actor.speed)
+                times, _ = self.routing.table(nodes[-1], facing, actor.speed, role=actor.role, reversing=mode)
                 target = min(unseen, key=lambda n: (times[n], n))
-                route, _, facing = self.routing.route(nodes[-1], facing, actor.speed, target)
+                route, _, _ = self.routing.route(nodes[-1], facing, actor.speed, target, role=actor.role, reversing=mode)
+                for u, v in zip(route, route[1:]):
+                    direction = heading(self.track.xy[u], self.track.xy[v])
+                    mode = self.routing.next_mode(facing, direction, mode)
+                    facing = direction
                 nodes.extend(route[1:])
                 unseen.difference_update(route)
-            route, _, _ = self.routing.route(nodes[-1], facing, actor.speed, actor.node)
+            route, _, _ = self.routing.route(nodes[-1], facing, actor.speed, actor.node, role=actor.role, reversing=mode)
             nodes.extend(route[1:])
             self.fixed_patrol = nodes
         if self.patrol_index >= len(self.fixed_patrol) - 1:
@@ -839,7 +964,7 @@ class Game:
             if recent:
                 threat = belief.last_seen
                 separation = min(self.routing.distance[threat][n] for n in early[1:])
-                approach, _, _ = self.routing.route(threat, belief.last_heading, self.config["police_speed_m_s"], actor.node)
+                approach, _, _ = self.routing.route(threat, belief.last_heading, self.config["police_speed_m_s"], actor.node, "P")
                 joins_approach = sum(n in approach[:-1] for n in early[1:])
                 visible_goal = detectable(belief.last_xy, self.track.xy[target], self.config, self.track.spacing, "P")
             else:
@@ -849,7 +974,7 @@ class Game:
             sensing_positions = [q for q in self.track.graph
                                  if detectable(self.track.xy[q], self.track.xy[target], self.config, self.track.spacing, "P")]
             # Favor points that take multiple bends to inspect, even with 3-cell vision.
-            search_delay = min(self.routing.table(q, None, self.config["police_speed_m_s"])[0][s]
+            search_delay = min(self.routing.table(q, None, self.config["police_speed_m_s"], "P")[0][s]
                                for q in (main[-1], self.track.resolve("T")) for s in sensing_positions)
             nearby = sum(self.routing.distance[target][j] <= 2 * self.track.spacing + EPS for j in self.branches)
             exposures = sum(detectable(self.track.xy[target], self.track.xy[q], self.config, self.track.spacing, "P") for q in main)
@@ -861,8 +986,20 @@ class Game:
                        round(utility, 3), -int(path[1] == actor.last_node))
             if not recent:
                 quality = (region, -joins_approach, round(utility, 3), -int(path[1] == actor.last_node))
+            if parking and self.config.get('regional_search_enabled'):
+                quality = (self.quadrant_escape_preference(path, actor, belief),) + quality
             evaluated.append((path, times, risk, quality))
         if recent:
+            # A tiny advantage in a worst-case reach envelope must not select
+            # a head-on departure when a lateral/away exit is available.
+            origin = self.track.xy[actor.node]
+            threat = tuple(belief.last_xy[i] - origin[i] for i in (0, 1))
+            def approaching(item):
+                first = self.track.xy[item[0][1]]
+                return sum((first[i] - origin[i]) * threat[i] for i in (0, 1)) > EPS
+            away = [item for item in evaluated if not approaching(item)]
+            if away:
+                evaluated = away
             # Do not reward ending a forecast early at a nearby visible stop.
             # Safety of the departure is the gate; a distant worst-case reach
             # envelope must not send the car back toward the pursuer's corridor.
@@ -871,8 +1008,12 @@ class Game:
             if best_departure <= .35:
                 chosen = max(evaluated, key=lambda item: (item[2][0], item[2][1], item[3]))
             else:
+                if not parking and best_departure > 1:
+                    evaluated = self.prefer_escape_progress(evaluated)
                 chosen = max(evaluated, key=lambda item: (item[3], item[2][1], item[2][0]))
         else:
+            if not parking:
+                evaluated = self.prefer_escape_progress(evaluated)
             chosen = max(evaluated, key=lambda item: item[3])
         return chosen[:3]
 
@@ -915,10 +1056,10 @@ class Game:
         if age > max(self.config["turn90_s"], self.config["uturn_s"]) + 2:
             return False
         police_speed = self.config["police_speed_m_s"]
-        times, _ = self.routing.table(belief.last_seen, belief.last_heading, police_speed)
+        times, _ = self.routing.table(belief.last_seen, belief.last_heading, police_speed, "P", reversing=None)
         # Allow for a half-cell quantization error, contact threshold and reaction.
         approach = times[actor.node] - age - (self.config["capture_center_distance_m"] + self.track.spacing / 2) / police_speed
-        leave = min(self.routing.edge_time(actor.node, n, actor.facing, actor.speed)[0]
+        leave = min(self.routing.edge_time(actor.node, n, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)[0]
                     for n in self.track.graph[actor.node])
         return approach <= leave + self.config.get("hide_reaction_margin_s", 1.0)
 
@@ -954,12 +1095,31 @@ class Game:
         self.active_escape_route = []
         return None, "hide", self.hide_goal
 
+    def sweep_observes(self, run, node, actor):
+        """Require a three-sample window, not a tangent contact with sensor range.
+
+        Runs are straight. Use the fastest possible own motion and a three-period
+        window so coverage is robust to the phase of the sensor clock. Stationary
+        observation goals remain available for sites excluded by this estimate.
+        """
+        a, b, point = self.track.xy[run[0]], self.track.xy[run[-1]], self.track.xy[node]
+        length = math.dist(a, b)
+        margin = 1.5 * self.config['sensor_period_s'] * self.routing.maximum_speed(actor.speed, actor.role) / self.track.spacing
+        if length <= 2 * margin:
+            return False
+        dx, dy = (b[0] - a[0]) / length, (b[1] - a[1]) / length
+        projection = (point[0] - a[0]) * dx + (point[1] - a[1]) * dy
+        center = min(length - margin, max(margin, projection))
+        return all(detectable((a[0] + dx * (center + offset), a[1] + dy * (center + offset)),
+                              point, self.config, self.track.spacing, 'P')
+                   for offset in (-margin, 0, margin))
+
     def search(self, actor, belief):
         """Commit a complete observation route; absence alone never cancels it."""
         continued = self.continue_search_route(actor)
         if continued:
             return continued
-        times, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed)
+        times, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
         remaining = set(self.search_sites) - self.search_covered
         if not remaining:
             self.search_sweeps.append({"t": round(self.now, 4), "event": "sweep_complete", "round": self.search_epoch,
@@ -970,15 +1130,17 @@ class Game:
             remaining = set(self.search_sites)
         plan = self.plans.get(actor.role)
         if plan and plan[0] == "search" and plan[1] != actor.node and self.now < plan[2]:
-            self.search_route = self.routing.route(actor.node, actor.facing, actor.speed, plan[1])[0][1:]
+            self.search_route = self.routing.route(actor.node, actor.facing, actor.speed, plan[1], role=actor.role, reversing=actor.reversing)[0][1:]
             self.search_route_target = plan[1]
             return self.continue_search_route(actor)
         best = None
         for target in self.track.graph:
+            if target in self.deadend_arms and self.arm_clear_counts.get(target, 0) >= 3:
+                continue
             visible = [n for n in remaining if detectable(self.track.xy[target], self.track.xy[n], self.config, self.track.spacing, "P")]
             if not visible:
                 continue
-            path, _, _ = self.routing.route(actor.node, actor.facing, actor.speed, target)
+            path, _, _ = self.routing.route(actor.node, actor.facing, actor.speed, target, role=actor.role, reversing=actor.reversing)
             repeated = sum(min(3, self.search_edges.get(tuple(sorted((u, v))), 0)) for u, v in zip(path, path[1:]))
             gain = sum(3 if n in self.hide_candidates else 1 for n in visible)
             mass = sum(belief.weights.get(n, 0) for n in visible)
@@ -986,25 +1148,23 @@ class Game:
             item = (score, -times[target], target, visible)
             if best is None or item > best:
                 best = item
-        chosen_path = self.routing.route(actor.node, actor.facing, actor.speed, best[2])[0]
+        chosen_path = self.routing.route(actor.node, actor.facing, actor.speed, best[2], role=actor.role, reversing=actor.reversing)[0]
         route_kind = "observation"
         for corridor in self.search_corridors:
+            if corridor[-1] in self.deadend_arms and self.arm_clear_counts.get(corridor[-1], 0) >= 3:
+                continue
             # If already on a run, continue towards its end instead of detouring to its start.
             run = corridor[corridor.index(actor.node):] if actor.node in corridor else corridor
             if len(run) < 2:
                 continue
-            approach, etas, facing = self.routing.route(actor.node, actor.facing, actor.speed, run[0])
+            approach, etas, facing = self.routing.route(actor.node, actor.facing, actor.speed, run[0], role=actor.role, reversing=actor.reversing)
             path = approach + run[1:]
             if len(set(path)) != len(path):
                 continue
-            visible = sorted(n for n in remaining if any(
-                detectable(self.track.xy[u], self.track.xy[n], self.config, self.track.spacing, "P") for u in run))
+            visible = sorted(n for n in remaining if self.sweep_observes(run, n, actor))
             if not visible:
                 continue
-            duration = etas[-1]
-            for u, v in zip(run, run[1:]):
-                seconds, facing = self.routing.edge_time(u, v, facing, actor.speed)
-                duration += seconds
+            duration = self.timed_path(path, actor)[-1]
             repeated = sum(min(3, self.search_edges.get(tuple(sorted((u, v))), 0)) for u, v in zip(path, path[1:]))
             gain = sum(3 if n in self.hide_candidates else 1 for n in visible)
             mass = sum(belief.weights.get(n, 0) for n in visible)
@@ -1036,6 +1196,7 @@ class Game:
                 self.negative_counts[node] = self.negative_counts.get(node, 0) + 1
                 if self.negative_counts[node] >= 3:
                     self.search_covered.add(node)
+                    self.search_observed_at[node] = self.now
             else:
                 self.negative_counts[node] = 0
         for leaf, path in self.deadend_arms.items():
@@ -1062,6 +1223,7 @@ class Game:
         changed = previous.get("node") != belief.last_seen
         if belief.last_time > previous.get("last_time", -math.inf):
             self.trail_goal = None
+            self.local_search = None
         if changed:
             self.trail_goal = None
             self.trail_exits.clear()
@@ -1086,7 +1248,7 @@ class Game:
             self.deadend_checked[actor.node] = self.now
             self.events.append({"t": round(self.now, 4), "event": "deadend_checked", "role": "P", "node": actor.node})
             self.deadend_goal = None
-        times, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed)
+        times, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
         if self.deadend_goal is None:
             options = []
             for leaf in self.deadend_arms:
@@ -1094,7 +1256,7 @@ class Game:
                     continue
                 if self.now - self.deadend_checked.get(leaf, -math.inf) < self.config.get("police_deadend_recheck_s", 20):
                     continue
-                path, etas, _ = self.routing.route(actor.node, actor.facing, actor.speed, leaf)
+                path, etas, _ = self.routing.route(actor.node, actor.facing, actor.speed, leaf, role=actor.role, reversing=actor.reversing)
                 if self.routing.distance[actor.node][leaf] > self.config.get("police_deadend_check_cells", 4) * self.track.spacing + EPS:
                     continue
                 directions = [actor.facing] + [heading(self.track.xy[u], self.track.xy[v]) for u, v in zip(path, path[1:])]
@@ -1106,15 +1268,68 @@ class Game:
             self.deadend_goal = min(options)[1]
         return next_nodes[self.deadend_goal], "check_deadend", self.deadend_goal
 
+    def search_last_region(self, actor, belief):
+        """Exhaust finite, clue-local hypotheses before resuming a saved sweep.
+
+        Coverage before the positive sighting cannot clear these hypotheses.
+        No runtime opponent position or planned opponent route is consulted.
+        """
+        trail = self.police_trail
+        if self.local_search is None:
+            origin, direction = trail['node'], trail['direction']
+            radius = self.config.get('police_local_search_cells', 5) * self.track.spacing
+            sites = {n for n in self.search_sites if self.routing.distance[origin][n] <= radius + EPS}
+            self.local_search = dict(origin=origin, since=trail['last_time'], direction=direction,
+                                     sites=sites, goal=None, phase='routes', completed=False)
+            # Old global empty observations are invalid inside a new sighting region.
+            self.search_covered.difference_update(sites)
+            self.events.append({'t':round(self.now,4),'role':'P','event':'local_search_started',
+                                'origin':origin,'direction':direction,'sites':sorted(sites)})
+        state = self.local_search
+        if state['completed']:
+            return self.search(actor, belief)
+        remaining = {n for n in state['sites'] if self.search_observed_at.get(n, -math.inf) <= state['since']}
+        routes = remaining - set(self.deadend_arms)
+        phase = 'routes' if routes else 'deadends'
+        options = routes or remaining
+        if len(options) > 1:
+            options = options - {actor.node}
+        if not options:
+            state['completed'] = True
+            self.events.append({'t':round(self.now,4),'role':'P','event':'local_search_complete',
+                                'origin':state['origin']})
+            return self.search(actor, belief)
+        times, first = self.routing.table(actor.node, actor.facing, actor.speed, 'P', actor.reversing)
+        if state['goal'] not in options or phase != state['phase']:
+            hint = state['direction']
+            origin_xy = self.track.xy[state['origin']]
+            def priority(n):
+                path = self.routing.route(state['origin'], hint, self.config['thief_speed_m_s'], n, 'B', None)[0]
+                first_heading = heading(origin_xy, self.track.xy[path[1]]) if len(path)>1 else hint
+                # Along last motion is most likely; branch alternatives remain
+                # queued instead of abandoning the whole area after one miss.
+                forward = int(hint is not None and first_heading == hint)
+                return (forward, int(n in self.hide_candidates), belief.weights.get(n,0)/(1+times[n]), -times[n], n)
+            state['goal'] = max(options, key=priority)
+            state['phase'] = phase
+            self.events.append({'t':round(self.now,4),'role':'P','event':'local_search_goal',
+                                'node':state['goal'],'origin':state['origin'],'phase':phase,
+                                'sector':relative_sector(self.track.xy[actor.node], self.track.xy[state['goal']])})
+        target = state['goal']
+        reason = 'local_search' if phase == 'routes' else 'local_deadend'
+        return first[target], reason, target
+
     def follow_trail(self, actor, belief):
         trail = self.police_trail
+        if trail and self.config.get('regional_search_enabled'):
+            return self.search_last_region(actor, belief)
         if self.deadend_goal:
             check = self.inspect_deadends(actor)
             if check:
                 return check
         if not trail or self.now - trail["last_time"] > self.config.get("police_search_memory_s", 12):
             return self.search(actor, belief)
-        times, first = self.routing.table(actor.node, actor.facing, actor.speed)
+        times, first = self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
         hint = trail["direction"]
         if hint and trail.get("xy") is not None:
             a, b = self.track.xy[actor.node], trail["xy"]
@@ -1169,7 +1384,7 @@ class Game:
                 return check
         if not belief.seen and self.police_trail:
             return self.follow_trail(actor, belief)
-        times, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed)
+        times, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
         targets = [belief.last_seen] if belief.last_seen != actor.node else []
         if not targets:
             # Use measured bearing within the same node, not an unseen true pose.
@@ -1186,7 +1401,7 @@ class Game:
         return next_nodes[target], "chase", target
 
     def escape_score(self, path, times, threats, pursuer_speed, facing=None, threat_facing=None,
-                     weights=None, horizon=None):
+                     weights=None, horizon=None, reversing=False):
         """Compare safety during turn waits as well as at future arrival nodes."""
         horizon = horizon or self.config["horizon_s"]
         samples, turn_seconds, distance, direction = [], 0.0, 0.0, facing
@@ -1194,7 +1409,8 @@ class Game:
             length = self.track.graph[u][v] * self.track.spacing / 2
             new_direction = heading(self.track.xy[u], self.track.xy[v])
             action = turn(direction, new_direction)
-            delay = self.config["turn90_s"] if action in ("LEFT", "RIGHT") else self.config["uturn_s"] if action == "UTURN" else 0
+            delay = self.routing.turn_delay(direction, new_direction, "B", reversing)
+            reversing = self.routing.next_mode(direction, new_direction, reversing)
             if delay:
                 samples.append((u, start + delay))
             samples.append((v, end))
@@ -1202,7 +1418,7 @@ class Game:
             distance += length
             direction = new_direction
         samples.append((path[-1], max(times[-1], horizon)))
-        table = {q: self.routing.table(q, threat_facing, pursuer_speed)[0] for q in threats}
+        table = {q: self.routing.table(q, threat_facing, pursuer_speed, "P", reversing=None)[0] for q in threats}
         probabilities = weights or {q: 1 / len(threats) for q in threats}
         norm = sum(probabilities.get(q, 0) for q in threats)
         safety, margin = 0.0, 0.0
@@ -1223,8 +1439,11 @@ class Game:
 
     def timed_path(self, path, actor):
         times, facing = [0.0], actor.facing
+        mode = actor.reversing
         for u, v in zip(path, path[1:]):
-            duration, facing = self.routing.edge_time(u, v, facing, actor.speed)
+            duration, direction = self.routing.edge_time(u, v, facing, actor.speed, role=actor.role, reversing=mode)
+            mode = self.routing.next_mode(facing, direction, mode)
+            facing = direction
             times.append(times[-1] + duration)
         return times
 
@@ -1232,7 +1451,7 @@ class Game:
         """Earliest map arrivals from a detected pose; no true opponent state."""
         speed = self.config["police_speed_m_s"]
         if belief.last_xy is None:
-            return self.routing.table(belief.last_seen, belief.last_heading, speed)[0]
+            return self.routing.table(belief.last_seen, belief.last_heading, speed, "P", reversing=None)[0]
         pose, roots = belief.last_xy, []
         for node, xy in self.track.xy.items():
             if math.dist(pose, xy) < EPS:
@@ -1248,11 +1467,12 @@ class Game:
                             xy = self.track.xy[node]
                             direction = pose_heading(pose, xy)
                             action = turn(belief.last_heading, direction)
-                            delay = self.config["turn90_s"] if action in ("LEFT", "RIGHT") else self.config["uturn_s"] if action == "UTURN" else 0
-                            roots.append((node, direction, delay + math.dist(pose, xy) * self.track.spacing / speed))
+                            delay = self.routing.turn_delay(belief.last_heading, direction, "P", reversing=None)
+                            partial_speed = self.routing.moving_speed(u, v, speed, "P", reversing=None) if node == v else self.routing.moving_speed(v, u, speed, "P", reversing=None)
+                            roots.append((node, direction, delay + math.dist(pose, xy) * self.track.spacing / partial_speed))
         if not roots:
             roots = [(belief.last_seen, belief.last_heading, 0.0)]
-        tables = [(self.routing.table(node, facing, speed)[0], delay) for node, facing, delay in roots]
+        tables = [(self.routing.table(node, facing, speed, "P", reversing=None)[0], delay) for node, facing, delay in roots]
         return {n: min(table[n] + delay for table, delay in tables) for n in self.track.graph}
 
     def route_risk(self, path, times, actor, belief, arrivals=None):
@@ -1263,24 +1483,29 @@ class Game:
         not access to the police controller or a guarantee against capture.
         """
         arrivals = arrivals or self.measured_police_arrivals(belief)
-        speed, horizon = self.config["police_speed_m_s"], self.config["horizon_s"]
+        speed, horizon = self.routing.maximum_speed(self.config["police_speed_m_s"], "P"), self.config["horizon_s"]
         age = max(0.0, self.now - belief.last_time)
         radius = self.config["capture_center_distance_m"] / self.track.spacing
         first_risk, early_margin, worst_margin = horizon, math.inf, math.inf
         turning = 0.0
+        mode, facing = actor.reversing, actor.facing
         for u, v, start, end in zip(path, path[1:], times, times[1:]):
             if start > horizon:
                 break
             a, b = self.track.xy[u], self.track.xy[v]
             length = math.dist(a, b) * self.track.spacing
-            delay = end - start - length / actor.speed
+            direction = heading(a, b)
+            mode = self.routing.next_mode(facing, direction, mode)
+            facing = direction
+            actual_speed = self.routing.moving_speed(u, v, actor.speed, actor.role, mode)
+            delay = max(0.0, end - start - length / actual_speed)
             moving_at = start + delay
             turning += delay
             segments = self.routing.contact_segments(u, v)
             count = max(1, math.ceil((min(end, horizon) - start) / self.config.get("escape_risk_step_s", .05)))
             for i in range(count + 1):
                 elapsed = start + (min(end, horizon) - start) * i / count
-                fraction = max(0.0, min(1.0, (elapsed - moving_at) * actor.speed / length))
+                fraction = max(0.0, min(1.0, (elapsed - moving_at) * actual_speed / length))
                 xy = (a[0] + (b[0] - a[0]) * fraction, a[1] + (b[1] - a[1]) * fraction)
                 eta = math.inf
                 for s, t in segments:
@@ -1304,7 +1529,7 @@ class Game:
                             direct = math.dist(belief.last_xy, contact) * self.track.spacing / speed
                             if direct > EPS:
                                 action = turn(belief.last_heading, pose_heading(belief.last_xy, contact))
-                                direct += self.config["turn90_s"] if action in ("LEFT", "RIGHT") else self.config["uturn_s"] if action == "UTURN" else 0
+                                direct += self.routing.turn_delay(belief.last_heading, pose_heading(belief.last_xy, contact), "P", reversing=None)
                             eta = min(eta, direct)
                 margin = eta - age - elapsed
                 worst_margin = min(worst_margin, margin)
@@ -1337,7 +1562,7 @@ class Game:
             quality -= .4 * int(path[1] == actor.last_node)
             if not recent:
                 expected = self.escape_score(path, times, threats, self.config["police_speed_m_s"],
-                                             actor.facing, None, belief.weights)
+                                             actor.facing, None, belief.weights, reversing=actor.reversing)
                 quality += .4 * (expected[0] + .2 * expected[1])
             side = self.side_preference(path, times) + self.region_preference(path, times)
             evaluated.append((path, times, risk, quality, side))
@@ -1355,14 +1580,25 @@ class Game:
             else:
                 if any(item[2][1] >= 0 for item in evaluated):
                     evaluated = [item for item in evaluated if item[2][1] >= 0]
+                evaluated = self.prefer_escape_progress(evaluated)
                 # Among similarly safe routes, prefer the opposite block and
                 # available branches rather than maximizing straight-line speed.
                 key = lambda item: (item[4], item[3], item[2][0], item[2][1], item[2][2], item[2][3])
         else:
+            evaluated = self.prefer_escape_progress(evaluated)
             key = lambda item: (int(all(n in self.cycle_core for n in item[0][1:])),
                                 item[4], item[3], -int(item[0][1] == actor.last_node), -item[1][-1])
         chosen = max(evaluated, key=key)
         return chosen[:3]
+
+    def prefer_escape_progress(self, evaluated):
+        # A soft visit penalty loses to lexicographic region preference. Once
+        # imminent-contact filtering is done, avoid retracing a just-run path
+        # when an equally admissible route reaches fresh track. Emergency
+        # reversals (contact <= 1 s) bypass this filter entirely.
+        progressing = [item for item in evaluated if any(
+            self.now - self.visits['B'].get(n, -math.inf) > 10 for n in item[0][1:])]
+        return progressing or evaluated
 
     def escape(self, actor, belief):
         if self.escape_mode == "preset":
@@ -1414,13 +1650,13 @@ class Game:
             if not self.police_checked_treasure:
                 node = root
                 while node != self.track.resolve("T"):
-                    _, next_nodes = self.routing.table(node, direction, enemy_speed)
+                    _, next_nodes = self.routing.table(node, direction, enemy_speed, "B")
                     target = next_nodes[self.track.resolve("T")]
-                    duration, direction = self.routing.edge_time(node, target, direction, enemy_speed)
+                    duration, direction = self.routing.edge_time(node, target, direction, enemy_speed, "B")
                     prefix.append(target)
                     elapsed.append(elapsed[-1] + duration)
                     node = target
-            paths = self.routing.paths(prefix[-1], direction, enemy_speed, limit=24)
+            paths = self.routing.paths(prefix[-1], direction, enemy_speed, limit=24, role="B")
             paths.sort(key=lambda item: self.escape_score(*item, [actor.node], actor.speed,
                                                          direction, actor.facing), reverse=True)
             # Keep different first exits instead of three near-identical paths.
@@ -1446,7 +1682,7 @@ class Game:
         predicted = self.predicted_routes(actor, belief)
         if not predicted:
             return self.chase(actor, belief)
-        times, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed)
+        times, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
         targets = {n for path, _, _ in predicted for n in path[1:]}
         best = None
         for target in sorted(targets):
@@ -1484,13 +1720,13 @@ class Game:
             if not gates:
                 self.pocket_block = None
                 return None
-            times, _ = self.routing.table(actor.node, actor.facing, actor.speed)
+            times, _ = self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
             feasible = False
             for gate in sorted(gates, key=lambda g: times[g]):
                 if self.pocket_block_cooldown.get(gate, -1) > self.now:
                     continue
                 speed = self.config["thief_speed_m_s"]
-                thief_time = self.routing.table(belief.last_seen, None, speed)[0][gate]
+                thief_time = self.routing.table(belief.last_seen, None, speed, "B")[0][gate]
                 thief_time = max(0, thief_time - math.dist(belief.last_xy, self.track.xy[belief.last_seen])*self.track.spacing/speed)
                 if times[gate] > thief_time + EPS:
                     continue
@@ -1519,7 +1755,7 @@ class Game:
                 self.pocket_block = None
                 return None
             return None, "cutoff", gate
-        return self.routing.table(actor.node, actor.facing, actor.speed)[1][gate], "cutoff", gate
+        return self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)[1][gate], "cutoff", gate
 
     def decide(self, role):
         actor, belief = self.robots[role], self.beliefs[role]
@@ -1547,7 +1783,7 @@ class Game:
         # The police cannot remotely read the simulator's treasure ownership.
         needs_treasure = not self.police_checked_treasure if role == "P" else self.owner != "B"
         if needs_treasure:
-            _, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed)
+            _, next_nodes = self.routing.table(actor.node, actor.facing, actor.speed, role=actor.role, reversing=actor.reversing)
             return next_nodes[self.track.resolve("T")], "treasure", self.track.resolve("T")
         if role == "B":
             if self.thief_policy in ("hide", "refuge"):
@@ -1594,11 +1830,11 @@ class Game:
             return
         belief = self.beliefs["P"]
         speed = self.config["thief_speed_m_s"]
-        travel, _ = self.routing.table(self.track.resolve("B"), "W", speed)
+        travel, _ = self.routing.table(self.track.resolve("B"), "W", speed, "B")
         earliest = travel[self.track.resolve("T")] + self.config["pickup_s"]
         if belief.seen or belief.last_time >= earliest:
             return
-        times, _ = self.routing.table(self.track.resolve("T"), None, speed)
+        times, _ = self.routing.table(self.track.resolve("T"), None, speed, "B")
         budget = max(0.0, self.now - earliest)
         weights = {}
         for node, duration in times.items():
@@ -1787,22 +2023,25 @@ def motion_metrics(result):
 
 def suite(track, config, seeds, sweep=False):
     scenarios = [
-        ("两格检测 · 藏身后智能逃跑", "hide", "smart", 2, 1),
-        ("三格检测 · 藏身后智能逃跑", "hide", "smart", 3, 1),
-        ("两格检测 · 藏身后预设路线", "hide", "preset", 2, 1),
-        ("三格检测 · 藏身后预设路线", "hide", "preset", 3, 1),
-        ("两格检测 · 多路口连续逃跑", "escape", "smart", 2, 1),
-        ("两格检测 · 警方快20% · 连续逃跑", "escape", "smart", 2, 1.2),
-        ("两格检测 · 定点藏匿与下一藏点转移", "refuge", "smart", 2, 1)]
+        ("两格检测 · 藏匿—转移—再藏匿", "refuge", "smart", 2, 1),
+        ("两格检测 · 警方快20% · 藏点转移", "refuge", "smart", 2, 1.2)]
+    if config.get("measured_motion", {}).get("slow_case"):
+        scenarios.append(("两格检测 · 动作偏慢P90 · 定点藏匿", "refuge", "smart", 2, 1))
     replays, summary = [], []
     speed_cases = [(config["police_speed_m_s"], config["thief_speed_m_s"], True)]
     if sweep:
-        speed_cases += [(1.8, 1.8, False), (2.1, 2.1, False)]
+        speed_cases += [(config["police_speed_m_s"] * factor, config["thief_speed_m_s"] * factor, False)
+                        for factor in (.9, 1.1)]
     for p_speed, b_speed, keep_replay in speed_cases:
       for label, thief, mode, cells, police_factor in scenarios:
         actual_police_speed = round(p_speed * police_factor, 6)
         case_config = dict(config, police_speed_m_s=actual_police_speed, thief_speed_m_s=b_speed,
-                           sensor_range_m=round(cells * track.spacing, 3), police_sensor_range_m=round(3 * track.spacing, 3))
+                           sensor_range_m=round(cells * track.spacing, 3), police_sensor_range_m=round(2 * track.spacing, 3))
+        if "动作偏慢P90" in label:
+            slow = config["measured_motion"]["slow_case"]
+            case_config["turn90_s"] = slow["turn90_s"]
+            case_config["measured_motion"] = dict(config["measured_motion"],
+                forward_to_reverse_s=slow["forward_to_reverse_s"], reverse_to_forward_s=slow["reverse_to_forward_s"])
         outcomes = []
         for offset in range(seeds):
             result = Game(track, case_config, thief_policy=thief, seed=config["seed"] + offset, escape_mode=mode).run()
@@ -1810,10 +2049,11 @@ def suite(track, config, seeds, sweep=False):
             outcomes.append(result)
         replay = outcomes[0]
         replay["label"] = label
+        replay["motion_parameters"] = dict(case_config.get("measured_motion", {}), turn90_s=case_config["turn90_s"])
         if keep_replay:
             replays.append(replay)
         summary.append({"scenario": label, "runs": seeds, "police_speed_m_s": actual_police_speed,
-                        "thief_speed_m_s": b_speed, "sensor_cells": cells, "police_sensor_cells": 3, "escape_mode": mode,
+                        "thief_speed_m_s": b_speed, "sensor_cells": cells, "police_sensor_cells": 2, "escape_mode": mode,
                         "police_wins": sum(r["winner"] == "police" for r in outcomes),
                         "thief_wins": sum(r["winner"] == "thief" for r in outcomes),
                         "draws": sum(r["winner"] == "draw" for r in outcomes),
@@ -1835,7 +2075,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=ROOT / "config.json")
     parser.add_argument("--seeds", type=int, default=1)
-    parser.add_argument("--sweep", action="store_true", help="Also compare 6x and 7x straight-line speed")
+    parser.add_argument("--sweep", action="store_true", help="Also compare 90% and 110% of configured speed")
     args = parser.parse_args()
     if args.seeds < 1:
         parser.error("--seeds must be positive")

@@ -14,6 +14,7 @@ class SimulatorTests(unittest.TestCase):
         cls.track = TrackMap()
         cls.config = dict(json.loads((ROOT / "config.json").read_text(encoding="utf-8")),
                           police_speed_m_s=.35, thief_speed_m_s=.35, turn90_s=.6, uturn_s=1.2, pickup_s=.8, horizon_s=8)
+        cls.config.pop("measured_motion", None)  # Legacy-model regression fixture.
         cls.routing = Routing(cls.track, cls.config)
 
     def test_time_routing_agrees_with_single_car_planner(self):
@@ -726,7 +727,7 @@ class SimulatorTests(unittest.TestCase):
         actor.node, actor.last_node = "(6,5)", "(6,6)"
         game.now, belief.seen = 4, False
         command = game.decide("P")
-        self.assertEqual(command[:2], ("(6,4)", "trail"))
+        self.assertEqual(command[:2], ("(6,4)", "local_search"))
         self.assertNotEqual(command[1], "treasure")
 
     def test_police_follow_last_heading_after_reaching_last_seen_junction(self):
@@ -736,7 +737,7 @@ class SimulatorTests(unittest.TestCase):
         belief.last_seen, belief.last_time, belief.seen, belief.last_heading = "(2,1)", 1, True, "W"
         game.remember_police_trail(actor, belief)
         belief.seen, game.now = False, 1.1
-        self.assertEqual(game.decide("P")[:2], ("(1,1)", "trail"))
+        self.assertEqual(game.decide("P")[:2], ("(1,1)", "local_search"))
 
     def test_police_nearby_one_bend_deadend_check_is_not_immediately_repeated(self):
         game = Game(self.track, self.config)

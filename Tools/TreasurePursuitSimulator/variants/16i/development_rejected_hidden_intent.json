@@ -1,0 +1,58 @@
+{
+  "status": "Rejected: branch projection read hidden candidate intent. Not used in the final model.",
+  "results": [
+    {
+      "fixture": null,
+      "duration_s": 23.266817470437626
+    },
+    {
+      "fixture": null,
+      "duration_s": 21.300923648707666
+    },
+    {
+      "fixture": [
+        38,
+        "W",
+        40,
+        "W"
+      ],
+      "duration_s": 1.0019630402047204
+    },
+    {
+      "fixture": [
+        38,
+        "N",
+        40,
+        "W"
+      ],
+      "duration_s": 11.637253509466728
+    },
+    {
+      "fixture": [
+        62,
+        "E",
+        34,
+        "S"
+      ],
+      "duration_s": 6.721825437941481
+    },
+    {
+      "fixture": [
+        38,
+        "E",
+        21,
+        "S"
+      ],
+      "duration_s": 11.319620073269522
+    },
+    {
+      "fixture": [
+        38,
+        "E",
+        21,
+        "S"
+      ],
+      "duration_s": 2.0118179093986566
+    }
+  ]
+}

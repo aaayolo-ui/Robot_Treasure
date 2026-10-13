@@ -1,0 +1,114 @@
+[
+  {
+    "new_file": ".gitignore",
+    "baseline_file": ".gitignore",
+    "added_lines": 1,
+    "removed_lines": 1,
+    "baseline_sha256": "785463fbd9ef170eff32867d3b2cbf69048058f2fedb328d4394de303212ecc2",
+    "new_sha256": "80d70804c8fbdc69732679088e5137ef9a8078b7cf2355c87d0e8a10d4ba2a47"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefMapTopology.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefMapTopology.h",
+    "added_lines": 140,
+    "removed_lines": 50,
+    "baseline_sha256": "0d1d5784d153237a7b1c39f20924cba76385fbb651e612979a04a21770283116",
+    "new_sha256": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "added_lines": 74,
+    "removed_lines": 6,
+    "baseline_sha256": "5add3269104e2782190444d095c7aee764133b36c3464c1a175c69f53229d1c1",
+    "new_sha256": "c25bd8e3eeafc11fbd29f4eaae5d1ac1bef51fbd0baa4e7018facc7277d35b6b"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+    "added_lines": 5,
+    "removed_lines": 0,
+    "baseline_sha256": "1ef089848a65f4856d292444ddca3cd296ddc7c908215e3d89b3515c41070978",
+    "new_sha256": "c002f767098aa12a3153cd5790eedade9b25b1bc1907d6ebea3eebfa0ffe0745"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+    "added_lines": 25,
+    "removed_lines": 2,
+    "baseline_sha256": "7235c906139233440f5f6e8573e038ca50221459d240bd986eb9ccdeab770da3",
+    "new_sha256": "88291d5a7c6ef5a51f9d79d7b1c58ac2e2a3fa75bb3a0d31b9452d8bdf8a97e1"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefThreatModel.c",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefThreatModel.c",
+    "added_lines": 23,
+    "removed_lines": 0,
+    "baseline_sha256": "064192545003c81c372648328475f57e4d2f1a114152bf869a06d0fe13097232",
+    "new_sha256": "d26c3faa6ae0e7a34ed3164e1020e527e62d80c232bae817eff95ff4437e01af"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefThreatModel.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefThreatModel.h",
+    "added_lines": 2,
+    "removed_lines": 0,
+    "baseline_sha256": "769b2a17e26cc45a5558a714ae86783982237be5e7837caef830156ed1d7e1fd",
+    "new_sha256": "80bd1203ba715d62ee24285c5c357b9dd1b38ec02c0df504aedb8f333ff5d1f8"
+  },
+  {
+    "new_file": "MDK-ARM/RTE/_Thief16H_TurnClearance_FourLaser_Test/RTE_Components.h",
+    "baseline_file": "MDK-ARM/RTE/_Thief16G_MultiExitHide_FourLaser_Test/RTE_Components.h",
+    "added_lines": 2,
+    "removed_lines": 2,
+    "baseline_sha256": "4afeba7071d413866eae13dd463a441dd612fbb5e6c0233f8080f3ec565c32c3",
+    "new_sha256": "dd3261664c6407fc773df7c0e97f6d342b5f05d080c58f79ce359e221277843e"
+  },
+  {
+    "new_file": "MDK-ARM/Thief16H_TurnClearance_FourLaser_Test.uvprojx",
+    "baseline_file": "MDK-ARM/Thief16G_MultiExitHide_FourLaser_Test.uvprojx",
+    "added_lines": 4,
+    "removed_lines": 4,
+    "baseline_sha256": "5f25a4d83ae6faf910a05607bb4599b3f961a1563a900f9a2467839b4131e0d7",
+    "new_sha256": "5ffa8501f20f2c1dc0b9dd1493e8272d04f3dcda29e94c18d6a9dc70f37294bd"
+  },
+  {
+    "new_file": "Tests/generate_topology.py",
+    "baseline_file": "Tests/generate_topology.py",
+    "added_lines": 21,
+    "removed_lines": 3,
+    "baseline_sha256": "a87b4e8c423d9dbe727b3a31c0a3b37d8d5a2b741a8b280175a202606501a8c2",
+    "new_sha256": "7df94396a14b57360d0c38487acac544f798c844a78cd71ca693f04536fc438e"
+  },
+  {
+    "new_file": "Tests/hide_catalog.json",
+    "baseline_file": "Tests/hide_catalog.json",
+    "added_lines": 29,
+    "removed_lines": 353,
+    "baseline_sha256": "a7fe7744a1efcc30eeab0a92792f2a3e5ea9ddf5e1c91c4cf2ce48852ecf5dd6",
+    "new_sha256": "6b75944e332285bac0063524be97550b40f601bf45c229f4f97992260117e9ee"
+  },
+  {
+    "new_file": "Tests/test_algorithms.c",
+    "baseline_file": "Tests/test_algorithms.c",
+    "added_lines": 32,
+    "removed_lines": 0,
+    "baseline_sha256": "1daf6a3d66e2686ba800c2412f3d5dae6087f36b83cd03401386bcc1489bff23",
+    "new_sha256": "7ac6931cd0bac145644f9ba6cb6b2a053bacca105245106d47fccb7a5aae28ee"
+  },
+  {
+    "new_file": "Thief16H_TurnClearance_FourLaser_Test.ioc",
+    "baseline_file": "Thief16G_MultiExitHide_FourLaser_Test.ioc",
+    "added_lines": 2,
+    "removed_lines": 2,
+    "baseline_sha256": "3ff4e4e5bb9cc85f28e1eed3f6257b5e1dcab7f96fbd32decfa0166af5d8ee4b",
+    "new_sha256": "7113340f93d189d65c9dbed9ba7677a26cfa2542d4abb10e37721c01dcb0ff29"
+  },
+  {
+    "new_file": "User/App_ThiefStrategy.c",
+    "baseline_file": "User/App_ThiefStrategy.c",
+    "added_lines": 4,
+    "removed_lines": 1,
+    "baseline_sha256": "9fbc6a5eccd3f036ff1e91567d520aecfe9260c4622040e82c7ff8e8a51c8f33",
+    "new_sha256": "06b9f7f09d36ebb24cbd06c64c395f625bcf21cad43de4224634ca47f44f83b4"
+  }
+]

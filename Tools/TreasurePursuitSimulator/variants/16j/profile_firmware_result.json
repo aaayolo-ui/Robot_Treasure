@@ -1,0 +1,25 @@
+{
+  "runs": [
+    {
+      "evidence": false,
+      "arm_instructions": 754149,
+      "goal": 11,
+      "candidates": 39,
+      "models": 74,
+      "model_steps": 1052,
+      "entry_inferred": 0
+    },
+    {
+      "evidence": true,
+      "arm_instructions": 3122669,
+      "goal": 62,
+      "candidates": 39,
+      "models": 113,
+      "model_steps": 4271,
+      "entry_inferred": 1
+    }
+  ],
+  "binary": "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/MDK-ARM/Thief16J_RefugeViability_FourLaser_Test/Thief16J_RefugeViability_FourLaser_Test.axf",
+  "binary_sha256": "b3260a3c3bc8c0b11d8f12d82f3281d4d29def109647ddd84cd5cfc0d08bddf1",
+  "scope": "Actual fully linked Keil binary; dynamic ARM instructions on CPU emulator, not hardware cycles/time. All calls use pure algorithm APIs. The unchanged 100ms guard still needs board verification."
+}

@@ -1,0 +1,98 @@
+[
+  {
+    "new_file": ".gitignore",
+    "baseline_file": ".gitignore",
+    "added_lines": 1,
+    "removed_lines": 1,
+    "baseline_sha256": "48ac452063e5c1a86be23db4ca7a72fb27942932f8f3dc162be2118ae380375d",
+    "new_sha256": "785463fbd9ef170eff32867d3b2cbf69048058f2fedb328d4394de303212ecc2"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefMapTopology.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefMapTopology.h",
+    "added_lines": 118,
+    "removed_lines": 12,
+    "baseline_sha256": "e74761645425ca4d06ec0329bba1f0a8c380b35cc578cab689adc120576424fa",
+    "new_sha256": "0d1d5784d153237a7b1c39f20924cba76385fbb651e612979a04a21770283116"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "added_lines": 30,
+    "removed_lines": 1,
+    "baseline_sha256": "14245f23f9e668c800b86aa860b15a3ad658ba16297e7bbb142090506dd6fe94",
+    "new_sha256": "5add3269104e2782190444d095c7aee764133b36c3464c1a175c69f53229d1c1"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+    "added_lines": 2,
+    "removed_lines": 0,
+    "baseline_sha256": "b38c63a4873f33d488634b7b7c089ed58cca7064529a5b338f018170f4a7d6d8",
+    "new_sha256": "1ef089848a65f4856d292444ddca3cd296ddc7c908215e3d89b3515c41070978"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+    "added_lines": 17,
+    "removed_lines": 1,
+    "baseline_sha256": "0370b61b7e6c0e3f317cc46a6965ba5c4c1ee509f5df6491aaea6429782bd259",
+    "new_sha256": "7235c906139233440f5f6e8573e038ca50221459d240bd986eb9ccdeab770da3"
+  },
+  {
+    "new_file": "MDK-ARM/RTE/_Thief16G_MultiExitHide_FourLaser_Test/RTE_Components.h",
+    "baseline_file": "MDK-ARM/RTE/_Thief16E_VisibilityEscape_FourLaser_Test/RTE_Components.h",
+    "added_lines": 2,
+    "removed_lines": 2,
+    "baseline_sha256": "1c54de7c255ca2673488b11b6799c6a35a051762fdee79ebe4a679c178ca582e",
+    "new_sha256": "4afeba7071d413866eae13dd463a441dd612fbb5e6c0233f8080f3ec565c32c3"
+  },
+  {
+    "new_file": "MDK-ARM/Thief16G_MultiExitHide_FourLaser_Test.uvprojx",
+    "baseline_file": "MDK-ARM/Thief16E_VisibilityEscape_FourLaser_Test.uvprojx",
+    "added_lines": 4,
+    "removed_lines": 4,
+    "baseline_sha256": "f9875c26d6f060ddd7b2c6fbdab7e3c67ad0968715ce1b80de9b19438284b511",
+    "new_sha256": "5f25a4d83ae6faf910a05607bb4599b3f961a1563a900f9a2467839b4131e0d7"
+  },
+  {
+    "new_file": "Tests/generate_topology.py",
+    "baseline_file": "Tests/generate_topology.py",
+    "added_lines": 82,
+    "removed_lines": 0,
+    "baseline_sha256": "6b4765955737dedcc44fe234e46add73753898cdf863d95de366778eb78f3de3",
+    "new_sha256": "a87b4e8c423d9dbe727b3a31c0a3b37d8d5a2b741a8b280175a202606501a8c2"
+  },
+  {
+    "new_file": "Tests/run_algorithms.py",
+    "baseline_file": "Tests/run_algorithms.py",
+    "added_lines": 2,
+    "removed_lines": 0,
+    "baseline_sha256": "eb31cd01bf6656731428a7fa654f9dcc1195a2456c1272f314af9b3508ace64e",
+    "new_sha256": "3cfb2cec868fb2817c160286dc9c20571e054b9739e417604c9505a8b18aa1e0"
+  },
+  {
+    "new_file": "Tests/test_algorithms.c",
+    "baseline_file": "Tests/test_algorithms.c",
+    "added_lines": 20,
+    "removed_lines": 3,
+    "baseline_sha256": "486403cc8fb1c8e891d2fc67f33c058c4928bcd53e3a23ee94d649f17ac7e163",
+    "new_sha256": "1daf6a3d66e2686ba800c2412f3d5dae6087f36b83cd03401386bcc1489bff23"
+  },
+  {
+    "new_file": "Thief16G_MultiExitHide_FourLaser_Test.ioc",
+    "baseline_file": "Thief16E_VisibilityEscape_FourLaser_Test.ioc",
+    "added_lines": 2,
+    "removed_lines": 2,
+    "baseline_sha256": "d5e85a7a084f68d8d1a23101b7e22b87389ca9fd255e848137e1b99eac7f6057",
+    "new_sha256": "3ff4e4e5bb9cc85f28e1eed3f6257b5e1dcab7f96fbd32decfa0166af5d8ee4b"
+  },
+  {
+    "new_file": "User/App_ThiefStrategy.c",
+    "baseline_file": "User/App_ThiefStrategy.c",
+    "added_lines": 7,
+    "removed_lines": 1,
+    "baseline_sha256": "d304f52e66c37e2229495b3419ba6dbe3ef13ce00fe936d6f4f0d758578fac95",
+    "new_sha256": "9fbc6a5eccd3f036ff1e91567d520aecfe9260c4622040e82c7ff8e8a51c8f33"
+  }
+]

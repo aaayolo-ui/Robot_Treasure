@@ -1,0 +1,1066 @@
+{
+  "source": "Tools/TreasurePursuitSimulator/map_annotations.json",
+  "note": "供逐路段实测核对；转弯出弯位置到路口检测的区间长度不一定等于中心间距。此文件不是已标定结果。",
+  "segments": [
+    {
+      "id": "S001",
+      "start": "N001",
+      "end": "N002",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S002",
+      "start": "N001",
+      "end": "N010",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S003",
+      "start": "N002",
+      "end": "N003",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S004",
+      "start": "N002",
+      "end": "N011",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S005",
+      "start": "N003",
+      "end": "N004",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S006",
+      "start": "N003",
+      "end": "N013",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S007",
+      "start": "N004",
+      "end": "N005",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.15,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S008",
+      "start": "N004",
+      "end": "N014",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S009",
+      "start": "N005",
+      "end": "N006",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.15,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S010",
+      "start": "N006",
+      "end": "N007",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S011",
+      "start": "N006",
+      "end": "N015",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S012",
+      "start": "N007",
+      "end": "N017",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S013",
+      "start": "N008",
+      "end": "N009",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S014",
+      "start": "N008",
+      "end": "N027",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S015",
+      "start": "N009",
+      "end": "N019",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S016",
+      "start": "N010",
+      "end": "N011",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S017",
+      "start": "N010",
+      "end": "N020",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S018",
+      "start": "N011",
+      "end": "N012",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S019",
+      "start": "N011",
+      "end": "N022",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S020",
+      "start": "N012",
+      "end": "N013",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S021",
+      "start": "N012",
+      "end": "N023",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S022",
+      "start": "N013",
+      "end": "N024",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S023",
+      "start": "N014",
+      "end": "N015",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S024",
+      "start": "N014",
+      "end": "N032",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S025",
+      "start": "N015",
+      "end": "N025",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S026",
+      "start": "N016",
+      "end": "N017",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S027",
+      "start": "N017",
+      "end": "N026",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S028",
+      "start": "N018",
+      "end": "N019",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S029",
+      "start": "N018",
+      "end": "N028",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S030",
+      "start": "N020",
+      "end": "N021",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S031",
+      "start": "N020",
+      "end": "N037",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S032",
+      "start": "N021",
+      "end": "N022",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S033",
+      "start": "N021",
+      "end": "N038",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S034",
+      "start": "N022",
+      "end": "N030",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S035",
+      "start": "N023",
+      "end": "N024",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S036",
+      "start": "N023",
+      "end": "N031",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S037",
+      "start": "N025",
+      "end": "N026",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S038",
+      "start": "N025",
+      "end": "N033",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S039",
+      "start": "N026",
+      "end": "N027",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S040",
+      "start": "N026",
+      "end": "N035",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S041",
+      "start": "N027",
+      "end": "N028",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S042",
+      "start": "N029",
+      "end": "N045",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S043",
+      "start": "N031",
+      "end": "N032",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S044",
+      "start": "N032",
+      "end": "N048",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S045",
+      "start": "N033",
+      "end": "N034",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S046",
+      "start": "N033",
+      "end": "N049",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S047",
+      "start": "N034",
+      "end": "N035",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S048",
+      "start": "N034",
+      "end": "N050",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S049",
+      "start": "N035",
+      "end": "N036",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S050",
+      "start": "N036",
+      "end": "N044",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S051",
+      "start": "N037",
+      "end": "N038",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S052",
+      "start": "N037",
+      "end": "N055",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S053",
+      "start": "N038",
+      "end": "N039",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S054",
+      "start": "N038",
+      "end": "N056",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S055",
+      "start": "N039",
+      "end": "N040",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S056",
+      "start": "N039",
+      "end": "N057",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S057",
+      "start": "N040",
+      "end": "N046",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S058",
+      "start": "N041",
+      "end": "N047",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S059",
+      "start": "N042",
+      "end": "N043",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S060",
+      "start": "N042",
+      "end": "N051",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S061",
+      "start": "N044",
+      "end": "N045",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S062",
+      "start": "N044",
+      "end": "N053",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S063",
+      "start": "N046",
+      "end": "N047",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S064",
+      "start": "N046",
+      "end": "N058",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S065",
+      "start": "N048",
+      "end": "N049",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S066",
+      "start": "N049",
+      "end": "N061",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S067",
+      "start": "N051",
+      "end": "N052",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S068",
+      "start": "N052",
+      "end": "N053",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S069",
+      "start": "N052",
+      "end": "N063",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S070",
+      "start": "N053",
+      "end": "N054",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S071",
+      "start": "N055",
+      "end": "N056",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S072",
+      "start": "N056",
+      "end": "N057",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S073",
+      "start": "N058",
+      "end": "N059",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S074",
+      "start": "N058",
+      "end": "N068",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S075",
+      "start": "N059",
+      "end": "N060",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S076",
+      "start": "N059",
+      "end": "N075",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S077",
+      "start": "N060",
+      "end": "N069",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S078",
+      "start": "N061",
+      "end": "N062",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S079",
+      "start": "N061",
+      "end": "N070",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S080",
+      "start": "N062",
+      "end": "N063",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S081",
+      "start": "N062",
+      "end": "N071",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S082",
+      "start": "N063",
+      "end": "N078",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S083",
+      "start": "N064",
+      "end": "N065",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S084",
+      "start": "N064",
+      "end": "N079",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S085",
+      "start": "N066",
+      "end": "N067",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S086",
+      "start": "N066",
+      "end": "N081",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S087",
+      "start": "N067",
+      "end": "N068",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S088",
+      "start": "N067",
+      "end": "N082",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S089",
+      "start": "N068",
+      "end": "N084",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S090",
+      "start": "N069",
+      "end": "N070",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S091",
+      "start": "N070",
+      "end": "N076",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S092",
+      "start": "N071",
+      "end": "N072",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S093",
+      "start": "N072",
+      "end": "N077",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S094",
+      "start": "N073",
+      "end": "N080",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S095",
+      "start": "N074",
+      "end": "N083",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S096",
+      "start": "N075",
+      "end": "N076",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S097",
+      "start": "N076",
+      "end": "N077",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S098",
+      "start": "N076",
+      "end": "N085",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S099",
+      "start": "N077",
+      "end": "N078",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S100",
+      "start": "N078",
+      "end": "N079",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S101",
+      "start": "N079",
+      "end": "N080",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S102",
+      "start": "N080",
+      "end": "N088",
+      "direction_from_start": "S",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S103",
+      "start": "N082",
+      "end": "N083",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.3,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S104",
+      "start": "N084",
+      "end": "N085",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.9,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S105",
+      "start": "N085",
+      "end": "N086",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    },
+    {
+      "id": "S106",
+      "start": "N087",
+      "end": "N088",
+      "direction_from_start": "E",
+      "nominal_map_length_m": 0.6,
+      "measured_center_to_center_m": null,
+      "calibrated": false,
+      "note": ""
+    }
+  ]
+}

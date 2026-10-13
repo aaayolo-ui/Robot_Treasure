@@ -1,0 +1,83 @@
+{
+  "stage": "four pursuit models, before branch interception",
+  "source_hashes": {
+    "Tools/TreasurePursuitSimulator/variants/16i/arm_bridge.c": "afced1146b72888eda257ade952d9f80d0d70310cb3fadf0e1cfff3c09d27e00",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "38ca4434357a06db3a331bfc410212569e4145acfb8b2c5f2490d7828dcf267d",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "a25ef68d93e4db06039b1e3baacc1bc544d0505bad8681835305417fcaa59d8d",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "3b79648e04817e0e7d8ba3e240b97ccb20d40fcdd4b39fb27780a24e0cb15c44",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.c": "50a1eb1766913b29eb2c6279785a1584266228958be64bd495c7cc5192eea7e4",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "a67d2dded35414a2b1a5e192ef7dbfe8fc2455b789aef6e01b29f18ce91467f5",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "9364061935b3fd8c5c0d74f08b8800e9445021101ed787252166fdb9c00a836c",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "74550828eb5f9c672c3c1e5bd65f1192e8a32c035eb1cc094e2fc77444a21079",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "5a24f5ed560b6494b9da50111ba1bcac58ea539b7e5464e10bd3d174f7a25e6e",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.h": "e60bc5ddf9ba25b726e7e130e588243575433cdcfe97acb12de3790c2a787cd2",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRolloutData.h": "e4a701ae2ffd01b35a86631c0c2565284f3c0be79a4d5b4cad2939af49cbeeff",
+    "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+  },
+  "results": [
+    {
+      "fixture": null,
+      "winner": "police",
+      "duration_s": 86.89053634043034
+    },
+    {
+      "fixture": null,
+      "winner": "police",
+      "duration_s": 67.51926178563431
+    },
+    {
+      "fixture": [
+        38,
+        "W",
+        40,
+        "W"
+      ],
+      "winner": "police",
+      "duration_s": 1.0019630402047204
+    },
+    {
+      "fixture": [
+        38,
+        "N",
+        40,
+        "W"
+      ],
+      "winner": "police",
+      "duration_s": 11.637253509466728
+    },
+    {
+      "fixture": [
+        62,
+        "E",
+        34,
+        "S"
+      ],
+      "winner": "police",
+      "duration_s": 6.721825437941481
+    },
+    {
+      "fixture": [
+        38,
+        "E",
+        21,
+        "S"
+      ],
+      "winner": "police",
+      "duration_s": 11.319620073269522
+    },
+    {
+      "fixture": [
+        38,
+        "E",
+        21,
+        "S"
+      ],
+      "winner": "police",
+      "duration_s": 2.0118179093986566
+    }
+  ]
+}

@@ -43,13 +43,13 @@ class PocketTests(unittest.TestCase):
         self.assertIsNone(g.block_pocket_exit(self.actor, self.belief))
         self.assertIsNone(g.pocket_block)
 
-    def test_past_last_sighting_continues_forward_to_straight_end(self):
+    def test_past_last_sighting_continues_forward_to_likely_branch(self):
         g = self.game
         self.actor.node, self.actor.facing, self.actor.last_node = '(6,5)', 'S', '(6,4)'
         self.belief.last_seen, self.belief.last_xy, self.belief.last_time = '(6,3)', (6,3), 29.9
         g.threat_active['P'] = True
         g.police_trail = {'node':'(6,3)', 'xy':(6,3), 'direction':'S', 'reached':False, 'last_time':29.9}
-        self.assertEqual(g.decide('P'), ('(6,6)', 'trail', '(6,9)'))
+        self.assertEqual(g.decide('P'), ('(6,6)', 'local_search', '(7,6)'))
 
     def test_resume_ahead_does_not_return_to_old_patrol_waypoint(self):
         g = self.game

@@ -1,0 +1,17 @@
+{
+  "note": "模板不是测量结果。填写真实批次、源记录序号、路线及两个计时边界之间的实测距离后才可标为 verified/calibrated。",
+  "intervals": [
+    {
+      "label": "第一次已知前进区间",
+      "session": null,
+      "start_sequence": null,
+      "end_sequence": null,
+      "segments": [{"id": "S001", "from": "N001", "to": "N002"}],
+      "entry_condition": "待填写：连续直行/起步/左转后/右转后",
+      "measured_interval_m": null,
+      "distance_calibrated": false,
+      "route_verified": false,
+      "boundary_note": ""
+    }
+  ]
+}

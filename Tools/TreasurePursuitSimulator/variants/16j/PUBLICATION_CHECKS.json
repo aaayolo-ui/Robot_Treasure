@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-13",
+  "scope": "Exported staged publication; offline only",
+  "published_source_hashes": 32,
+  "map_nodes": 88,
+  "map_segments": 106,
+  "replay_scenarios": 7,
+  "replay_frames": 22729,
+  "embedded_data_matches": true,
+  "log_sha256": "138576fbe7416f90fad63818e5d3d552f5463ef1cb8ddebf997868bcf0b09d12",
+  "dependency_imports": true,
+  "actual_c_checks": 11625,
+  "actual_c_failures": 0,
+  "uart_checks": 435,
+  "uart_failures": 0,
+  "base_simulation_tests": 128,
+  "logger_tests": 41,
+  "body_model_tests": 18,
+  "offline_dom_passed": true,
+  "hardware_verified": false,
+  "browser_layout_verified": false
+}

@@ -1,0 +1,8 @@
+{
+  "routes": 579,
+  "legs_checked": 7631,
+  "deterministic": true,
+  "table_bytes": 138860,
+  "max_candidates_per_root": 67,
+  "enumeration_capped": false
+}

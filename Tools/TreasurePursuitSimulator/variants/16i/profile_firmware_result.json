@@ -1,0 +1,25 @@
+{
+  "runs": [
+    {
+      "evidence": false,
+      "arm_instructions": 1179753,
+      "goal": 12,
+      "candidates": 39,
+      "models": 89,
+      "model_steps": 1676,
+      "entry_inferred": 0
+    },
+    {
+      "evidence": true,
+      "arm_instructions": 3125737,
+      "goal": 62,
+      "candidates": 39,
+      "models": 113,
+      "model_steps": 4271,
+      "entry_inferred": 1
+    }
+  ],
+  "binary": "STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/MDK-ARM/Thief16I_RolloutMinimax_FourLaser_Test/Thief16I_RolloutMinimax_FourLaser_Test.axf",
+  "binary_sha256": "6a460d2f32676a8a59b7d9d3388088c96afb82c874d5cef64e71a8519d7c051a",
+  "scope": "Actual fully linked Keil binary; dynamic ARM instructions on CPU emulator, not hardware cycles/time. All calls use pure algorithm APIs. The unchanged 100ms guard still needs board verification."
+}

@@ -10,6 +10,9 @@ class RefugeTests(unittest.TestCase):
     def setUpClass(cls):
         cls.track = TrackMap()
         cls.config = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
+        # Keep the exact physical assumptions of the user's original replay.
+        cls.config.pop('measured_motion', None)
+        cls.config.update(police_speed_m_s=1.95, thief_speed_m_s=1.95, turn90_s=.5, uturn_s=.5)
 
     def measured_game(self, own, facing, opponent, opponent_heading, **kwargs):
         game = Game(self.track, dict(self.config, miss_probability=0), **kwargs)
@@ -71,12 +74,16 @@ class RefugeTests(unittest.TestCase):
                 self.assertTrue(set(path) <= game.cycle_core)
                 self.assertIsNotNone(landmark_type(self.track, path[-1]))
 
-    def test_police_has_three_cells_while_thief_has_two(self):
+    def test_both_cars_detect_two_cells_not_three(self):
         game = Game(self.track, dict(self.config, miss_probability=0))
         game.robots['P'].node, game.robots['B'].node = '(6,3)', '(6,6)'
         game.observe()
-        self.assertTrue(game.beliefs['P'].seen)
+        self.assertFalse(game.beliefs['P'].seen)
         self.assertFalse(game.beliefs['B'].seen)
+        game.robots['B'].node = '(6,5)'
+        game.observe()
+        self.assertTrue(game.beliefs['P'].seen)
+        self.assertTrue(game.beliefs['B'].seen)
 
     def test_visible_empty_dead_end_is_cleared_without_entering(self):
         game = Game(self.track, dict(self.config, miss_probability=0))

@@ -1,0 +1,21 @@
+{
+  "scripts": 2,
+  "nodes": 88,
+  "segments": 106,
+  "node_click": true,
+  "segment_click": true,
+  "toggles": true,
+  "distinct_trails": true,
+  "hide_jump": true,
+  "decision_jump": true,
+  "scenario": true,
+  "capture_marker": true,
+  "export_matches": true,
+  "scaled_car_bodies": true,
+  "continuous_body_angle": true,
+  "envelope_toggle": true,
+  "turn_jump": true,
+  "contact_point_position": true,
+  "browser": false,
+  "scope": "Offline DOM/event smoke test. Browser layout and hardware remain unverified."
+}

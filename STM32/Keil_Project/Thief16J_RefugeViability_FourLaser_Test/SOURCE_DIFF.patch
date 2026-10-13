@@ -1,0 +1,302 @@
+--- 16I/.gitignore
++++ 16J/.gitignore
+@@ -1,6 +1,6 @@
+ MDK-ARM/Gray12_MapFullRoute_Calibration_Test/
+ MDK-ARM/build*.log
+-MDK-ARM/Thief16I_RolloutMinimax_FourLaser_Test/
++MDK-ARM/Thief16J_RefugeViability_FourLaser_Test/
+ 
+ Tests/build/
+ __pycache__/
+--- 16I/Algorithm/ThiefStrategy/ThiefRiskSearch.c
++++ 16J/Algorithm/ThiefStrategy/ThiefRiskSearch.c
+@@ -127,6 +127,7 @@
+   decision->approach_mask=0U;
+   decision->candidates_evaluated=0U;decision->model_rollouts=0U;
+   decision->forecast_contact_ms=0U;decision->terminal_escape_ms=0L;decision->planner_kind=0U;
++  decision->surviving_models=0U;decision->risk_band_ms=0U;decision->recovery_runway_ms=0U;
+   decision->model_steps=0UL;decision->forecast_clear=0U;decision->entry_inferred=0U;
+   threats=ThiefThreatModel_Prepare(now);
+   for(i=0U;i<THIEF_STATE_COUNT;i++) {
+--- 16I/Algorithm/ThiefStrategy/ThiefRiskSearch.h
++++ 16J/Algorithm/ThiefStrategy/ThiefRiskSearch.h
+@@ -20,6 +20,8 @@
+   uint8_t planner_kind;
+   uint32_t model_steps;
+   uint8_t forecast_clear,entry_inferred;
++  uint8_t surviving_models;
++  uint16_t risk_band_ms,recovery_runway_ms;
+ } ThiefDecision_t;
+ void ThiefRiskSearch_Init(void);
+ void ThiefRiskSearch_MarkExposed(uint16_t node,uint32_t now);
+--- 16I/Algorithm/ThiefStrategy/ThiefRollout.c
++++ 16J/Algorithm/ThiefStrategy/ThiefRollout.c
+@@ -25,6 +25,21 @@
+ static uint16_t entry_age;
+ static uint8_t entry_heading=4U;
+ 
++/* Sorted, conservative contact-time bands. Once the earliest danger band
++ * ties, preserve more complete-transfer hypotheses and more time before the
++ * next mandatory corner. Coverage is not a measured probability of winning. */
++static int8_t RiskOrder(const uint16_t *a,const uint16_t *b,uint8_t ac,uint8_t bc,
++                        uint16_t ar,uint16_t br) {
++  uint8_t k;
++  if(THIEF_ROLLOUT_RISK_TIERS) {
++    if(a[0]!=b[0]) return a[0]>b[0]?1:-1;
++    if(ac!=bc) return ac>bc?1:-1;
++    if(ar!=br) return ar>br?1:-1;
++  }
++  for(k=0U;k<THIEF_ROLLOUT_MODELS;k++) if(a[k]!=b[k]) return a[k]>b[k]?1:-1;
++  return 0;
++}
++
+ static int32_t Abs(int32_t x) {return x<0L?-x:x;}
+ static uint16_t S(uint16_t n,uint8_t h,uint8_t mode) {return (uint16_t)((n-1U)*8U+h*2U+mode);}
+ static uint32_t MoveMs(uint16_t mm,uint8_t mode,uint32_t speed) {
+@@ -306,7 +321,7 @@
+ uint8_t ThiefRollout_Select(uint16_t node,uint8_t body,uint8_t mask,uint16_t previous,uint32_t now,
+     uint16_t *path,uint16_t *count,uint8_t *mode,ThiefDecision_t *d) {
+   uint16_t a,z,i,best=0xFFFFU,evaluated=0U;int16_t px,py;
+-  uint8_t best_clear=0U,best_cool=1U;uint16_t best_contact=0U,best_time=65535U;
++  uint8_t best_clear=0U,best_cool=1U,best_coverage=0U;uint16_t best_runway=0U;uint16_t best_contact=0U,best_time=65535U;
+   int32_t best_escape=-0x7FFFFFFFL,best_gap=-1L;
+   uint16_t best_rank[THIEF_ROLLOUT_MODELS]={0};
+   if(!node || node>88U || body>3U || !path || !count || !mode || !d) return 0U;
+@@ -325,7 +340,10 @@
+     const RolloutRoute_t *r=&rollout_routes[i];uint16_t contact=65535U;uint8_t clear=1U,model,cool,pruned=0U;
+     uint16_t goal=rollout_nodes[r->offset+r->count-1U];
+     int32_t escape=0x7FFFFFFFL,gap=0x7FFFFFFFL;
+-    uint16_t rank[THIEF_ROLLOUT_MODELS];int8_t rank_order=0;
++    uint16_t rank[THIEF_ROLLOUT_MODELS];int8_t rank_order=0;uint8_t coverage=0U;
++    uint16_t runway=thief_straight_runway_mm[goal-1U][r->body];
++    uint16_t back=thief_straight_runway_mm[goal-1U][(r->body+2U)%4U];
++    if(back<runway) runway=back;
+     if(mask&(1U<<r->first)) continue;
+     cool=(uint8_t)(goal==previous || (exposed[goal-1U] && now-exposed_at[goal-1U]<THIEF_HIDE_COOLDOWN_MS));
+     for(model=0U;model<THIEF_ROLLOUT_MODELS;model++) {
+@@ -334,10 +352,12 @@
+        * clear; if even that vector loses, completing this candidate cannot
+        * change the maximin/leximin result. This is an exact pruning rule. */
+       uint8_t scenario=(uint8_t)(THIEF_ROLLOUT_MODELS-1U-model),k;
+-      uint16_t bound[THIEF_ROLLOUT_MODELS];int8_t order=0;
++      uint16_t bound[THIEF_ROLLOUT_MODELS];
+       Score s=Run(r,body,px,py,scenario<branches?THIEF_FORWARD_MM_S:THIEF_POLICE_MAX_MM_S,(uint8_t)(scenario%branches));
+       model_count++;if(!s.clear) clear=0U;
+-      rank[model]=s.clear?20001U:s.contact;
++      rank[model]=s.clear?20001U:THIEF_ROLLOUT_RISK_TIERS?
++          (uint16_t)(s.contact/THIEF_ROLLOUT_TIME_BUCKET_MS*THIEF_ROLLOUT_TIME_BUCKET_MS):s.contact;
++      if(s.clear) coverage++;
+       if(s.contact<contact) contact=s.contact;
+       if(s.escape<escape) escape=s.escape;if(s.gap<gap) gap=s.gap;
+       if(THIEF_ROLLOUT_PRUNE && best!=0xFFFFU) {
+@@ -347,10 +367,9 @@
+           while(j && bound[j-1U]>value) {bound[j]=bound[j-1U];j--;}
+           bound[j]=value;
+         }
+-        for(k=0U;k<THIEF_ROLLOUT_MODELS;k++) if(bound[k]!=best_rank[k]) {
+-          order=(int8_t)(bound[k]>best_rank[k]?1:-1);break;
+-        }
+-        if((best_clear && !clear) || (!best_clear && order<0)) {pruned=1U;break;}
++        if((best_clear && !clear) || (!best_clear && RiskOrder(bound,best_rank,
++            (uint8_t)(coverage+THIEF_ROLLOUT_MODELS-1U-model),best_coverage,
++            runway,best_runway)<0)) {pruned=1U;break;}
+       }
+     }
+     evaluated++;
+@@ -363,19 +382,17 @@
+       while(j && rank[j-1U]>value) {rank[j]=rank[j-1U];j--;}
+       rank[j]=value;
+     }
+-    for(model=0U;model<THIEF_ROLLOUT_MODELS;model++) if(rank[model]!=best_rank[model]) {
+-      rank_order=(int8_t)(rank[model]>best_rank[model]?1:-1);break;
+-    }
++    rank_order=RiskOrder(rank,best_rank,coverage,best_coverage,runway,best_runway);
+     if(!clear) escape=0L;
+-    /* Lexicographic maximin: complete transfer clear first, then worst contact
+-     * delay if trapped; terminal next-escape slack; exposure; distance/time.
+-     * No sum of arbitrary risk weights can buy a predicted contact away. */
++    /* All-model clear transfers retain 16I's dynamic terminal-slack ranking.
++     * Only degraded decisions use the bounded uncertainty/coverage hierarchy.
++     * Long straight distance alone must never displace a clear transfer. */
+     if(best==0xFFFFU || clear>best_clear || (clear==best_clear &&
+        ((!clear && rank_order>0) || ((clear || rank_order==0) &&
+        (escape>best_escape || (escape==best_escape &&
+        (cool<best_cool || (cool==best_cool &&
+        (gap>best_gap || (gap==best_gap && r->time_ms<best_time)))))))))) {
+-      best=i;best_clear=clear;best_contact=contact;best_escape=escape;best_cool=cool;best_gap=gap;best_time=r->time_ms;
++      best=i;best_coverage=coverage;best_runway=runway;best_clear=clear;best_contact=contact;best_escape=escape;best_cool=cool;best_gap=gap;best_time=r->time_ms;
+       memcpy(best_rank,rank,sizeof(best_rank));
+     }
+   }
+@@ -394,11 +411,17 @@
+     d->terminal_escape_ms=best_escape;d->planner_kind=1U;
+     d->model_steps=model_steps;d->forecast_clear=best_clear;
+     d->entry_inferred=(uint8_t)(entry_heading<4U);
++    d->surviving_models=best_coverage;d->risk_band_ms=best_rank[0];
++    d->recovery_runway_ms=(uint16_t)((uint32_t)best_runway*1000UL/
++        (THIEF_FORWARD_MM_S>THIEF_REVERSE_MM_S?THIEF_FORWARD_MM_S:THIEF_REVERSE_MM_S));
+   }
+   return 1U;
+ }
+ uint32_t ThiefRollout_WorkBytes(void) {return (uint32_t)(sizeof(exposed_at)+sizeof(exposed)+sizeof(model_steps)+sizeof(model_count)+sizeof(entry)+sizeof(entry_age)+sizeof(entry_heading));}
+ #ifdef THIEF_ROLLOUT_TEST
++int8_t ThiefRollout_TestOrder(const uint16_t *a,const uint16_t *b,uint8_t ac,uint8_t bc,uint16_t ar,uint16_t br) {
++  return RiskOrder(a,b,ac,bc,ar,br);
++}
+ uint8_t ThiefRollout_TestView(int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
+   Box a={0,0,95,99},b0={x0,y0,95,99},b1={x1,y1,95,99};
+   return VisibleDuring(a,a,b0,b1);
+--- 16I/Algorithm/ThiefStrategy/ThiefRollout.h
++++ 16J/Algorithm/ThiefStrategy/ThiefRollout.h
+@@ -12,6 +12,7 @@
+     uint8_t *mode,ThiefDecision_t *decision);
+ uint32_t ThiefRollout_WorkBytes(void);
+ #ifdef THIEF_ROLLOUT_TEST
++int8_t ThiefRollout_TestOrder(const uint16_t *a,const uint16_t *b,uint8_t ac,uint8_t bc,uint16_t ar,uint16_t br);
+ uint8_t ThiefRollout_TestView(int32_t x0,int32_t y0,int32_t x1,int32_t y1);
+ int32_t ThiefRollout_TestSweep(int32_t x0,int32_t y0,int32_t x1,int32_t y1,uint8_t rotating);
+ #endif
+--- 16I/Algorithm/ThiefStrategy/ThiefStrategyConfig.h
++++ 16J/Algorithm/ThiefStrategy/ThiefStrategyConfig.h
+@@ -4,9 +4,21 @@
+ #define THIEF_STRATEGY_VERSION_16G 1
+ #define THIEF_STRATEGY_VERSION_16H 1
+ #define THIEF_STRATEGY_VERSION_16I 1
++#define THIEF_STRATEGY_VERSION_16J 1
+ #ifndef THIEF_ROLLOUT_ENABLED
+ #define THIEF_ROLLOUT_ENABLED 1
+ #endif
++#ifndef THIEF_ROLLOUT_RISK_TIERS
++#define THIEF_ROLLOUT_RISK_TIERS 1
++#endif
++#ifndef THIEF_ROLLOUT_TIME_BUCKET_MS
++#define THIEF_ROLLOUT_TIME_BUCKET_MS 120U /* same as timing guard; a planning assumption, not measurement precision */
++#endif
++
++#if THIEF_ROLLOUT_TIME_BUCKET_MS < 1
++#error Contact time bucket must be positive
++#endif
++
+ /* Rollout advances at committed-motion phase endpoints, with interval checks. */
+ #define THIEF_ROLLOUT_HOLD_MS 340UL
+ #define THIEF_ROLLOUT_MAX_MS 20000UL
+--- 16I/MDK-ARM/RTE/_Thief16I_RolloutMinimax_FourLaser_Test/RTE_Components.h
++++ 16J/MDK-ARM/RTE/_Thief16J_RefugeViability_FourLaser_Test/RTE_Components.h
+@@ -3,8 +3,8 @@
+  * Auto generated Run-Time-Environment Component Configuration File
+  *      *** Do not modify ! ***
+  *
+- * Project: 'Thief16I_RolloutMinimax_FourLaser_Test' 
+- * Target:  'Thief16I_RolloutMinimax_FourLaser_Test' 
++ * Project: 'Thief16J_RefugeViability_FourLaser_Test' 
++ * Target:  'Thief16J_RefugeViability_FourLaser_Test' 
+  */
+ 
+ #ifndef RTE_COMPONENTS_H
+--- 16I/MDK-ARM/Thief16I_RolloutMinimax_FourLaser_Test.uvprojx
++++ 16J/MDK-ARM/Thief16J_RefugeViability_FourLaser_Test.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Thief16I_RolloutMinimax_FourLaser_Test</TargetName>
++      <TargetName>Thief16J_RefugeViability_FourLaser_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Thief16I_RolloutMinimax_FourLaser_Test\</OutputDirectory>
+-          <OutputName>Thief16I_RolloutMinimax_FourLaser_Test</OutputName>
++          <OutputDirectory>Thief16J_RefugeViability_FourLaser_Test\</OutputDirectory>
++          <OutputName>Thief16J_RefugeViability_FourLaser_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -860,7 +860,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0" />
+         <targetInfos>
+-          <targetInfo name="Thief16I_RolloutMinimax_FourLaser_Test" />
++          <targetInfo name="Thief16J_RefugeViability_FourLaser_Test" />
+         </targetInfos>
+       </component>
+     </components>
+--- 16I/Tests/test_algorithms.c
++++ 16J/Tests/test_algorithms.c
+@@ -248,6 +248,13 @@
+       check(d.model_rollouts>=d.candidates_evaluated &&
+             d.model_rollouts<=d.candidates_evaluated*THIEF_ROLLOUT_MODELS);
+       check(d.model_steps>0 && d.model_steps<20000UL);
++      check(d.surviving_models<=THIEF_ROLLOUT_MODELS);
++      check(d.forecast_clear==(d.surviving_models==THIEF_ROLLOUT_MODELS));
++      check(d.recovery_runway_ms>0U);
++      if(!d.forecast_clear) {
++        check(d.risk_band_ms<=d.forecast_contact_ms);
++        check(d.forecast_contact_ms-d.risk_band_ms<THIEF_ROLLOUT_TIME_BUCKET_MS);
++      }
+       check(!d.entry_inferred && count>1 && count<=28);
+       check(path[0]==38 && path[count-1]==d.goal_node);
+       check(ThiefRiskSearch_HideSafe(d.goal_node));
+@@ -307,6 +314,20 @@
+   check(ThiefRollout_TestView(400,-400,400,400));
+   check(!ThiefRollout_TestView(601,-10,601,10));
+   check(!ThiefRollout_TestView(300,300,400,400));
++  /* Priority invariants: do not buy earlier contact with extra model coverage;
++   * tied earliest bands permit coverage, then executable runway, to dominate
++   * uncertain second/third contact predictions. */
++  {
++    const uint16_t a[6]={960,1200,20001,20001,20001,20001};
++    const uint16_t b[6]={840,20001,20001,20001,20001,20001};
++    const uint16_t c[6]={960,20001,20001,20001,20001,20001};
++    const uint16_t d[6]={960,1320,20001,20001,20001,20001};
++    check(ThiefRollout_TestOrder(a,b,4,5,300,600)>0);
++    check(ThiefRollout_TestOrder(a,c,4,5,900,300)<0);
++    check(ThiefRollout_TestOrder(a,d,4,4,600,300)>0);
++    check(ThiefRollout_TestOrder(a,d,4,4,300,300)<0);
++    check(ThiefRollout_TestOrder(a,a,4,4,300,300)==0);
++  }
+   test_done=1;
+   while(1) {}
+ }
+--- 16I/Thief16I_RolloutMinimax_FourLaser_Test.ioc
++++ 16J/Thief16J_RefugeViability_FourLaser_Test.ioc
+@@ -162,8 +162,8 @@
+ ProjectManager.NoMain=false
+ ProjectManager.PreviousToolchain=
+ ProjectManager.ProjectBuild=false
+-ProjectManager.ProjectFileName=Thief16I_RolloutMinimax_FourLaser_Test.ioc
+-ProjectManager.ProjectName=Thief16I_RolloutMinimax_FourLaser_Test
++ProjectManager.ProjectFileName=Thief16J_RefugeViability_FourLaser_Test.ioc
++ProjectManager.ProjectName=Thief16J_RefugeViability_FourLaser_Test
+ ProjectManager.ProjectStructure=
+ ProjectManager.RegisterCallBack=
+ ProjectManager.StackSize=0x400
+--- 16I/User/App_ThiefStrategy.c
++++ 16J/User/App_ThiefStrategy.c
+@@ -1097,7 +1097,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_SendString("Thief16I_RolloutMinimax_FourLaser_Test\r\n");
++  UartDebug_SendString("Thief16J_RefugeViability_FourLaser_Test\r\n");
+   UartDebug_Printf("MAP_PARAMS BASE_RPM_X10=%ld CONTROL_MS=%u TURN_PWM=%ld SPIN_TARGET_X100=%ld WHEEL_CIRCUMFERENCE_UM=%lu\r\n",
+       (long)LINE_FOLLOW_PID_BASE_RPM_X10, (unsigned)LINE_FOLLOW_PID_CONTROL_PERIOD_MS,
+       (long)ROUTE_TURN_EQUAL_PWM, (long)ROUTE_TURN_TARGET_ANGLE_X100,
+@@ -1239,11 +1239,12 @@
+         (unsigned)d->goal_node,(unsigned)d->parking_heading,
+         (unsigned)d->escape_exits,(unsigned)d->exit_branch_ms);
+       if(d->planner_kind) {
+-        UartDebug_Printf("ROLLOUT_V6 KIND=%u CAND=%u MODELS=%u CLEAR=%u HIT_MS=%u EXIT_MS=%ld STEPS=%lu ENTRY=%u\r\n",
++        UartDebug_Printf("RISK_TIERS_V7 KIND=%u CAND=%u MODELS=%u CLEAR=%u HIT_MS=%u EXIT_MS=%ld STEPS=%lu ENTRY=%u COVER=%u BAND_MS=%u RUNWAY_MS=%u\r\n",
+           (unsigned)d->planner_kind,(unsigned)d->candidates_evaluated,
+           (unsigned)d->model_rollouts,(unsigned)d->forecast_clear,
+           (unsigned)d->forecast_contact_ms,(long)d->terminal_escape_ms,
+-          (unsigned long)d->model_steps,(unsigned)d->entry_inferred);
++          (unsigned long)d->model_steps,(unsigned)d->entry_inferred,
++          (unsigned)d->surviving_models,(unsigned)d->risk_band_ms,(unsigned)d->recovery_runway_ms);
+       } else {
+         UartDebug_Printf("TURN_WINDOW_V5 FIRST_RISK_MS=%u APPROACH_MASK=%u HORIZON_MS=%lu ENVELOPE_MM=%lu\r\n",
+           (unsigned)d->first_pause_risk_ms,(unsigned)d->approach_mask,

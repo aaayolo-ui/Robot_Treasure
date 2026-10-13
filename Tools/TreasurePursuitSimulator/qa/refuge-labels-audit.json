@@ -8,81 +8,37 @@
   "note": "Seed 7 only. Sampled frame checks supplement continuous collision unit tests; they do not prove optimal play or physical performance.",
   "cases": [
     {
-      "scenario": "两格检测 · 藏身后智能逃跑",
-      "duration_s": 180,
-      "winner": "thief",
-      "continued_contact_frames": 0,
-      "pursuit_abandonments": 0,
-      "sampled_short_ping_pong": 0,
-      "hiding_frames_checked": 10,
-      "hides_checked": 101,
-      "escape_plans_checked": 101
-    },
-    {
-      "scenario": "三格检测 · 藏身后智能逃跑",
-      "duration_s": 180,
-      "winner": "thief",
-      "continued_contact_frames": 0,
-      "pursuit_abandonments": 0,
-      "sampled_short_ping_pong": 0,
-      "hiding_frames_checked": 9,
-      "hides_checked": 110,
-      "escape_plans_checked": 110
-    },
-    {
-      "scenario": "两格检测 · 藏身后预设路线",
-      "duration_s": 180,
-      "winner": "thief",
-      "continued_contact_frames": 0,
-      "pursuit_abandonments": 0,
-      "sampled_short_ping_pong": 0,
-      "hiding_frames_checked": 10,
-      "hides_checked": 101,
-      "escape_plans_checked": 101
-    },
-    {
-      "scenario": "三格检测 · 藏身后预设路线",
-      "duration_s": 180,
-      "winner": "thief",
-      "continued_contact_frames": 0,
-      "pursuit_abandonments": 0,
-      "sampled_short_ping_pong": 0,
-      "hiding_frames_checked": 9,
-      "hides_checked": 110,
-      "escape_plans_checked": 110
-    },
-    {
-      "scenario": "两格检测 · 多路口连续逃跑",
-      "duration_s": 40.126923,
+      "scenario": "两格检测 · 藏匿—转移—再藏匿",
+      "duration_s": 173.78877,
       "winner": "police",
       "continued_contact_frames": 0,
       "pursuit_abandonments": 0,
       "sampled_short_ping_pong": 0,
-      "hiding_frames_checked": 0,
-      "hides_checked": 0,
-      "escape_plans_checked": 17
+      "hiding_frames_checked": 796,
+      "hides_checked": 13,
+      "escape_plans_checked": 13
     },
     {
-      "scenario": "两格检测 · 警方快20% · 连续逃跑",
-      "duration_s": 11.869231,
+      "scenario": "两格检测 · 警方快20% · 藏点转移",
+      "duration_s": 17.164667,
       "winner": "police",
       "continued_contact_frames": 0,
       "pursuit_abandonments": 0,
       "sampled_short_ping_pong": 0,
-      "hiding_frames_checked": 0,
-      "hides_checked": 0,
-      "escape_plans_checked": 5
+      "hiding_frames_checked": 22,
+      "hides_checked": 2,
+      "escape_plans_checked": 2
     },
     {
-      "scenario": "两格检测 · 定点藏匿与下一藏点转移",
-      "duration_s": 180,
-      "winner": "thief",
+      "scenario": "两格检测 · 动作偏慢P90 · 定点藏匿",
+      "duration_s": 64.481137,
+      "winner": "police",
       "continued_contact_frames": 0,
       "pursuit_abandonments": 0,
       "sampled_short_ping_pong": 0,
-      "hiding_frames_checked": 10,
-      "hides_checked": 120,
-      "escape_plans_checked": 120
+      "hiding_frames_checked": 88,
+      "hides_checked": 9,
+      "escape_plans_checked": 9
     }
   ]
 }

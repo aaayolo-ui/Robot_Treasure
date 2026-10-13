@@ -1,0 +1,10 @@
+New firmware files: 178; new replay files: 34; new Docs/15: 1.
+No existing user file edited. Old 16E/16F baseline hashes: 230/230 unchanged.
+Derived differences from the copied 16E project: 12 files, +287/-27 lines.
+Source rename/config/map metadata/score/diagnostic/test differences are listed in SOURCE_CHANGES.json and SOURCE_DIFF.patch.
+Scoped git diff is empty because this task only adds new untracked files; no staging.
+Keil rebuild: 0 errors, 0 warnings; actual Cortex-M3 C checks: 10802 passed.
+Five contact/route scenarios and offline DOM/controls passed; real browser/hardware untested.
+Full-match same-speed regression: 37.784117 s baseline versus 28.532011 s experiment.
+Police +20%: 25.426029 s baseline versus 25.761864 s experiment; zero thief wins.
+16F baseline retained. No git add/commit/push, MCU flashing or real motor operation.

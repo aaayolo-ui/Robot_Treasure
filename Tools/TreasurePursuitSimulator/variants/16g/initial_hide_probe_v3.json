@@ -1,0 +1,280 @@
+{
+  "seeds": [
+    7,
+    8
+  ],
+  "runs": [
+    {
+      "variant": "initial_N012",
+      "factor": 1.0,
+      "seed": 7,
+      "duration_s": 17.460866366829567,
+      "winner": "police",
+      "initial_hide": "N012",
+      "initial_parking": "W",
+      "faults": 0,
+      "goals": [
+        "N012",
+        "N011"
+      ],
+      "arrived_hides": 1
+    },
+    {
+      "variant": "initial_N012",
+      "factor": 1.2,
+      "seed": 7,
+      "duration_s": 15.58005534087187,
+      "winner": "police",
+      "initial_hide": "N012",
+      "initial_parking": "W",
+      "faults": 0,
+      "goals": [
+        "N012",
+        "N011"
+      ],
+      "arrived_hides": 1
+    },
+    {
+      "variant": "initial_N023",
+      "factor": 1.0,
+      "seed": 7,
+      "duration_s": 21.042895317512475,
+      "winner": "police",
+      "initial_hide": "N023",
+      "initial_parking": "S",
+      "faults": 0,
+      "goals": [
+        "N023",
+        "N011",
+        "N038"
+      ],
+      "arrived_hides": 2
+    },
+    {
+      "variant": "initial_N023",
+      "factor": 1.2,
+      "seed": 7,
+      "duration_s": 18.872636619272864,
+      "winner": "police",
+      "initial_hide": "N023",
+      "initial_parking": "S",
+      "faults": 0,
+      "goals": [
+        "N023",
+        "N011",
+        "N038"
+      ],
+      "arrived_hides": 2
+    },
+    {
+      "variant": "initial_N038",
+      "factor": 1.0,
+      "seed": 7,
+      "duration_s": 28.53201110212181,
+      "winner": "police",
+      "initial_hide": "N038",
+      "initial_parking": "E",
+      "faults": 0,
+      "goals": [
+        "N038",
+        "N059",
+        "N011"
+      ],
+      "arrived_hides": 2
+    },
+    {
+      "variant": "initial_N038",
+      "factor": 1.2,
+      "seed": 7,
+      "duration_s": 25.763666899968307,
+      "winner": "police",
+      "initial_hide": "N038",
+      "initial_parking": "E",
+      "faults": 0,
+      "goals": [
+        "N038",
+        "N059",
+        "N011"
+      ],
+      "arrived_hides": 2
+    },
+    {
+      "variant": "initial_N062",
+      "factor": 1.0,
+      "seed": 7,
+      "duration_s": 11.966931641443633,
+      "winner": "police",
+      "initial_hide": "N062",
+      "initial_parking": "E",
+      "faults": 0,
+      "goals": [
+        "N062"
+      ],
+      "arrived_hides": 0
+    },
+    {
+      "variant": "initial_N062",
+      "factor": 1.2,
+      "seed": 7,
+      "duration_s": 72.26037689637528,
+      "winner": "police",
+      "initial_hide": "N062",
+      "initial_parking": "E",
+      "faults": 0,
+      "goals": [
+        "N062",
+        "N038"
+      ],
+      "arrived_hides": 1
+    }
+  ],
+  "summary": [
+    {
+      "variant": "initial_N012",
+      "factor": 1.0,
+      "mean_s": 17.460866366829567,
+      "thief_wins": 0,
+      "faults": 0
+    },
+    {
+      "variant": "initial_N012",
+      "factor": 1.2,
+      "mean_s": 15.58005534087187,
+      "thief_wins": 0,
+      "faults": 0
+    },
+    {
+      "variant": "initial_N023",
+      "factor": 1.0,
+      "mean_s": 21.042895317512475,
+      "thief_wins": 0,
+      "faults": 0
+    },
+    {
+      "variant": "initial_N023",
+      "factor": 1.2,
+      "mean_s": 18.872636619272864,
+      "thief_wins": 0,
+      "faults": 0
+    },
+    {
+      "variant": "initial_N038",
+      "factor": 1.0,
+      "mean_s": 28.53201110212181,
+      "thief_wins": 0,
+      "faults": 0
+    },
+    {
+      "variant": "initial_N038",
+      "factor": 1.2,
+      "mean_s": 25.763666899968307,
+      "thief_wins": 0,
+      "faults": 0
+    },
+    {
+      "variant": "initial_N062",
+      "factor": 1.0,
+      "mean_s": 11.966931641443633,
+      "thief_wins": 0,
+      "faults": 0
+    },
+    {
+      "variant": "initial_N062",
+      "factor": 1.2,
+      "mean_s": 72.26037689637528,
+      "thief_wins": 0,
+      "faults": 0
+    }
+  ],
+  "source_hashes": {
+    "initial_N012": {
+      "Tools/TreasurePursuitSimulator/variants/16g/arm_bridge.c": "021989ec161f33fa758509f24afa2280848ebf52d2f42f2fcac23b435cc1a0fb",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3ee6169fb5c0a9335f86a217170ea8c31715c3d12e1129a6695eb6293208235a",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "66370c2ec8ae8975364c8208854ce310bec2bd50fe97da0e74b855578e366283",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "064192545003c81c372648328475f57e4d2f1a114152bf869a06d0fe13097232",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "8c254d0ec14311bc5c29cb1a7741cd84326a9b92a57cbcc5778f2b85a06005e1",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "e3242cd320cd2711e3bff9932b6d10024ed6cee6e69cbcb6457c862c51c783f0",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "1ef089848a65f4856d292444ddca3cd296ddc7c908215e3d89b3515c41070978",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "769b2a17e26cc45a5558a714ae86783982237be5e7837caef830156ed1d7e1fd",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "5a24f5ed560b6494b9da50111ba1bcac58ea539b7e5464e10bd3d174f7a25e6e",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+    },
+    "initial_N023": {
+      "Tools/TreasurePursuitSimulator/variants/16g/arm_bridge.c": "021989ec161f33fa758509f24afa2280848ebf52d2f42f2fcac23b435cc1a0fb",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3ee6169fb5c0a9335f86a217170ea8c31715c3d12e1129a6695eb6293208235a",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "66370c2ec8ae8975364c8208854ce310bec2bd50fe97da0e74b855578e366283",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "064192545003c81c372648328475f57e4d2f1a114152bf869a06d0fe13097232",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "8c254d0ec14311bc5c29cb1a7741cd84326a9b92a57cbcc5778f2b85a06005e1",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "e3242cd320cd2711e3bff9932b6d10024ed6cee6e69cbcb6457c862c51c783f0",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "1ef089848a65f4856d292444ddca3cd296ddc7c908215e3d89b3515c41070978",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "769b2a17e26cc45a5558a714ae86783982237be5e7837caef830156ed1d7e1fd",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "5a24f5ed560b6494b9da50111ba1bcac58ea539b7e5464e10bd3d174f7a25e6e",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+    },
+    "initial_N038": {
+      "Tools/TreasurePursuitSimulator/variants/16g/arm_bridge.c": "021989ec161f33fa758509f24afa2280848ebf52d2f42f2fcac23b435cc1a0fb",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3ee6169fb5c0a9335f86a217170ea8c31715c3d12e1129a6695eb6293208235a",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "66370c2ec8ae8975364c8208854ce310bec2bd50fe97da0e74b855578e366283",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "064192545003c81c372648328475f57e4d2f1a114152bf869a06d0fe13097232",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "8c254d0ec14311bc5c29cb1a7741cd84326a9b92a57cbcc5778f2b85a06005e1",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "e3242cd320cd2711e3bff9932b6d10024ed6cee6e69cbcb6457c862c51c783f0",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "1ef089848a65f4856d292444ddca3cd296ddc7c908215e3d89b3515c41070978",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "769b2a17e26cc45a5558a714ae86783982237be5e7837caef830156ed1d7e1fd",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "5a24f5ed560b6494b9da50111ba1bcac58ea539b7e5464e10bd3d174f7a25e6e",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+    },
+    "initial_N062": {
+      "Tools/TreasurePursuitSimulator/variants/16g/arm_bridge.c": "021989ec161f33fa758509f24afa2280848ebf52d2f42f2fcac23b435cc1a0fb",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3ee6169fb5c0a9335f86a217170ea8c31715c3d12e1129a6695eb6293208235a",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "66370c2ec8ae8975364c8208854ce310bec2bd50fe97da0e74b855578e366283",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "064192545003c81c372648328475f57e4d2f1a114152bf869a06d0fe13097232",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "8c254d0ec14311bc5c29cb1a7741cd84326a9b92a57cbcc5778f2b85a06005e1",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "e3242cd320cd2711e3bff9932b6d10024ed6cee6e69cbcb6457c862c51c783f0",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "1ef089848a65f4856d292444ddca3cd296ddc7c908215e3d89b3515c41070978",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "769b2a17e26cc45a5558a714ae86783982237be5e7837caef830156ed1d7e1fd",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "5a24f5ed560b6494b9da50111ba1bcac58ea539b7e5464e10bd3d174f7a25e6e",
+      "STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+    }
+  },
+  "body_model": {
+    "version": "16F-body-turn-v1",
+    "dimensions_status": "用户确认采用资料名义值，未实测整车外包络",
+    "bodies": {
+      "P": {
+        "length_m": 0.19,
+        "width_m": 0.198
+      },
+      "B": {
+        "length_m": 0.19,
+        "width_m": 0.198
+      }
+    },
+    "turn": {
+      "brake_fraction": 0.24,
+      "pivot_angle_deg": 45.0,
+      "profile": "smoothstep",
+      "center_path": "fixed_at_track_node",
+      "status": "连续角度的差速原地转向近似；制动占比和角速度曲线未实测，重新识线位移未建模"
+    },
+    "collision": {
+      "contact_tolerance_m": 1e-07,
+      "advancement_safety_factor": 0.9,
+      "max_iterations": 20000,
+      "method": "oriented_rectangle_SAT_conservative_advancement"
+    },
+    "frame_period_s": 0.02
+  },
+  "scope": "Same continuous rectangle judge, limited sensors, police policy and speed parameters; development seeds only."
+}

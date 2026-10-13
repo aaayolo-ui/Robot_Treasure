@@ -1,0 +1,77 @@
+{
+  "baseline_files_unchanged": 6418,
+  "c_source_hashes_verified": 13,
+  "nodes": 88,
+  "segments": 106,
+  "candidate_hides": 4,
+  "map_and_car_physics_unchanged": true,
+  "hardware_control_core_vendor_system_files_unchanged": 117,
+  "duplicate_project_sources": false,
+  "keil_errors": 0,
+  "keil_warnings": 0,
+  "actual_c_checks": 11170,
+  "algorithm_workspace_bytes": 14681,
+  "comparison_runs": 27,
+  "cases": [
+    {
+      "label": "完整开局 · 多出口藏匿 · 双方同速",
+      "duration_s": 35.56548539948172,
+      "winner": "police",
+      "terminal_body_contact": true,
+      "no_earlier_overlap": true,
+      "no_planner_fault": true
+    },
+    {
+      "label": "完整开局 · 多出口藏匿 · 警方快20%",
+      "duration_s": 33.19323307385856,
+      "winner": "police",
+      "terminal_body_contact": true,
+      "no_earlier_overlap": true,
+      "no_planner_fault": true
+    },
+    {
+      "label": "不利停车对照 · N038同轴近距追击",
+      "duration_s": 1.0019630402047204,
+      "winner": "police",
+      "terminal_body_contact": true,
+      "no_earlier_overlap": true,
+      "no_planner_fault": true
+    },
+    {
+      "label": "朝向对照 · N038纵向停车 · 右侧来车",
+      "duration_s": 6.344996959252783,
+      "winner": "police",
+      "terminal_body_contact": true,
+      "no_earlier_overlap": true,
+      "no_planner_fault": true
+    },
+    {
+      "label": "不利停车对照 · N062后方来车后的强制拐弯",
+      "duration_s": 6.721825437941481,
+      "winner": "police",
+      "terminal_body_contact": true,
+      "no_earlier_overlap": true,
+      "no_planner_fault": true
+    },
+    {
+      "label": "换线专项 · N038横向停车 · 上方两格来车",
+      "duration_s": 91.2979927805055,
+      "winner": "police",
+      "terminal_body_contact": true,
+      "no_earlier_overlap": true,
+      "no_planner_fault": true
+    },
+    {
+      "label": "换线专项 · N038横向停车 · 上方来车快20%",
+      "duration_s": 2.0118179093986566,
+      "winner": "police",
+      "terminal_body_contact": true,
+      "no_earlier_overlap": true,
+      "no_planner_fault": true
+    }
+  ],
+  "browser": false,
+  "hardware": false,
+  "status": "仅编译通过，尚未完成硬件验证",
+  "scope": "Offline Cortex-M3 algorithm, geometry and page script checks; no physical validation."
+}

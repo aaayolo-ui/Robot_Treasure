@@ -40,7 +40,7 @@
 <div class="timeline"><input id="timeline" type="range" min="0" value="0" step="1" aria-label="回放时间"><span id="time" class="time"></span></div>
 <p id="detail" class="detail"></p>
 <p id="metrics" class="metrics"></p>
-<p class="note">画面显示双方位置仅用于复盘。扇形表示两格或三格的有限检测，橙色圆环标记藏身目标，浅橙点线表示当前逃跑计划。路线核查只使用已检测的位置，无法排除未检测到的交会。地图黑线是道路。</p>
+<p class="note">画面显示双方位置仅用于复盘。扇形表示双方两格的有限检测，橙色圆环标记藏身目标，浅橙点线表示当前逃跑计划。路线核查只使用已检测的位置，无法排除未检测到的交会。地图黑线是道路。</p>
 <h2>当前参数和结果</h2>
 <p id="parameters" class="note"></p>
 <div class="tables"><table><thead><tr><th>场景</th><th>警 / 偷速度</th><th>运行数</th><th>警方胜</th><th>小偷胜</th><th>平均持续</th><th>逃跑最长直行</th></tr></thead><tbody id="summary"></tbody></table></div>
@@ -54,7 +54,7 @@
   const report=JSON.parse(document.getElementById("report-data").textContent);
   const el=id=>document.getElementById(id), select=el("scenario"), svg=el("map"), slider=el("timeline");
   const ns="http://www.w3.org/2000/svg", phases=["路口决策","转向等待","沿线行驶","取宝确认","短暂守候","停靠警戒","预先调整行进方向","前进／后退换向等待"];
-  const reasons=["最快路线取宝","固定回路","沿已选路线撤离","检测后立即追踪","检测后预测拦截","短暂守候","覆盖未检查藏点","提前封堵出口","向下一分岔转移","前往藏身点","藏身警戒","朝向撤离方向","检测后沿路线撤离","按预定路线巡逻","按预设路线规避","漏检后沿最后轨迹查找","检查未覆盖死路","转移到下一个藏点"];
+  const reasons=["最快路线取宝","固定回路","沿已选路线撤离","检测后立即追踪","检测后预测拦截","短暂守候","覆盖未检查藏点","提前封堵出口","向下一分岔转移","前往藏身点","藏身警戒","朝向撤离方向","检测后沿路线撤离","按预定路线巡逻","按预设路线规避","漏检后沿最后轨迹查找","检查未覆盖死路","转移到下一个藏点","沿线索排查可能藏身区","排查线索区死角"];
   const outcomes={police:"警方胜",thief:"小偷胜",draw:"平局",judge:"需裁判判定"};
   const endReasons={capture_before_pickup:"取宝前接触抓捕",capture_after_pickup:"取宝后接触抓捕并缴得",police_pickup:"警方先取宝",survived_timeout:"小偷持宝到限时",no_treasure_timeout:"到限时无人取宝",simultaneous_pickup:"同时取宝，模型不擅自判胜"};
   let match=report.replays[0], index=0, playing=false, lastStamp=null, replayTime=0;
@@ -63,9 +63,20 @@
     info:el("map-info"),picker:el("node-picker"),download:el("download-map"),viewport:el("map-viewport")
   }, ()=>render(), ()=>{playing=false;el("play").textContent="播放";});
   report.replays.forEach((m,i)=>{const option=document.createElement("option");option.value=i;option.textContent=m.label;select.append(option);});
-  for(const row of report.summary){const tr=document.createElement("tr");for(const value of [row.scenario,`${row.police_speed_m_s} / ${row.thief_speed_m_s} m/s`,row.runs,row.police_wins,row.thief_wins,`${row.mean_duration_s.toFixed(1)} s`,`${row.mean_max_escape_straight_m.toFixed(2)} m`]){const td=document.createElement("td");td.textContent=value;tr.append(td);}el("summary").append(tr);}
+  for(const row of report.summary){const tr=document.createElement("tr");for(const value of [row.scenario,`${row.police_speed_m_s.toFixed(3)} / ${row.thief_speed_m_s.toFixed(3)} m/s`,row.runs,row.police_wins,row.thief_wins,`${row.mean_duration_s.toFixed(1)} s`,`${row.mean_max_escape_straight_m.toFixed(2)} m`]){const td=document.createElement("td");td.textContent=value;tr.append(td);}el("summary").append(tr);}
   const c=report.config;
-  el("intro").textContent=`转弯、后退换向均 ${c.turn90_s} 秒，取宝不停。警方统一三格检测，沿选定巡查段持续扫描，检出立即追踪；场景中的“两格／三格”指小偷检测距离。小偷沿选定路线撤到下一个藏点，检测到新危险时才切换路线。`;
+  const turnP=c.motion_profiles?.P?.turn90_s??c.turn90_s, turnB=c.motion_profiles?.B?.turn90_s??c.turn90_s;
+  const fmt=value=>Number(value).toFixed(3);
+  function motionText(m){
+    const model=m.motion_parameters??c.measured_motion;
+    if(c.measured_motion&&model){
+      return `转弯额外代价 ${fmt(model.turn90_s??c.turn90_s)} s；前进→倒车 ${fmt(model.forward_to_reverse_s)} s，倒车→前进 ${fmt(model.reverse_to_forward_s)} s；倒车速度：警方 ${fmt(m.police_speed_m_s*model.reverse_speed_ratio)}、小偷 ${fmt(m.thief_speed_m_s*model.reverse_speed_ratio)} m/s`;
+    }
+    return `警方转弯额外代价 ${fmt(turnP)} s，小偷 ${fmt(turnB)} s；换向 ${fmt(c.uturn_s)} s`;
+  }
+  el("intro").textContent=c.measured_motion?
+    "已接入本车全图日志：前进/倒车分别计时，转弯和换向期间仍可能被抓。双方暂共用这一辆车的标定基准；警方快20%和动作偏慢P90场景用于压力测试。小偷统一藏匿—转移—再藏匿；警方丢失视野后先沿线索排查藏身区、再排查死角，最后恢复巡线。三个场景统一两格检测，只比较速度和动作耗时。":
+    "预存地图与有限检测；警方沿选定巡查段持续扫描，检出立即追踪。小偷沿选定路线撤到下一藏点，检测到新危险时才切换路线。";
   const directions={N:"北",E:"东",S:"南",W:"西"},channels={left:"左侧",right:"右侧",front:"前方",rear:"后方"};
   function node(tag,attrs={},text){const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text!==undefined)n.textContent=text;svg.append(n);return n;}
   function render(){
@@ -112,7 +123,11 @@
     el("time").textContent=`${f[0].toFixed(1)} / ${match.duration_s.toFixed(1)} s`;
     const detection=match.vision==="fixed"?"固定路线不读取对手检测":`警方${f[7]?"已检出对手":"暂未检出对手"}，小偷${f[14]?"已检出对手":"暂未检出对手"}`;
     el("detail").textContent=`警方：${reasons[f[6]]}，${phases[f[5]]}，${f[26]?"后退":"前进"}方向；小偷：${reasons[f[13]]}，${phases[f[12]]}，${f[27]?"后退":"前进"}方向。${detection}。${f[21]?`小偷${channels[f[21]]}红外检出。`:""}${f[22]?`优先向${directions[f[22]]}侧区块转移，先检查路线交会风险。`:`区域优先向${directions[f[23]]}侧转移，依据预计来路或最近检测。`}${plan?`当前采用${plan.mode==="relocate"?"下一藏点转移":plan.mode==="smart"?"智能规划":"预设节点"}路线，终点 ${annotations.reference(plan.nodes.at(-1))}，经过 ${plan.topology.branch_count} 个不同分岔。`:""}${captured?"已达到二维接触距离，立即判警方获胜，检测盲区也不免除抓捕。":""}`;
-    el("parameters").textContent=`警方直行 ${match.police_speed_m_s} m/s；小偷直行 ${match.thief_speed_m_s} m/s；90°转向 ${c.turn90_s} s；掉头／后退换向 ${c.uturn_s} s；${c.pickup_s===0?"经过宝藏点取宝，不减速、不停车":`取宝停靠 ${c.pickup_s} s`}；警方检测 3 格（${match.police_sensor_range_m} m），小偷检测 ${Math.round(match.sensor_range_m/report.map.grid_spacing_m)} 格（${match.sensor_range_m} m），半角 ${c.sensor_half_angle_deg}°，每 ${(c.sensor_period_s*1000).toFixed(0)} ms 检测一次，漏检 ${Math.round(c.miss_probability*100)}%。二维中心距离 ${c.capture_center_distance_m} m 内即判抓捕。藏点仅选真实拐角或路口，所在直道至多 ${c.hide_max_straight_cells} 格，至少两条环路出口，排除只有一个外部出口的封闭环路。警方检出封闭环路内目标时优先比较赶到出口堵截的时间；警方优先覆盖未检查的候选位置，长直道按整段巡查，未检出不取消路线；丢失目标沿最后方向查到直道末端，不回追已越过的旧坐标，再从当前位置恢复巡查；完整可见死路连续三次未检出后跳过驶入，新的检出优先追踪。沿线抵达下一地图节点再换路，已开始的动作需要完成。自身位置假设已知，尚未实车验证；搜索和藏点选择均为启发式，未证明全局最优。`;
+    el("parameters").textContent=`警方直行 ${fmt(match.police_speed_m_s)} m/s；小偷直行 ${fmt(match.thief_speed_m_s)} m/s；${motionText(match)}；${c.pickup_s===0?"经过宝藏点取宝，不减速、不停车":`取宝停靠 ${c.pickup_s} s`}；警方检测 2 格（${match.police_sensor_range_m} m），小偷检测 ${Math.round(match.sensor_range_m/report.map.grid_spacing_m)} 格（${match.sensor_range_m} m），半角 ${c.sensor_half_angle_deg}°，每 ${(c.sensor_period_s*1000).toFixed(0)} ms 检测一次，漏检 ${Math.round(c.miss_probability*100)}%。二维中心距离 ${c.capture_center_distance_m} m 内即判抓捕。藏点仅选真实拐角或路口，所在直道至多 ${c.hide_max_straight_cells} 格，至少两条环路出口，排除只有一个外部出口的封闭环路。警方检出封闭环路内目标时优先比较赶到出口堵截的时间；警方优先覆盖未检查的候选位置，长直道按整段巡查，未检出不取消路线；丢失目标先检查最后运动方向可达的藏点与分岔，再查本区未确认的死角，完成后恢复巡查；旧的排查记录不能清除新线索；象限以自身为原点、东为正X、北为正Y，只作为道路候选排序；完整可见死路连续三次未检出后跳过驶入，新的检出优先追踪。沿线抵达下一地图节点再换路，已开始的动作需要完成。自身位置假设已知。速度基于名义地图长度，换向为刹车至重新识线的时间；转弯是等效额外代价，并非原地旋转90°实测值。尚未模拟完整加减速和惯性滑移，对抗效果未实车验证。搜索和藏点选择均为启发式。`;
+    if(f[6]===18||f[6]===19){
+      const clue=(match.events||[]).filter(e=>e.event==="local_search_goal"&&e.t<=f[0]+.001).at(-1);
+      if(clue)el("detail").textContent+=`警方沿最后线索 ${annotations.reference(clue.origin)} 排查 ${annotations.reference(clue.node)}，目标位于规划时自身坐标系 ${clue.sector} 象限/轴；本区排查优先于巡线。`;
+    }
     if(f[6]===6){
       const patrol=(match.search_sweeps||[]).filter(e=>e.event==="observation_goal" && e.t<=f[0]+.001).at(-1);
       if(patrol?.route?.length>1) el("detail").textContent+=`警方正在完成${patrol.kind==="straight_sweep"?"长直道扫描":"巡查"}：${annotations.reference(patrol.route[0])} → ${annotations.reference(patrol.node)}；未检出不会取消本段，实际检出优先追踪。`;

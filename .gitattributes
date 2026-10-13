@@ -1,5 +1,23 @@
-﻿# 3D CAD models
+# 3D CAD models
 *.step binary
 *.STEP binary
 *.stp binary
 *.STP binary
+
+# Preserve published source/evidence bytes for recorded SHA256 checks.
+/STM32/Keil_Project/Gray12_DesktopBase_ReverseReturn_Test/** -text
+/STM32/Keil_Project/Gray12_MapRoute_Calibration_Test/** -text
+/STM32/Keil_Project/Gray12_MapFullRoute_Calibration_Test/** -text
+/STM32/Keil_Project/Gray12_MapFullRoute_TreasureMask_Test/** -text
+/STM32/Keil_Project/Gray12_ReversePerformance_Test/** -text
+/STM32/Keil_Project/Laser14B_AI1811_Range_Test/** -text
+/STM32/Keil_Project/Thief16A_FrontLaser_MapStrategy_Test/** -text
+/STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/** -text
+/STM32/Keil_Project/Thief16D_RiskAware_FourLaser_Test/** -text
+/STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/** -text
+/STM32/Keil_Project/Thief16G_MultiExitHide_FourLaser_Test/** -text
+/STM32/Keil_Project/Thief16H_TurnClearance_FourLaser_Test/** -text
+/STM32/Keil_Project/Thief16I_RolloutMinimax_FourLaser_Test/** -text
+/STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/** -text
+/Tools/TreasurePursuitSimulator/variants/** -text
+/Tools/MapTimingLogger/datasets/*.log -text

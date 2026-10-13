@@ -1,0 +1,93 @@
+{
+  "status": "rejected double-counted terminal wait; not final result",
+  "summary": [
+    {
+      "scenario": "\u5b8c\u6574\u5f00\u5c40 \u00b7 \u591a\u51fa\u53e3\u85cf\u533f \u00b7 \u53cc\u65b9\u540c\u901f",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 161.01489637754585,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "\u5b8c\u6574\u5f00\u5c40 \u00b7 \u591a\u51fa\u53e3\u85cf\u533f \u00b7 \u8b66\u65b9\u5feb20%",
+      "police_speed_m_s": 0.8088000000000001,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 67.32060999043298,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "\u4e0d\u5229\u505c\u8f66\u5bf9\u7167 \u00b7 N038\u540c\u8f74\u8fd1\u8ddd\u8ffd\u51fb",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 1.0019630402047204,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "\u671d\u5411\u5bf9\u7167 \u00b7 N038\u7eb5\u5411\u505c\u8f66 \u00b7 \u53f3\u4fa7\u6765\u8f66",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 19.6106586967913,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "\u4e0d\u5229\u505c\u8f66\u5bf9\u7167 \u00b7 N062\u540e\u65b9\u6765\u8f66\u540e\u7684\u5f3a\u5236\u62d0\u5f2f",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 6.721825437941481,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "\u6362\u7ebf\u4e13\u9879 \u00b7 N038\u6a2a\u5411\u505c\u8f66 \u00b7 \u4e0a\u65b9\u4e24\u683c\u6765\u8f66",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 45.807937302307984,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "\u6362\u7ebf\u4e13\u9879 \u00b7 N038\u6a2a\u5411\u505c\u8f66 \u00b7 \u4e0a\u65b9\u6765\u8f66\u5feb20%",
+      "police_speed_m_s": 0.8088000000000001,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 2.0118179093986566,
+      "mean_max_escape_straight_m": 0.0
+    }
+  ],
+  "source_hashes": {
+    "Tools/TreasurePursuitSimulator/variants/16j/arm_bridge.c": "c160a27128a29acd2ec1d3b745439162f280c34e326eb0601db2f78820023dd5",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "38ca4434357a06db3a331bfc410212569e4145acfb8b2c5f2490d7828dcf267d",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "9dc247580a5d848f3389866004549abdab74b1556ff87836b309f1abf5f8080c",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "3b79648e04817e0e7d8ba3e240b97ccb20d40fcdd4b39fb27780a24e0cb15c44",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.c": "ce368a5f19842b1f5c2d9c03038674d8553f654689b0fd973c06546a702fbe42",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "3a29e294c789fd812b44e4a5501d26ec1b1cb1f50c1b5acacc0fa6b45bdaf090",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "7fb828148c2c64bb8bb23030fb02009a091032b0a8474e15ee5b8e98b1d96075",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "74550828eb5f9c672c3c1e5bd65f1192e8a32c035eb1cc094e2fc77444a21079",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "5a24f5ed560b6494b9da50111ba1bcac58ea539b7e5464e10bd3d174f7a25e6e",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.h": "b68853d1168f41c088e58897bcc36567aba772d97a8271817ba300b35e4de6fc",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRolloutData.h": "a14d4021a8e3bb66034cdde98ea1c0820edcbeb8b985cc1113a19b94dd6d7f3b",
+    "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+  }
+}

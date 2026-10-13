@@ -1,5 +1,8 @@
 # Keil MDK generated files
 
+# Offline publication validation exports and caches
+/build/
+
 # Build output
 Objects/
 Listings/

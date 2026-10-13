@@ -1,0 +1,22 @@
+{
+  "version": "16F-body-turn-v1",
+  "dimensions_status": "用户确认采用资料名义值，未实测整车外包络",
+  "bodies": {
+    "P": {"length_m": 0.190, "width_m": 0.198},
+    "B": {"length_m": 0.190, "width_m": 0.198}
+  },
+  "turn": {
+    "brake_fraction": 0.24,
+    "pivot_angle_deg": 45.0,
+    "profile": "smoothstep",
+    "center_path": "fixed_at_track_node",
+    "status": "连续角度的差速原地转向近似；制动占比和角速度曲线未实测，重新识线位移未建模"
+  },
+  "collision": {
+    "contact_tolerance_m": 0.0000001,
+    "advancement_safety_factor": 0.9,
+    "max_iterations": 20000,
+    "method": "oriented_rectangle_SAT_conservative_advancement"
+  },
+  "frame_period_s": 0.02
+}

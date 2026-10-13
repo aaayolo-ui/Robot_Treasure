@@ -1,0 +1,1534 @@
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\.gitignore
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\.gitignore
+@@ -1,3 +1,6 @@
+ MDK-ARM/Gray12_MapFullRoute_Calibration_Test/
+ MDK-ARM/build*.log
+-MDK-ARM/Thief16B_FourLaser_MapStrategy_Test/
++MDK-ARM/Thief16D_RiskAware_FourLaser_Test/
++
++Tests/build/
++__pycache__/
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Algorithm\ThiefStrategy\ThiefMapPlanner.c
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Algorithm\ThiefStrategy\ThiefMapPlanner.c
+@@ -1,27 +1,32 @@
+ #include "ThiefMapPlanner.h"
+ #include <stddef.h>
+-
+-#define DIST_INF 0x3FFFFFFFUL
++#include "ThiefThreatModel.h"
++#include "ThiefStrategyConfig.h"
++
+ #define ESCAPE_ID 1601U
+ #define INITIAL_ID 1600U
+-#define TARGET_ESCAPE_MM 1500UL
+-
+-static const uint16_t safe_hide_nodes[] = {
+-  11U, 14U, 15U, 22U, 23U, 25U, 32U, 33U, 34U,
+-  35U, 38U, 39U, 46U, 49U, 52U, 53U, 58U, 59U, 61U,
+-  62U, 63U, 67U, 68U, 70U, 76U, 77U, 78U, 79U
+-};
+-
+-/* The project stack is 1 KiB. Keep Dijkstra and path scratch buffers in
+- * module RAM so a replan cannot overflow the call stack. The planner is used
+- * synchronously from the main loop and is intentionally non-reentrant. */
+-static uint32_t work_distance[MAP_ROUTE_NODE_COUNT];
+-static uint16_t work_previous[MAP_ROUTE_NODE_COUNT];
+-static uint16_t work_reverse_path[MAP_ROUTE_NODE_COUNT];
+-static uint16_t work_path_a[MAP_ROUTE_NODE_COUNT];
+-static uint16_t work_path_b[MAP_ROUTE_NODE_COUNT];
+-static uint16_t work_path_c[MAP_ROUTE_NODE_COUNT];
+-static uint8_t work_visited[MAP_ROUTE_NODE_COUNT];
++static uint16_t departure[MAP_ROUTE_NODE_COUNT];
++static uint16_t combined[MAP_ROUTE_NODE_COUNT];
++static ThiefDecision_t decision;
++
++void ThiefMapPlanner_Init(void)
++{
++  ThiefRiskSearch_Init();
++  ThiefThreatModel_Init();
++  decision.goal_node=0U;
++}
++void ThiefMapPlanner_ObserveThreat(uint16_t node,uint8_t heading,
++    int16_t x,int16_t y,uint32_t now)
++{
++  ThiefThreatModel_Record(heading,x,y,now);
++  ThiefRiskSearch_MarkExposed(node,now);
++}
++const ThiefDecision_t *ThiefMapPlanner_Decision(void) {return &decision;}
++uint32_t ThiefMapPlanner_WorkBytes(void)
++{
++  return ThiefRiskSearch_WorkBytes()+ThiefThreatModel_WorkBytes()+
++    (uint32_t)(sizeof(departure)+sizeof(combined)+sizeof(decision));
++}
+ 
+ const MapRouteNode_t *ThiefMapPlanner_Node(uint16_t node_id)
+ {
+@@ -72,63 +77,6 @@
+     }
+   }
+   return 0U;
+-}
+-
+-static uint8_t ShortestPath(uint16_t start, uint16_t goal, uint16_t blocked,
+-                            uint16_t *path, uint16_t *path_count,
+-                            uint32_t *total_length)
+-{
+-  uint16_t i, cursor, count = 0U;
+-
+-  if ((ThiefMapPlanner_Node(start) == NULL) ||
+-      (ThiefMapPlanner_Node(goal) == NULL) || (start == blocked)) return 0U;
+-  for (i = 0U; i < MAP_ROUTE_NODE_COUNT; i++) {
+-    work_distance[i] = DIST_INF;
+-    work_previous[i] = 0U;
+-    work_visited[i] = 0U;
+-  }
+-  work_distance[start - 1U] = 0U;
+-
+-  for (i = 0U; i < MAP_ROUTE_NODE_COUNT; i++) {
+-    uint16_t pick = 0U;
+-    uint32_t best = DIST_INF;
+-    uint16_t s;
+-    for (s = 1U; s <= MAP_ROUTE_NODE_COUNT; s++) {
+-      if ((work_visited[s - 1U] == 0U) &&
+-          (work_distance[s - 1U] < best)) {
+-        best = work_distance[s - 1U];
+-        pick = s;
+-      }
+-    }
+-    if ((pick == 0U) || (pick == goal)) break;
+-    work_visited[pick - 1U] = 1U;
+-    for (s = 0U; s < MAP_ROUTE_SEGMENT_COUNT; s++) {
+-      const MapRouteSegment_t *segment = &map_route_segments[s];
+-      uint16_t next = 0U;
+-      uint32_t candidate;
+-      if (segment->start == pick) next = segment->end;
+-      else if (segment->end == pick) next = segment->start;
+-      if ((next == 0U) || (next == blocked)) continue;
+-      candidate = work_distance[pick - 1U] + segment->length_mm;
+-      if (candidate < work_distance[next - 1U]) {
+-        work_distance[next - 1U] = candidate;
+-        work_previous[next - 1U] = pick;
+-      }
+-    }
+-  }
+-
+-  if (work_distance[goal - 1U] == DIST_INF) return 0U;
+-  cursor = goal;
+-  while ((cursor != 0U) && (count < MAP_ROUTE_NODE_COUNT)) {
+-    work_reverse_path[count++] = cursor;
+-    if (cursor == start) break;
+-    cursor = work_previous[cursor - 1U];
+-  }
+-  if ((count == 0U) || (work_reverse_path[count - 1U] != start)) return 0U;
+-  *path_count = count;
+-  for (i = 0U; i < count; i++) path[i] = work_reverse_path[count - 1U - i];
+-  if (total_length != NULL) *total_length = work_distance[goal - 1U];
+-  return 1U;
+ }
+ 
+ static uint8_t BuildRoute(const uint16_t *nodes, uint16_t node_count,
+@@ -207,72 +155,46 @@
+ 
+ uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan)
+ {
+-  uint16_t *departure = work_path_b;
+-  uint16_t *combined = work_path_c;
+-  uint16_t departure_count, i, count;
+-  const uint16_t prefix_count = (uint16_t)(sizeof(initial_treasure_path) /
+-                                         sizeof(initial_treasure_path[0]));
+-  if (plan == NULL) return 0U;
+-  plan->valid = 0U;
+-  if (initial_treasure_path[0] != THIEF_START_NODE) return 0U;
+-  if (ShortestPath(4U, THIEF_FIRST_HIDE_NODE, THIEF_TREASURE_NODE,
+-                   departure, &departure_count, NULL) == 0U) return 0U;
+-  if ((uint32_t)prefix_count + (uint32_t)departure_count - 1UL >
+-      MAP_ROUTE_NODE_COUNT) return 0U;
+-  count = 0U;
+-  for (i = 0U; i < prefix_count; i++) combined[count++] = initial_treasure_path[i];
+-  for (i = 1U; i < departure_count; i++) combined[count++] = departure[i];
+-  return BuildRoute(combined, count, 0U, INITIAL_ID, plan);
++  uint16_t departure_count,i,count;
++  uint8_t first_mode;
++  const uint16_t prefix_count=(uint16_t)(sizeof(initial_treasure_path)/sizeof(initial_treasure_path[0]));
++  if(plan==NULL) return 0U;
++  plan->valid=0U;
++  /* Preserve the exact user-selected treasure prefix, then optimize the hide. */
++  if(!ThiefRiskSearch_Select(4U,3U,0U,0U,0U,5U,0U,0UL,
++      departure,&departure_count,&first_mode,&decision)) return 0U;
++  if(prefix_count+departure_count-1U>MAP_ROUTE_NODE_COUNT) return 0U;
++  count=0U;
++  for(i=0U;i<prefix_count;i++) combined[count++]=initial_treasure_path[i];
++  for(i=1U;i<departure_count;i++) combined[count++]=departure[i];
++  if(!BuildRoute(combined,count,0U,INITIAL_ID,plan)) return 0U;
++  /* Initial telemetry reports the entire fixed-prefix + hide route, not only
++   * the N004-to-hide suffix used by the hide selector. */
++  decision.travel_ms=THIEF_STARTUP_MS;
++  for(i=0U;i<plan->route.count;i++) {
++    uint8_t turn=0U,change=0U;
++    if(i>0U) {
++      turn=(plan->steps[i-1U].action==MAP_ACTION_LEFT ||
++            plan->steps[i-1U].action==MAP_ACTION_RIGHT)?1U:0U;
++      change=(plan->steps[i-1U].action==MAP_ACTION_REVERSE)?1U:0U;
++    }
++    decision.travel_ms+=ThiefRiskSearch_LegTime(plan->steps[i].length_mm,
++        plan->steps[i].drive_mode,turn,change);
++  }
++  return 1U;
+ }
+ 
+ uint8_t ThiefMapPlanner_PlanEscape(uint16_t current_node,
+-                                   uint8_t body_heading,
+-                                   uint8_t threat_heading_mask,
+-                                   uint16_t previous_hide_node,
+-                                   ThiefRoutePlan_t *plan)
+-{
+-  uint16_t forced_next, first_length;
+-  uint16_t *candidate_path = work_path_a;
+-  uint16_t *best_path = work_path_b;
+-  uint16_t count, best_count = 0U;
+-  uint32_t length, best_score = DIST_INF;
+-  uint16_t i;
+-  uint8_t mode, best_mode=1U;
+-  if(plan==NULL || !threat_heading_mask) return 0U;
++    uint8_t body_heading,uint8_t threat_mask,uint16_t previous_hide_node,
++    uint32_t now,ThiefRoutePlan_t *plan)
++{
++  uint16_t count;
++  uint8_t mode;
++  if(plan==NULL || !threat_mask) return 0U;
+   plan->valid=0U;
+-  for(mode=0U;mode<2U;mode++) {
+-    uint8_t away_heading=(uint8_t)((body_heading+2U*mode)%4U);
+-    if((threat_heading_mask & (1U<<away_heading))!=0U) continue;
+-    if(!ThiefMapPlanner_HasRoad(current_node,away_heading,&forced_next,&first_length)) continue;
+-
+-  for (i = 0U; i < (uint16_t)(sizeof(safe_hide_nodes) / sizeof(safe_hide_nodes[0])); i++) {
+-    uint16_t goal = safe_hide_nodes[i];
+-    uint8_t arrival_heading;
+-    uint16_t dummy_length;
+-    uint32_t score;
+-    if ((goal == current_node) || (goal == previous_hide_node)) continue;
+-    if (ShortestPath(forced_next, goal, current_node,
+-                     &candidate_path[1], &count, &length) == 0U) continue;
+-    candidate_path[0] = current_node;
+-    count++;
+-    length += first_length;
+-    if ((count < 3U) || (length < 600UL)) continue;
+-    if (SegmentBetween(candidate_path[count - 2U], goal,
+-                       &arrival_heading, &dummy_length) == 0U) continue;
+-    if (ThiefMapPlanner_HasRoad(goal, arrival_heading, NULL, NULL) == 0U) continue;
+-    score = (length > TARGET_ESCAPE_MM) ?
+-            (length - TARGET_ESCAPE_MM) : (TARGET_ESCAPE_MM - length);
+-    if (score < best_score) {
+-      uint16_t j;
+-      best_score = score;
+-      best_mode = mode;
+-      best_count = count;
+-      for (j = 0U; j < count; j++) best_path[j] = candidate_path[j];
+-    }
+-  }
+-  }
+-  if (best_count == 0U) return 0U;
+-  return BuildRoute(best_path, best_count, best_mode, ESCAPE_ID, plan);
++  if(!ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
++      0U,previous_hide_node,now,departure,&count,&mode,&decision)) return 0U;
++  return BuildRoute(departure,count,mode,ESCAPE_ID,plan);
+ }
+ 
+ void ThiefMapPlanner_PoseAtNode(uint16_t node_id, uint8_t body_heading,
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Algorithm\ThiefStrategy\ThiefMapPlanner.h
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Algorithm\ThiefStrategy\ThiefMapPlanner.h
+@@ -2,12 +2,12 @@
+ #define THIEF_MAP_PLANNER_H
+ 
+ #include "MapRoutePlan.h"
++#include "ThiefRiskSearch.h"
+ #include <stdint.h>
+ 
+ #define THIEF_ROUTE_MAX_STEPS 48U
+ #define THIEF_START_NODE 54U
+ #define THIEF_TREASURE_NODE 5U
+-#define THIEF_FIRST_HIDE_NODE 59U
+ #define THIEF_START_BODY_HEADING 3U
+ 
+ typedef struct {
+@@ -30,10 +30,16 @@
+ } ThiefMapPose_t;
+ 
+ uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan);
++void ThiefMapPlanner_Init(void);
++void ThiefMapPlanner_ObserveThreat(uint16_t node,uint8_t world_heading,
++    int16_t hit_x_mm,int16_t hit_y_mm,uint32_t now);
++const ThiefDecision_t *ThiefMapPlanner_Decision(void);
++uint32_t ThiefMapPlanner_WorkBytes(void);
+ uint8_t ThiefMapPlanner_PlanEscape(uint16_t current_node,
+                                    uint8_t body_heading,
+                                    uint8_t threat_heading_mask,
+                                    uint16_t previous_hide_node,
++                                   uint32_t now,
+                                    ThiefRoutePlan_t *plan);
+ void ThiefMapPlanner_PoseAtNode(uint16_t node_id, uint8_t body_heading,
+                                 ThiefMapPose_t *pose);
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Algorithm\ThiefStrategy\ThiefMapTopology.h
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Algorithm\ThiefStrategy\ThiefMapTopology.h
+@@ -0,0 +1,37 @@
++/* Generated offline from MapRoutePlan.c. Do not edit by hand. */
++#ifndef THIEF_MAP_TOPOLOGY_H
++#define THIEF_MAP_TOPOLOGY_H
++#include <stdint.h>
++static const uint8_t thief_hide_safe[88] = {
++  0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
++  0U, 0U, 0U, 0U, 0U, 0U, 1U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
++  0U, 0U, 0U, 0U, 0U, 0U, 1U, 0U, 0U, 0U, 0U, 1U, 0U, 0U, 0U, 0U,
++  0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 1U, 0U, 0U, 1U, 1U, 0U,
++  0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
++  0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
++};
++static const uint8_t thief_parking_axis_mask[88] = {
++  0U, 10U, 10U, 10U, 10U, 10U, 0U, 0U, 0U, 5U, 15U, 10U, 5U, 5U, 5U, 0U,
++  0U, 0U, 0U, 5U, 10U, 0U, 5U, 0U, 5U, 5U, 0U, 0U, 0U, 0U, 0U, 5U,
++  5U, 10U, 10U, 0U, 5U, 15U, 10U, 0U, 0U, 0U, 0U, 5U, 0U, 5U, 0U, 0U,
++  5U, 0U, 0U, 0U, 0U, 0U, 0U, 10U, 0U, 5U, 10U, 0U, 5U, 10U, 5U, 0U,
++  0U, 0U, 0U, 5U, 0U, 5U, 0U, 0U, 0U, 0U, 0U, 15U, 10U, 0U, 0U, 0U,
++  0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U,
++};
++static const uint16_t thief_hide_quality[88] = {
++  3910U, 3090U, 2190U, 1440U, 910U, 1140U, 1660U, 3160U, 4360U, 4740U, 4220U, 3390U, 2640U, 1890U, 1140U, 2630U,
++  2340U, 3160U, 3760U, 5190U, 4740U, 4440U, 3540U, 2860U, 1140U, 2120U, 2340U, 2560U, 4880U, 4430U, 3610U, 2340U,
++  1140U, 1440U, 2040U, 3010U, 3840U, 3470U, 2640U, 1960U, 2030U, 3910U, 4280U, 3690U, 4060U, 1590U, 1660U, 1210U,
++  990U, 2030U, 3610U, 3240U, 3840U, 4130U, 4660U, 4140U, 3460U, 840U, 840U, 610U, 990U, 1590U, 2790U, 4360U,
++  4880U, 160U, 390U, 840U, 760U, 1140U, 1810U, 2410U, 4280U, 2480U, 1660U, 1670U, 2490U, 3090U, 3540U, 3990U,
++  80U, 1360U, 1960U, 1510U, 1890U, 2630U, 5480U, 4360U,
++};
++static const uint16_t thief_police_prior_ms[88] = {
++  7866U, 8604U, 10077U, 10077U, 10077U, 9339U, 10077U, 11213U, 12718U, 7866U, 8235U, 9740U, 9740U, 9708U, 8970U, 11981U,
++  10476U, 11582U, 12719U, 6361U, 5992U, 7497U, 10109U, 10478U, 8970U, 9339U, 10844U, 10844U, 13487U, 8634U, 10109U, 9370U,
++  8233U, 8970U, 8970U, 10476U, 5623U, 4486U, 4486U, 3748U, 5254U, 12011U, 13148U, 11213U, 12350U, 2611U, 4117U, 8233U,
++  7495U, 10107U, 10874U, 9738U, 10874U, 10874U, 6361U, 5992U, 5623U, 2611U, 3748U, 3748U, 7126U, 7864U, 9000U, 9369U,
++  10874U, 0U, 737U, 1874U, 5254U, 5989U, 9001U, 8631U, 9738U, 4516U, 4885U, 5989U, 7126U, 8631U, 8631U, 9000U,
++  0U, 1874U, 3379U, 2611U, 5989U, 5989U, 10875U, 9738U,
++};
++#endif
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Algorithm\ThiefStrategy\ThiefRiskSearch.c
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Algorithm\ThiefStrategy\ThiefRiskSearch.c
+@@ -0,0 +1,195 @@
++#include "ThiefRiskSearch.h"
++#include "ThiefMapPlanner.h"
++#include "ThiefThreatModel.h"
++#include "ThiefStrategyConfig.h"
++#include "ThiefMapTopology.h"
++#include <stddef.h>
++
++#define NO_STATE 0xFFFFU
++/* Bounded RAM workspace; no recursion, allocation or HAL calls. Decisions are
++ * made only while the chassis is stopped. One label per heading/mode state is
++ * a bounded heuristic, not a complete SIPP or minimax game solver. */
++static uint32_t cost[THIEF_STATE_COUNT],arrival[THIEF_STATE_COUNT];
++static int32_t safety[THIEF_STATE_COUNT];
++static uint16_t parent[THIEF_STATE_COUNT],reverse_states[THIEF_STATE_COUNT];
++static uint8_t visited[THIEF_STATE_COUNT];
++static uint32_t exposed_at[MAP_ROUTE_NODE_COUNT];
++static uint8_t exposed[MAP_ROUTE_NODE_COUNT];
++
++static uint16_t State(uint16_t node,uint8_t heading,uint8_t mode)
++{ return (uint16_t)((node-1U)*8U+heading*2U+mode); }
++static uint16_t StateNode(uint16_t state) {return state/8U+1U;}
++static uint8_t StateHeading(uint16_t state) {return (uint8_t)((state%8U)/2U);}
++
++void ThiefRiskSearch_Init(void)
++{
++  uint16_t n;
++  for(n=0U;n<MAP_ROUTE_NODE_COUNT;n++) {exposed[n]=0U;exposed_at[n]=0UL;}
++}
++void ThiefRiskSearch_MarkExposed(uint16_t node,uint32_t now)
++{
++  if(!node || node>MAP_ROUTE_NODE_COUNT) return;
++  exposed[node-1U]=1U;exposed_at[node-1U]=now;
++}
++uint8_t ThiefRiskSearch_HideSafe(uint16_t node)
++{ return (node && node<=MAP_ROUTE_NODE_COUNT)?thief_hide_safe[node-1U]:0U; }
++
++uint32_t ThiefRiskSearch_LegTime(uint16_t length,uint8_t mode,
++                                uint8_t turn,uint8_t change)
++{
++  uint32_t speed=mode?THIEF_REVERSE_MM_S:THIEF_FORWARD_MM_S;
++  uint32_t time=((uint32_t)length*1000UL+speed-1UL)/speed;
++  if(turn) time+=THIEF_TURN_EXTRA_MS;
++  if(change) time+=mode?THIEF_SWITCH_TO_REV_MS:THIEF_SWITCH_TO_FWD_MS;
++  return time;
++}
++
++static uint8_t HasHeading(uint16_t node,uint8_t heading)
++{
++  uint16_t s;
++  for(s=0U;s<MAP_ROUTE_SEGMENT_COUNT;s++) {
++    const MapRouteSegment_t *e=&map_route_segments[s];
++    if(e->start==node && e->heading==heading) return 1U;
++    if(e->end==node && ((e->heading+2U)%4U)==heading) return 1U;
++  }
++  return 0U;
++}
++
++static int32_t LegMargin(uint16_t from,uint16_t to,uint16_t length,
++                         uint32_t before,uint32_t motion_start,uint32_t duration)
++{
++  int32_t worst=ThiefThreatModel_Margin(from,from,0U,before);
++  int32_t value=ThiefThreatModel_Margin(from,from,0U,motion_start);
++  uint16_t progress=0U;
++  if(value<worst) worst=value;
++  /* <=75 mm sampling, plus contact radius and timing guard. Near contact and
++   * real continuous motion still require hardware validation. */
++  for(;;) {
++    uint32_t when=motion_start+duration*progress/length;
++    value=ThiefThreatModel_Margin(from,to,progress,when);
++    if(value<worst) worst=value;
++    if(progress==length) break;
++    progress=(uint16_t)((length-progress>75U)?progress+75U:length);
++  }
++  return worst;
++}
++
++uint8_t ThiefRiskSearch_Select(uint16_t start,uint8_t heading,uint8_t mode,
++    uint8_t axis_only,uint8_t threat_mask,uint16_t blocked,uint16_t previous,
++    uint32_t now,uint16_t *path,uint16_t *count,uint8_t *first_mode,
++    ThiefDecision_t *decision)
++{
++  uint16_t root,i,pass,s,pick,expanded=0U,best_goal=NO_STATE;
++  uint8_t threats;
++  int32_t best_quality=-0x3FFFFFFFL;
++  int32_t best_margin=-0x3FFFFFFFL;
++  uint8_t have_safe=0U;
++  if(!path || !count || !first_mode || !decision || !start ||
++      start>MAP_ROUTE_NODE_COUNT || heading>3U || mode>1U) return 0U;
++  decision->goal_node=0U;decision->states_expanded=0U;
++  threats=ThiefThreatModel_Prepare(now);
++  for(i=0U;i<THIEF_STATE_COUNT;i++) {
++    cost[i]=THIEF_COST_INF;arrival[i]=0UL;safety[i]=6000L;
++    parent[i]=NO_STATE;visited[i]=0U;
++  }
++  root=State(start,heading,mode);cost[root]=0UL;
++  for(pass=0U;pass<THIEF_STATE_COUNT;pass++) {
++    uint32_t best=THIEF_COST_INF;
++    pick=NO_STATE;
++    for(i=0U;i<THIEF_STATE_COUNT;i++)
++      if(!visited[i] && cost[i]<best) {best=cost[i];pick=i;}
++    if(pick==NO_STATE) break;
++    visited[pick]=1U;expanded++;
++    for(s=0U;s<MAP_ROUTE_SEGMENT_COUNT;s++) {
++      const MapRouteSegment_t *e=&map_route_segments[s];
++      uint16_t from=StateNode(pick),to=0U,next;
++      uint8_t out=0U,delta,next_mode,turn,change;
++      uint32_t travel,wait,at,new_cost,penalty=0UL;
++      int32_t margin;
++      if(e->start==from) {to=e->end;out=e->heading;}
++      else if(e->end==from) {to=e->start;out=(uint8_t)((e->heading+2U)%4U);}
++      if(!to || to==blocked || to==start) continue;
++      /* A committed hide transfer must not bounce immediately over its last
++       * edge. Starting in reverse remains allowed at the root. */
++      if(parent[pick]!=NO_STATE && to==StateNode(parent[pick])) continue;
++      delta=(uint8_t)((out+4U-StateHeading(pick))%4U);
++      if(map_route_nodes[from-1U].kind==0U && delta!=0U) continue;
++      if(pick==root && axis_only && (delta==1U || delta==3U)) continue;
++      if(pick==root && (threat_mask&(1U<<out))) continue;
++      next_mode=(uint8_t)((pick&1U)^((delta==2U)?1U:0U));
++      turn=(delta==1U || delta==3U)?1U:0U;
++      change=(delta==2U && pick!=root)?1U:0U;
++      travel=ThiefRiskSearch_LegTime(e->length_mm,next_mode,0U,0U);
++      wait=turn?THIEF_TURN_EXTRA_MS:0UL;
++      if(change) wait+=next_mode?THIEF_SWITCH_TO_REV_MS:THIEF_SWITCH_TO_FWD_MS;
++      if(pick==root) wait+=THIEF_STARTUP_MS;
++      at=arrival[pick]+wait+travel;
++      margin=LegMargin(from,to,e->length_mm,arrival[pick],arrival[pick]+wait,travel);
++      if(pick==root && threats && margin<=0L) continue;
++      if(margin<=0L) {
++        uint32_t danger=(uint32_t)(-margin);
++        if(danger>6000UL) danger=6000UL;
++        penalty=15000UL+danger*4UL;
++      } else if(margin<500L) penalty=(uint32_t)(500L-margin)*4UL;
++      new_cost=cost[pick]+wait+travel+penalty;
++      next=State(to,out,next_mode);
++      if(!visited[next] && new_cost<cost[next]) {
++        cost[next]=new_cost;arrival[next]=at;parent[next]=pick;
++        safety[next]=margin<safety[pick]?margin:safety[pick];
++      }
++    }
++  }
++  for(i=0U;i<THIEF_STATE_COUNT;i++) {
++    uint16_t node=StateNode(i),cursor,count_states=0U;
++    uint32_t mm=0UL;
++    int32_t quality,margin;
++    uint8_t h=StateHeading(i),safe;
++    if(cost[i]==THIEF_COST_INF || node==start || node==previous ||
++       !thief_hide_safe[node-1U] || !(thief_parking_axis_mask[node-1U]&(1U<<h)) ||
++       !HasHeading(node,h)) continue;
++    if(exposed[node-1U] && (uint32_t)(now-exposed_at[node-1U])<THIEF_HIDE_COOLDOWN_MS) continue;
++    cursor=i;
++    while(cursor!=root && cursor!=NO_STATE && count_states<MAP_ROUTE_NODE_COUNT) {
++      uint16_t p=parent[cursor];
++      if(p==NO_STATE) break;
++      for(s=0U;s<MAP_ROUTE_SEGMENT_COUNT;s++) {
++        const MapRouteSegment_t *e=&map_route_segments[s];
++        uint16_t a=StateNode(p),b=StateNode(cursor);
++        if((e->start==a && e->end==b)||(e->start==b && e->end==a)) {mm+=e->length_mm;break;}
++      }
++      cursor=p;count_states++;
++    }
++    if(cursor!=root || count_states>=THIEF_ROUTE_MAX_STEPS ||
++       (axis_only && mm<THIEF_MIN_RELOCATE_MM)) continue;
++    margin=safety[i];safe=(margin>0L)?1U:0U;
++    /* Prefer safe short-horizon paths first; if all complete plans are unsafe,
++     * select the least-bad one only when its first leg passed the hard screen.
++     * Search-time/exit quality is secondary, never the old 1.5 m target. */
++    quality=(int32_t)thief_hide_quality[node-1U]*2L-(int32_t)arrival[i];
++    if(!threats) quality+=(int32_t)thief_police_prior_ms[node-1U]/2L;
++    if((safe && !have_safe) || (safe==have_safe &&
++       ((!safe && margin>best_margin) || ((safe || margin==best_margin) && quality>best_quality)))) {
++      best_goal=i;have_safe=safe;best_margin=margin;best_quality=quality;
++    }
++  }
++  decision->states_expanded=expanded;decision->threat_count=threats;
++  if(best_goal==NO_STATE) return 0U;
++  i=0U;pick=best_goal;
++  while(pick!=root && pick!=NO_STATE && i<THIEF_STATE_COUNT) {
++    reverse_states[i++]=pick;pick=parent[pick];
++  }
++  if(pick!=root || !i || i+1U>MAP_ROUTE_NODE_COUNT) return 0U;
++  path[0]=start;
++  *first_mode=(uint8_t)(reverse_states[i-1U]&1U);
++  *count=i+1U;
++  for(s=0U;s<i;s++) path[s+1U]=StateNode(reverse_states[i-1U-s]);
++  decision->goal_node=StateNode(best_goal);decision->travel_ms=arrival[best_goal];
++  decision->worst_margin_ms=best_margin;decision->degraded=(uint8_t)!have_safe;
++  return 1U;
++}
++
++uint32_t ThiefRiskSearch_WorkBytes(void)
++{
++  return (uint32_t)(sizeof(cost)+sizeof(arrival)+sizeof(safety)+sizeof(parent)+
++      sizeof(reverse_states)+sizeof(visited)+sizeof(exposed_at)+sizeof(exposed));
++}
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Algorithm\ThiefStrategy\ThiefRiskSearch.h
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Algorithm\ThiefStrategy\ThiefRiskSearch.h
+@@ -0,0 +1,22 @@
++#ifndef THIEF_RISK_SEARCH_H
++#define THIEF_RISK_SEARCH_H
++#include "MapRoutePlan.h"
++#include <stdint.h>
++
++typedef struct {
++  uint32_t travel_ms;
++  int32_t worst_margin_ms;
++  uint16_t states_expanded, goal_node;
++  uint8_t threat_count, degraded;
++} ThiefDecision_t;
++void ThiefRiskSearch_Init(void);
++void ThiefRiskSearch_MarkExposed(uint16_t node,uint32_t now);
++uint8_t ThiefRiskSearch_Select(uint16_t start,uint8_t heading,uint8_t mode,
++    uint8_t axis_only,uint8_t threat_mask,uint16_t blocked,uint16_t previous,
++    uint32_t now,uint16_t *path,uint16_t *count,uint8_t *first_mode,
++    ThiefDecision_t *decision);
++uint32_t ThiefRiskSearch_LegTime(uint16_t length,uint8_t mode,
++                                uint8_t turn,uint8_t change);
++uint32_t ThiefRiskSearch_WorkBytes(void);
++uint8_t ThiefRiskSearch_HideSafe(uint16_t node);
++#endif
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Algorithm\ThiefStrategy\ThiefStrategyConfig.h
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Algorithm\ThiefStrategy\ThiefStrategyConfig.h
+@@ -0,0 +1,23 @@
++#ifndef THIEF_STRATEGY_CONFIG_H
++#define THIEF_STRATEGY_CONFIG_H
++
++/* Planning estimates, not newly measured vehicle data. All costs are integer ms.
++ * Recalibrate after changing motor speed or turn/reverse control parameters. */
++#define THIEF_FORWARD_MM_S       674UL
++#define THIEF_REVERSE_MM_S       679UL
++#define THIEF_POLICE_MAX_MM_S    815UL /* Assumed 1.2 x max reference FWD/REV speed */
++#define THIEF_TURN_EXTRA_MS      768UL
++#define THIEF_SWITCH_TO_REV_MS   282UL
++#define THIEF_SWITCH_TO_FWD_MS   274UL
++#define THIEF_STARTUP_MS          80UL /* Starting from an already stopped hide */
++#define THIEF_CONTACT_MM         180UL
++#define THIEF_TIMING_GUARD_MS    120UL
++#define THIEF_PLAN_BUDGET_MS     100UL
++#define THIEF_THREAT_MEMORY_MS  4000UL
++#define THIEF_RISK_HORIZON_MS   3000UL
++#define THIEF_HIDE_COOLDOWN_MS 30000UL
++#define THIEF_MIN_RELOCATE_MM    600UL
++#define THIEF_STATE_COUNT (MAP_ROUTE_NODE_COUNT * 8U)
++#define THIEF_COST_INF 0x3FFFFFFFUL
++
++#endif
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Algorithm\ThiefStrategy\ThiefThreatModel.c
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Algorithm\ThiefStrategy\ThiefThreatModel.c
+@@ -0,0 +1,124 @@
++#include "ThiefThreatModel.h"
++#include "ThiefStrategyConfig.h"
++#include <stddef.h>
++
++typedef struct {
++  int16_t x_mm, y_mm;
++  uint32_t tick;
++  uint8_t valid;
++} ThreatObservation_t;
++static ThreatObservation_t observation[4];
++/* Multi-source earliest reach times relative to the current decision, possibly
++ * negative when the last sighting has aged. Unknown orientation is treated
++ * conservatively: the opponent may use any connected road, with no turn delay. */
++static int32_t earliest[MAP_ROUTE_NODE_COUNT];
++static uint8_t visited[MAP_ROUTE_NODE_COUNT], active;
++
++static uint32_t TimeForDistance(uint32_t mm)
++{
++  return (mm * 1000UL) / THIEF_POLICE_MAX_MM_S;
++}
++
++void ThiefThreatModel_Init(void)
++{
++  uint16_t i;
++  for (i=0U;i<4U;i++) observation[i].valid=0U;
++  active=0U;
++}
++
++void ThiefThreatModel_Record(uint8_t channel,int16_t x,int16_t y,uint32_t tick)
++{
++  if(channel>=4U) return;
++  observation[channel].x_mm=x;
++  observation[channel].y_mm=y;
++  observation[channel].tick=tick;
++  observation[channel].valid=1U;
++}
++
++uint8_t ThiefThreatModel_Prepare(uint32_t now)
++{
++  uint16_t i, s, pass;
++  uint8_t c;
++  active=0U;
++  for(i=0U;i<MAP_ROUTE_NODE_COUNT;i++) {
++    earliest[i]=(int32_t)THIEF_COST_INF; visited[i]=0U;
++  }
++  for(c=0U;c<4U;c++) {
++    uint32_t age=now-observation[c].tick;
++    uint8_t seeded=0U;
++    if(!observation[c].valid || age>THIEF_THREAT_MEMORY_MS) continue;
++    for(s=0U;s<MAP_ROUTE_SEGMENT_COUNT;s++) {
++      const MapRouteSegment_t *e=&map_route_segments[s];
++      const MapRouteNode_t *a=&map_route_nodes[e->start-1U];
++      const MapRouteNode_t *b=&map_route_nodes[e->end-1U];
++      int32_t ax=a->x_half*150L, ay=a->y_half*150L;
++      int32_t bx=b->x_half*150L, by=b->y_half*150L;
++      int32_t x=observation[c].x_mm, y=observation[c].y_mm;
++      int32_t da,db,value;
++      if(ax==bx) {
++        if(x!=ax || y<(ay<by?ay:by) || y>(ay>by?ay:by)) continue;
++        da=y-ay; db=y-by;
++      } else {
++        if(y!=ay || x<(ax<bx?ax:bx) || x>(ax>bx?ax:bx)) continue;
++        da=x-ax; db=x-bx;
++      }
++      if(da<0L) da=-da;
++      if(db<0L) db=-db;
++      value=(int32_t)TimeForDistance((uint32_t)da)-(int32_t)age;
++      if(value<earliest[e->start-1U]) earliest[e->start-1U]=value;
++      value=(int32_t)TimeForDistance((uint32_t)db)-(int32_t)age;
++      if(value<earliest[e->end-1U]) earliest[e->end-1U]=value;
++      seeded=1U;
++    }
++    if(seeded) active++;
++  }
++  if(!active) return 0U;
++  for(pass=0U;pass<MAP_ROUTE_NODE_COUNT;pass++) {
++    uint16_t pick=0U;
++    int32_t best=(int32_t)THIEF_COST_INF;
++    for(i=0U;i<MAP_ROUTE_NODE_COUNT;i++)
++      if(!visited[i] && earliest[i]<best) {best=earliest[i];pick=i+1U;}
++    if(!pick) break;
++    visited[pick-1U]=1U;
++    for(s=0U;s<MAP_ROUTE_SEGMENT_COUNT;s++) {
++      const MapRouteSegment_t *e=&map_route_segments[s];
++      uint16_t next=0U;
++      int32_t value;
++      if(e->start==pick) next=e->end;
++      else if(e->end==pick) next=e->start;
++      if(!next) continue;
++      value=best+(int32_t)TimeForDistance(e->length_mm);
++      if(value<earliest[next-1U]) earliest[next-1U]=value;
++    }
++  }
++  return active;
++}
++
++int32_t ThiefThreatModel_Margin(uint16_t from,uint16_t to,
++                               uint16_t progress,uint32_t own_time)
++{
++  uint16_t s;
++  int32_t reach=(int32_t)THIEF_COST_INF;
++  if(!active || own_time>THIEF_RISK_HORIZON_MS) return 6000L;
++  if(!from || from>MAP_ROUTE_NODE_COUNT || !to || to>MAP_ROUTE_NODE_COUNT)
++    return -6000L;
++  if(from==to) reach=earliest[from-1U];
++  else for(s=0U;s<MAP_ROUTE_SEGMENT_COUNT;s++) {
++    const MapRouteSegment_t *e=&map_route_segments[s];
++    int32_t a,b;
++    if(!((e->start==from && e->end==to)||(e->end==from && e->start==to))) continue;
++    if(progress>e->length_mm) progress=e->length_mm;
++    a=earliest[from-1U]+(int32_t)TimeForDistance(progress);
++    b=earliest[to-1U]+(int32_t)TimeForDistance(e->length_mm-progress);
++    reach=a<b?a:b;break;
++  }
++  /* This is a conservative timing screen, not proof of collision avoidance.
++   * Edges are sampled by the planner; motion/localization uncertainty remains. */
++  return reach-(int32_t)own_time-(int32_t)TimeForDistance(THIEF_CONTACT_MM)
++         -(int32_t)THIEF_TIMING_GUARD_MS;
++}
++
++uint32_t ThiefThreatModel_WorkBytes(void)
++{
++  return (uint32_t)(sizeof(observation)+sizeof(earliest)+sizeof(visited)+sizeof(active));
++}
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Algorithm\ThiefStrategy\ThiefThreatModel.h
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Algorithm\ThiefStrategy\ThiefThreatModel.h
+@@ -0,0 +1,14 @@
++#ifndef THIEF_THREAT_MODEL_H
++#define THIEF_THREAT_MODEL_H
++#include "MapRoutePlan.h"
++#include <stdint.h>
++
++void ThiefThreatModel_Init(void);
++/* Record only map-gated, stable observations. Channel must be a world heading. */
++void ThiefThreatModel_Record(uint8_t channel, int16_t x_mm, int16_t y_mm,
++                             uint32_t tick);
++uint8_t ThiefThreatModel_Prepare(uint32_t now);
++int32_t ThiefThreatModel_Margin(uint16_t from, uint16_t to,
++                               uint16_t progress_mm, uint32_t own_time_ms);
++uint32_t ThiefThreatModel_WorkBytes(void);
++#endif
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\MDK-ARM\RTE\_Thief16B_FourLaser_MapStrategy_Test\RTE_Components.h
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\MDK-ARM\RTE\_Thief16D_RiskAware_FourLaser_Test\RTE_Components.h
+@@ -3,8 +3,8 @@
+  * Auto generated Run-Time-Environment Component Configuration File
+  *      *** Do not modify ! ***
+  *
+- * Project: 'Thief16B_FourLaser_MapStrategy_Test' 
+- * Target:  'Thief16B_FourLaser_MapStrategy_Test' 
++ * Project: 'Thief16D_RiskAware_FourLaser_Test' 
++ * Target:  'Thief16D_RiskAware_FourLaser_Test' 
+  */
+ 
+ #ifndef RTE_COMPONENTS_H
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\MDK-ARM\startup_stm32f103xe.s
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\MDK-ARM\startup_stm32f103xe.s
+@@ -29,7 +29,7 @@
+ ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
+ ; </h>
+ 
+-Stack_Size		EQU     0x400
++Stack_Size		EQU     0x800
+ 
+                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
+ Stack_Mem       SPACE   Stack_Size
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\MDK-ARM\Thief16B_FourLaser_MapStrategy_Test.uvprojx
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\MDK-ARM\Thief16D_RiskAware_FourLaser_Test.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Thief16B_FourLaser_MapStrategy_Test</TargetName>
++      <TargetName>Thief16D_RiskAware_FourLaser_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Thief16B_FourLaser_MapStrategy_Test\</OutputDirectory>
+-          <OutputName>Thief16B_FourLaser_MapStrategy_Test</OutputName>
++          <OutputDirectory>Thief16D_RiskAware_FourLaser_Test\</OutputDirectory>
++          <OutputName>Thief16D_RiskAware_FourLaser_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -806,6 +806,36 @@
+               <FilePath>../Algorithm/ThiefStrategy/ThiefMapPlanner.h</FilePath>
+             </File>
+             <File>
++              <FileName>ThiefRiskSearch.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>../Algorithm/ThiefStrategy/ThiefRiskSearch.c</FilePath>
++            </File>
++            <File>
++              <FileName>ThiefRiskSearch.h</FileName>
++              <FileType>5</FileType>
++              <FilePath>../Algorithm/ThiefStrategy/ThiefRiskSearch.h</FilePath>
++            </File>
++            <File>
++              <FileName>ThiefThreatModel.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>../Algorithm/ThiefStrategy/ThiefThreatModel.c</FilePath>
++            </File>
++            <File>
++              <FileName>ThiefThreatModel.h</FileName>
++              <FileType>5</FileType>
++              <FilePath>../Algorithm/ThiefStrategy/ThiefThreatModel.h</FilePath>
++            </File>
++            <File>
++              <FileName>ThiefStrategyConfig.h</FileName>
++              <FileType>5</FileType>
++              <FilePath>../Algorithm/ThiefStrategy/ThiefStrategyConfig.h</FilePath>
++            </File>
++            <File>
++              <FileName>ThiefMapTopology.h</FileName>
++              <FileType>5</FileType>
++              <FilePath>../Algorithm/ThiefStrategy/ThiefMapTopology.h</FilePath>
++            </File>
++            <File>
+               <FileName>FrontLaserGate.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>../Algorithm/ThiefStrategy/FrontLaserGate.c</FilePath>
+@@ -830,7 +860,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
+         <targetInfos>
+-          <targetInfo name="Thief16B_FourLaser_MapStrategy_Test"/>
++          <targetInfo name="Thief16D_RiskAware_FourLaser_Test"/>
+         </targetInfos>
+       </component>
+     </components>
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\README.md
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\README.md
+@@ -1,53 +1,64 @@
+-# Thief16B 四方向激光小偷工程
++# Thief16D STM32 风险感知小偷策略
+ 
+-从 `Thief16A_FrontLaser_MapStrategy_Test` 独立复制，取消 TFT，增加左、右、后三只同款 AI-1811。原单前激光工程保留。
++从 `Thief16B_FourLaser_MapStrategy_Test` 独立复制；原16A、16B、16C及电脑回放策略保留。无需虚拟机、服务器、联网或训练模型。电脑只负责离线拓扑生成、编译和测试，决策在STM32本机执行。
+ 
+-状态：仅编译通过，尚未完成硬件验证。电脑算法与串口解析测试通过不代表实车验证。
++仅编译通过，尚未完成硬件验证。
+ 
+-## 打开与接线
++## 打开工程
+ 
+-Keil 工程：`MDK-ARM/Thief16B_FourLaser_MapStrategy_Test.uvprojx`。
++[Keil工程](MDK-ARM/Thief16D_RiskAware_FourLaser_Test.uvprojx)。MCU、时钟、Flash下载设置沿用16B；未烧录、未自动驱动电机。用户短按KEY2开始；运行时按KEY1/WK_UP/KEY2按原逻辑制动停止。起点N054，车头朝西。
+ 
+-| 信号 | STM32 引脚 |
++## 新策略做什么
++
++1. 固定取宝前缀不变：N054→N053右转→N044直行→N036左转→N035/N034直行→N033右转→N025/N015直行→N006左转→N005宝藏→N004。宝藏直穿不停车。
++2. 首藏点不再固定N059。根据藏点退路、直道跨度、附近路口、警方从出生点到可检测位置的预计时间以及自己的行驶耗时选择。当前地图和默认参数选择N023：取宝后N004→N003→N013→N012→N023。
++3. 到藏点停稳后四方向检测。稳定的合法道路目标更新地图内物体的可能位置；未检测到对手的地方不会凭全局回放数据加入模型。
++4. 逃跑时使用88节点×4行进朝向×2正倒车状态的时间搜索。首段必须避开所有当前检出方向，并能直接前进/倒车离开；路径不能立即沿刚走过的边折返。
++5. 根据最近测距命中位置、已过去时间及假定的对手最大速度，计算对手到达各节点/路段位置的最早时间。检查转向等待及移动中的交会风险，然后比较下一个藏点的质量和预计耗时，取消旧“接近1.5m”的目标评分。
++6. 当前暴露藏点禁用30秒；到下个藏点等待新检测，保持完整路线承诺，不在移动中反复推翻路线。
++
++藏点先在电脑上筛选，烧入ROM。排除死路、单出口环路及其入口、跨度大于900mm的整条直道。由于当前控制器从藏点只支持直接前进/倒车起步，停靠轴两端都必须接入可靠环路，不能将通向死路的分支算作退路。当前候选：N023、N039、N044、N059、N062、N063；到达朝向不合适时也不会选择该点。
++
++## 算法的准确边界
++
++这是有限状态时间寻路＋对手可达区域＋短期风险评分，不是完整SIPP、概率POMDP或全局最优博弈求解。每个状态仅保存一个代价标签，可能舍弃更好路线；交会检查沿路段每不超过75mm采样，考虑接触范围与时间余量，不提供连续运动的防撞证明。
++
++已知威胁下优先选前三秒内有正余量的路线。如果没有这样的完整路线，但首段仍通过严格筛选，则选择最小风险路线并输出 `DEGRADED=1`；它可能被抓到。首段也没有可用路线时保持制动并报 `ESCAPE_PLAN_FAILED`，不盲目冲向物体。
++
++保留16B的移动期串口隔离：取宝和逃跑时关闭激光接收，仅停稳后启用。所以本版没有行驶中新检测后的即时避碰；途中只能使用出发时得到的线索。最近观测保存4秒，不会永久当作已知对手位置。单点激光识别的是物体，不能区分车和人。
++
++原路口识别和坐标更新控制没有重写。实际路口误认、漏认、打滑或转向不到位仍可能使规划在错误位置执行，应从节点/里程日志验证，不应以规划测试通过当作实车路径正确。
++
++## 接线
++
++| 信号 | 引脚 |
+ |---|---|
+-| 前激光 T/TX | PA3 / USART2_RX |
+-| 左激光 T/TX | PB7 / USART1_RX 重映射 |
+-| 右激光 T/TX | PC11 / UART4_RX |
+-| 后激光 T/TX | PB11 / USART3_RX |
+-| 左前轮编码器 B 相 | 从 PC11 移到 PB14 / EXTI14 |
+-| 左前轮编码器 A 相 | PC10，保留 |
+-| 蓝牙/外置USB转TTL RX | PB10 / USART3_TX |
+-| 蓝牙/外置USB转TTL TX | 留空，不能再接 PB11 |
++| 前AI-1811 TX | PA3 / USART2_RX |
++| 左AI-1811 TX | PB7 / USART1_RX重映射 |
++| 右AI-1811 TX | PC11 / UART4_RX |
++| 后AI-1811 TX | PB11 / USART3_RX |
++| 左前轮编码器A/B相 | PC10 / PB14 |
++| 车载蓝牙或外置USB转TTL RX | PB10 / USART3_TX |
++| 车载蓝牙或USB转TTL TX | 留空，不能接PB11 |
+ 
+-拔掉 TFT 或断开屏幕信号线；PB7 不再输出屏幕 CS。PB14 如仍接旧红外 OUT，先移除。面包板只作连线转接，不增加串口。VCC/GND 沿用用户既定方案，本次不改供电。
++TFT断开，软件无屏幕驱动；VCC/GND按用户既定接法，本版只修改策略。电机映射、PI/PID、速度和转向控制参数从16B复制保留。
+ 
+-## 检测和逃跑
++## STM32资源与计算预算
+ 
+-- 四路均为 115200、8N1，每路独立 FIFO、校验、重同步、错误计数和接收时间戳，互不混用。
+-- 共用原 `FrontLaserGate.c`：50～600 mm、置信度≥10、5帧窗口至少3帧有效、有效距离跨度≤120 mm，并通过当前节点道路投影与场地边界过滤。
+-- 四路各有一份过滤状态。方向按车头换算：前0°、左−90°、右+90°、后180°，不会将侧后目标误投到车头前方。
+-- 超过250 ms没有新有效校验帧显示 `NO_DATA`；新数据到来时先清除旧投票。过期的队列字节不用于触发逃跑。串口溢出/错误会清队列并清除该路证据。
+-- 沿用前激光阶段限制：拿宝藏和逃跑移动期间关闭四路接收；到藏点且轮速稳定停下后重新接收，再检测、逃跑到下个藏点。不宣称行驶中四方向避障。
+-- 前方触发时起步方向避开前方，后方触发时避开后方。侧方触发在可用的前进/倒退路线中选择下个藏点，不新增原地90°转向起步。多路同时触发时，禁止向任何已确认威胁方向起步；前后均被堵或无可用路线时停住并输出 `ESCAPE_PLAN_FAILED`，不会盲目前冲/倒退。
+-- 策略只使用已有地图与有限测距；测到物体不等于识别了警方身份，继续沿用前激光的几何过滤规则。
++- 按Keil原有48KiB RAM、256KiB Flash配置核对，最终构建大小见VERIFICATION.md。
++- 搜索最多704轮，没有递归、动态内存分配或依赖Python；拓扑表在ROM，搜索工作区13265字节。
++- 仅停车时规划；移动周期不进行规划，也不格式化四激光状态日志。
++- 逃跑规划计算超过100ms则保持制动，输出 `PLANNING_BUDGET_EXCEEDED`。真实板上耗时需查看 `COMPUTE_MS`，电脑CPU模拟不代表72MHz板上的耗时。
++- 新工程栈增为2KiB；链接器静态调用图存在间接调用的未知部分，仍需实车核对中断与栈余量。
+ 
+-原宝藏路线、速度、PID、转向参数和电机映射由复制时的16A保留。USART1/2/UART4在运动前关闭并复位，避免额外改变既有运动期外设状态；USART3只暂停接收，PB10日志发送持续工作。
++## 参数位置
+ 
+-## 电脑查看
++规划参数集中于 `Algorithm/ThiefStrategy/ThiefStrategyConfig.h`：前进674mm/s、倒车679mm/s、警方最大速度假设815mm/s、90°额外代价768ms、前进换倒车282ms、倒车换前进274ms。来自旧标定估计/建模假设，不是本次新增实测；当前电机调速或转角改变后，应重新标定。警方上限必须覆盖真实最快速度，设得过低会漏判风险。
+ 
+-串口助手选择实际 COM 口、115200、8N1、文本模式。每125 ms轮换输出一个方向，四路约每500 ms各显示一次；策略判断仍在主循环处理新帧时执行，不等待显示周期。
++修改地图或规划耗时参数后，在电脑重新执行 `python Tests/generate_topology.py`，再编译。控制器实际旋转阈值仍沿用基线45°，规划的“90°额外代价”与实际旋转终止阈值不同；它代表完整拐角动作的估计耗时，需实测修正。
+ 
+-示例格式（非实测数据）：
++## 串口与验证
+ 
+-```text
+-LASER DIR=LEFT D=320 C=20 STATUS=OPPONENT AGE=3 BAD=0 DROP=0 ERR=0 STATE=HIDING FAULT=NONE
+-LASER_ESCAPE DIR=LEFT MASK=8 D=320 C=20 FROM=N059 TO=N...
+-```
++电脑接收115200、8N1、文本。开机和每次逃跑输出 `PLAN_V2`：目标、预计路线耗时、最小交会时间余量、展开状态数、有效威胁数、是否退化选择。逃跑另输出 `COMPUTE_MS`。`MARGIN_MS` 是模型余量，不是实测安全时间；无有效威胁时的6000是哨兵值。四方向 `LASER` 日志沿用16B，仅停止时格式化输出。
+ 
+-`D` 为毫米，`AGE` 为毫秒，`BAD/DROP/ERR` 为累计校验错误/丢字节/串口错误。`MOVING_OFF` 表示移动期间接收已关闭；该状态下显示的距离是历史值，不是当前测量。`MASK` 使用地图北/东/南/西的位0/1/2/3，可同时表达多个威胁方向。
+-
+-上电默认停车；沿用 KEY2 开始、运行时按键停车的控制。首次测试由用户先验证四路方向与日志、编码器计数，再做实车运动验证；本次未自动烧录或驱动电机。
+-
+-## 验证与文件清单
+-
+-见 `VERIFICATION.md`、`SOURCE_CHANGES.json`、`FILE_MANIFEST.md`。完整新增工程不应覆盖16A。测试在 `Tests/`，只在电脑执行；测试桩不加入 Keil 固件。
++测试命令和验证范围见 [VERIFICATION.md](VERIFICATION.md)。改动文件见 [SOURCE_CHANGES.json](SOURCE_CHANGES.json) 和 [FILE_MANIFEST.md](FILE_MANIFEST.md)，可审阅 [SOURCE_DIFF.patch](SOURCE_DIFF.patch)。未提交或推送。
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Tests\generate_topology.py
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Tests\generate_topology.py
+@@ -0,0 +1,138 @@
++"""Generate fixed map topology metadata offline; no third-party packages."""
++from pathlib import Path
++import heapq, re
++
++ROOT=Path(__file__).resolve().parents[1]
++def load_map():
++    text=(ROOT/'Algorithm/MapRoute/MapRoutePlan.c').read_text(encoding='utf-8')
++    nb=text.split('const MapRouteNode_t map_route_nodes[] = {')[1].split('};')[0]
++    eb=text.split('const MapRouteSegment_t map_route_segments[] = {')[1].split('};')[0]
++    nodes={r[0]:r[1:] for r in (tuple(map(int,m)) for m in re.findall(r'\{(\d+),\s*(-?\d+),\s*(-?\d+),\s*(\d+),\s*(\d+)\}',nb))}
++    graph={n:[] for n in nodes}
++    for _,a,b,mm,h in (tuple(map(int,m)) for m in re.findall(r'\{(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\}',eb)):
++        graph[a].append((b,mm,h));graph[b].append((a,mm,(h+2)%4))
++    return nodes,graph
++
++def components(graph,removed):
++    left=set(graph)-{removed}; result=[]
++    while left:
++        group=set(); pending=[min(left)]
++        while pending:
++            n=pending.pop()
++            if n not in left:continue
++            left.remove(n);group.add(n)
++            pending.extend(a for a,_,_ in graph[n] if a in left)
++        result.append(group)
++    return result
++
++def distances(graph,start):
++    dist={start:0}; queue=[(0,start)]
++    while queue:
++        cost,n=heapq.heappop(queue)
++        if cost!=dist[n]:continue
++        for a,mm,_ in graph[n]:
++            v=cost+mm
++            if v<dist.get(a,10**9):dist[a]=v;heapq.heappush(queue,(v,a))
++    return dist
++
++def metadata():
++    nodes,g=load_map(); core=set(g)
++    while True:
++        leaves={n for n in core if sum(a in core for a,_,_ in g[n])<2}
++        if not leaves:break
++        core-=leaves
++    # Removing each gateway finds single-entry regions even if they contain a loop.
++    # Keep the largest component as the main map; blacklist the detached regions
++    # and their gateway. Conservative offline hide screening, not all graph games.
++    pockets=set()
++    for gate in g:
++        groups=components(g,gate)
++        if len(groups)<2:continue
++        main=max(groups,key=lambda c:(len(c),-min(c)))
++        detached=set().union(*(c for c in groups if c is not main))
++        if detached & core:pockets|=detached|{gate}
++    def span(n):
++        def ray(h):
++            cur=n;seen={n};total=0
++            while True:
++                edge=next((e for e in g[cur] if e[2]==h),None)
++                if not edge or edge[0] in seen:return total
++                cur,mm,_=edge;total+=mm;seen.add(cur)
++        return max(ray(0)+ray(2),ray(1)+ray(3))
++    all_dist={n:distances(g,n) for n in g}
++    branches={n for n in core-pockets if nodes[n][3]>=3}
++    candidates={n for n in core-pockets if nodes[n][2] in (1,2,3)
++                and span(n)<=900 and sum(a in core-pockets for a,_,_ in g[n])>=2}
++    parent={}; queue=[(0,81)]; best={81:0}
++    while queue:
++        cost,n=heapq.heappop(queue)
++        if cost!=best[n]:continue
++        for a,mm,_ in g[n]:
++            if cost+mm<best.get(a,10**9):best[a]=cost+mm;parent[a]=n;heapq.heappush(queue,(cost+mm,a))
++    approach=[5]
++    while approach[-1]!=81:approach.append(parent[approach[-1]])
++    approach=set(approach)
++    cfg=(ROOT/'Algorithm/ThiefStrategy/ThiefStrategyConfig.h').read_text()
++    def parameter(name):
++        return int(re.search(r'#define\s+'+name+r'\s+(\d+)',cfg).group(1))
++    police_speed=parameter('THIEF_POLICE_MAX_MM_S')
++    turn_ms=parameter('THIEF_TURN_EXTRA_MS')
++    # Offline time prior includes heading and turns. This is a search-quality
++    # prior, not knowledge of the opponent's chosen path. Risk uses the separate
++    # conservative reach model without opponent turn delays.
++    pq=[(0,81,0,0)];pt={(81,0,0):0}
++    while pq:
++        cost,n,h,mode=heapq.heappop(pq)
++        if cost!=pt[n,h,mode]:continue
++        for a,mm,nh in g[n]:
++            if nodes[n][2]==0 and h!=nh:continue
++            delta=(nh-h)%4
++            next_mode=mode^(delta==2)
++            extra=0 if delta==0 else (parameter('THIEF_SWITCH_TO_REV_MS' if next_mode else 'THIEF_SWITCH_TO_FWD_MS') if delta==2 else turn_ms)
++            value=cost+(mm*1000+police_speed-1)//police_speed+extra
++            if value<pt.get((a,nh,next_mode),10**9):pt[a,nh,next_mode]=value;heapq.heappush(pq,(value,a,nh,next_mode))
++    police_time={n:min(v for (a,h,mode),v in pt.items() if a==n) for n in g}
++    def detectable(a,b):
++        if a==b:return True
++        ax,ay=nodes[a][:2];bx,by=nodes[b][:2]
++        if ax!=bx and ay!=by:return False
++        h=1 if bx>ax else 3 if bx<ax else 2 if by>ay else 0
++        cur=a;seen={a};distance=0
++        while distance<=600:
++            edge=next((e for e in g[cur] if e[2]==h),None)
++            if not edge:return False
++            cur,mm,_=edge;distance+=mm
++            if distance>600:return False
++            if cur==b:return True
++            if cur in seen:return False
++            seen.add(cur)
++        return False
++    quality=[];safe=[];prior=[];parking=[]
++    for n in sorted(g):
++        nearby=sum(all_dist[n][b]<=600 for b in branches)
++        # Greater police detour and nearby junction count improves hide quality.
++        separation=min(all_dist[n][p] for p in approach)
++        exits={h for a,_,h in g[n] if a in core-pockets}
++        axes=sum(1<<h for h in exits if (h+2)%4 in exits)
++        # The current chassis starts escape forward/reverse, without a new
++        # stationary corner turn. Both directions on the parking axis must be
++        # genuine cycle exits; a dead branch must not count as a second exit.
++        parking.append(axes)
++        safe.append(int(n in candidates and axes!=0))
++        prior.append(min(60000,min(police_time[a] for a in g if detectable(a,n))))
++        quality.append(min(6000,separation*2+nearby*150+nodes[n][3]*80))
++    return safe,quality,prior,parking,pockets
++
++def main():
++    safe,quality,prior,parking,pockets=metadata()
++    out=['/* Generated offline from MapRoutePlan.c. Do not edit by hand. */',
++         '#ifndef THIEF_MAP_TOPOLOGY_H','#define THIEF_MAP_TOPOLOGY_H','#include <stdint.h>']
++    for typ,name,values in [('uint8_t','thief_hide_safe',safe),('uint8_t','thief_parking_axis_mask',parking),('uint16_t','thief_hide_quality',quality),('uint16_t','thief_police_prior_ms',prior)]:
++        out.append('static const '+typ+' '+name+'[88] = {')
++        for i in range(0,88,16):out.append('  '+', '.join(str(v)+'U' for v in values[i:i+16])+',')
++        out.append('};')
++    out.append('#endif')
++    (ROOT/'Algorithm/ThiefStrategy/ThiefMapTopology.h').write_text('\n'.join(out)+'\n',encoding='utf-8')
++    print('Safe hides:',[i+1 for i,v in enumerate(safe) if v])
++    print('Single-entry exclusions:',sorted(pockets))
++if __name__=='__main__':main()
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Tests\run_algorithms.py
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Tests\run_algorithms.py
+@@ -2,7 +2,8 @@
+ Requires unicorn + pyelftools. Install into your Python environment or set PYTHONPATH.
+ """
+ from pathlib import Path
+-import subprocess, json
++import subprocess, json, sys
++sys.path.insert(0,str(Path(__file__).resolve().parent/"build/deps"))
+ from elftools.elf.elffile import ELFFile
+ from unicorn import Uc, UC_ARCH_ARM, UC_MODE_THUMB, UC_HOOK_MEM_WRITE
+ from unicorn.arm_const import UC_ARM_REG_SP, UC_ARM_REG_LR
+@@ -13,6 +14,7 @@
+ compiler=Path('D:/keil5/ARM/ARMCC/bin/armcc.exe')
+ linker=compiler.with_name('armlink.exe')
+ sources=[root/'Tests/test_algorithms.c',root/'Algorithm/ThiefStrategy/ThiefMapPlanner.c',root/'Algorithm/ThiefStrategy/FrontLaserGate.c',root/'Algorithm/MapRoute/MapRoutePlan.c']
++if not uart_test: sources += [root/'Algorithm/ThiefStrategy/ThiefRiskSearch.c',root/'Algorithm/ThiefStrategy/ThiefThreatModel.c',root/'Algorithm/MapRoute/MapRouteNavigator.c']
+ if uart_test: sources=[root/'Tests/test_uart.c',root/'Hardware/LaserRx.c']
+ objects=[]
+ for source in sources:
+@@ -21,7 +23,7 @@
+ elf=build/('uart.axf' if uart_test else 'algorithms.axf')
+ subprocess.run([str(linker),'--cpu=Cortex-M3','--entry=test_main','--datacompressor=off','--ro_base=0x08000000','--rw_base=0x20000000',*[str(x) for x in objects],'-o',str(elf)],check=True)
+ u=Uc(UC_ARCH_ARM,UC_MODE_THUMB)
+-u.mem_map(0x08000000,0x100000);u.mem_map(0x20000000,0x20000)
++u.mem_map(0x08000000,0x100000);u.mem_map(0x20000000,0xc000)
+ with elf.open('rb') as f:
+  e=ELFFile(f)
+  for seg in e.iter_segments():
+@@ -30,7 +32,7 @@
+   if section['sh_flags'] & 2 and section['sh_type']!='SHT_NOBITS' and section['sh_size']:
+    u.mem_write(section['sh_addr'],section.data())
+  sym={x.name:x['st_value'] for x in e.get_section_by_name('.symtab').iter_symbols()}
+-u.reg_write(UC_ARM_REG_SP,0x2001fff0);u.reg_write(UC_ARM_REG_LR,0x08000001)
++u.reg_write(UC_ARM_REG_SP,0x2000bff0);u.reg_write(UC_ARM_REG_LR,0x08000001)
+ completed=[False]
+ def hook(uc,access,address,size,value,data):
+  if address==sym['test_done'] and value==1:
+@@ -38,6 +40,9 @@
+ u.hook_add(UC_HOOK_MEM_WRITE,hook,begin=sym['test_done'],end=sym['test_done']+3)
+ u.emu_start(sym['test_main']|1,0,count=2000000000)
+ assert completed[0], 'Instruction budget exhausted before completion'
+-result={x:int.from_bytes(u.mem_read(sym[x],4),'little') for x in ('test_checks','test_failures','test_done')}
++names=['test_checks','test_failures','test_done']
++if not uart_test: names += ['test_initial_goal','test_initial_steps','test_workspace_bytes','test_routes_accepted','test_max_states']
++result={x:int.from_bytes(u.mem_read(sym[x],4),'little') for x in names}
++if not uart_test: result['initial_nodes']=[int.from_bytes(u.mem_read(sym['test_initial_nodes']+i*4,4),'little') for i in range(result['test_initial_steps']+1)]
+ print(json.dumps(result));(build/('uart_result.json' if uart_test else 'result.json')).write_text(json.dumps(result,indent=2))
+ assert result['test_done']==1 and result['test_failures']==0
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Tests\test_algorithms.c
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Tests\test_algorithms.c
+@@ -1,6 +1,13 @@
+ #include "FrontLaserGate.h"
+ #include "ThiefMapPlanner.h"
++#include "ThiefThreatModel.h"
++#include "ThiefRiskSearch.h"
++#include "MapRouteNavigator.h"
++#include "ThiefStrategyConfig.h"
+ volatile unsigned test_failures, test_checks, test_done;
++volatile unsigned test_initial_goal, test_initial_steps, test_workspace_bytes;
++volatile unsigned test_routes_accepted, test_max_states;
++volatile unsigned test_initial_nodes[49];
+ static ThiefRoutePlan_t plan;
+ static FrontLaserGate_t gate[4];
+ static ThiefMapPose_t pose;
+@@ -17,6 +24,7 @@
+ {
+   unsigned n,h,d,i,mask,ok,next,length,ports;
+   unsigned short neighbor,len;
++  ThiefMapPlanner_Init();
+   /* Check every direction transform on every node and orientation against map edges. */
+   for(n=1;n<=MAP_ROUTE_NODE_COUNT;n++) for(h=0;h<4;h++) for(d=0;d<4;d++) {
+     static const unsigned offsets[4]={0,3,1,2};
+@@ -51,8 +59,11 @@
+   check(!observe(0,100,20,1));
+   /* Every accepted plan must depart on physical body axis, never toward a detected threat. */
+   for(n=1;n<=MAP_ROUTE_NODE_COUNT;n++) if(n==59 || n==53 || n==38) for(h=0;h<4;h++) for(mask=1;mask<16;mask++) {
+-    ok=ThiefMapPlanner_PlanEscape(n,h,mask,0,&plan);
++    ok=ThiefMapPlanner_PlanEscape(n,h,mask,0,10000UL,&plan);
+     if(!ok) continue;
++    test_routes_accepted++;
++    if(ThiefMapPlanner_Decision()->states_expanded>test_max_states)
++      test_max_states=ThiefMapPlanner_Decision()->states_expanded;
+     check(plan.valid && plan.route.count>0);
+     check(!(mask & (1U<<plan.steps[0].heading)));
+     check((plan.steps[0].heading+2U*plan.route.drive_mode)%4==h);
+@@ -64,11 +75,71 @@
+         next=neighbor; length+=len;
+       }
+       check(next==s->to_node && length==s->length_mm);
++      if(i>0) check(plan.steps[i].to_node!=plan.steps[i-1].from_node);
+     }
+   }
+-  check(ThiefMapPlanner_PlanEscape(59,0,15,0,&plan)==0);
++  check(ThiefMapPlanner_PlanEscape(59,0,15,0,10000UL,&plan)==0);
+   check(ThiefMapPlanner_PlanInitial(&plan));
++  test_initial_goal=plan.goal_node;test_initial_steps=plan.route.count;
++  test_workspace_bytes=ThiefMapPlanner_WorkBytes();
++  test_initial_nodes[0]=54;
++  for(i=0;i<plan.route.count;i++) test_initial_nodes[i+1]=plan.steps[i].to_node;
++  check(test_routes_accepted>20);
+   check(plan.route.start_node==54 && plan.steps[0].to_node==53);
++  check(ThiefRiskSearch_LegTime(300,0,1,0)>ThiefRiskSearch_LegTime(300,0,0,0));
++  check(ThiefRiskSearch_LegTime(300,1,0,1)>ThiefRiskSearch_LegTime(300,1,0,0));
++  check(ThiefMapPlanner_WorkBytes()<18000UL);
++  check(!ThiefRiskSearch_HideSafe(8) && !ThiefRiskSearch_HideSafe(9));
++  check(!ThiefRiskSearch_HideSafe(18) && !ThiefRiskSearch_HideSafe(19));
++  check(!ThiefRiskSearch_HideSafe(27) && !ThiefRiskSearch_HideSafe(28));
++  check(!ThiefRiskSearch_HideSafe(15) && !ThiefRiskSearch_HideSafe(49));
++  {
++    static const unsigned targets[]={53,44,36,35,34,33,25,15,6,4};
++    static const int actions[]={1,0,-1,0,0,1,0,0,-1,-1};
++    static MapRouteNavigator_t nav;
++    check(plan.route.count>10);
++    for(i=0;i<10;i++) {
++      check(plan.steps[i].to_node==targets[i]);
++      /* N004 departure may depend on the chosen hide; treasure prefix is fixed. */
++      if(i<9) check(plan.steps[i].action==actions[i]);
++    }
++    check(ThiefRiskSearch_HideSafe(plan.goal_node));
++    MapRouteNavigator_StartRuntime(&nav,&plan.route,plan.steps);
++    check(!nav.fault);
++  }
++  /* Actual coordinates/distance affect the reachable set; no observations of
++   * the unseen simulator opponent are fed to this model. */
++  {
++    const MapRouteNode_t *n59=ThiefMapPlanner_Node(59);
++    unsigned when=10000;
++    int m0,m1;
++    ThiefMapPlanner_Init();
++    ThiefMapPlanner_ObserveThreat(59,3,n59->x_half*150-600,n59->y_half*150,when);
++    check(ThiefThreatModel_Prepare(when)==1);
++    m0=ThiefThreatModel_Margin(59,59,0,0);
++    check(ThiefThreatModel_Prepare(when+100)==1);
++    m1=ThiefThreatModel_Margin(59,59,0,0);
++    check(m1<m0);
++    check(ThiefMapPlanner_PlanEscape(59,3,8,0,when,&plan));
++    check(plan.steps[0].heading==1);
++    check(plan.route.drive_mode==1);
++    check(plan.goal_node!=59 && ThiefRiskSearch_HideSafe(plan.goal_node));
++    check(ThiefMapPlanner_Decision()->threat_count==1);
++    check(ThiefMapPlanner_Decision()->states_expanded<=THIEF_STATE_COUNT);
++    check(ThiefThreatModel_Prepare(when+THIEF_THREAT_MEMORY_MS+1)==0);
++    ThiefMapPlanner_Init();
++    /* Off-road hit is rejected as a belief seed, even if a caller bypasses gate. */
++    ThiefMapPlanner_ObserveThreat(59,0,123,456,when);
++    check(!ThiefThreatModel_Prepare(when));
++    ThiefMapPlanner_Init();
++    ThiefMapPlanner_ObserveThreat(59,3,n59->x_half*150-50,n59->y_half*150,when);
++    check(!ThiefMapPlanner_PlanEscape(59,3,8,0,when,&plan));
++    check(!plan.valid);
++    /* A timer wrap must not turn a fresh observation into a stale one. */
++    ThiefMapPlanner_Init();
++    ThiefMapPlanner_ObserveThreat(59,3,n59->x_half*150-600,n59->y_half*150,0xFFFFFFF0U);
++    check(ThiefThreatModel_Prepare(20U)==1);
++  }
+   test_done=1;
+   while(1) {}
+ }
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Tests\verify_thief_strategy.py
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Tests\verify_thief_strategy.py
+@@ -1,135 +1,5 @@
+-"""Offline invariants for the STM32 thief map planner.
+-
+-This mirrors route-selection constraints only; it does not claim motor or sensor
+-hardware behaviour.
+-"""
+-from __future__ import annotations
+-
+-import heapq
+-import re
++"""Run the actual ARM planner tests; no hardware access."""
+ from pathlib import Path
+-
+-ROOT = Path(__file__).parent.parent
+-PLAN = ROOT / "Algorithm" / "MapRoute" / "MapRoutePlan.c"
+-PLANNER = ROOT / "Algorithm" / "ThiefStrategy" / "ThiefMapPlanner.c"
+-
+-
+-def load_map():
+-    text = PLAN.read_text(encoding="utf-8")
+-    node_block = text.split("const MapRouteNode_t map_route_nodes[] = {", 1)[1].split("};", 1)[0]
+-    seg_block = text.split("const MapRouteSegment_t map_route_segments[] = {", 1)[1].split("};", 1)[0]
+-    nodes = {
+-        row[0]: tuple(row[1:])
+-        for row in (
+-            tuple(map(int, match))
+-            for match in re.findall(
+-                r"\{(\d+),\s*(-?\d+),\s*(-?\d+),\s*(\d+),\s*(\d+)\}",
+-                node_block,
+-            )
+-        )
+-    }
+-    segments = [
+-        tuple(map(int, match))
+-        for match in re.findall(
+-            r"\{(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\}",
+-            seg_block,
+-        )
+-    ]
+-    adjacency = {node: [] for node in nodes}
+-    for _, start, end, length, heading in segments:
+-        adjacency[start].append((end, length, heading))
+-        adjacency[end].append((start, length, (heading + 2) % 4))
+-    return nodes, adjacency
+-
+-
+-def shortest(adjacency, start, goal, blocked=0):
+-    queue = [(0, start)]
+-    distance = {start: 0}
+-    previous = {}
+-    while queue:
+-        cost, node = heapq.heappop(queue)
+-        if cost != distance[node]:
+-            continue
+-        if node == goal:
+-            break
+-        for nxt, length, _ in adjacency[node]:
+-            if nxt == blocked:
+-                continue
+-            candidate = cost + length
+-            if candidate < distance.get(nxt, 10**9):
+-                distance[nxt] = candidate
+-                previous[nxt] = node
+-                heapq.heappush(queue, (candidate, nxt))
+-    if goal not in distance:
+-        return None, None
+-    path = [goal]
+-    while path[-1] != start:
+-        path.append(previous[path[-1]])
+-    return list(reversed(path)), distance[goal]
+-
+-
+-def main():
+-    nodes, adjacency = load_map()
+-    planner = PLANNER.read_text(encoding="utf-8")
+-    block = planner.split("initial_treasure_path[] = {", 1)[1].split("};", 1)[0]
+-    prefix = [int(value) for value in re.findall(r"(\d+)U", block)]
+-    assert prefix == [54, 53, 44, 36, 35, 34, 33, 25, 15, 6, 5, 4]
+-    departure, _ = shortest(adjacency, 4, 59, 5)
+-    initial = prefix + departure[1:]
+-    edges = [next(edge for edge in adjacency[a] if edge[0] == b)
+-             for a, b in zip(initial, initial[1:])]
+-    total_mm = sum(edge[1] for edge in edges)
+-    turns = {initial[i]: (edges[i][2] - edges[i-1][2]) % 4
+-             for i in range(1, len(prefix)-1)}
+-    assert {n: turns[n] for n in (53, 36, 33, 6)} == {53: 1, 36: 3, 33: 1, 6: 3}
+-    assert all(turns[n] == 0 for n in (44, 35, 34, 25, 15, 5))
+-    assert initial[0] == 54 and initial[-1] == 59
+-    assert initial.count(5) == 1
+-    before = initial[initial.index(5) - 1]
+-    after = initial[initial.index(5) + 1]
+-    assert {before, after} == {4, 6}
+-
+-    planner = PLANNER.read_text(encoding="utf-8")
+-    safe_block = planner.split("safe_hide_nodes[] = {", 1)[1].split("};", 1)[0]
+-    safe = [int(value) for value in re.findall(r"(\d+)U", safe_block)]
+-    assert all(nodes[node][2] not in (0, 4) for node in safe)
+-
+-    current, previous, body_heading = 59, 54, 3
+-    traces = []
+-    for _ in range(12):
+-        away = (body_heading + 2) % 4
+-        forced = [edge for edge in adjacency[current] if edge[2] == away]
+-        assert forced, f"N{current:03d} has no road away from laser direction"
+-        forced_node, forced_mm, _ = forced[0]
+-        options = []
+-        for goal in safe:
+-            if goal in (current, previous):
+-                continue
+-            path, path_mm = shortest(adjacency, forced_node, goal, current)
+-            if not path:
+-                continue
+-            path = [current] + path
+-            total = forced_mm + path_mm
+-            if len(path) < 3 or total < 600:
+-                continue
+-            arrival = next(h for n, _, h in adjacency[path[-2]] if n == goal)
+-            if not any(h == arrival for _, _, h in adjacency[goal]):
+-                continue
+-            options.append((abs(total - 1500), total, goal, path, arrival))
+-        assert options, f"N{current:03d} has no legal escape"
+-        _, distance, goal, path, arrival = min(options)
+-        assert nodes[goal][2] != 4
+-        assert path[1] == forced_node
+-        traces.append((current, goal, distance, path))
+-        previous, current = current, goal
+-        body_heading = (arrival + 2) % 4
+-
+-    print(f"initial: {total_mm} mm, {initial}")
+-    for index, (start, goal, distance, path) in enumerate(traces, 1):
+-        print(f"escape {index:02d}: N{start:03d}->N{goal:03d}, {distance} mm, {path}")
+-    print("PASS: treasure crossing, non-endpoint hides, and 12 escape replans")
+-
+-
+-if __name__ == "__main__":
+-    main()
+-
++import subprocess,sys
++ROOT=Path(__file__).resolve().parent
++subprocess.run([sys.executable,str(ROOT/'run_algorithms.py')],check=True)
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\Thief16B_FourLaser_MapStrategy_Test.ioc
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\Thief16D_RiskAware_FourLaser_Test.ioc
+@@ -162,8 +162,8 @@
+ ProjectManager.NoMain=false
+ ProjectManager.PreviousToolchain=
+ ProjectManager.ProjectBuild=false
+-ProjectManager.ProjectFileName=Thief16B_FourLaser_MapStrategy_Test.ioc
+-ProjectManager.ProjectName=Thief16B_FourLaser_MapStrategy_Test
++ProjectManager.ProjectFileName=Thief16D_RiskAware_FourLaser_Test.ioc
++ProjectManager.ProjectName=Thief16D_RiskAware_FourLaser_Test
+ ProjectManager.ProjectStructure=
+ ProjectManager.RegisterCallBack=
+ ProjectManager.StackSize=0x400
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\User\App_ThiefStrategy.c
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\User\App_ThiefStrategy.c
+@@ -19,6 +19,7 @@
+ #include "LaserRx.h"
+ #include "FrontLaserGate.h"
+ #include "ThiefMapPlanner.h"
++#include "ThiefStrategyConfig.h"
+ #include "StartupWheelLog.h"
+ 
+ /* RPM targets use x10 units. Keep the user's cruise/turn settings separate. */
+@@ -214,7 +215,11 @@
+   sensor_pose.body_heading=(uint8_t)((thief_pose.body_heading+laser_heading_offset[i])%4U);
+   if(FrontLaserGate_Observe(&thief_laser[i],&sensor_pose,
+       (thief_strategy_state==THIEF_STRATEGY_HIDING)?1U:0U,
+-      distance,confidence,firmware)) thief_escape_requested=1U;
++      distance,confidence,firmware)) {
++    ThiefMapPlanner_ObserveThreat(thief_pose.node_id,sensor_pose.body_heading,
++        thief_laser[i].hit_x_mm,thief_laser[i].hit_y_mm,tick);
++    thief_escape_requested=1U;
++  }
+ }
+ static uint8_t Thief_ThreatMask(uint32_t now)
+ {
+@@ -239,6 +244,7 @@
+   static uint8_t i;
+   uint32_t bad,dropped,errors;
+   const char *status;
++  if(route_active || thief_strategy_state==THIEF_STRATEGY_SETTLING) return;
+   if((uint32_t)(now-last)<125U) return;
+   last=now;
+   status=FrontLaserGate_StatusText(thief_laser[i].status);
+@@ -1081,11 +1087,12 @@
+   thief_strategy_state = THIEF_STRATEGY_READY;
+   ThiefMapPlanner_PoseAtNode(thief_current_node, thief_body_heading,
+                              &thief_pose);
++  ThiefMapPlanner_Init();
+   if (ThiefMapPlanner_PlanInitial(&thief_plan) == 0U) {
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_SendString("Thief16B_FourLaser_MapStrategy_Test\r\n");
++  UartDebug_SendString("Thief16D_RiskAware_FourLaser_Test\r\n");
+   UartDebug_Printf("MAP_PARAMS BASE_RPM_X10=%ld CONTROL_MS=%u TURN_PWM=%ld SPIN_TARGET_X100=%ld WHEEL_CIRCUMFERENCE_UM=%lu\r\n",
+       (long)LINE_FOLLOW_PID_BASE_RPM_X10, (unsigned)LINE_FOLLOW_PID_CONTROL_PERIOD_MS,
+       (long)ROUTE_TURN_EQUAL_PWM, (long)ROUTE_TURN_TARGET_ANGLE_X100,
+@@ -1093,6 +1100,13 @@
+   UartDebug_SendString("LASER FRONT=PA3 LEFT=PB7 RIGHT=PC11 REAR=PB11 115200; LOG_TX=PB10; TFT=OFF; ENCODER_B_B=PB14\r\n");
+   UartDebug_SendString("THIEF: N054 HEAD=W; KEY2=start treasure+hide; laser 3/5 triggers escape\r\n");
+   Route_MapPreview();
++  {
++    const ThiefDecision_t *d=ThiefMapPlanner_Decision();
++    UartDebug_Printf("PLAN_V2 GOAL=N%03u T_MS=%lu MARGIN_MS=%ld STATES=%u THREATS=%u DEGRADED=%u RAM=%lu\r\n",
++      (unsigned)d->goal_node,(unsigned long)d->travel_ms,(long)d->worst_margin_ms,
++      (unsigned)d->states_expanded,(unsigned)d->threat_count,(unsigned)d->degraded,
++      (unsigned long)ThiefMapPlanner_WorkBytes());
++  }
+ 
+ }
+ 
+@@ -1180,12 +1194,13 @@
+       (thief_strategy_state == THIEF_STRATEGY_HIDING) &&
+       (thief_escape_requested != 0U)) {
+     uint16_t old_hide = thief_current_node;
++    uint32_t planning_started = SystemTime_GetMs();
+     uint8_t threat_mask = Thief_ThreatMask(now);
+     thief_escape_requested = 0U;
+     if (!threat_mask) goto task_end;
+     if (ThiefMapPlanner_PlanEscape(thief_current_node, thief_body_heading,
+                                    threat_mask,
+-                                   thief_previous_hide_node,
++                                   thief_previous_hide_node,now,
+                                    &thief_plan) == 0U) {
+       thief_strategy_state = THIEF_STRATEGY_FAULT;
+       route_fault_reason = "ESCAPE_PLAN_FAILED";
+@@ -1194,10 +1209,21 @@
+       goto task_end;
+     }
+     thief_previous_hide_node = old_hide;
++    if ((uint32_t)(SystemTime_GetMs()-planning_started)>THIEF_PLAN_BUDGET_MS) {
++      Route_StopFault("PLANNING_BUDGET_EXCEEDED");
++      goto task_end;
++    }
+     UartDebug_Printf("LASER_ESCAPE DIR=%s MASK=%u D=%u C=%u FROM=N%03u TO=N%03u\r\n",
+         laser_name[thief_trigger_direction], (unsigned)threat_mask,
+         (unsigned)thief_laser[thief_trigger_direction].distance_mm, (unsigned)thief_laser[thief_trigger_direction].confidence,
+         (unsigned)thief_current_node, (unsigned)thief_plan.goal_node);
++    {
++      const ThiefDecision_t *d=ThiefMapPlanner_Decision();
++      UartDebug_Printf("PLAN_V2 GOAL=N%03u T_MS=%lu MARGIN_MS=%ld STATES=%u THREATS=%u DEGRADED=%u COMPUTE_MS=%lu\r\n",
++        (unsigned)d->goal_node,(unsigned long)d->travel_ms,(long)d->worst_margin_ms,
++        (unsigned)d->states_expanded,(unsigned)d->threat_count,(unsigned)d->degraded,
++        (unsigned long)(SystemTime_GetMs()-planning_started));
++    }
+     Route_Start();
+     goto task_end;
+   }
+--- STM32\Keil_Project\Thief16B_FourLaser_MapStrategy_Test\VERIFICATION.md
++++ STM32\Keil_Project\Thief16D_RiskAware_FourLaser_Test\VERIFICATION.md
+@@ -1,33 +1,61 @@
+-# 验证记录
++# 16D 验证记录
+ 
+-日期：2026-10-11。
++日期：2026-10-12。
+ 
+ 仅编译通过，尚未完成硬件验证。
+ 
+-## 软件验证
++## 最终构建
+ 
+-- ARMCC 5 / Keil 全量编译目标：0 Error(s), 0 Warning(s)，最终日志 `MDK-ARM/build_four_laser.log`。
+-- 实际 ARMCC 编译的地图/过滤 C 代码在 Unicorn CPU 模拟器运行：9541 项检查，0 失败。覆盖88个节点、四种车头方向、四种传感器方向；阈值、质量、移动期不触发、不同通道不混票；三个代表藏点的四种车头与全部15种威胁组合的有效路线检查；初始路线入口。
+-- 实际 `Hardware/LaserRx.c` 配测试用 HAL 桩在电脑运行：435 项检查，0 失败。覆盖四路逐字节交错、坏校验恢复、过期队列拒绝、单路溢出隔离、串口错误恢复、接收启停清除半帧，以及运动期保留 USART3 日志发送。
+-- 测试桩不模拟实车结果，也未进入固件。尚未测试电气信号、UART中断实际延迟、传感器互扰、真实最大数据率、编码器跨端口读取时序或运动效果。
+-- Keil 源文件路径存在、无重复条目；TFT、TftRoutePage、ThiefTftPage 均从编译源列表移除。
+-- 原16A源文件未修改；差异清单见 `SOURCE_CHANGES.json`。速度、PI/PID、转向参数未更改。
++Keil MDK / ARM Compiler 5.06 update5 build528 全量编译：0 Error(s), 0 Warning(s)。日志 `MDK-ARM/build_risk_strategy.log`，HEX 位于 `MDK-ARM/Thief16D_RiskAware_FourLaser_Test/`。
+ 
+-## 重跑电脑测试
++| 项目 | 最终字节数 |
++|---|---:|
++| Code | 37820 |
++| RO-data | 5548 |
++| RW-data | 324 |
++| ZI-data | 34044 |
++| Flash：Code + RO | 43368（42.4KiB），配置上限256KiB |
++| RAM：RW + ZI | 34368（33.6KiB），配置上限48KiB |
++| 算法工作区 | 13265，已包含在上面的RAM中 |
++| 栈预留 | 2048，已包含在上面的RAM中 |
+ 
+-Python 安装 `unicorn` 和 `pyelftools`，ARMCC5 路径为 `D:/keil5/ARM/ARMCC/bin`。
++链接器静态调用图报告已知最大704字节，另有函数指针等未知项；不能当作实车栈峰值。比16B的构建记录增加2784字节Flash及12976字节RAM；16B记录不代表它在此刻重新构建过。
++
++## 实际C代码的电脑执行检查
++
++使用ARMCC编译，再用Unicorn执行实际ARM代码，映射48KiB RAM；不连接车辆。
++
++- 地图、方向门控、规划、风险和时钟边界：10457项检查，0失败。
++- 四路串口解析/错误隔离/过期队列/接收启停：435项检查，0失败。驱动与16B相同，测试HAL桩仅在电脑使用，不加入固件。
++- 接受108组不同朝向/威胁方向的路线；逐段验证道路连通、长度、首段不迎向已检出方向、正倒车与车头一致、没有立即沿上一条边折返。
++- 检查固定取宝转向、宝藏合并直穿、单出口区域与长直道排除、接触太近时无安全首段的停止结果、观测老化与4秒失效、32位时钟回绕以及离路命中不形成可达区域。
++- 本组检查中最多展开361个状态；源代码上限704。不是全图所有局面或实车耗时证明。
++
++实际C初始路线输出：
++
++```text
++N054 N053 N044 N036 N035 N034 N033 N025 N015 N006 N004 N003 N013 N012 N023
++```
++
++N006→N004内部经过N005宝藏；执行步骤数14。不能把这个规划输出当成实车已经走过的轨迹。
++
++## 重跑
+ 
+ ```powershell
++python -m pip install --target Tests/build/deps unicorn pyelftools
++python Tests/generate_topology.py
+ python Tests/run_algorithms.py
+ python Tests/run_algorithms.py --uart
+ ```
+ 
+-输出与测试固件在已忽略的 `Tests/build/`。此测试不接触实车。
++编译器/链接器路径沿用 `D:/keil5/ARM/ARMCC/bin`。生成测试文件、依赖与Keil产物均被忽略；重跑CPU检查不需要虚拟机、服务器或实车。
+ 
+-## 待实车核对
++## 尚需用户实车确认
+ 
+-1. 新接线与新固件配套：屏幕断开，编码器B相移PB14，PB11只接后激光TX。
+-2. 停止状态分别遮挡前/左/右/后，确认日志方向、毫米读数；拔开一路TX应只令该路超时。
+-3. 车轮悬空由用户低速验证四轮方向和左前编码器正反计数，不自动执行。
+-4. 在藏点分别触发前后与侧方检测，观察逃跑起步方向、下个藏点和多路冲突停机。
+-5. 实测后再确认接收稳定性及运动参数，不以编译或CPU测试替代硬件验证。
++- 新接线：前PA3、左PB7、右PC11、后PB11，左前编码器PC10/PB14，TFT断开，蓝牙RX接PB10、TX留空。
++- 日志的版本名为16D，初始目标N023；确认N053/N036/N033/N006真实路口动作和节点/里程记录一致。
++- 停稳后四方向测距、观测坐标、逃跑第一段和下个藏点。
++- 真实 `COMPUTE_MS` 是否小于100ms；超时保持制动，不把电脑CPU运行速度当成板上速度。
++- 全部动作和速度重新标定后修正规划参数，确认最大对手速度、定位误差、制动/转向占用时间、串口中断与栈余量。
++
++未烧录、未驱动电机、未提交或推送。

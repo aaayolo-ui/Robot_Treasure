@@ -1,0 +1,1102 @@
+--- 16A/Algorithm\ThiefStrategy\ThiefMapPlanner.c
++++ 16B/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -227,6 +227,7 @@
+ 
+ uint8_t ThiefMapPlanner_PlanEscape(uint16_t current_node,
+                                    uint8_t body_heading,
++                                   uint8_t threat_heading_mask,
+                                    uint16_t previous_hide_node,
+                                    ThiefRoutePlan_t *plan)
+ {
+@@ -236,11 +237,13 @@
+   uint16_t count, best_count = 0U;
+   uint32_t length, best_score = DIST_INF;
+   uint16_t i;
+-  uint8_t away_heading = (uint8_t)((body_heading + 2U) % 4U);
+-  if ((plan == NULL) ||
+-      (ThiefMapPlanner_HasRoad(current_node, away_heading,
+-                               &forced_next, &first_length) == 0U)) return 0U;
+-  plan->valid = 0U;
++  uint8_t mode, best_mode=1U;
++  if(plan==NULL || !threat_heading_mask) return 0U;
++  plan->valid=0U;
++  for(mode=0U;mode<2U;mode++) {
++    uint8_t away_heading=(uint8_t)((body_heading+2U*mode)%4U);
++    if((threat_heading_mask & (1U<<away_heading))!=0U) continue;
++    if(!ThiefMapPlanner_HasRoad(current_node,away_heading,&forced_next,&first_length)) continue;
+ 
+   for (i = 0U; i < (uint16_t)(sizeof(safe_hide_nodes) / sizeof(safe_hide_nodes[0])); i++) {
+     uint16_t goal = safe_hide_nodes[i];
+@@ -262,12 +265,14 @@
+     if (score < best_score) {
+       uint16_t j;
+       best_score = score;
++      best_mode = mode;
+       best_count = count;
+       for (j = 0U; j < count; j++) best_path[j] = candidate_path[j];
+     }
+   }
++  }
+   if (best_count == 0U) return 0U;
+-  return BuildRoute(best_path, best_count, 1U, ESCAPE_ID, plan);
++  return BuildRoute(best_path, best_count, best_mode, ESCAPE_ID, plan);
+ }
+ 
+ void ThiefMapPlanner_PoseAtNode(uint16_t node_id, uint8_t body_heading,
+--- 16A/Algorithm\ThiefStrategy\ThiefMapPlanner.h
++++ 16B/Algorithm/ThiefStrategy/ThiefMapPlanner.h
+@@ -32,6 +32,7 @@
+ uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan);
+ uint8_t ThiefMapPlanner_PlanEscape(uint16_t current_node,
+                                    uint8_t body_heading,
++                                   uint8_t threat_heading_mask,
+                                    uint16_t previous_hide_node,
+                                    ThiefRoutePlan_t *plan);
+ void ThiefMapPlanner_PoseAtNode(uint16_t node_id, uint8_t body_heading,
+--- 16A/Core\Inc\main.h
++++ 16B/Core/Inc/main.h
+@@ -101,8 +101,8 @@
+ #define MOTOR_D_IN2_GPIO_Port GPIOA
+ #define ENCODER_B_A_Pin GPIO_PIN_10
+ #define ENCODER_B_A_GPIO_Port GPIOC
+-#define ENCODER_B_B_Pin GPIO_PIN_11
+-#define ENCODER_B_B_GPIO_Port GPIOC
++#define ENCODER_B_B_Pin GPIO_PIN_14
++#define ENCODER_B_B_GPIO_Port GPIOB
+ #define NCHD12_REAR_SCL_Pin GPIO_PIN_12
+ #define NCHD12_REAR_SCL_GPIO_Port GPIOB
+ #define NCHD12_REAR_SDA_Pin GPIO_PIN_13
+--- 16A/Core\Inc\stm32f1xx_it.h
++++ 16B/Core/Inc/stm32f1xx_it.h
+@@ -57,6 +57,9 @@
+ void SysTick_Handler(void);
+ void UART5_IRQHandler(void);
+ void USART2_IRQHandler(void);
++void USART1_IRQHandler(void);
++void USART3_IRQHandler(void);
++void UART4_IRQHandler(void);
+ void EXTI15_10_IRQHandler(void);
+ /* USER CODE BEGIN EFP */
+ 
+--- 16A/Core\Src\main.c
++++ 16B/Core/Src/main.c
+@@ -49,6 +49,8 @@
+ 
+ UART_HandleTypeDef huart3;
+ UART_HandleTypeDef huart5;
++UART_HandleTypeDef huart1;
++UART_HandleTypeDef huart4;
+ UART_HandleTypeDef huart2;
+ 
+ /* USER CODE BEGIN PV */
+@@ -65,6 +67,8 @@
+ static void MX_TIM8_Init(void);
+ static void MX_USART3_UART_Init(void);
+ static void MX_UART5_Init(void);
++static void MX_USART1_UART_Init(void);
++static void MX_UART4_Init(void);
+ static void MX_USART2_UART_Init(void);
+ /* USER CODE BEGIN PFP */
+ 
+@@ -111,6 +115,8 @@
+   MX_TIM8_Init();
+   MX_USART3_UART_Init();
+   MX_UART5_Init();
++  MX_USART1_UART_Init();
++  MX_UART4_Init();
+   MX_USART2_UART_Init();
+   /* USER CODE BEGIN 2 */
+   App_ThiefStrategy_Init();
+@@ -556,11 +562,6 @@
+   /*Configure GPIO pin Output Level */
+   HAL_GPIO_WritePin(MOTOR_D_IN2_GPIO_Port, MOTOR_D_IN2_Pin, GPIO_PIN_RESET);
+ 
+-  /*Configure GPIO pin Output Level */
+-  HAL_GPIO_WritePin(GPIOB,
+-                   TFT_BLK_Pin | TFT_RS_DC_Pin | TFT_RST_Pin |
+-                   TFT_CS_Pin | TFT_SCLK_Pin | TFT_MOSI_Pin,
+-                   GPIO_PIN_RESET);
+ 
+   /* Configure the front software-I2C bus released high. */
+   HAL_GPIO_WritePin(GPIOA,
+@@ -609,19 +610,14 @@
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+   HAL_GPIO_Init(NCHD12_FRONT_SCL_GPIO_Port, &GPIO_InitStruct);
+ 
+-  /* Configure the TFT fixed-interface pins. */
+-  GPIO_InitStruct.Pin = TFT_BLK_Pin | TFT_RS_DC_Pin | TFT_RST_Pin |
+-                        TFT_CS_Pin | TFT_SCLK_Pin | TFT_MOSI_Pin;
+-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+-  HAL_GPIO_Init(TFT_BLK_GPIO_Port, &GPIO_InitStruct);
+ 
+   /* Configure encoder B for software quadrature decoding. */
+-  GPIO_InitStruct.Pin = ENCODER_B_A_Pin | ENCODER_B_B_Pin;
++  GPIO_InitStruct.Pin = ENCODER_B_A_Pin;
+   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   HAL_GPIO_Init(ENCODER_B_A_GPIO_Port, &GPIO_InitStruct);
++  GPIO_InitStruct.Pin = ENCODER_B_B_Pin;
++  HAL_GPIO_Init(ENCODER_B_B_GPIO_Port, &GPIO_InitStruct);
+ 
+   HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+@@ -632,6 +628,31 @@
+ }
+ 
+ /* USER CODE BEGIN 4 */
++static void MX_USART1_UART_Init(void)
++{
++  huart1.Instance = USART1;
++  huart1.Init.BaudRate = 115200;
++  huart1.Init.WordLength = UART_WORDLENGTH_8B;
++  huart1.Init.StopBits = UART_STOPBITS_1;
++  huart1.Init.Parity = UART_PARITY_NONE;
++  huart1.Init.Mode = UART_MODE_RX;
++  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
++  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
++  if (HAL_UART_Init(&huart1) != HAL_OK) Error_Handler();
++}
++static void MX_UART4_Init(void)
++{
++  huart4.Instance = UART4;
++  huart4.Init.BaudRate = 115200;
++  huart4.Init.WordLength = UART_WORDLENGTH_8B;
++  huart4.Init.StopBits = UART_STOPBITS_1;
++  huart4.Init.Parity = UART_PARITY_NONE;
++  huart4.Init.Mode = UART_MODE_RX;
++  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
++  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
++  if (HAL_UART_Init(&huart4) != HAL_OK) Error_Handler();
++}
++
+ 
+ /* USER CODE END 4 */
+ 
+--- 16A/Core\Src\stm32f1xx_hal_msp.c
++++ 16B/Core/Src/stm32f1xx_hal_msp.c
+@@ -354,7 +354,18 @@
+ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
+ {
+   GPIO_InitTypeDef GPIO_InitStruct = {0};
+-  if(huart->Instance==USART2)
++  if(huart->Instance==USART1) {
++    __HAL_RCC_USART1_CLK_ENABLE(); __HAL_RCC_GPIOB_CLK_ENABLE();
++    __HAL_AFIO_REMAP_USART1_ENABLE();
++    GPIO_InitStruct.Pin=GPIO_PIN_7; GPIO_InitStruct.Mode=GPIO_MODE_INPUT;
++    GPIO_InitStruct.Pull=GPIO_NOPULL; HAL_GPIO_Init(GPIOB,&GPIO_InitStruct);
++    HAL_NVIC_SetPriority(USART1_IRQn,5,0); HAL_NVIC_EnableIRQ(USART1_IRQn);
++  } else if(huart->Instance==UART4) {
++    __HAL_RCC_UART4_CLK_ENABLE(); __HAL_RCC_GPIOC_CLK_ENABLE();
++    GPIO_InitStruct.Pin=GPIO_PIN_11; GPIO_InitStruct.Mode=GPIO_MODE_INPUT;
++    GPIO_InitStruct.Pull=GPIO_NOPULL; HAL_GPIO_Init(GPIOC,&GPIO_InitStruct);
++    HAL_NVIC_SetPriority(UART4_IRQn,5,0); HAL_NVIC_EnableIRQ(UART4_IRQn);
++  } else if(huart->Instance==USART2)
+   {
+     __HAL_RCC_USART2_CLK_ENABLE();
+     __HAL_RCC_GPIOA_CLK_ENABLE();
+@@ -389,6 +400,7 @@
+     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+ 
+     /* USER CODE BEGIN USART3_MspInit 1 */
++    HAL_NVIC_SetPriority(USART3_IRQn,5,0); HAL_NVIC_EnableIRQ(USART3_IRQn);
+ 
+     /* USER CODE END USART3_MspInit 1 */
+ 
+@@ -427,7 +439,13 @@
+   */
+ void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
+ {
+-  if(huart->Instance==USART2)
++  if(huart->Instance==USART1) {
++    HAL_NVIC_DisableIRQ(USART1_IRQn); __HAL_RCC_USART1_CLK_DISABLE();
++    HAL_GPIO_DeInit(GPIOB,GPIO_PIN_7);
++  } else if(huart->Instance==UART4) {
++    HAL_NVIC_DisableIRQ(UART4_IRQn); __HAL_RCC_UART4_CLK_DISABLE();
++    HAL_GPIO_DeInit(GPIOC,GPIO_PIN_11);
++  } else if(huart->Instance==USART2)
+   {
+     HAL_NVIC_DisableIRQ(USART2_IRQn);
+     __HAL_RCC_USART2_CLK_DISABLE();
+--- 16A/Core\Src\stm32f1xx_it.c
++++ 16B/Core/Src/stm32f1xx_it.c
+@@ -201,6 +201,11 @@
+ /******************************************************************************/
+ 
+ /* USER CODE BEGIN 1 */
++extern UART_HandleTypeDef huart1, huart3, huart4;
++void USART1_IRQHandler(void) { HAL_UART_IRQHandler(&huart1); }
++void USART3_IRQHandler(void) { HAL_UART_IRQHandler(&huart3); }
++void UART4_IRQHandler(void) { HAL_UART_IRQHandler(&huart4); }
++
+ 
+ void UART5_IRQHandler(void)
+ {
+--- 16A/Hardware\Encoder.c
++++ 16B/Hardware/Encoder.c
+@@ -41,7 +41,7 @@
+   {
+     state |= 2U;
+   }
+-  if ((input_state & ENCODER_B_B_Pin) != 0U)
++  if ((ENCODER_B_B_GPIO_Port->IDR & ENCODER_B_B_Pin) != 0U)
+   {
+     state |= 1U;
+   }
+--- 16A/Hardware\LaserRx.c
++++ 16B/Hardware/LaserRx.c
+@@ -1,202 +1,147 @@
+ #include "LaserRx.h"
+ #include "main.h"
+-#define RAW_FIFO_SIZE 512U
+-#define LASER_FRAME_LENGTH 8U
+-#define LASER_FRAME_HEADER 0xAAU
+-#define LASER_FRAME_TYPE 0x05U
+-extern UART_HandleTypeDef huart2;
+-static volatile uint8_t raw_fifo[RAW_FIFO_SIZE];
+-static volatile uint16_t raw_fifo_head, raw_fifo_tail;
+-static volatile uint32_t raw_fifo_dropped, uart_errors;
+-static uint32_t bad_frames;
+-static uint8_t usart2_rx_byte, laser_frame[LASER_FRAME_LENGTH], laser_frame_length;
+-static LaserRx_Handler on_frame;
+-static volatile uint8_t receiver_enabled;
+-static uint8_t RawFifo_Pop(uint8_t *byte);
+-static void USART2_StartReceive(void);
+-static void LaserParser_ProcessByte(uint8_t byte);
+-static void LaserParser_Resync(void);
++#include <string.h>
++#define FIFO_SIZE 256U
++#define FRESH_MS 250U
++extern UART_HandleTypeDef huart1, huart2, huart3, huart4;
++typedef struct {
++  volatile uint8_t fifo[FIFO_SIZE];
++  volatile uint32_t tick[FIFO_SIZE];
++  volatile uint16_t head, tail;
++  volatile uint32_t dropped, errors;
++  volatile uint8_t lost;
++  uint32_t bad, last_tick;
++  uint8_t rx, frame[8], count;
++} LaserChannel;
++static LaserChannel channels[LASER_COUNT];
++static UART_HandleTypeDef *const ports[LASER_COUNT]={&huart2,&huart1,&huart4,&huart3};
++static volatile uint8_t enabled;
++static int Channel(UART_HandleTypeDef *uart)
++{
++  int i;
++  for(i=0;i<LASER_COUNT;i++) if(uart==ports[i]) return i;
++  return -1;
++}
++static void Arm(int i)
++{
++  if(enabled && HAL_UART_Receive_IT(ports[i],&channels[i].rx,1U)!=HAL_OK) {
++    channels[i].errors++; channels[i].lost=1U;
++  }
++}
+ void LaserRx_Init(void)
+ {
+-  /* CubeMX has configured USART2 already; startup is stationary. */
+-  receiver_enabled = 1U;
+-  USART2_StartReceive();
++  memset(channels,0,sizeof(channels));
++  enabled=0U;
++  (void)LaserRx_SetEnabled(1U);
+ }
+-
+-uint8_t LaserRx_IsEnabled(void) { return receiver_enabled; }
+-
+-uint8_t LaserRx_SetEnabled(uint8_t enabled)
++uint8_t LaserRx_IsEnabled(void) { return enabled; }
++uint8_t LaserRx_SetEnabled(uint8_t value)
+ {
+-  HAL_StatusTypeDef status;
+-  if (enabled == 0U)
+-  {
+-    /* Merely ignoring frames or clearing RXNEIE leaves the peripheral and
+-     * its alternate-function path enabled. Remove that difference from the
+-     * validated no-USART2 driving baseline before any wheel is commanded. */
+-    receiver_enabled = 0U;
+-    HAL_NVIC_DisableIRQ(USART2_IRQn);
+-    if (__HAL_RCC_USART2_IS_CLK_ENABLED())
+-    {
+-      (void)HAL_UART_AbortReceive(&huart2);
+-      status = HAL_UART_DeInit(&huart2); /* disables UE and MSP clock */
+-      if (status != HAL_OK) return 0U;
++  int i;
++  uint8_t stopped=1U;
++  if(value && enabled) return 1U;
++  enabled=0U;
++  /* All detection is stationary, as in 16A. Gate UART4 as well: PC10 is encoder A.
++   * Keep USART3 clock and TX alive for logs; abort only its RX transaction. */
++  for(i=0;i<LASER_COUNT;i++) {
++    (void)HAL_UART_AbortReceive(ports[i]);
++    if(i!=LASER_REAR && HAL_UART_DeInit(ports[i])!=HAL_OK) stopped=0U;
++    channels[i].head=0U; channels[i].tail=0U;
++    channels[i].count=0U; channels[i].lost=0U;
++  }
++  __HAL_RCC_USART2_FORCE_RESET();
++  __HAL_RCC_USART2_RELEASE_RESET();
++  __HAL_RCC_UART4_FORCE_RESET();
++  __HAL_RCC_UART4_RELEASE_RESET();
++  __HAL_RCC_USART1_FORCE_RESET();
++  __HAL_RCC_USART1_RELEASE_RESET();
++  if(!value || !stopped) return stopped;
++  for(i=0;i<LASER_COUNT;i++) {
++    if(i!=LASER_REAR && HAL_UART_Init(ports[i])!=HAL_OK) {
++      (void)LaserRx_SetEnabled(0U); return 0U;
+     }
+-    __HAL_RCC_USART2_FORCE_RESET();
+-    __HAL_RCC_USART2_RELEASE_RESET();
+-    HAL_NVIC_ClearPendingIRQ(USART2_IRQn);
+-    raw_fifo_head = 0U;
+-    raw_fifo_tail = 0U;
+-    laser_frame_length = 0U;
+-    on_frame = 0;
+-    return __HAL_RCC_USART2_IS_CLK_DISABLED() ? 1U : 0U;
++    __HAL_UART_CLEAR_OREFLAG(ports[i]);
+   }
+-  if (receiver_enabled != 0U) return 1U;
+-  raw_fifo_head = 0U;
+-  raw_fifo_tail = 0U;
+-  laser_frame_length = 0U;
+-  HAL_NVIC_ClearPendingIRQ(USART2_IRQn);
+-  if (HAL_UART_Init(&huart2) != HAL_OK) return 0U;
+-  receiver_enabled = 1U;
+-  if (HAL_UART_Receive_IT(&huart2, &usart2_rx_byte, 1U) != HAL_OK)
+-  {
+-    (void)LaserRx_SetEnabled(0U);
+-    return 0U;
++  enabled=1U;
++  for(i=0;i<LASER_COUNT;i++) {
++    if(HAL_UART_Receive_IT(ports[i],&channels[i].rx,1U)!=HAL_OK) {
++      (void)LaserRx_SetEnabled(0U); return 0U;
++    }
+   }
+   return 1U;
+ }
++void LaserRx_UartRxComplete(UART_HandleTypeDef *uart)
++{
++  int i=Channel(uart);
++  uint16_t next;
++  LaserChannel *c;
++  if(i<0 || !enabled) return;
++  c=&channels[i]; next=(uint16_t)((c->head+1U)%FIFO_SIZE);
++  if(next==c->tail) { c->dropped++; c->lost=1U; }
++  else {
++    c->fifo[c->head]=c->rx; c->tick[c->head]=HAL_GetTick(); c->head=next;
++  }
++  Arm(i);
++}
++void LaserRx_UartError(UART_HandleTypeDef *uart)
++{
++  int i=Channel(uart);
++  if(i<0 || !enabled) return;
++  channels[i].errors++; channels[i].lost=1U;
++  (void)HAL_UART_AbortReceive(uart);
++  __HAL_UART_CLEAR_OREFLAG(uart);
++  Arm(i);
++}
++static void Byte(LaserChannel *c, uint8_t b, uint32_t tick,
++                 LaserDirection_t direction, LaserRx_Handler handler)
++{
++  uint8_t sum=0U, j, k;
++  if((uint32_t)(tick-c->last_tick)>FRESH_MS) c->count=0U;
++  c->last_tick=tick;
++  if(!c->count) { if(b==0xAAU) c->frame[c->count++]=b; return; }
++  if(c->count==1U && b!=0x05U) { c->count=(b==0xAAU)?1U:0U; return; }
++  c->frame[c->count++]=b;
++  if(c->count<8U) return;
++  for(j=0;j<7U;j++) sum=(uint8_t)(sum+c->frame[j]);
++  if(sum==c->frame[7]) {
++    if(handler) handler(direction,(uint16_t)(c->frame[4]|((uint16_t)c->frame[5]<<8)),
++      c->frame[6],(uint16_t)(c->frame[2]|((uint16_t)c->frame[3]<<8)),tick);
++    c->count=0U;
++  } else {
++    c->bad++; c->count=0U;
++    /* Keep the first possible header in the failed frame tail. */
++    for(j=1U;j<8U;j++) if(c->frame[j]==0xAAU && (j==7U || c->frame[j+1U]==0x05U)) {
++      c->count=(uint8_t)(8U-j);
++      for(k=0U;k<c->count;k++) c->frame[k]=c->frame[j+k];
++      break;
++    }
++  }
++}
+ void LaserRx_Poll(LaserRx_Handler handler)
+ {
+-  uint8_t byte;
+-  if (receiver_enabled == 0U) return;
+-  on_frame = handler;
+-  while (RawFifo_Pop(&byte)) { LaserParser_ProcessByte(byte); }
+-}
+-void LaserRx_Counters(uint32_t *bad, uint32_t *dropped, uint32_t *errors)
+-{ *bad = bad_frames; *dropped = raw_fifo_dropped; *errors = uart_errors; }
+-void LaserRx_UartRxComplete(UART_HandleTypeDef *huart)
+-{
+-  uint16_t next_head;
+-
+-  if ((huart->Instance != USART2) || (receiver_enabled == 0U))
+-  {
+-    return;
+-  }
+-
+-  next_head = (uint16_t)((raw_fifo_head + 1U) % RAW_FIFO_SIZE);
+-  if (next_head == raw_fifo_tail)
+-  {
+-    raw_fifo_dropped++;
+-  }
+-  else
+-  {
+-    raw_fifo[raw_fifo_head] = usart2_rx_byte;
+-    raw_fifo_head = next_head;
+-  }
+-
+-  USART2_StartReceive();
+-}
+-
+-void LaserRx_UartError(UART_HandleTypeDef *huart)
+-{
+-  if ((huart->Instance == USART2) && (receiver_enabled != 0U))
+-  {
+-    uart_errors++;
+-    __HAL_UART_CLEAR_OREFLAG(&huart2);
+-    USART2_StartReceive();
++  int i;
++  uint8_t b;
++  uint32_t tick, irq;
++  LaserChannel *c;
++  if(!enabled) return;
++  for(i=0;i<LASER_COUNT;i++) {
++    c=&channels[i];
++    if(c->lost) {
++      irq=__get_PRIMASK(); __disable_irq();
++      c->tail=c->head; c->lost=0U; c->count=0U;
++      __set_PRIMASK(irq);
++      if(handler) handler((LaserDirection_t)i,0U,0U,0U,HAL_GetTick());
++    }
++    while(c->tail!=c->head) {
++      b=c->fifo[c->tail]; tick=c->tick[c->tail];
++      c->tail=(uint16_t)((c->tail+1U)%FIFO_SIZE);
++      if((uint32_t)(HAL_GetTick()-tick)>FRESH_MS) { c->count=0U; continue; }
++      Byte(c,b,tick,(LaserDirection_t)i,handler);
++    }
+   }
+ }
+-
+-static uint8_t RawFifo_Pop(uint8_t *byte)
++void LaserRx_Counters(LaserDirection_t direction,uint32_t *bad,uint32_t *dropped,uint32_t *errors)
+ {
+-  if (raw_fifo_tail == raw_fifo_head)
+-  {
+-    return 0U;
+-  }
+-
+-  *byte = raw_fifo[raw_fifo_tail];
+-  raw_fifo_tail = (uint16_t)((raw_fifo_tail + 1U) % RAW_FIFO_SIZE);
+-  return 1U;
++  if(direction>=LASER_COUNT) return;
++  *bad=channels[direction].bad; *dropped=channels[direction].dropped; *errors=channels[direction].errors;
+ }
+-
+-static void LaserParser_ProcessByte(uint8_t byte)
+-{
+-  uint8_t index;
+-  uint8_t checksum = 0U;
+-  uint16_t firmware;
+-  uint16_t distance_mm;
+-
+-  if (laser_frame_length == 0U)
+-  {
+-    if (byte == LASER_FRAME_HEADER)
+-    {
+-      laser_frame[0] = byte;
+-      laser_frame_length = 1U;
+-    }
+-    return;
+-  }
+-
+-  if (laser_frame_length == 1U)
+-  {
+-    if (byte == LASER_FRAME_TYPE)
+-    {
+-      laser_frame[1] = byte;
+-      laser_frame_length = 2U;
+-    }
+-    else if (byte == LASER_FRAME_HEADER)
+-    {
+-      laser_frame[0] = byte;
+-    }
+-    else
+-    {
+-      laser_frame_length = 0U;
+-    }
+-    return;
+-  }
+-
+-  laser_frame[laser_frame_length] = byte;
+-  laser_frame_length++;
+-
+-  if (laser_frame_length != LASER_FRAME_LENGTH)
+-  {
+-    return;
+-  }
+-
+-  for (index = 0U; index < (LASER_FRAME_LENGTH - 1U); index++)
+-  {
+-    checksum = (uint8_t)(checksum + laser_frame[index]);
+-  }
+-
+-  if (checksum == laser_frame[LASER_FRAME_LENGTH - 1U])
+-  {
+-    firmware = (uint16_t)laser_frame[2] | ((uint16_t)laser_frame[3] << 8U);
+-    distance_mm = (uint16_t)laser_frame[4] | ((uint16_t)laser_frame[5] << 8U);
+-    if (on_frame != 0) { on_frame(distance_mm, laser_frame[6], firmware); }
+-    laser_frame_length = 0U;
+-  }
+-  else
+-  {
+-    bad_frames++;
+-    LaserParser_Resync();
+-  }
+-}
+-
+-static void LaserParser_Resync(void)
+-{
+-  uint8_t index;
+-  uint8_t byte;
+-
+-  /* Reprocess the failed frame tail so a header in data or SUM is not lost. */
+-  laser_frame_length = 0U;
+-  for (index = 1U; index < LASER_FRAME_LENGTH; index++)
+-  {
+-    byte = laser_frame[index];
+-    LaserParser_ProcessByte(byte);
+-  }
+-}
+-
+-static void USART2_StartReceive(void)
+-{
+-  if (receiver_enabled != 0U)
+-    (void)HAL_UART_Receive_IT(&huart2, &usart2_rx_byte, 1U);
+-}
+-
+--- 16A/Hardware\LaserRx.h
++++ 16B/Hardware/LaserRx.h
+@@ -2,14 +2,14 @@
+ #define LASER_RX_H
+ #include <stdint.h>
+ #include "stm32f1xx_hal.h"
+-typedef void (*LaserRx_Handler)(uint16_t distance, uint8_t confidence, uint16_t firmware);
++typedef enum { LASER_FRONT=0, LASER_LEFT, LASER_RIGHT, LASER_REAR, LASER_COUNT } LaserDirection_t;
++typedef void (*LaserRx_Handler)(LaserDirection_t direction, uint16_t distance,
++    uint8_t confidence, uint16_t firmware, uint32_t arrival_tick);
+ void LaserRx_Init(void);
+-/* USART2 is allowed only while stationary: PA2 is also TIM5_CH3 (motor D).
+- * Call from the main loop before enabling chassis motion / after settling. */
+ uint8_t LaserRx_SetEnabled(uint8_t enabled);
+ uint8_t LaserRx_IsEnabled(void);
+ void LaserRx_Poll(LaserRx_Handler handler);
+-void LaserRx_Counters(uint32_t *bad, uint32_t *dropped, uint32_t *errors);
++void LaserRx_Counters(LaserDirection_t direction, uint32_t *bad, uint32_t *dropped, uint32_t *errors);
+ void LaserRx_UartRxComplete(UART_HandleTypeDef *huart);
+ void LaserRx_UartError(UART_HandleTypeDef *huart);
+ #endif
+--- 16A/Hardware\UartRxDispatcher.c
++++ 16B/Hardware/UartRxDispatcher.c
+@@ -5,14 +5,16 @@
+ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+ {
+   if (huart == 0) return;
+-  if (huart->Instance == USART2) LaserRx_UartRxComplete(huart);
++  if ((huart->Instance == USART1) || (huart->Instance == USART2) ||
++      (huart->Instance == USART3) || (huart->Instance == UART4)) LaserRx_UartRxComplete(huart);
+   else if (huart->Instance == UART5) JY61P_UartRxComplete(huart);
+ }
+ 
+ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+ {
+   if (huart == 0) return;
+-  if (huart->Instance == USART2) LaserRx_UartError(huart);
++  if ((huart->Instance == USART1) || (huart->Instance == USART2) ||
++      (huart->Instance == USART3) || (huart->Instance == UART4)) LaserRx_UartError(huart);
+   else if (huart->Instance == UART5) JY61P_UartError(huart);
+ }
+ 
+--- 16A/MDK-ARM\Thief16A_FrontLaser_MapStrategy_Test.uvprojx
++++ 16B/MDK-ARM/Thief16B_FourLaser_MapStrategy_Test.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Thief16A_FrontLaser_MapStrategy_Test</TargetName>
++      <TargetName>Thief16B_FourLaser_MapStrategy_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Thief16A_FrontLaser_MapStrategy_Test\</OutputDirectory>
+-          <OutputName>Thief16A_FrontLaser_MapStrategy_Test</OutputName>
++          <OutputDirectory>Thief16B_FourLaser_MapStrategy_Test\</OutputDirectory>
++          <OutputName>Thief16B_FourLaser_MapStrategy_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -556,11 +556,6 @@
+               <FilePath>../Hardware/SoftI2C.h</FilePath>
+             </File>
+             <File>
+-              <FileName>TFT.c</FileName>
+-              <FileType>1</FileType>
+-              <FilePath>../Hardware/TFT.c</FilePath>
+-            </File>
+-            <File>
+               <FileName>TFT.h</FileName>
+               <FileType>5</FileType>
+               <FilePath>../Hardware/TFT.h</FilePath>
+@@ -726,11 +721,6 @@
+               <FilePath>../User/LineFollowLog.h</FilePath>
+             </File>
+             <File>
+-              <FileName>TftRoutePage.c</FileName>
+-              <FileType>1</FileType>
+-              <FilePath>../User/TftRoutePage.c</FilePath>
+-            </File>
+-            <File>
+               <FileName>TftRoutePage.h</FileName>
+               <FileType>5</FileType>
+               <FilePath>../User/TftRoutePage.h</FilePath>
+@@ -744,11 +734,6 @@
+               <FileName>MapRoutePosition.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>..\User\MapRoutePosition.c</FilePath>
+-            </File>
+-            <File>
+-              <FileName>ThiefTftPage.c</FileName>
+-              <FileType>1</FileType>
+-              <FilePath>../User/ThiefTftPage.c</FilePath>
+             </File>
+             <File>
+               <FileName>ThiefTftPage.h</FileName>
+@@ -845,7 +830,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
+         <targetInfos>
+-          <targetInfo name="Thief16A_FrontLaser_MapStrategy_Test"/>
++          <targetInfo name="Thief16B_FourLaser_MapStrategy_Test"/>
+         </targetInfos>
+       </component>
+     </components>
+--- 16A/Thief16A_FrontLaser_MapStrategy_Test.ioc
++++ 16B/Thief16B_FourLaser_MapStrategy_Test.ioc
+@@ -18,54 +18,10 @@
+ Mcu.IP8=USART3
+ Mcu.IP9=UART5
+ Mcu.IP10=USART2
+-Mcu.IPNb=11
++Mcu.IPNb=13
+ Mcu.Name=STM32F103R(C-D-E)Tx
+ Mcu.Package=LQFP64
+-Mcu.Pin0=PD0-OSC_IN
+-Mcu.Pin1=PD1-OSC_OUT
+-Mcu.Pin10=PA7
+-Mcu.Pin11=PC4
+-Mcu.Pin12=PC5
+-Mcu.Pin13=PB0
+-Mcu.Pin14=PB1
+-Mcu.Pin15=PB10
+-Mcu.Pin16=PB11
+-Mcu.Pin17=PC6
+-Mcu.Pin18=PC7
+-Mcu.Pin19=PC8
+-Mcu.Pin2=PC0
+-Mcu.Pin20=PC9
+-Mcu.Pin21=PA8
+-Mcu.Pin22=PA9
+-Mcu.Pin23=PA10
+-Mcu.Pin24=PA13
+-Mcu.Pin25=PA14
+-Mcu.Pin26=PA15
+-Mcu.Pin27=PB3
+-Mcu.Pin28=PB6
+-Mcu.Pin29=PB7
+-Mcu.Pin3=PC1
+-Mcu.Pin30=VP_SYS_VS_Systick
+-Mcu.Pin31=VP_TIM5_VS_ClockSourceINT
+-Mcu.Pin32=VP_TIM8_VS_ClockSourceINT
+-Mcu.Pin33=PB8
+-Mcu.Pin34=PB9
+-Mcu.Pin35=PA4
+-Mcu.Pin36=PA5
+-Mcu.Pin37=PC10
+-Mcu.Pin38=PC11
+-Mcu.Pin39=PB12
+-Mcu.Pin40=PB13
+-Mcu.Pin41=PC12
+-Mcu.Pin42=PD2
+-Mcu.Pin43=PA3
+-Mcu.Pin4=PC2
+-Mcu.Pin5=PC3
+-Mcu.Pin6=PA0-WKUP
+-Mcu.Pin7=PA1
+-Mcu.Pin8=PA2
+-Mcu.Pin9=PA6
+-Mcu.PinsNb=44
++Mcu.PinsNb=42
+ Mcu.ThirdPartyNb=0
+ Mcu.UserConstants=
+ Mcu.UserName=STM32F103RCTx
+@@ -126,22 +82,6 @@
+ PB1.GPIO_Label=MOTOR_D_IN1
+ PB1.Locked=true
+ PB1.Signal=GPIO_Output
+-PB4.GPIOParameters=GPIO_Label
+-PB4.GPIO_Label=TFT_BLK
+-PB4.Locked=true
+-PB4.Signal=GPIO_Output
+-PB5.GPIOParameters=GPIO_Label
+-PB5.GPIO_Label=TFT_RS_DC
+-PB5.Locked=true
+-PB5.Signal=GPIO_Output
+-PB6.GPIOParameters=GPIO_Label
+-PB6.GPIO_Label=TFT_RST
+-PB6.Locked=true
+-PB6.Signal=GPIO_Output
+-PB7.GPIOParameters=GPIO_Label
+-PB7.GPIO_Label=TFT_CS
+-PB7.Locked=true
+-PB7.Signal=GPIO_Output
+ PB10.Mode=Asynchronous
+ PB10.Signal=USART3_TX
+ PB11.Mode=Asynchronous
+@@ -155,24 +95,11 @@
+ PB13.Locked=true
+ PB13.Signal=GPIO_Output
+ PB3.Signal=S_TIM2_CH2
+-PB8.GPIOParameters=GPIO_Label
+-PB8.GPIO_Label=TFT_SCLK
+-PB8.Locked=true
+-PB8.Signal=GPIO_Output
+-PB9.GPIOParameters=GPIO_Label
+-PB9.GPIO_Label=TFT_MOSI
+-PB9.Locked=true
+-PB9.Signal=GPIO_Output
+ PC10.GPIOParameters=GPIO_Label,GPIO_PuPd
+ PC10.GPIO_Label=ENCODER_B_A
+ PC10.GPIO_PuPd=GPIO_NOPULL
+ PC10.Locked=true
+ PC10.Signal=GPXTI10
+-PC11.GPIOParameters=GPIO_Label,GPIO_PuPd
+-PC11.GPIO_Label=ENCODER_B_B
+-PC11.GPIO_PuPd=GPIO_NOPULL
+-PC11.Locked=true
+-PC11.Signal=GPXTI11
+ PC0.GPIOParameters=GPIO_Label
+ PC0.GPIO_Label=MOTOR_A_IN1
+ PC0.Locked=true
+@@ -235,8 +162,8 @@
+ ProjectManager.NoMain=false
+ ProjectManager.PreviousToolchain=
+ ProjectManager.ProjectBuild=false
+-ProjectManager.ProjectFileName=Thief16A_FrontLaser_MapStrategy_Test.ioc
+-ProjectManager.ProjectName=Thief16A_FrontLaser_MapStrategy_Test
++ProjectManager.ProjectFileName=Thief16B_FourLaser_MapStrategy_Test.ioc
++ProjectManager.ProjectName=Thief16B_FourLaser_MapStrategy_Test
+ ProjectManager.ProjectStructure=
+ ProjectManager.RegisterCallBack=
+ ProjectManager.StackSize=0x400
+@@ -245,7 +172,7 @@
+ ProjectManager.UAScriptAfterPath=
+ ProjectManager.UAScriptBeforePath=
+ ProjectManager.UnderRoot=false
+-ProjectManager.functionlistsort=1-SystemClock_Config-RCC-false-HAL-false,2-MX_GPIO_Init-GPIO-false-HAL-true,3-MX_TIM1_Init-TIM1-false-HAL-true,4-MX_TIM2_Init-TIM2-false-HAL-true,5-MX_TIM3_Init-TIM3-false-HAL-true,6-MX_TIM5_Init-TIM5-false-HAL-true,7-MX_TIM8_Init-TIM8-false-HAL-true,8-MX_USART2_UART_Init-USART2-false-HAL-true,9-MX_USART3_UART_Init-USART3-false-HAL-true,10-MX_UART5_Init-UART5-false-HAL-true
++ProjectManager.functionlistsort=1-SystemClock_Config-RCC-false-HAL-false,2-MX_GPIO_Init-GPIO-false-HAL-true,3-MX_TIM1_Init-TIM1-false-HAL-true,4-MX_TIM2_Init-TIM2-false-HAL-true,5-MX_TIM3_Init-TIM3-false-HAL-true,6-MX_TIM5_Init-TIM5-false-HAL-true,7-MX_TIM8_Init-TIM8-false-HAL-true,8-MX_USART2_UART_Init-USART2-false-HAL-true,9-MX_USART3_UART_Init-USART3-false-HAL-true,10-MX_UART5_Init-UART5-false-HAL-true,11-MX_USART1_UART_Init-USART1-false-HAL-true,12-MX_UART4_Init-UART4-false-HAL-true
+ RCC.ADCFreqValue=36000000
+ RCC.AHBFreq_Value=72000000
+ RCC.APB1CLKDivider=RCC_HCLK_DIV2
+@@ -325,3 +252,75 @@
+ VP_TIM8_VS_ClockSourceINT.Mode=Internal
+ VP_TIM8_VS_ClockSourceINT.Signal=TIM8_VS_ClockSourceINT
+ board=custom
++Mcu.Pin0=PD0-OSC_IN
++Mcu.Pin1=PD1-OSC_OUT
++Mcu.Pin2=PC0
++Mcu.Pin3=PC1
++Mcu.Pin4=PC2
++Mcu.Pin5=PC3
++Mcu.Pin6=PA0-WKUP
++Mcu.Pin7=PA1
++Mcu.Pin8=PA2
++Mcu.Pin9=PA6
++Mcu.Pin10=PA7
++Mcu.Pin11=PC4
++Mcu.Pin12=PC5
++Mcu.Pin13=PB0
++Mcu.Pin14=PB1
++Mcu.Pin15=PB10
++Mcu.Pin16=PB11
++Mcu.Pin17=PC6
++Mcu.Pin18=PC7
++Mcu.Pin19=PC8
++Mcu.Pin20=PC9
++Mcu.Pin21=PA8
++Mcu.Pin22=PA9
++Mcu.Pin23=PA10
++Mcu.Pin24=PA13
++Mcu.Pin25=PA14
++Mcu.Pin26=PA15
++Mcu.Pin27=PB3
++Mcu.Pin28=PB7
++Mcu.Pin29=VP_SYS_VS_Systick
++Mcu.Pin30=VP_TIM5_VS_ClockSourceINT
++Mcu.Pin31=VP_TIM8_VS_ClockSourceINT
++Mcu.Pin32=PA4
++Mcu.Pin33=PA5
++Mcu.Pin34=PC10
++Mcu.Pin35=PC11
++Mcu.Pin36=PB12
++Mcu.Pin37=PB13
++Mcu.Pin38=PC12
++Mcu.Pin39=PD2
++Mcu.Pin40=PA3
++Mcu.Pin41=PB14
++Mcu.IP11=USART1
++Mcu.IP12=UART4
++PB7.Mode=Asynchronous
++PB7.Signal=USART1_RX
++PC11.Mode=Asynchronous
++PC11.Signal=UART4_RX
++PB14.GPIOParameters=GPIO_Label,GPIO_ModeDefaultEXTI
++PB14.GPIO_Label=ENCODER_B_B
++PB14.GPIO_ModeDefaultEXTI=GPIO_MODE_IT_RISING_FALLING
++PB14.Signal=GPXTI14
++PB14.Locked=true
++SH.GPXTI14.0=GPIO_EXTI14
++SH.GPXTI14.ConfNb=1
++USART1.BaudRate=115200
++USART1.IPParameters=VirtualMode,BaudRate,WordLength,StopBits,Parity,Mode
++USART1.Mode=RX
++USART1.Parity=PARITY_NONE
++USART1.StopBits=STOPBITS_1
++USART1.VirtualMode=VM_ASYNC
++USART1.WordLength=WORDLENGTH_8B
++UART4.BaudRate=115200
++UART4.IPParameters=VirtualMode,BaudRate,WordLength,StopBits,Parity,Mode
++UART4.Mode=RX
++UART4.Parity=PARITY_NONE
++UART4.StopBits=STOPBITS_1
++UART4.VirtualMode=VM_ASYNC
++UART4.WordLength=WORDLENGTH_8B
++NVIC.USART1_IRQn=true\:5\:0\:false\:false\:true\:true\:true\:true
++NVIC.USART3_IRQn=true\:5\:0\:false\:false\:true\:true\:true\:true
++NVIC.UART4_IRQn=true\:5\:0\:false\:false\:true\:true\:true\:true
+--- 16A/User\App_ThiefStrategy.c
++++ 16B/User/App_ThiefStrategy.c
+@@ -10,7 +10,7 @@
+ #include "nchd12.h"
+ #include "nchd12_rear.h"
+ #include "SystemTime.h"
+-#include "ThiefTftPage.h"
++
+ #include "UartDebug.h"
+ #include "MapTimingLog.h"
+ #include "MapRouteNavigator.h"
+@@ -160,12 +160,16 @@
+ static ThiefStrategyState_t thief_strategy_state;
+ static ThiefRoutePlan_t thief_plan;
+ static ThiefMapPose_t thief_pose;
+-static FrontLaserGate_t thief_laser;
++static FrontLaserGate_t thief_laser[LASER_COUNT];
++static uint8_t thief_trigger_direction;
++static const uint8_t laser_heading_offset[LASER_COUNT] = {0U,3U,1U,2U};
++static const char *const laser_name[LASER_COUNT] = {"FRONT","LEFT","RIGHT","REAR"};
+ static uint16_t thief_current_node;
+ static uint16_t thief_previous_hide_node;
+ static uint8_t thief_body_heading;
+ static uint8_t thief_escape_requested;
+-static uint32_t thief_last_laser_tick;
++static uint32_t thief_last_laser_tick[LASER_COUNT];
++static uint8_t thief_laser_seen[LASER_COUNT];
+ 
+ static const char *Thief_StrategyName(void)
+ {
+@@ -186,19 +190,67 @@
+   }
+ }
+ 
+-static void Thief_OnLaserFrame(uint16_t distance, uint8_t confidence,
+-                               uint16_t firmware)
+-{
+-  uint32_t now = SystemTime_GetMs();
+-  if ((uint32_t)(now - thief_last_laser_tick) > 250U)
+-    FrontLaserGate_ResetEvidence(&thief_laser);
+-  thief_last_laser_tick = now;
++static void Thief_ResetLaserEvidence(void)
++{
++  uint8_t i;
++  for (i=0U;i<LASER_COUNT;i++) {
++    FrontLaserGate_ResetEvidence(&thief_laser[i]);
++    thief_laser_seen[i]=0U;
++  }
++  thief_escape_requested=0U;
++}
++static void Thief_OnLaserFrame(LaserDirection_t direction,uint16_t distance,
++                               uint8_t confidence,uint16_t firmware,uint32_t tick)
++{
++  ThiefMapPose_t sensor_pose;
++  uint8_t i=(uint8_t)direction;
++  if(i>=LASER_COUNT) return;
++  if(!thief_laser_seen[i] || (uint32_t)(tick-thief_last_laser_tick[i])>250U || !distance)
++    FrontLaserGate_ResetEvidence(&thief_laser[i]);
++  thief_last_laser_tick[i]=tick;
++  thief_laser_seen[i]=1U;
+   Thief_UpdatePose();
+-  if (FrontLaserGate_Observe(&thief_laser, &thief_pose,
+-      (thief_strategy_state == THIEF_STRATEGY_HIDING) ? 1U : 0U,
+-      distance, confidence, firmware) != 0U) {
+-    thief_escape_requested = 1U;
+-  }
++  sensor_pose=thief_pose;
++  sensor_pose.body_heading=(uint8_t)((thief_pose.body_heading+laser_heading_offset[i])%4U);
++  if(FrontLaserGate_Observe(&thief_laser[i],&sensor_pose,
++      (thief_strategy_state==THIEF_STRATEGY_HIDING)?1U:0U,
++      distance,confidence,firmware)) thief_escape_requested=1U;
++}
++static uint8_t Thief_ThreatMask(uint32_t now)
++{
++  uint8_t i,mask=0U;
++  uint16_t nearest=0xFFFFU;
++  for(i=0U;i<LASER_COUNT;i++) {
++    if(!thief_laser_seen[i] || (uint32_t)(now-thief_last_laser_tick[i])>250U) {
++      FrontLaserGate_ResetEvidence(&thief_laser[i]); continue;
++    }
++    if(thief_laser[i].status==FRONT_LASER_OPPONENT) {
++      mask|=(uint8_t)(1U<<((thief_body_heading+laser_heading_offset[i])%4U));
++      if(thief_laser[i].distance_mm<nearest) {
++        nearest=thief_laser[i].distance_mm; thief_trigger_direction=i;
++      }
++    }
++  }
++  return mask;
++}
++static void Thief_LaserLog(uint32_t now)
++{
++  static uint32_t last;
++  static uint8_t i;
++  uint32_t bad,dropped,errors;
++  const char *status;
++  if((uint32_t)(now-last)<125U) return;
++  last=now;
++  status=FrontLaserGate_StatusText(thief_laser[i].status);
++  if(!LaserRx_IsEnabled()) status="MOVING_OFF";
++  else if(!thief_laser_seen[i] || (uint32_t)(now-thief_last_laser_tick[i])>250U) status="NO_DATA";
++  LaserRx_Counters((LaserDirection_t)i,&bad,&dropped,&errors);
++  UartDebug_Printf("LASER DIR=%s D=%u C=%u STATUS=%s AGE=%lu BAD=%lu DROP=%lu ERR=%lu STATE=%s FAULT=%s\r\n",
++    laser_name[i],(unsigned)thief_laser[i].distance_mm,(unsigned)thief_laser[i].confidence,
++    status,(unsigned long)(thief_laser_seen[i]?now-thief_last_laser_tick[i]:0U),
++    (unsigned long)bad,(unsigned long)dropped,(unsigned long)errors,
++    Thief_StrategyName(),route_fault_reason?route_fault_reason:"NONE");
++  i=(uint8_t)((i+1U)%LASER_COUNT);
+ }
+ 
+ static void Route_MapContext(void)
+@@ -873,7 +925,7 @@
+     last_control_tick = now;
+     turn_stop_stable_count = 0U;
+     thief_escape_requested = 0U;
+-    FrontLaserGate_ResetEvidence(&thief_laser);
++    Thief_ResetLaserEvidence();
+     ThiefMapPlanner_PoseAtNode(thief_current_node, thief_body_heading,
+                                &thief_pose);
+     MapTimingLog_Event(MAP_TIMING_END, junction_count, now, 3L);
+@@ -975,8 +1027,8 @@
+   route_state = ROUTE_STATE_LEAVE_START;
+   thief_strategy_state = (thief_plan.route.id == 1600U) ?
+       THIEF_STRATEGY_TO_HIDE : THIEF_STRATEGY_ESCAPING;
+-  FrontLaserGate_ResetEvidence(&thief_laser);
+-  UartDebug_SendString("START_OK STATE=LEAVE LASER_USART2=OFF\r\n");
++  Thief_ResetLaserEvidence();
++  UartDebug_SendString("START_OK STATE=LEAVE LASER_RX=ALL_OFF\r\n");
+   StartupWheelLog_Begin(now);
+ }
+ 
+@@ -1016,7 +1068,12 @@
+   turn_stop_frame_count = 0U;
+   JY61P_Init();
+   LaserRx_Init();
+-  FrontLaserGate_Init(&thief_laser);
++  Thief_ResetLaserEvidence();
++  if(!LaserRx_IsEnabled()) {
++    thief_strategy_state=THIEF_STRATEGY_FAULT;
++    route_fault_reason="LASER_INIT_FAILED";
++    return;
++  }
+   thief_current_node = THIEF_START_NODE;
+   thief_previous_hide_node = 0U;
+   thief_body_heading = THIEF_START_BODY_HEADING;
+@@ -1028,15 +1085,15 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_SendString("Thief16A_FrontLaser_MapStrategy_Test\r\n");
++  UartDebug_SendString("Thief16B_FourLaser_MapStrategy_Test\r\n");
+   UartDebug_Printf("MAP_PARAMS BASE_RPM_X10=%ld CONTROL_MS=%u TURN_PWM=%ld SPIN_TARGET_X100=%ld WHEEL_CIRCUMFERENCE_UM=%lu\r\n",
+       (long)LINE_FOLLOW_PID_BASE_RPM_X10, (unsigned)LINE_FOLLOW_PID_CONTROL_PERIOD_MS,
+       (long)ROUTE_TURN_EQUAL_PWM, (long)ROUTE_TURN_TARGET_ANGLE_X100,
+       (unsigned long)MAP_ROUTE_WHEEL_CIRCUMFERENCE_UM);
+-  UartDebug_SendString("LASER=USART2_RX PA3 115200; JY61P=UART5 9600\r\n");
++  UartDebug_SendString("LASER FRONT=PA3 LEFT=PB7 RIGHT=PC11 REAR=PB11 115200; LOG_TX=PB10; TFT=OFF; ENCODER_B_B=PB14\r\n");
+   UartDebug_SendString("THIEF: N054 HEAD=W; KEY2=start treasure+hide; laser 3/5 triggers escape\r\n");
+   Route_MapPreview();
+-  ThiefTftPage_Init();
++
+ }
+ 
+ void App_ThiefStrategy_Task(void)
+@@ -1108,7 +1165,7 @@
+       if (((uint32_t)(now - route_state_tick) >= ROUTE_TURN_STOP_MS) &&
+           (turn_stop_stable_count >= ROUTE_TURN_STOP_STABLE_SAMPLES)) {
+         thief_strategy_state = THIEF_STRATEGY_HIDING;
+-        FrontLaserGate_ResetEvidence(&thief_laser);
++        Thief_ResetLaserEvidence();
+         thief_escape_requested = 0U;
+         if (LaserRx_SetEnabled(1U) == 0U)
+           Route_StopFault("LASER_RESTART_FAILED");
+@@ -1123,8 +1180,11 @@
+       (thief_strategy_state == THIEF_STRATEGY_HIDING) &&
+       (thief_escape_requested != 0U)) {
+     uint16_t old_hide = thief_current_node;
++    uint8_t threat_mask = Thief_ThreatMask(now);
+     thief_escape_requested = 0U;
++    if (!threat_mask) goto task_end;
+     if (ThiefMapPlanner_PlanEscape(thief_current_node, thief_body_heading,
++                                   threat_mask,
+                                    thief_previous_hide_node,
+                                    &thief_plan) == 0U) {
+       thief_strategy_state = THIEF_STRATEGY_FAULT;
+@@ -1134,8 +1194,9 @@
+       goto task_end;
+     }
+     thief_previous_hide_node = old_hide;
+-    UartDebug_Printf("LASER_ESCAPE D=%u C=%u FROM=N%03u TO=N%03u\r\n",
+-        (unsigned)thief_laser.distance_mm, (unsigned)thief_laser.confidence,
++    UartDebug_Printf("LASER_ESCAPE DIR=%s MASK=%u D=%u C=%u FROM=N%03u TO=N%03u\r\n",
++        laser_name[thief_trigger_direction], (unsigned)threat_mask,
++        (unsigned)thief_laser[thief_trigger_direction].distance_mm, (unsigned)thief_laser[thief_trigger_direction].confidence,
+         (unsigned)thief_current_node, (unsigned)thief_plan.goal_node);
+     Route_Start();
+     goto task_end;
+@@ -1647,10 +1708,5 @@
+   StartupWheelLog_Task(SystemTime_GetMs(), (uint8_t)route_state, route_active);
+   MapTimingLog_Task();
+   Thief_UpdatePose();
+-  /* TFT drawing is blocking: retain the reverse baseline's stopped-only refresh. */
+-  if ((route_active == 0U) || (route_state == ROUTE_STATE_TURN_STOP) ||
+-      (route_state == ROUTE_STATE_FRONT_RECOVERY) || (gyro_paused != 0U))
+-  ThiefTftPage_Task(Route_StateName(route_state), route_fault_reason,
+-                    Thief_StrategyName(), &thief_pose, &thief_laser,
+-                    thief_plan.goal_node);
+-}
++  Thief_LaserLog(SystemTime_GetMs());
++}

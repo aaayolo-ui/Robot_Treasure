@@ -1,0 +1,101 @@
+[
+  {
+    "new_file": ".gitignore",
+    "baseline_file": ".gitignore",
+    "status": "copied_then_modified",
+    "added_lines": 1,
+    "removed_lines": 1,
+    "baseline_sha256": "554486c70bacced1787e2ba0cd33153767bf2f8e6e2ac8ed03f2032bf03b7387",
+    "new_sha256": "9db42b6c56fffc479d31cd8ce1f716e0430c763710e38f04913fc0dbd20fe9c2"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "status": "copied_then_modified",
+    "added_lines": 1,
+    "removed_lines": 0,
+    "baseline_sha256": "9dc247580a5d848f3389866004549abdab74b1556ff87836b309f1abf5f8080c",
+    "new_sha256": "c46f235904a65b70612bdeb80a03b44f47b19bf0cf3c76b0cbceaab04761e42b"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+    "status": "copied_then_modified",
+    "added_lines": 2,
+    "removed_lines": 0,
+    "baseline_sha256": "7fb828148c2c64bb8bb23030fb02009a091032b0a8474e15ee5b8e98b1d96075",
+    "new_sha256": "b64d786e432287481fe3f2037e5f09a9c9a5114ff904bb9f6582d77efe147ae6"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefRollout.c",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefRollout.c",
+    "status": "copied_then_modified",
+    "added_lines": 38,
+    "removed_lines": 15,
+    "baseline_sha256": "8645fea9ea024aa7750068cca89e137b8e82793f1f79e0a7a77cbce30621c47b",
+    "new_sha256": "8bb54d038dbc1b9f64e56cf6d65331311c862dfdad1f4db3ca41251723472827"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefRollout.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefRollout.h",
+    "status": "copied_then_modified",
+    "added_lines": 1,
+    "removed_lines": 0,
+    "baseline_sha256": "b68853d1168f41c088e58897bcc36567aba772d97a8271817ba300b35e4de6fc",
+    "new_sha256": "2b79d3c16e26471c317a1883dde485e526006f7eee60c327179d8a39f319678c"
+  },
+  {
+    "new_file": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+    "baseline_file": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+    "status": "copied_then_modified",
+    "added_lines": 12,
+    "removed_lines": 0,
+    "baseline_sha256": "2dd184e9157363ba559aa1c4bd64b1d03b60b7e888fb12f5841448759baf667e",
+    "new_sha256": "e8bb99216ac9a328f9be05cd6449fab805831f42fb088e433885cda780e7cea9"
+  },
+  {
+    "new_file": "MDK-ARM/RTE/_Thief16J_RefugeViability_FourLaser_Test/RTE_Components.h",
+    "baseline_file": "MDK-ARM/RTE/_Thief16I_RolloutMinimax_FourLaser_Test/RTE_Components.h",
+    "status": "copied_then_modified",
+    "added_lines": 2,
+    "removed_lines": 2,
+    "baseline_sha256": "51d8ad544003e6af5fe365c234ec6716346a012111516c98e33541bd484e96d3",
+    "new_sha256": "361dcad63fbef985c3b0154ff91fd4a749c2de63b4d3d2ab14b41dd51a21f707"
+  },
+  {
+    "new_file": "MDK-ARM/Thief16J_RefugeViability_FourLaser_Test.uvprojx",
+    "baseline_file": "MDK-ARM/Thief16I_RolloutMinimax_FourLaser_Test.uvprojx",
+    "status": "copied_then_modified",
+    "added_lines": 4,
+    "removed_lines": 4,
+    "baseline_sha256": "23b109224892fc4cb4029f1354b1a662842aa9b8edf829a730e3121096bc3d56",
+    "new_sha256": "68342fbd3864ba40e3c577a3237858dadee65fd4ea3696f079438c5b123b6b11"
+  },
+  {
+    "new_file": "Tests/test_algorithms.c",
+    "baseline_file": "Tests/test_algorithms.c",
+    "status": "copied_then_modified",
+    "added_lines": 21,
+    "removed_lines": 0,
+    "baseline_sha256": "de8a6eb711145a3ab6854c383f3587ee19356520a1a1da2be76fc321e4958080",
+    "new_sha256": "4aa7bc38a35ccca527d671cfa179e714adacbdf9502597ede601f69a8de2b81d"
+  },
+  {
+    "new_file": "Thief16J_RefugeViability_FourLaser_Test.ioc",
+    "baseline_file": "Thief16I_RolloutMinimax_FourLaser_Test.ioc",
+    "status": "copied_then_modified",
+    "added_lines": 2,
+    "removed_lines": 2,
+    "baseline_sha256": "01f79dbd6cb6fd2d1ab0934b405d0219a3005f20f6c2fccfa3568bcfb1387261",
+    "new_sha256": "68497b5e4c034710a28ed37d64a1d74a0da503a955a2ef7c6faf7c5c2b565ec8"
+  },
+  {
+    "new_file": "User/App_ThiefStrategy.c",
+    "baseline_file": "User/App_ThiefStrategy.c",
+    "status": "copied_then_modified",
+    "added_lines": 4,
+    "removed_lines": 3,
+    "baseline_sha256": "7c86696d5a16c8a3f8e5c5fe111336de1d598cc1bc3b3ecb9c202f1b124f3980",
+    "new_sha256": "e2bb6d656ce71943665ce390dbe35bd37c7599e9c958497820fafa3db4acaf7f"
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "baseline": "Thief16A_FrontLaser_MapStrategy_Test",
+  "changed": [
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.h",
+    "Core/Inc/main.h",
+    "Core/Inc/stm32f1xx_it.h",
+    "Core/Src/main.c",
+    "Core/Src/stm32f1xx_hal_msp.c",
+    "Core/Src/stm32f1xx_it.c",
+    "Hardware/Encoder.c",
+    "Hardware/LaserRx.c",
+    "Hardware/LaserRx.h",
+    "Hardware/UartRxDispatcher.c",
+    "MDK-ARM/Thief16B_FourLaser_MapStrategy_Test.uvprojx",
+    "Thief16B_FourLaser_MapStrategy_Test.ioc",
+    "User/App_ThiefStrategy.c"
+  ],
+  "unchanged_source_count": 137,
+  "duplicate_project_entries": 0,
+  "project_entries": 79
+}

@@ -8,11 +8,20 @@ class PatrolTests(unittest.TestCase):
     def setUp(self):
         self.track = TrackMap()
         config = json.loads((ROOT / 'config.json').read_text(encoding='utf-8'))
+        # Reproduce the original high-speed report; measured-motion behavior
+        # has separate tests with the actual calibrated configuration.
+        config.pop('measured_motion', None)
+        config['regional_search_enabled'] = False  # Legacy straight-trail regression.
+        config.update(police_speed_m_s=1.95, thief_speed_m_s=1.95, turn90_s=.5, uturn_s=.5,
+                      police_sensor_range_m=.9)  # Preserve this historical three-cell fixture.
         self.game = Game(self.track, dict(config, miss_probability=0))
         self.game.now = 30
         self.game.owner, self.game.police_checked_treasure = 'B', True
         self.actor, self.belief = self.game.robots['P'], self.game.beliefs['P']
         self.actor.node, self.actor.facing = '(6,0)', 'S'
+        # Finish the local stationary observation before selecting the next run.
+        for _ in range(3):
+            self.game.update_search_coverage()
 
     def test_central_corridor_selected_and_completed_despite_negative_coverage(self):
         g = self.game
@@ -54,6 +63,8 @@ class PatrolTests(unittest.TestCase):
 
     def test_passage_without_consecutive_samples_does_not_mark_coverage(self):
         g = self.game
+        g.negative_counts.clear()
+        g.search_covered.clear()
         self.actor.node = '(6,3)'
         g.update_search_coverage()
         self.assertEqual(g.negative_counts['(6,3)'], 1)

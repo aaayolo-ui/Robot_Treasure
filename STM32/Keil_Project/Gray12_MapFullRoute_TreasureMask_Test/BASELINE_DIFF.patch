@@ -1,0 +1,162 @@
+--- baseline/Algorithm/MapRoute/TreasureGrayMask.c
++++ experiment/Algorithm/MapRoute/TreasureGrayMask.c
+@@ -0,0 +1,21 @@
++#include "TreasureGrayMask.h"
++#include <stddef.h>
++
++uint16_t TreasureGrayMask_Apply(const MapRouteStep_t *step, uint8_t enabled,
++                               uint8_t leading, uint16_t gray12)
++{
++  uint16_t mask;
++  if ((enabled == 0U) || (step == NULL)) return gray12;
++  if ((step->from_node == 4U) && (step->to_node == 6U) &&
++      (step->heading == 1U)) {
++    /* East: north is travel-left. */
++    mask = (leading != 0U) ? 0x0C00U : 0x0003U;
++  } else if ((step->from_node == 6U) && (step->to_node == 4U) &&
++             (step->heading == 3U)) {
++    /* West: north is travel-right. */
++    mask = (leading != 0U) ? 0x0003U : 0x0C00U;
++  } else {
++    return gray12;
++  }
++  return (uint16_t)(gray12 & (uint16_t)~mask);
++}
+--- baseline/Algorithm/MapRoute/TreasureGrayMask.h
++++ experiment/Algorithm/MapRoute/TreasureGrayMask.h
+@@ -0,0 +1,9 @@
++#ifndef TREASURE_GRAY_MASK_H
++#define TREASURE_GRAY_MASK_H
++#include "MapRoutePlan.h"
++
++/* Logical leading board: P12 is travel-left. Trailing board: P1 is travel-left.
++ * TravelFrame already swaps physical boards in reverse mode. Text is north. */
++uint16_t TreasureGrayMask_Apply(const MapRouteStep_t *step, uint8_t enabled,
++                               uint8_t leading, uint16_t gray12);
++#endif
+--- baseline/Gray12_MapFullRoute_Calibration_Test.ioc
++++ experiment/Gray12_MapFullRoute_TreasureMask_Test.ioc
+@@ -230,8 +230,8 @@
+ ProjectManager.NoMain=false
+ ProjectManager.PreviousToolchain=
+ ProjectManager.ProjectBuild=false
+-ProjectManager.ProjectFileName=Gray12_MapFullRoute_Calibration_Test.ioc
+-ProjectManager.ProjectName=Gray12_MapFullRoute_Calibration_Test
++ProjectManager.ProjectFileName=Gray12_MapFullRoute_TreasureMask_Test.ioc
++ProjectManager.ProjectName=Gray12_MapFullRoute_TreasureMask_Test
+ ProjectManager.ProjectStructure=
+ ProjectManager.RegisterCallBack=
+ ProjectManager.StackSize=0x400
+--- baseline/MDK-ARM/Gray12_MapFullRoute_Calibration_Test.uvprojx
++++ experiment/MDK-ARM/Gray12_MapFullRoute_TreasureMask_Test.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Gray12_MapFullRoute_Calibration_Test</TargetName>
++      <TargetName>Gray12_MapFullRoute_TreasureMask_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Gray12_MapFullRoute_Calibration_Test\</OutputDirectory>
+-          <OutputName>Gray12_MapFullRoute_Calibration_Test</OutputName>
++          <OutputDirectory>Gray12_MapFullRoute_TreasureMask_Test\</OutputDirectory>
++          <OutputName>Gray12_MapFullRoute_TreasureMask_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -756,6 +756,11 @@
+               <FilePath>../Algorithm/SpeedPI/WheelSpeedPi.h</FilePath>
+             </File>
+             <File>
++              <FileName>TreasureGrayMask.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\Algorithm\MapRoute\TreasureGrayMask.c</FilePath>
++            </File>
++            <File>
+               <FileName>MapRouteNavigator.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>..\Algorithm\MapRoute\MapRouteNavigator.c</FilePath>
+@@ -780,7 +785,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
+         <targetInfos>
+-          <targetInfo name="Gray12_MapFullRoute_Calibration_Test"/>
++          <targetInfo name="Gray12_MapFullRoute_TreasureMask_Test"/>
+         </targetInfos>
+       </component>
+     </components>
+--- baseline/MDK-ARM/RTE/_Gray12_MapFullRoute_Calibration_Test/RTE_Components.h
++++ experiment/MDK-ARM/RTE/_Gray12_MapFullRoute_TreasureMask_Test/RTE_Components.h
+@@ -3,8 +3,8 @@
+  * Auto generated Run-Time-Environment Component Configuration File
+  *      *** Do not modify ! ***
+  *
+- * Project: 'Gray12_MapFullRoute_Calibration_Test' 
+- * Target:  'Gray12_MapFullRoute_Calibration_Test' 
++ * Project: 'Gray12_MapFullRoute_TreasureMask_Test' 
++ * Target:  'Gray12_MapFullRoute_TreasureMask_Test' 
+  */
+ 
+ #ifndef RTE_COMPONENTS_H
+--- baseline/User/App_LineFollowExperiment.c
++++ experiment/User/App_LineFollowExperiment.c
+@@ -16,6 +16,7 @@
+ #include "MapRouteNavigator.h"
+ #include "MapRoutePosition.h"
+ #include "TravelFrame.h"
++#include "TreasureGrayMask.h"
+ 
+ /* RPM targets use x10 units. Keep the user's cruise/turn settings separate. */
+ #define ROUTE_LEAVE_START_RPM_X10          1000L
+@@ -311,6 +312,19 @@
+   return 1U;
+ }
+ 
++static uint16_t Route_FilterTreasureGray(uint16_t raw12, uint8_t leading)
++{
++  /* Apply only during translation on this map leg. Rotation/realignment uses
++   * all channels: a horizontal route heading is not the body yaw in a turn. */
++  uint8_t enabled = (uint8_t)((route_active != 0U) &&
++      ((route_state == ROUTE_STATE_FOLLOW) ||
++       (route_state == ROUTE_STATE_LEAVE_START) ||
++       (route_state == ROUTE_STATE_MAP_PASS) ||
++       (route_state == ROUTE_STATE_FRONT_RECOVERY)));
++  return TreasureGrayMask_Apply(MapRouteNavigator_Current(&map_nav), enabled,
++                                leading, raw12);
++}
++
+ static RouteGrayState_t Route_ReadFront(RouteGraySample_t *sample)
+ {
+   uint16_t raw16;
+@@ -320,7 +334,7 @@
+   {
+     return ROUTE_GRAY_I2C_ERROR;
+   }
+-  sample->front_raw12 = NCHD12_Extract12(raw16);
++  sample->front_raw12 = Route_FilterTreasureGray(NCHD12_Extract12(raw16), 1U);
+   GrayPosition_Calculate(sample->front_raw12, &sample->front_position);
+   state = Route_ClassifyPosition(&sample->front_position, 1U);
+   if ((state == ROUTE_GRAY_NO_LINE) || (state == ROUTE_GRAY_ALL_BLACK) ||
+@@ -355,7 +369,7 @@
+     rear_hw_ready = 0U;
+     return ROUTE_GRAY_I2C_ERROR;
+   }
+-  sample->rear_raw12 = NCHD12_Extract12(raw16);
++  sample->rear_raw12 = Route_FilterTreasureGray(NCHD12_Extract12(raw16), 0U);
+   GrayPosition_Calculate(sample->rear_raw12, &sample->rear_position);
+   /* Logical trailing board contributes heading; leading board detects branches. */
+   state = Route_ClassifyPosition(&sample->rear_position, 0U);
+@@ -933,7 +947,7 @@
+   last_front_watch_tick = run_start_tick;
+   turn_stop_frame_count = 0U;
+   JY61P_Init();
+-  UartDebug_SendString("Gray12_MapFullRoute_Calibration_Test MT3\r\n");
++  UartDebug_SendString("Gray12_MapFullRoute_TreasureMask_Test MT3 MASK1\r\n");
+   UartDebug_Printf("MAP_PARAMS BASE_RPM_X10=%ld CONTROL_MS=%u TURN_PWM=%ld SPIN_TARGET_X100=%ld WHEEL_CIRCUMFERENCE_UM=%lu\r\n",
+       (long)LINE_FOLLOW_PID_BASE_RPM_X10, (unsigned)LINE_FOLLOW_PID_CONTROL_PERIOD_MS,
+       (long)ROUTE_TURN_EQUAL_PWM, (long)ROUTE_TURN_TARGET_ANGLE_X100,

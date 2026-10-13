@@ -1,0 +1,563 @@
+[
+  {
+    "node": 11,
+    "xy_mm": [
+      600,
+      300
+    ],
+    "exits": {
+      "0": {
+        "node": 2,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          11,
+          2
+        ]
+      },
+      "1": {
+        "node": 12,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          11,
+          12
+        ]
+      },
+      "2": {
+        "node": 21,
+        "time_ms": 1740,
+        "length_mm": 600,
+        "turns": 1,
+        "path": [
+          11,
+          22,
+          21
+        ]
+      },
+      "3": {
+        "node": 10,
+        "time_ms": 971,
+        "length_mm": 600,
+        "turns": 0,
+        "path": [
+          11,
+          10
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      2,
+      10,
+      12,
+      21
+    ],
+    "escape_exits": 4,
+    "parking_axis_mask": 15,
+    "expected_police_entry_heading": 2
+  },
+  {
+    "node": 12,
+    "xy_mm": [
+      900,
+      300
+    ],
+    "exits": {
+      "1": {
+        "node": 13,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          12,
+          13
+        ]
+      },
+      "2": {
+        "node": 23,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          12,
+          23
+        ]
+      },
+      "3": {
+        "node": 11,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          12,
+          11
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      11,
+      13,
+      23
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 10,
+    "expected_police_entry_heading": 3
+  },
+  {
+    "node": 13,
+    "xy_mm": [
+      1200,
+      300
+    ],
+    "exits": {
+      "0": {
+        "node": 3,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          13,
+          3
+        ]
+      },
+      "2": {
+        "node": 23,
+        "time_ms": 1740,
+        "length_mm": 600,
+        "turns": 1,
+        "path": [
+          13,
+          24,
+          23
+        ]
+      },
+      "3": {
+        "node": 12,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          13,
+          12
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      3,
+      12,
+      23
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 5,
+    "expected_police_entry_heading": 2
+  },
+  {
+    "node": 21,
+    "xy_mm": [
+      300,
+      600
+    ],
+    "exits": {
+      "1": {
+        "node": 11,
+        "time_ms": 1740,
+        "length_mm": 600,
+        "turns": 1,
+        "path": [
+          21,
+          22,
+          11
+        ]
+      },
+      "2": {
+        "node": 38,
+        "time_ms": 971,
+        "length_mm": 600,
+        "turns": 0,
+        "path": [
+          21,
+          38
+        ]
+      },
+      "3": {
+        "node": 20,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          21,
+          20
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      11,
+      20,
+      38
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 10,
+    "expected_police_entry_heading": 3
+  },
+  {
+    "node": 23,
+    "xy_mm": [
+      900,
+      600
+    ],
+    "exits": {
+      "0": {
+        "node": 12,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          23,
+          12
+        ]
+      },
+      "1": {
+        "node": 13,
+        "time_ms": 1740,
+        "length_mm": 600,
+        "turns": 1,
+        "path": [
+          23,
+          24,
+          13
+        ]
+      },
+      "2": {
+        "node": 32,
+        "time_ms": 2185,
+        "length_mm": 900,
+        "turns": 1,
+        "path": [
+          23,
+          31,
+          32
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      12,
+      13,
+      32
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 5,
+    "expected_police_entry_heading": 3
+  },
+  {
+    "node": 38,
+    "xy_mm": [
+      300,
+      1200
+    ],
+    "exits": {
+      "0": {
+        "node": 21,
+        "time_ms": 971,
+        "length_mm": 600,
+        "turns": 0,
+        "path": [
+          38,
+          21
+        ]
+      },
+      "1": {
+        "node": 39,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          38,
+          39
+        ]
+      },
+      "2": {
+        "node": 56,
+        "time_ms": 971,
+        "length_mm": 600,
+        "turns": 0,
+        "path": [
+          38,
+          56
+        ]
+      },
+      "3": {
+        "node": 37,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          38,
+          37
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      21,
+      37,
+      39,
+      56
+    ],
+    "escape_exits": 4,
+    "parking_axis_mask": 15,
+    "expected_police_entry_heading": 1
+  },
+  {
+    "node": 39,
+    "xy_mm": [
+      600,
+      1200
+    ],
+    "exits": {
+      "1": {
+        "node": 58,
+        "time_ms": 2186,
+        "length_mm": 900,
+        "turns": 1,
+        "path": [
+          39,
+          40,
+          46,
+          58
+        ]
+      },
+      "2": {
+        "node": 56,
+        "time_ms": 2185,
+        "length_mm": 900,
+        "turns": 1,
+        "path": [
+          39,
+          57,
+          56
+        ]
+      },
+      "3": {
+        "node": 38,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          39,
+          38
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      38,
+      56,
+      58
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 10,
+    "expected_police_entry_heading": 1
+  },
+  {
+    "node": 56,
+    "xy_mm": [
+      300,
+      1800
+    ],
+    "exits": {
+      "0": {
+        "node": 38,
+        "time_ms": 971,
+        "length_mm": 600,
+        "turns": 0,
+        "path": [
+          56,
+          38
+        ]
+      },
+      "1": {
+        "node": 39,
+        "time_ms": 2185,
+        "length_mm": 900,
+        "turns": 1,
+        "path": [
+          56,
+          57,
+          39
+        ]
+      },
+      "3": {
+        "node": 37,
+        "time_ms": 2185,
+        "length_mm": 900,
+        "turns": 1,
+        "path": [
+          56,
+          55,
+          37
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      37,
+      38,
+      39
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 10,
+    "expected_police_entry_heading": 1
+  },
+  {
+    "node": 59,
+    "xy_mm": [
+      1200,
+      1800
+    ],
+    "exits": {
+      "1": {
+        "node": 70,
+        "time_ms": 2954,
+        "length_mm": 900,
+        "turns": 2,
+        "path": [
+          59,
+          60,
+          69,
+          70
+        ]
+      },
+      "2": {
+        "node": 76,
+        "time_ms": 2630,
+        "length_mm": 1200,
+        "turns": 1,
+        "path": [
+          59,
+          75,
+          76
+        ]
+      },
+      "3": {
+        "node": 58,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          59,
+          58
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      58,
+      70,
+      76
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 10,
+    "expected_police_entry_heading": 0
+  },
+  {
+    "node": 62,
+    "xy_mm": [
+      2100,
+      1800
+    ],
+    "exits": {
+      "1": {
+        "node": 63,
+        "time_ms": 971,
+        "length_mm": 600,
+        "turns": 0,
+        "path": [
+          62,
+          63
+        ]
+      },
+      "2": {
+        "node": 77,
+        "time_ms": 2954,
+        "length_mm": 900,
+        "turns": 2,
+        "path": [
+          62,
+          71,
+          72,
+          77
+        ]
+      },
+      "3": {
+        "node": 61,
+        "time_ms": 526,
+        "length_mm": 300,
+        "turns": 0,
+        "path": [
+          62,
+          61
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      61,
+      63,
+      77
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 10,
+    "expected_police_entry_heading": 1
+  },
+  {
+    "node": 63,
+    "xy_mm": [
+      2700,
+      1800
+    ],
+    "exits": {
+      "0": {
+        "node": 33,
+        "time_ms": 5951,
+        "length_mm": 2400,
+        "turns": 3,
+        "path": [
+          63,
+          52,
+          53,
+          44,
+          36,
+          35,
+          34,
+          33
+        ]
+      },
+      "2": {
+        "node": 77,
+        "time_ms": 2185,
+        "length_mm": 900,
+        "turns": 1,
+        "path": [
+          63,
+          78,
+          77
+        ]
+      },
+      "3": {
+        "node": 62,
+        "time_ms": 971,
+        "length_mm": 600,
+        "turns": 0,
+        "path": [
+          63,
+          62
+        ]
+      }
+    },
+    "independent_branch_targets": [
+      33,
+      62,
+      77
+    ],
+    "escape_exits": 3,
+    "parking_axis_mask": 5,
+    "expected_police_entry_heading": 1
+  }
+]

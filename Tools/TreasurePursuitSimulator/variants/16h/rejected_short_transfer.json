@@ -1,0 +1,45 @@
+{
+  "status": "Rejected: prioritizing a 6 s hide transfer window made the police +20 percent case worse than 16G. The experiment is absent from the final C code.",
+  "results": [
+    {
+      "duration_s": 33.364760666546445,
+      "winner": "police",
+      "fixture": null
+    },
+    {
+      "duration_s": 24.654980908733382,
+      "winner": "police",
+      "fixture": null
+    },
+    {
+      "duration_s": 1.0019630402047204,
+      "winner": "police",
+      "fixture": [
+        38,
+        "W",
+        40,
+        "W"
+      ]
+    },
+    {
+      "duration_s": 6.344996959252783,
+      "winner": "police",
+      "fixture": [
+        38,
+        "N",
+        40,
+        "W"
+      ]
+    },
+    {
+      "duration_s": 6.721825437941481,
+      "winner": "police",
+      "fixture": [
+        62,
+        "E",
+        34,
+        "S"
+      ]
+    }
+  ]
+}

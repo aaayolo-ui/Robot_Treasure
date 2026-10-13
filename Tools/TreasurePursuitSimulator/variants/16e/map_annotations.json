@@ -1,0 +1,8634 @@
+{
+  "schema_version": 1,
+  "coordinate_system": "x向右、y向下；grid为地图格坐标，m按格距推算",
+  "grid_spacing_m": 0.3,
+  "calibrated": false,
+  "length_note": "沿用原地图0.3米格距推算，尚未实地标定",
+  "localization_note": "标注表示地图几何。灰度识别特征尚需实测；相同形状路口不能单独确定全局位置。宝藏点是任务标记，不是新增灰度路口。",
+  "type_labels": {
+    "corner": "直角拐弯",
+    "t_junction": "T 型路口",
+    "cross": "十字路口",
+    "endpoint": "死路端点",
+    "police_spawn": "警方出生点",
+    "thief_spawn": "小偷出生点",
+    "treasure": "宝藏点"
+  },
+  "nodes": [
+    {
+      "id": "N001",
+      "original_node": "(0,0)",
+      "xy_grid": [
+        0,
+        0
+      ],
+      "xy_m": [
+        0.0,
+        0.0
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S001",
+          "neighbor": "N002",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S002",
+          "neighbor": "N010",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N002",
+      "original_node": "(2,0)",
+      "xy_grid": [
+        2,
+        0
+      ],
+      "xy_m": [
+        0.6,
+        0.0
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S003",
+          "neighbor": "N003",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S004",
+          "neighbor": "N011",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S001",
+          "neighbor": "N001",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N003",
+      "original_node": "(4,0)",
+      "xy_grid": [
+        4,
+        0
+      ],
+      "xy_m": [
+        1.2,
+        0.0
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S005",
+          "neighbor": "N004",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S006",
+          "neighbor": "N013",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S003",
+          "neighbor": "N002",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N004",
+      "original_node": "(5,0)",
+      "xy_grid": [
+        5,
+        0
+      ],
+      "xy_m": [
+        1.5,
+        0.0
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S007",
+          "neighbor": "N005",
+          "direction": "E",
+          "length_m": 0.15
+        },
+        {
+          "segment": "S008",
+          "neighbor": "N014",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S005",
+          "neighbor": "N003",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N005",
+      "original_node": "(5.5,0)",
+      "xy_grid": [
+        5.5,
+        0
+      ],
+      "xy_m": [
+        1.65,
+        0.0
+      ],
+      "types": [
+        "treasure"
+      ],
+      "type": "treasure",
+      "geometry_type": "straight_special",
+      "labels": [
+        "宝藏点"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S009",
+          "neighbor": "N006",
+          "direction": "E",
+          "length_m": 0.15
+        },
+        {
+          "segment": "S007",
+          "neighbor": "N004",
+          "direction": "W",
+          "length_m": 0.15
+        }
+      ],
+      "is_track_landmark": false
+    },
+    {
+      "id": "N006",
+      "original_node": "(6,0)",
+      "xy_grid": [
+        6,
+        0
+      ],
+      "xy_m": [
+        1.8,
+        0.0
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S010",
+          "neighbor": "N007",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S011",
+          "neighbor": "N015",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S009",
+          "neighbor": "N005",
+          "direction": "W",
+          "length_m": 0.15
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N007",
+      "original_node": "(8,0)",
+      "xy_grid": [
+        8,
+        0
+      ],
+      "xy_m": [
+        2.4,
+        0.0
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S012",
+          "neighbor": "N017",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S010",
+          "neighbor": "N006",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N008",
+      "original_node": "(9,0)",
+      "xy_grid": [
+        9,
+        0
+      ],
+      "xy_m": [
+        2.7,
+        0.0
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S013",
+          "neighbor": "N009",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S014",
+          "neighbor": "N027",
+          "direction": "S",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N009",
+      "original_node": "(11,0)",
+      "xy_grid": [
+        11,
+        0
+      ],
+      "xy_m": [
+        3.3,
+        0.0
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S015",
+          "neighbor": "N019",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S013",
+          "neighbor": "N008",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N010",
+      "original_node": "(0,1)",
+      "xy_grid": [
+        0,
+        1
+      ],
+      "xy_m": [
+        0.0,
+        0.3
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S016",
+          "neighbor": "N011",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S002",
+          "neighbor": "N001",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S017",
+          "neighbor": "N020",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N011",
+      "original_node": "(2,1)",
+      "xy_grid": [
+        2,
+        1
+      ],
+      "xy_m": [
+        0.6,
+        0.3
+      ],
+      "types": [
+        "cross"
+      ],
+      "type": "cross",
+      "geometry_type": "cross",
+      "labels": [
+        "十字路口"
+      ],
+      "degree": 4,
+      "connections": [
+        {
+          "segment": "S018",
+          "neighbor": "N012",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S004",
+          "neighbor": "N002",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S019",
+          "neighbor": "N022",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S016",
+          "neighbor": "N010",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N012",
+      "original_node": "(3,1)",
+      "xy_grid": [
+        3,
+        1
+      ],
+      "xy_m": [
+        0.9,
+        0.3
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S020",
+          "neighbor": "N013",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S021",
+          "neighbor": "N023",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S018",
+          "neighbor": "N011",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N013",
+      "original_node": "(4,1)",
+      "xy_grid": [
+        4,
+        1
+      ],
+      "xy_m": [
+        1.2,
+        0.3
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S006",
+          "neighbor": "N003",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S022",
+          "neighbor": "N024",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S020",
+          "neighbor": "N012",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N014",
+      "original_node": "(5,1)",
+      "xy_grid": [
+        5,
+        1
+      ],
+      "xy_m": [
+        1.5,
+        0.3
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S023",
+          "neighbor": "N015",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S008",
+          "neighbor": "N004",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S024",
+          "neighbor": "N032",
+          "direction": "S",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N015",
+      "original_node": "(6,1)",
+      "xy_grid": [
+        6,
+        1
+      ],
+      "xy_m": [
+        1.8,
+        0.3
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S011",
+          "neighbor": "N006",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S025",
+          "neighbor": "N025",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S023",
+          "neighbor": "N014",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N016",
+      "original_node": "(7,1)",
+      "xy_grid": [
+        7,
+        1
+      ],
+      "xy_m": [
+        2.1,
+        0.3
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S026",
+          "neighbor": "N017",
+          "direction": "E",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N017",
+      "original_node": "(8,1)",
+      "xy_grid": [
+        8,
+        1
+      ],
+      "xy_m": [
+        2.4,
+        0.3
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S012",
+          "neighbor": "N007",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S027",
+          "neighbor": "N026",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S026",
+          "neighbor": "N016",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N018",
+      "original_node": "(10,1)",
+      "xy_grid": [
+        10,
+        1
+      ],
+      "xy_m": [
+        3.0,
+        0.3
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S028",
+          "neighbor": "N019",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S029",
+          "neighbor": "N028",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N019",
+      "original_node": "(11,1)",
+      "xy_grid": [
+        11,
+        1
+      ],
+      "xy_m": [
+        3.3,
+        0.3
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S015",
+          "neighbor": "N009",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S028",
+          "neighbor": "N018",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N020",
+      "original_node": "(0,2)",
+      "xy_grid": [
+        0,
+        2
+      ],
+      "xy_m": [
+        0.0,
+        0.6
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S030",
+          "neighbor": "N021",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S017",
+          "neighbor": "N010",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S031",
+          "neighbor": "N037",
+          "direction": "S",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N021",
+      "original_node": "(1,2)",
+      "xy_grid": [
+        1,
+        2
+      ],
+      "xy_m": [
+        0.3,
+        0.6
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S032",
+          "neighbor": "N022",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S033",
+          "neighbor": "N038",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S030",
+          "neighbor": "N020",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N022",
+      "original_node": "(2,2)",
+      "xy_grid": [
+        2,
+        2
+      ],
+      "xy_m": [
+        0.6,
+        0.6
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S019",
+          "neighbor": "N011",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S034",
+          "neighbor": "N030",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S032",
+          "neighbor": "N021",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N023",
+      "original_node": "(3,2)",
+      "xy_grid": [
+        3,
+        2
+      ],
+      "xy_m": [
+        0.9,
+        0.6
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S035",
+          "neighbor": "N024",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S021",
+          "neighbor": "N012",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S036",
+          "neighbor": "N031",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N024",
+      "original_node": "(4,2)",
+      "xy_grid": [
+        4,
+        2
+      ],
+      "xy_m": [
+        1.2,
+        0.6
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S022",
+          "neighbor": "N013",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S035",
+          "neighbor": "N023",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N025",
+      "original_node": "(6,2)",
+      "xy_grid": [
+        6,
+        2
+      ],
+      "xy_m": [
+        1.8,
+        0.6
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S037",
+          "neighbor": "N026",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S025",
+          "neighbor": "N015",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S038",
+          "neighbor": "N033",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N026",
+      "original_node": "(8,2)",
+      "xy_grid": [
+        8,
+        2
+      ],
+      "xy_m": [
+        2.4,
+        0.6
+      ],
+      "types": [
+        "cross"
+      ],
+      "type": "cross",
+      "geometry_type": "cross",
+      "labels": [
+        "十字路口"
+      ],
+      "degree": 4,
+      "connections": [
+        {
+          "segment": "S039",
+          "neighbor": "N027",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S027",
+          "neighbor": "N017",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S040",
+          "neighbor": "N035",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S037",
+          "neighbor": "N025",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N027",
+      "original_node": "(9,2)",
+      "xy_grid": [
+        9,
+        2
+      ],
+      "xy_m": [
+        2.7,
+        0.6
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S041",
+          "neighbor": "N028",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S014",
+          "neighbor": "N008",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S039",
+          "neighbor": "N026",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N028",
+      "original_node": "(10,2)",
+      "xy_grid": [
+        10,
+        2
+      ],
+      "xy_m": [
+        3.0,
+        0.6
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S029",
+          "neighbor": "N018",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S041",
+          "neighbor": "N027",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N029",
+      "original_node": "(11,2)",
+      "xy_grid": [
+        11,
+        2
+      ],
+      "xy_m": [
+        3.3,
+        0.6
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S042",
+          "neighbor": "N045",
+          "direction": "S",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N030",
+      "original_node": "(2,3)",
+      "xy_grid": [
+        2,
+        3
+      ],
+      "xy_m": [
+        0.6,
+        0.9
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S034",
+          "neighbor": "N022",
+          "direction": "N",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N031",
+      "original_node": "(3,3)",
+      "xy_grid": [
+        3,
+        3
+      ],
+      "xy_m": [
+        0.9,
+        0.9
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S043",
+          "neighbor": "N032",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S036",
+          "neighbor": "N023",
+          "direction": "N",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N032",
+      "original_node": "(5,3)",
+      "xy_grid": [
+        5,
+        3
+      ],
+      "xy_m": [
+        1.5,
+        0.9
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S024",
+          "neighbor": "N014",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S044",
+          "neighbor": "N048",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S043",
+          "neighbor": "N031",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N033",
+      "original_node": "(6,3)",
+      "xy_grid": [
+        6,
+        3
+      ],
+      "xy_m": [
+        1.8,
+        0.9
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S045",
+          "neighbor": "N034",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S038",
+          "neighbor": "N025",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S046",
+          "neighbor": "N049",
+          "direction": "S",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N034",
+      "original_node": "(7,3)",
+      "xy_grid": [
+        7,
+        3
+      ],
+      "xy_m": [
+        2.1,
+        0.9
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S047",
+          "neighbor": "N035",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S048",
+          "neighbor": "N050",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S045",
+          "neighbor": "N033",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N035",
+      "original_node": "(8,3)",
+      "xy_grid": [
+        8,
+        3
+      ],
+      "xy_m": [
+        2.4,
+        0.9
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S049",
+          "neighbor": "N036",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S040",
+          "neighbor": "N026",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S047",
+          "neighbor": "N034",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N036",
+      "original_node": "(10,3)",
+      "xy_grid": [
+        10,
+        3
+      ],
+      "xy_m": [
+        3.0,
+        0.9
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S050",
+          "neighbor": "N044",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S049",
+          "neighbor": "N035",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N037",
+      "original_node": "(0,4)",
+      "xy_grid": [
+        0,
+        4
+      ],
+      "xy_m": [
+        0.0,
+        1.2
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S051",
+          "neighbor": "N038",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S031",
+          "neighbor": "N020",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S052",
+          "neighbor": "N055",
+          "direction": "S",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N038",
+      "original_node": "(1,4)",
+      "xy_grid": [
+        1,
+        4
+      ],
+      "xy_m": [
+        0.3,
+        1.2
+      ],
+      "types": [
+        "cross"
+      ],
+      "type": "cross",
+      "geometry_type": "cross",
+      "labels": [
+        "十字路口"
+      ],
+      "degree": 4,
+      "connections": [
+        {
+          "segment": "S053",
+          "neighbor": "N039",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S033",
+          "neighbor": "N021",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S054",
+          "neighbor": "N056",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S051",
+          "neighbor": "N037",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N039",
+      "original_node": "(2,4)",
+      "xy_grid": [
+        2,
+        4
+      ],
+      "xy_m": [
+        0.6,
+        1.2
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S055",
+          "neighbor": "N040",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S056",
+          "neighbor": "N057",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S053",
+          "neighbor": "N038",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N040",
+      "original_node": "(3,4)",
+      "xy_grid": [
+        3,
+        4
+      ],
+      "xy_m": [
+        0.9,
+        1.2
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S057",
+          "neighbor": "N046",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S055",
+          "neighbor": "N039",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N041",
+      "original_node": "(4,4)",
+      "xy_grid": [
+        4,
+        4
+      ],
+      "xy_m": [
+        1.2,
+        1.2
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S058",
+          "neighbor": "N047",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N042",
+      "original_node": "(8,4)",
+      "xy_grid": [
+        8,
+        4
+      ],
+      "xy_m": [
+        2.4,
+        1.2
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S059",
+          "neighbor": "N043",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S060",
+          "neighbor": "N051",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N043",
+      "original_node": "(9,4)",
+      "xy_grid": [
+        9,
+        4
+      ],
+      "xy_m": [
+        2.7,
+        1.2
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S059",
+          "neighbor": "N042",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N044",
+      "original_node": "(10,4)",
+      "xy_grid": [
+        10,
+        4
+      ],
+      "xy_m": [
+        3.0,
+        1.2
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S061",
+          "neighbor": "N045",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S050",
+          "neighbor": "N036",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S062",
+          "neighbor": "N053",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N045",
+      "original_node": "(11,4)",
+      "xy_grid": [
+        11,
+        4
+      ],
+      "xy_m": [
+        3.3,
+        1.2
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S042",
+          "neighbor": "N029",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S061",
+          "neighbor": "N044",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N046",
+      "original_node": "(3,5)",
+      "xy_grid": [
+        3,
+        5
+      ],
+      "xy_m": [
+        0.9,
+        1.5
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S063",
+          "neighbor": "N047",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S057",
+          "neighbor": "N040",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S064",
+          "neighbor": "N058",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N047",
+      "original_node": "(4,5)",
+      "xy_grid": [
+        4,
+        5
+      ],
+      "xy_m": [
+        1.2,
+        1.5
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S058",
+          "neighbor": "N041",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S063",
+          "neighbor": "N046",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N048",
+      "original_node": "(5,5)",
+      "xy_grid": [
+        5,
+        5
+      ],
+      "xy_m": [
+        1.5,
+        1.5
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S065",
+          "neighbor": "N049",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S044",
+          "neighbor": "N032",
+          "direction": "N",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N049",
+      "original_node": "(6,5)",
+      "xy_grid": [
+        6,
+        5
+      ],
+      "xy_m": [
+        1.8,
+        1.5
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S046",
+          "neighbor": "N033",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S066",
+          "neighbor": "N061",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S065",
+          "neighbor": "N048",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N050",
+      "original_node": "(7,5)",
+      "xy_grid": [
+        7,
+        5
+      ],
+      "xy_m": [
+        2.1,
+        1.5
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S048",
+          "neighbor": "N034",
+          "direction": "N",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N051",
+      "original_node": "(8,5)",
+      "xy_grid": [
+        8,
+        5
+      ],
+      "xy_m": [
+        2.4,
+        1.5
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S067",
+          "neighbor": "N052",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S060",
+          "neighbor": "N042",
+          "direction": "N",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N052",
+      "original_node": "(9,5)",
+      "xy_grid": [
+        9,
+        5
+      ],
+      "xy_m": [
+        2.7,
+        1.5
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S068",
+          "neighbor": "N053",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S069",
+          "neighbor": "N063",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S067",
+          "neighbor": "N051",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N053",
+      "original_node": "(10,5)",
+      "xy_grid": [
+        10,
+        5
+      ],
+      "xy_m": [
+        3.0,
+        1.5
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S070",
+          "neighbor": "N054",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S062",
+          "neighbor": "N044",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S068",
+          "neighbor": "N052",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N054",
+      "original_node": "(11,5)",
+      "xy_grid": [
+        11,
+        5
+      ],
+      "xy_m": [
+        3.3,
+        1.5
+      ],
+      "types": [
+        "endpoint",
+        "thief_spawn"
+      ],
+      "type": "thief_spawn",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点",
+        "小偷出生点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S070",
+          "neighbor": "N053",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N055",
+      "original_node": "(0,6)",
+      "xy_grid": [
+        0,
+        6
+      ],
+      "xy_m": [
+        0.0,
+        1.8
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S071",
+          "neighbor": "N056",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S052",
+          "neighbor": "N037",
+          "direction": "N",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N056",
+      "original_node": "(1,6)",
+      "xy_grid": [
+        1,
+        6
+      ],
+      "xy_m": [
+        0.3,
+        1.8
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S072",
+          "neighbor": "N057",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S054",
+          "neighbor": "N038",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S071",
+          "neighbor": "N055",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N057",
+      "original_node": "(2,6)",
+      "xy_grid": [
+        2,
+        6
+      ],
+      "xy_m": [
+        0.6,
+        1.8
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S056",
+          "neighbor": "N039",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S072",
+          "neighbor": "N056",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N058",
+      "original_node": "(3,6)",
+      "xy_grid": [
+        3,
+        6
+      ],
+      "xy_m": [
+        0.9,
+        1.8
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S073",
+          "neighbor": "N059",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S064",
+          "neighbor": "N046",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S074",
+          "neighbor": "N068",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N059",
+      "original_node": "(4,6)",
+      "xy_grid": [
+        4,
+        6
+      ],
+      "xy_m": [
+        1.2,
+        1.8
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S075",
+          "neighbor": "N060",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S076",
+          "neighbor": "N075",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S073",
+          "neighbor": "N058",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N060",
+      "original_node": "(5,6)",
+      "xy_grid": [
+        5,
+        6
+      ],
+      "xy_m": [
+        1.5,
+        1.8
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S077",
+          "neighbor": "N069",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S075",
+          "neighbor": "N059",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N061",
+      "original_node": "(6,6)",
+      "xy_grid": [
+        6,
+        6
+      ],
+      "xy_m": [
+        1.8,
+        1.8
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S078",
+          "neighbor": "N062",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S066",
+          "neighbor": "N049",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S079",
+          "neighbor": "N070",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N062",
+      "original_node": "(7,6)",
+      "xy_grid": [
+        7,
+        6
+      ],
+      "xy_m": [
+        2.1,
+        1.8
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S080",
+          "neighbor": "N063",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S081",
+          "neighbor": "N071",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S078",
+          "neighbor": "N061",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N063",
+      "original_node": "(9,6)",
+      "xy_grid": [
+        9,
+        6
+      ],
+      "xy_m": [
+        2.7,
+        1.8
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S069",
+          "neighbor": "N052",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S082",
+          "neighbor": "N078",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S080",
+          "neighbor": "N062",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N064",
+      "original_node": "(10,6)",
+      "xy_grid": [
+        10,
+        6
+      ],
+      "xy_m": [
+        3.0,
+        1.8
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S083",
+          "neighbor": "N065",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S084",
+          "neighbor": "N079",
+          "direction": "S",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N065",
+      "original_node": "(11,6)",
+      "xy_grid": [
+        11,
+        6
+      ],
+      "xy_m": [
+        3.3,
+        1.8
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S083",
+          "neighbor": "N064",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N066",
+      "original_node": "(0,7)",
+      "xy_grid": [
+        0,
+        7
+      ],
+      "xy_m": [
+        0.0,
+        2.1
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S085",
+          "neighbor": "N067",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S086",
+          "neighbor": "N081",
+          "direction": "S",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N067",
+      "original_node": "(1,7)",
+      "xy_grid": [
+        1,
+        7
+      ],
+      "xy_m": [
+        0.3,
+        2.1
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S087",
+          "neighbor": "N068",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S088",
+          "neighbor": "N082",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S085",
+          "neighbor": "N066",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N068",
+      "original_node": "(3,7)",
+      "xy_grid": [
+        3,
+        7
+      ],
+      "xy_m": [
+        0.9,
+        2.1
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S074",
+          "neighbor": "N058",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S089",
+          "neighbor": "N084",
+          "direction": "S",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S087",
+          "neighbor": "N067",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N069",
+      "original_node": "(5,7)",
+      "xy_grid": [
+        5,
+        7
+      ],
+      "xy_m": [
+        1.5,
+        2.1
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S090",
+          "neighbor": "N070",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S077",
+          "neighbor": "N060",
+          "direction": "N",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N070",
+      "original_node": "(6,7)",
+      "xy_grid": [
+        6,
+        7
+      ],
+      "xy_m": [
+        1.8,
+        2.1
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S079",
+          "neighbor": "N061",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S091",
+          "neighbor": "N076",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S090",
+          "neighbor": "N069",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N071",
+      "original_node": "(7,7)",
+      "xy_grid": [
+        7,
+        7
+      ],
+      "xy_m": [
+        2.1,
+        2.1
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S092",
+          "neighbor": "N072",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S081",
+          "neighbor": "N062",
+          "direction": "N",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N072",
+      "original_node": "(8,7)",
+      "xy_grid": [
+        8,
+        7
+      ],
+      "xy_m": [
+        2.4,
+        2.1
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S093",
+          "neighbor": "N077",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S092",
+          "neighbor": "N071",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N073",
+      "original_node": "(11,7)",
+      "xy_grid": [
+        11,
+        7
+      ],
+      "xy_m": [
+        3.3,
+        2.1
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S094",
+          "neighbor": "N080",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N074",
+      "original_node": "(2,8)",
+      "xy_grid": [
+        2,
+        8
+      ],
+      "xy_m": [
+        0.6,
+        2.4
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S095",
+          "neighbor": "N083",
+          "direction": "S",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N075",
+      "original_node": "(4,8)",
+      "xy_grid": [
+        4,
+        8
+      ],
+      "xy_m": [
+        1.2,
+        2.4
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S096",
+          "neighbor": "N076",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S076",
+          "neighbor": "N059",
+          "direction": "N",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N076",
+      "original_node": "(6,8)",
+      "xy_grid": [
+        6,
+        8
+      ],
+      "xy_m": [
+        1.8,
+        2.4
+      ],
+      "types": [
+        "cross"
+      ],
+      "type": "cross",
+      "geometry_type": "cross",
+      "labels": [
+        "十字路口"
+      ],
+      "degree": 4,
+      "connections": [
+        {
+          "segment": "S097",
+          "neighbor": "N077",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S091",
+          "neighbor": "N070",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S098",
+          "neighbor": "N085",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S096",
+          "neighbor": "N075",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N077",
+      "original_node": "(8,8)",
+      "xy_grid": [
+        8,
+        8
+      ],
+      "xy_m": [
+        2.4,
+        2.4
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S099",
+          "neighbor": "N078",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S093",
+          "neighbor": "N072",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S097",
+          "neighbor": "N076",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N078",
+      "original_node": "(9,8)",
+      "xy_grid": [
+        9,
+        8
+      ],
+      "xy_m": [
+        2.7,
+        2.4
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S100",
+          "neighbor": "N079",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S082",
+          "neighbor": "N063",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S099",
+          "neighbor": "N077",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N079",
+      "original_node": "(10,8)",
+      "xy_grid": [
+        10,
+        8
+      ],
+      "xy_m": [
+        3.0,
+        2.4
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S101",
+          "neighbor": "N080",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S084",
+          "neighbor": "N064",
+          "direction": "N",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S100",
+          "neighbor": "N078",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N080",
+      "original_node": "(11,8)",
+      "xy_grid": [
+        11,
+        8
+      ],
+      "xy_m": [
+        3.3,
+        2.4
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S094",
+          "neighbor": "N073",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S102",
+          "neighbor": "N088",
+          "direction": "S",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S101",
+          "neighbor": "N079",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N081",
+      "original_node": "(0,9)",
+      "xy_grid": [
+        0,
+        9
+      ],
+      "xy_m": [
+        0.0,
+        2.7
+      ],
+      "types": [
+        "endpoint",
+        "police_spawn"
+      ],
+      "type": "police_spawn",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点",
+        "警方出生点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S086",
+          "neighbor": "N066",
+          "direction": "N",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N082",
+      "original_node": "(1,9)",
+      "xy_grid": [
+        1,
+        9
+      ],
+      "xy_m": [
+        0.3,
+        2.7
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S103",
+          "neighbor": "N083",
+          "direction": "E",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S088",
+          "neighbor": "N067",
+          "direction": "N",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N083",
+      "original_node": "(2,9)",
+      "xy_grid": [
+        2,
+        9
+      ],
+      "xy_m": [
+        0.6,
+        2.7
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S095",
+          "neighbor": "N074",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S103",
+          "neighbor": "N082",
+          "direction": "W",
+          "length_m": 0.3
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N084",
+      "original_node": "(3,9)",
+      "xy_grid": [
+        3,
+        9
+      ],
+      "xy_m": [
+        0.9,
+        2.7
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S104",
+          "neighbor": "N085",
+          "direction": "E",
+          "length_m": 0.9
+        },
+        {
+          "segment": "S089",
+          "neighbor": "N068",
+          "direction": "N",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N085",
+      "original_node": "(6,9)",
+      "xy_grid": [
+        6,
+        9
+      ],
+      "xy_m": [
+        1.8,
+        2.7
+      ],
+      "types": [
+        "t_junction"
+      ],
+      "type": "t_junction",
+      "geometry_type": "t_junction",
+      "labels": [
+        "T 型路口"
+      ],
+      "degree": 3,
+      "connections": [
+        {
+          "segment": "S105",
+          "neighbor": "N086",
+          "direction": "E",
+          "length_m": 0.6
+        },
+        {
+          "segment": "S098",
+          "neighbor": "N076",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S104",
+          "neighbor": "N084",
+          "direction": "W",
+          "length_m": 0.9
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N086",
+      "original_node": "(8,9)",
+      "xy_grid": [
+        8,
+        9
+      ],
+      "xy_m": [
+        2.4,
+        2.7
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S105",
+          "neighbor": "N085",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N087",
+      "original_node": "(9,9)",
+      "xy_grid": [
+        9,
+        9
+      ],
+      "xy_m": [
+        2.7,
+        2.7
+      ],
+      "types": [
+        "endpoint"
+      ],
+      "type": "endpoint",
+      "geometry_type": "endpoint",
+      "labels": [
+        "死路端点"
+      ],
+      "degree": 1,
+      "connections": [
+        {
+          "segment": "S106",
+          "neighbor": "N088",
+          "direction": "E",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    },
+    {
+      "id": "N088",
+      "original_node": "(11,9)",
+      "xy_grid": [
+        11,
+        9
+      ],
+      "xy_m": [
+        3.3,
+        2.7
+      ],
+      "types": [
+        "corner"
+      ],
+      "type": "corner",
+      "geometry_type": "corner",
+      "labels": [
+        "直角拐弯"
+      ],
+      "degree": 2,
+      "connections": [
+        {
+          "segment": "S102",
+          "neighbor": "N080",
+          "direction": "N",
+          "length_m": 0.3
+        },
+        {
+          "segment": "S106",
+          "neighbor": "N087",
+          "direction": "W",
+          "length_m": 0.6
+        }
+      ],
+      "is_track_landmark": true
+    }
+  ],
+  "segments": [
+    {
+      "id": "S001",
+      "start": "N001",
+      "end": "N002",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(0,0)",
+        "(1,0)",
+        "(2,0)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,0)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(2,0)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S002",
+      "start": "N001",
+      "end": "N010",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(0,0)",
+        "(0,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(0,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S003",
+      "start": "N002",
+      "end": "N003",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(2,0)",
+        "(3,0)",
+        "(4,0)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(2,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,0)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(4,0)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S004",
+      "start": "N002",
+      "end": "N011",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(2,0)",
+        "(2,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(2,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S005",
+      "start": "N003",
+      "end": "N004",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(4,0)",
+        "(5,0)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(4,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(5,0)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S006",
+      "start": "N003",
+      "end": "N013",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(4,0)",
+        "(4,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(4,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S007",
+      "start": "N004",
+      "end": "N005",
+      "length_m": 0.15,
+      "length_half_cell_ticks": 1,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(5,0)",
+        "(5.5,0)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(5.5,0)",
+          "distance_from_start_m": 0.15
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S008",
+      "start": "N004",
+      "end": "N014",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(5,0)",
+        "(5,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(5,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S009",
+      "start": "N005",
+      "end": "N006",
+      "length_m": 0.15,
+      "length_half_cell_ticks": 1,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(5.5,0)",
+        "(6,0)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5.5,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,0)",
+          "distance_from_start_m": 0.15
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S010",
+      "start": "N006",
+      "end": "N007",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(6,0)",
+        "(7,0)",
+        "(8,0)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(7,0)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(8,0)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S011",
+      "start": "N006",
+      "end": "N015",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(6,0)",
+        "(6,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S012",
+      "start": "N007",
+      "end": "N017",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(8,0)",
+        "(8,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S013",
+      "start": "N008",
+      "end": "N009",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(9,0)",
+        "(10,0)",
+        "(11,0)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(9,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,0)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(11,0)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S014",
+      "start": "N008",
+      "end": "N027",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(9,0)",
+        "(9,1)",
+        "(9,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(9,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(9,1)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(9,2)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S015",
+      "start": "N009",
+      "end": "N019",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(11,0)",
+        "(11,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(11,0)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S016",
+      "start": "N010",
+      "end": "N011",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(0,1)",
+        "(1,1)",
+        "(2,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,1)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(2,1)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S017",
+      "start": "N010",
+      "end": "N020",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(0,1)",
+        "(0,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(0,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S018",
+      "start": "N011",
+      "end": "N012",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(2,1)",
+        "(3,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(2,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S019",
+      "start": "N011",
+      "end": "N022",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(2,1)",
+        "(2,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(2,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S020",
+      "start": "N012",
+      "end": "N013",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(3,1)",
+        "(4,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S021",
+      "start": "N012",
+      "end": "N023",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(3,1)",
+        "(3,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S022",
+      "start": "N013",
+      "end": "N024",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(4,1)",
+        "(4,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(4,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S023",
+      "start": "N014",
+      "end": "N015",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(5,1)",
+        "(6,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S024",
+      "start": "N014",
+      "end": "N032",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(5,1)",
+        "(5,2)",
+        "(5,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(5,2)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(5,3)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S025",
+      "start": "N015",
+      "end": "N025",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(6,1)",
+        "(6,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S026",
+      "start": "N016",
+      "end": "N017",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(7,1)",
+        "(8,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(7,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S027",
+      "start": "N017",
+      "end": "N026",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(8,1)",
+        "(8,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S028",
+      "start": "N018",
+      "end": "N019",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(10,1)",
+        "(11,1)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,1)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S029",
+      "start": "N018",
+      "end": "N028",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(10,1)",
+        "(10,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,1)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S030",
+      "start": "N020",
+      "end": "N021",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(0,2)",
+        "(1,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S031",
+      "start": "N020",
+      "end": "N037",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(0,2)",
+        "(0,3)",
+        "(0,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(0,3)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(0,4)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S032",
+      "start": "N021",
+      "end": "N022",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(1,2)",
+        "(2,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(1,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S033",
+      "start": "N021",
+      "end": "N038",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(1,2)",
+        "(1,3)",
+        "(1,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(1,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,3)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(1,4)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S034",
+      "start": "N022",
+      "end": "N030",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(2,2)",
+        "(2,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(2,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,3)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S035",
+      "start": "N023",
+      "end": "N024",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(3,2)",
+        "(4,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S036",
+      "start": "N023",
+      "end": "N031",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(3,2)",
+        "(3,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,3)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S037",
+      "start": "N025",
+      "end": "N026",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(6,2)",
+        "(7,2)",
+        "(8,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(7,2)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(8,2)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S038",
+      "start": "N025",
+      "end": "N033",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(6,2)",
+        "(6,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,3)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S039",
+      "start": "N026",
+      "end": "N027",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(8,2)",
+        "(9,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(9,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S040",
+      "start": "N026",
+      "end": "N035",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(8,2)",
+        "(8,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,3)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S041",
+      "start": "N027",
+      "end": "N028",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(9,2)",
+        "(10,2)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(9,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,2)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S042",
+      "start": "N029",
+      "end": "N045",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(11,2)",
+        "(11,3)",
+        "(11,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(11,2)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,3)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(11,4)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S043",
+      "start": "N031",
+      "end": "N032",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(3,3)",
+        "(4,3)",
+        "(5,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,3)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,3)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(5,3)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S044",
+      "start": "N032",
+      "end": "N048",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(5,3)",
+        "(5,4)",
+        "(5,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5,3)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(5,4)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(5,5)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S045",
+      "start": "N033",
+      "end": "N034",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(6,3)",
+        "(7,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,3)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(7,3)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S046",
+      "start": "N033",
+      "end": "N049",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(6,3)",
+        "(6,4)",
+        "(6,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,3)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,4)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(6,5)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S047",
+      "start": "N034",
+      "end": "N035",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(7,3)",
+        "(8,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(7,3)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,3)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S048",
+      "start": "N034",
+      "end": "N050",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(7,3)",
+        "(7,4)",
+        "(7,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(7,3)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(7,4)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(7,5)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S049",
+      "start": "N035",
+      "end": "N036",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(8,3)",
+        "(9,3)",
+        "(10,3)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,3)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(9,3)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(10,3)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S050",
+      "start": "N036",
+      "end": "N044",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(10,3)",
+        "(10,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,3)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,4)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S051",
+      "start": "N037",
+      "end": "N038",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(0,4)",
+        "(1,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,4)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S052",
+      "start": "N037",
+      "end": "N055",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(0,4)",
+        "(0,5)",
+        "(0,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(0,5)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(0,6)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S053",
+      "start": "N038",
+      "end": "N039",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(1,4)",
+        "(2,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(1,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,4)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S054",
+      "start": "N038",
+      "end": "N056",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(1,4)",
+        "(1,5)",
+        "(1,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(1,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,5)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(1,6)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S055",
+      "start": "N039",
+      "end": "N040",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(2,4)",
+        "(3,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(2,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,4)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S056",
+      "start": "N039",
+      "end": "N057",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(2,4)",
+        "(2,5)",
+        "(2,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(2,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,5)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(2,6)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S057",
+      "start": "N040",
+      "end": "N046",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(3,4)",
+        "(3,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S058",
+      "start": "N041",
+      "end": "N047",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(4,4)",
+        "(4,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(4,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S059",
+      "start": "N042",
+      "end": "N043",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(8,4)",
+        "(9,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(9,4)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S060",
+      "start": "N042",
+      "end": "N051",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(8,4)",
+        "(8,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S061",
+      "start": "N044",
+      "end": "N045",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(10,4)",
+        "(11,4)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,4)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S062",
+      "start": "N044",
+      "end": "N053",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(10,4)",
+        "(10,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,4)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S063",
+      "start": "N046",
+      "end": "N047",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(3,5)",
+        "(4,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,5)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S064",
+      "start": "N046",
+      "end": "N058",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(3,5)",
+        "(3,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,5)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S065",
+      "start": "N048",
+      "end": "N049",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(5,5)",
+        "(6,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5,5)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S066",
+      "start": "N049",
+      "end": "N061",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(6,5)",
+        "(6,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,5)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S067",
+      "start": "N051",
+      "end": "N052",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(8,5)",
+        "(9,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,5)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(9,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S068",
+      "start": "N052",
+      "end": "N053",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(9,5)",
+        "(10,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(9,5)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S069",
+      "start": "N052",
+      "end": "N063",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(9,5)",
+        "(9,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(9,5)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(9,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S070",
+      "start": "N053",
+      "end": "N054",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(10,5)",
+        "(11,5)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,5)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,5)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S071",
+      "start": "N055",
+      "end": "N056",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(0,6)",
+        "(1,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S072",
+      "start": "N056",
+      "end": "N057",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(1,6)",
+        "(2,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(1,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S073",
+      "start": "N058",
+      "end": "N059",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(3,6)",
+        "(4,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S074",
+      "start": "N058",
+      "end": "N068",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(3,6)",
+        "(3,7)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,7)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S075",
+      "start": "N059",
+      "end": "N060",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(4,6)",
+        "(5,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(4,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(5,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S076",
+      "start": "N059",
+      "end": "N075",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(4,6)",
+        "(4,7)",
+        "(4,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(4,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,7)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(4,8)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S077",
+      "start": "N060",
+      "end": "N069",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(5,6)",
+        "(5,7)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(5,7)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S078",
+      "start": "N061",
+      "end": "N062",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(6,6)",
+        "(7,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(7,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S079",
+      "start": "N061",
+      "end": "N070",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(6,6)",
+        "(6,7)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,7)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S080",
+      "start": "N062",
+      "end": "N063",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(7,6)",
+        "(8,6)",
+        "(9,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(7,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,6)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(9,6)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S081",
+      "start": "N062",
+      "end": "N071",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(7,6)",
+        "(7,7)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(7,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(7,7)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S082",
+      "start": "N063",
+      "end": "N078",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(9,6)",
+        "(9,7)",
+        "(9,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(9,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(9,7)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(9,8)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S083",
+      "start": "N064",
+      "end": "N065",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(10,6)",
+        "(11,6)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,6)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S084",
+      "start": "N064",
+      "end": "N079",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(10,6)",
+        "(10,7)",
+        "(10,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,6)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,7)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(10,8)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S085",
+      "start": "N066",
+      "end": "N067",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(0,7)",
+        "(1,7)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,7)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S086",
+      "start": "N066",
+      "end": "N081",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(0,7)",
+        "(0,8)",
+        "(0,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(0,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(0,8)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(0,9)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S087",
+      "start": "N067",
+      "end": "N068",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(1,7)",
+        "(2,7)",
+        "(3,7)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(1,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,7)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(3,7)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S088",
+      "start": "N067",
+      "end": "N082",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(1,7)",
+        "(1,8)",
+        "(1,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(1,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(1,8)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(1,9)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S089",
+      "start": "N068",
+      "end": "N084",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(3,7)",
+        "(3,8)",
+        "(3,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(3,8)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(3,9)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S090",
+      "start": "N069",
+      "end": "N070",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(5,7)",
+        "(6,7)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(5,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,7)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S091",
+      "start": "N070",
+      "end": "N076",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(6,7)",
+        "(6,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,8)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S092",
+      "start": "N071",
+      "end": "N072",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(7,7)",
+        "(8,7)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(7,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,7)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S093",
+      "start": "N072",
+      "end": "N077",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(8,7)",
+        "(8,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(8,8)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S094",
+      "start": "N073",
+      "end": "N080",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(11,7)",
+        "(11,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(11,7)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,8)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S095",
+      "start": "N074",
+      "end": "N083",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(2,8)",
+        "(2,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(2,8)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,9)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S096",
+      "start": "N075",
+      "end": "N076",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(4,8)",
+        "(5,8)",
+        "(6,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(4,8)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(5,8)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(6,8)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S097",
+      "start": "N076",
+      "end": "N077",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(6,8)",
+        "(7,8)",
+        "(8,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,8)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(7,8)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(8,8)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S098",
+      "start": "N076",
+      "end": "N085",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(6,8)",
+        "(6,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,8)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(6,9)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S099",
+      "start": "N077",
+      "end": "N078",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(8,8)",
+        "(9,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(8,8)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(9,8)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S100",
+      "start": "N078",
+      "end": "N079",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(9,8)",
+        "(10,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(9,8)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,8)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S101",
+      "start": "N079",
+      "end": "N080",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(10,8)",
+        "(11,8)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(10,8)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,8)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S102",
+      "start": "N080",
+      "end": "N088",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "S",
+      "direction_from_end": "N",
+      "original_nodes": [
+        "(11,8)",
+        "(11,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(11,8)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(11,9)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S103",
+      "start": "N082",
+      "end": "N083",
+      "length_m": 0.3,
+      "length_half_cell_ticks": 2,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(1,9)",
+        "(2,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(1,9)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(2,9)",
+          "distance_from_start_m": 0.3
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S104",
+      "start": "N084",
+      "end": "N085",
+      "length_m": 0.9,
+      "length_half_cell_ticks": 6,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(3,9)",
+        "(4,9)",
+        "(5,9)",
+        "(6,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(3,9)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(4,9)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(5,9)",
+          "distance_from_start_m": 0.6
+        },
+        {
+          "original_node": "(6,9)",
+          "distance_from_start_m": 0.9
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S105",
+      "start": "N085",
+      "end": "N086",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(6,9)",
+        "(7,9)",
+        "(8,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(6,9)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(7,9)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(8,9)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    },
+    {
+      "id": "S106",
+      "start": "N087",
+      "end": "N088",
+      "length_m": 0.6,
+      "length_half_cell_ticks": 4,
+      "direction_from_start": "E",
+      "direction_from_end": "W",
+      "original_nodes": [
+        "(9,9)",
+        "(10,9)",
+        "(11,9)"
+      ],
+      "original_offsets": [
+        {
+          "original_node": "(9,9)",
+          "distance_from_start_m": 0.0
+        },
+        {
+          "original_node": "(10,9)",
+          "distance_from_start_m": 0.3
+        },
+        {
+          "original_node": "(11,9)",
+          "distance_from_start_m": 0.6
+        }
+      ],
+      "calibrated": false
+    }
+  ],
+  "original_node_mapping": {
+    "(0,0)": {
+      "xy_grid": [
+        0,
+        0
+      ],
+      "node_id": "N001",
+      "segments": [
+        {
+          "segment_id": "S001",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S002",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(1,0)": {
+      "xy_grid": [
+        1,
+        0
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S001",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(2,0)": {
+      "xy_grid": [
+        2,
+        0
+      ],
+      "node_id": "N002",
+      "segments": [
+        {
+          "segment_id": "S001",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S003",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S004",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(3,0)": {
+      "xy_grid": [
+        3,
+        0
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S003",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(4,0)": {
+      "xy_grid": [
+        4,
+        0
+      ],
+      "node_id": "N003",
+      "segments": [
+        {
+          "segment_id": "S003",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S005",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S006",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(5,0)": {
+      "xy_grid": [
+        5,
+        0
+      ],
+      "node_id": "N004",
+      "segments": [
+        {
+          "segment_id": "S005",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S007",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.15
+        },
+        {
+          "segment_id": "S008",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(5.5,0)": {
+      "xy_grid": [
+        5.5,
+        0
+      ],
+      "node_id": "N005",
+      "segments": [
+        {
+          "segment_id": "S007",
+          "distance_from_start_m": 0.15,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S009",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.15
+        }
+      ]
+    },
+    "(6,0)": {
+      "xy_grid": [
+        6,
+        0
+      ],
+      "node_id": "N006",
+      "segments": [
+        {
+          "segment_id": "S009",
+          "distance_from_start_m": 0.15,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S010",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S011",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(7,0)": {
+      "xy_grid": [
+        7,
+        0
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S010",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(8,0)": {
+      "xy_grid": [
+        8,
+        0
+      ],
+      "node_id": "N007",
+      "segments": [
+        {
+          "segment_id": "S010",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S012",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(9,0)": {
+      "xy_grid": [
+        9,
+        0
+      ],
+      "node_id": "N008",
+      "segments": [
+        {
+          "segment_id": "S013",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S014",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(10,0)": {
+      "xy_grid": [
+        10,
+        0
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S013",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(11,0)": {
+      "xy_grid": [
+        11,
+        0
+      ],
+      "node_id": "N009",
+      "segments": [
+        {
+          "segment_id": "S013",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S015",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(0,1)": {
+      "xy_grid": [
+        0,
+        1
+      ],
+      "node_id": "N010",
+      "segments": [
+        {
+          "segment_id": "S002",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S016",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S017",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(1,1)": {
+      "xy_grid": [
+        1,
+        1
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S016",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(2,1)": {
+      "xy_grid": [
+        2,
+        1
+      ],
+      "node_id": "N011",
+      "segments": [
+        {
+          "segment_id": "S004",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S016",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S018",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S019",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(3,1)": {
+      "xy_grid": [
+        3,
+        1
+      ],
+      "node_id": "N012",
+      "segments": [
+        {
+          "segment_id": "S018",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S020",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S021",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(4,1)": {
+      "xy_grid": [
+        4,
+        1
+      ],
+      "node_id": "N013",
+      "segments": [
+        {
+          "segment_id": "S006",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S020",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S022",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(5,1)": {
+      "xy_grid": [
+        5,
+        1
+      ],
+      "node_id": "N014",
+      "segments": [
+        {
+          "segment_id": "S008",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S023",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S024",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(6,1)": {
+      "xy_grid": [
+        6,
+        1
+      ],
+      "node_id": "N015",
+      "segments": [
+        {
+          "segment_id": "S011",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S023",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S025",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(7,1)": {
+      "xy_grid": [
+        7,
+        1
+      ],
+      "node_id": "N016",
+      "segments": [
+        {
+          "segment_id": "S026",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(8,1)": {
+      "xy_grid": [
+        8,
+        1
+      ],
+      "node_id": "N017",
+      "segments": [
+        {
+          "segment_id": "S012",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S026",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S027",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(9,1)": {
+      "xy_grid": [
+        9,
+        1
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S014",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(10,1)": {
+      "xy_grid": [
+        10,
+        1
+      ],
+      "node_id": "N018",
+      "segments": [
+        {
+          "segment_id": "S028",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S029",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(11,1)": {
+      "xy_grid": [
+        11,
+        1
+      ],
+      "node_id": "N019",
+      "segments": [
+        {
+          "segment_id": "S015",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S028",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(0,2)": {
+      "xy_grid": [
+        0,
+        2
+      ],
+      "node_id": "N020",
+      "segments": [
+        {
+          "segment_id": "S017",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S030",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S031",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(1,2)": {
+      "xy_grid": [
+        1,
+        2
+      ],
+      "node_id": "N021",
+      "segments": [
+        {
+          "segment_id": "S030",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S032",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S033",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(2,2)": {
+      "xy_grid": [
+        2,
+        2
+      ],
+      "node_id": "N022",
+      "segments": [
+        {
+          "segment_id": "S019",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S032",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S034",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(3,2)": {
+      "xy_grid": [
+        3,
+        2
+      ],
+      "node_id": "N023",
+      "segments": [
+        {
+          "segment_id": "S021",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S035",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S036",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(4,2)": {
+      "xy_grid": [
+        4,
+        2
+      ],
+      "node_id": "N024",
+      "segments": [
+        {
+          "segment_id": "S022",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S035",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(5,2)": {
+      "xy_grid": [
+        5,
+        2
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S024",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(6,2)": {
+      "xy_grid": [
+        6,
+        2
+      ],
+      "node_id": "N025",
+      "segments": [
+        {
+          "segment_id": "S025",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S037",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S038",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(7,2)": {
+      "xy_grid": [
+        7,
+        2
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S037",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(8,2)": {
+      "xy_grid": [
+        8,
+        2
+      ],
+      "node_id": "N026",
+      "segments": [
+        {
+          "segment_id": "S027",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S037",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S039",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S040",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(9,2)": {
+      "xy_grid": [
+        9,
+        2
+      ],
+      "node_id": "N027",
+      "segments": [
+        {
+          "segment_id": "S014",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S039",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S041",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(10,2)": {
+      "xy_grid": [
+        10,
+        2
+      ],
+      "node_id": "N028",
+      "segments": [
+        {
+          "segment_id": "S029",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S041",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(11,2)": {
+      "xy_grid": [
+        11,
+        2
+      ],
+      "node_id": "N029",
+      "segments": [
+        {
+          "segment_id": "S042",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(0,3)": {
+      "xy_grid": [
+        0,
+        3
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S031",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(1,3)": {
+      "xy_grid": [
+        1,
+        3
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S033",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(2,3)": {
+      "xy_grid": [
+        2,
+        3
+      ],
+      "node_id": "N030",
+      "segments": [
+        {
+          "segment_id": "S034",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(3,3)": {
+      "xy_grid": [
+        3,
+        3
+      ],
+      "node_id": "N031",
+      "segments": [
+        {
+          "segment_id": "S036",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S043",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(4,3)": {
+      "xy_grid": [
+        4,
+        3
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S043",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(5,3)": {
+      "xy_grid": [
+        5,
+        3
+      ],
+      "node_id": "N032",
+      "segments": [
+        {
+          "segment_id": "S024",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S043",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S044",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(6,3)": {
+      "xy_grid": [
+        6,
+        3
+      ],
+      "node_id": "N033",
+      "segments": [
+        {
+          "segment_id": "S038",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S045",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S046",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(7,3)": {
+      "xy_grid": [
+        7,
+        3
+      ],
+      "node_id": "N034",
+      "segments": [
+        {
+          "segment_id": "S045",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S047",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S048",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(8,3)": {
+      "xy_grid": [
+        8,
+        3
+      ],
+      "node_id": "N035",
+      "segments": [
+        {
+          "segment_id": "S040",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S047",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S049",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(9,3)": {
+      "xy_grid": [
+        9,
+        3
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S049",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(10,3)": {
+      "xy_grid": [
+        10,
+        3
+      ],
+      "node_id": "N036",
+      "segments": [
+        {
+          "segment_id": "S049",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S050",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(11,3)": {
+      "xy_grid": [
+        11,
+        3
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S042",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(0,4)": {
+      "xy_grid": [
+        0,
+        4
+      ],
+      "node_id": "N037",
+      "segments": [
+        {
+          "segment_id": "S031",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S051",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S052",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(1,4)": {
+      "xy_grid": [
+        1,
+        4
+      ],
+      "node_id": "N038",
+      "segments": [
+        {
+          "segment_id": "S033",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S051",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S053",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S054",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(2,4)": {
+      "xy_grid": [
+        2,
+        4
+      ],
+      "node_id": "N039",
+      "segments": [
+        {
+          "segment_id": "S053",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S055",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S056",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(3,4)": {
+      "xy_grid": [
+        3,
+        4
+      ],
+      "node_id": "N040",
+      "segments": [
+        {
+          "segment_id": "S055",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S057",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(4,4)": {
+      "xy_grid": [
+        4,
+        4
+      ],
+      "node_id": "N041",
+      "segments": [
+        {
+          "segment_id": "S058",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(5,4)": {
+      "xy_grid": [
+        5,
+        4
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S044",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(6,4)": {
+      "xy_grid": [
+        6,
+        4
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S046",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(7,4)": {
+      "xy_grid": [
+        7,
+        4
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S048",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(8,4)": {
+      "xy_grid": [
+        8,
+        4
+      ],
+      "node_id": "N042",
+      "segments": [
+        {
+          "segment_id": "S059",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S060",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(9,4)": {
+      "xy_grid": [
+        9,
+        4
+      ],
+      "node_id": "N043",
+      "segments": [
+        {
+          "segment_id": "S059",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(10,4)": {
+      "xy_grid": [
+        10,
+        4
+      ],
+      "node_id": "N044",
+      "segments": [
+        {
+          "segment_id": "S050",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S061",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S062",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(11,4)": {
+      "xy_grid": [
+        11,
+        4
+      ],
+      "node_id": "N045",
+      "segments": [
+        {
+          "segment_id": "S042",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S061",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(0,5)": {
+      "xy_grid": [
+        0,
+        5
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S052",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(1,5)": {
+      "xy_grid": [
+        1,
+        5
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S054",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(2,5)": {
+      "xy_grid": [
+        2,
+        5
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S056",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(3,5)": {
+      "xy_grid": [
+        3,
+        5
+      ],
+      "node_id": "N046",
+      "segments": [
+        {
+          "segment_id": "S057",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S063",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S064",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(4,5)": {
+      "xy_grid": [
+        4,
+        5
+      ],
+      "node_id": "N047",
+      "segments": [
+        {
+          "segment_id": "S058",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S063",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(5,5)": {
+      "xy_grid": [
+        5,
+        5
+      ],
+      "node_id": "N048",
+      "segments": [
+        {
+          "segment_id": "S044",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S065",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(6,5)": {
+      "xy_grid": [
+        6,
+        5
+      ],
+      "node_id": "N049",
+      "segments": [
+        {
+          "segment_id": "S046",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S065",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S066",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(7,5)": {
+      "xy_grid": [
+        7,
+        5
+      ],
+      "node_id": "N050",
+      "segments": [
+        {
+          "segment_id": "S048",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(8,5)": {
+      "xy_grid": [
+        8,
+        5
+      ],
+      "node_id": "N051",
+      "segments": [
+        {
+          "segment_id": "S060",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S067",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(9,5)": {
+      "xy_grid": [
+        9,
+        5
+      ],
+      "node_id": "N052",
+      "segments": [
+        {
+          "segment_id": "S067",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S068",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S069",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(10,5)": {
+      "xy_grid": [
+        10,
+        5
+      ],
+      "node_id": "N053",
+      "segments": [
+        {
+          "segment_id": "S062",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S068",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S070",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(11,5)": {
+      "xy_grid": [
+        11,
+        5
+      ],
+      "node_id": "N054",
+      "segments": [
+        {
+          "segment_id": "S070",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(0,6)": {
+      "xy_grid": [
+        0,
+        6
+      ],
+      "node_id": "N055",
+      "segments": [
+        {
+          "segment_id": "S052",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S071",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(1,6)": {
+      "xy_grid": [
+        1,
+        6
+      ],
+      "node_id": "N056",
+      "segments": [
+        {
+          "segment_id": "S054",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S071",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S072",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(2,6)": {
+      "xy_grid": [
+        2,
+        6
+      ],
+      "node_id": "N057",
+      "segments": [
+        {
+          "segment_id": "S056",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S072",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(3,6)": {
+      "xy_grid": [
+        3,
+        6
+      ],
+      "node_id": "N058",
+      "segments": [
+        {
+          "segment_id": "S064",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S073",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S074",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(4,6)": {
+      "xy_grid": [
+        4,
+        6
+      ],
+      "node_id": "N059",
+      "segments": [
+        {
+          "segment_id": "S073",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S075",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S076",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(5,6)": {
+      "xy_grid": [
+        5,
+        6
+      ],
+      "node_id": "N060",
+      "segments": [
+        {
+          "segment_id": "S075",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S077",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(6,6)": {
+      "xy_grid": [
+        6,
+        6
+      ],
+      "node_id": "N061",
+      "segments": [
+        {
+          "segment_id": "S066",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S078",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S079",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(7,6)": {
+      "xy_grid": [
+        7,
+        6
+      ],
+      "node_id": "N062",
+      "segments": [
+        {
+          "segment_id": "S078",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S080",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S081",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(8,6)": {
+      "xy_grid": [
+        8,
+        6
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S080",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(9,6)": {
+      "xy_grid": [
+        9,
+        6
+      ],
+      "node_id": "N063",
+      "segments": [
+        {
+          "segment_id": "S069",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S080",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S082",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(10,6)": {
+      "xy_grid": [
+        10,
+        6
+      ],
+      "node_id": "N064",
+      "segments": [
+        {
+          "segment_id": "S083",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S084",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(11,6)": {
+      "xy_grid": [
+        11,
+        6
+      ],
+      "node_id": "N065",
+      "segments": [
+        {
+          "segment_id": "S083",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(0,7)": {
+      "xy_grid": [
+        0,
+        7
+      ],
+      "node_id": "N066",
+      "segments": [
+        {
+          "segment_id": "S085",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        },
+        {
+          "segment_id": "S086",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(1,7)": {
+      "xy_grid": [
+        1,
+        7
+      ],
+      "node_id": "N067",
+      "segments": [
+        {
+          "segment_id": "S085",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S087",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S088",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(2,7)": {
+      "xy_grid": [
+        2,
+        7
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S087",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(3,7)": {
+      "xy_grid": [
+        3,
+        7
+      ],
+      "node_id": "N068",
+      "segments": [
+        {
+          "segment_id": "S074",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S087",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S089",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(4,7)": {
+      "xy_grid": [
+        4,
+        7
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S076",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(5,7)": {
+      "xy_grid": [
+        5,
+        7
+      ],
+      "node_id": "N069",
+      "segments": [
+        {
+          "segment_id": "S077",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S090",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(6,7)": {
+      "xy_grid": [
+        6,
+        7
+      ],
+      "node_id": "N070",
+      "segments": [
+        {
+          "segment_id": "S079",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S090",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S091",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(7,7)": {
+      "xy_grid": [
+        7,
+        7
+      ],
+      "node_id": "N071",
+      "segments": [
+        {
+          "segment_id": "S081",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S092",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(8,7)": {
+      "xy_grid": [
+        8,
+        7
+      ],
+      "node_id": "N072",
+      "segments": [
+        {
+          "segment_id": "S092",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S093",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(9,7)": {
+      "xy_grid": [
+        9,
+        7
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S082",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(10,7)": {
+      "xy_grid": [
+        10,
+        7
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S084",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(11,7)": {
+      "xy_grid": [
+        11,
+        7
+      ],
+      "node_id": "N073",
+      "segments": [
+        {
+          "segment_id": "S094",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(0,8)": {
+      "xy_grid": [
+        0,
+        8
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S086",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(1,8)": {
+      "xy_grid": [
+        1,
+        8
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S088",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(2,8)": {
+      "xy_grid": [
+        2,
+        8
+      ],
+      "node_id": "N074",
+      "segments": [
+        {
+          "segment_id": "S095",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(3,8)": {
+      "xy_grid": [
+        3,
+        8
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S089",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(4,8)": {
+      "xy_grid": [
+        4,
+        8
+      ],
+      "node_id": "N075",
+      "segments": [
+        {
+          "segment_id": "S076",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S096",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(5,8)": {
+      "xy_grid": [
+        5,
+        8
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S096",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(6,8)": {
+      "xy_grid": [
+        6,
+        8
+      ],
+      "node_id": "N076",
+      "segments": [
+        {
+          "segment_id": "S091",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S096",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S097",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        },
+        {
+          "segment_id": "S098",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(7,8)": {
+      "xy_grid": [
+        7,
+        8
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S097",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(8,8)": {
+      "xy_grid": [
+        8,
+        8
+      ],
+      "node_id": "N077",
+      "segments": [
+        {
+          "segment_id": "S093",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S097",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S099",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(9,8)": {
+      "xy_grid": [
+        9,
+        8
+      ],
+      "node_id": "N078",
+      "segments": [
+        {
+          "segment_id": "S082",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S099",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S100",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(10,8)": {
+      "xy_grid": [
+        10,
+        8
+      ],
+      "node_id": "N079",
+      "segments": [
+        {
+          "segment_id": "S084",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S100",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S101",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(11,8)": {
+      "xy_grid": [
+        11,
+        8
+      ],
+      "node_id": "N080",
+      "segments": [
+        {
+          "segment_id": "S094",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S101",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S102",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(0,9)": {
+      "xy_grid": [
+        0,
+        9
+      ],
+      "node_id": "N081",
+      "segments": [
+        {
+          "segment_id": "S086",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(1,9)": {
+      "xy_grid": [
+        1,
+        9
+      ],
+      "node_id": "N082",
+      "segments": [
+        {
+          "segment_id": "S088",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S103",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(2,9)": {
+      "xy_grid": [
+        2,
+        9
+      ],
+      "node_id": "N083",
+      "segments": [
+        {
+          "segment_id": "S095",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S103",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(3,9)": {
+      "xy_grid": [
+        3,
+        9
+      ],
+      "node_id": "N084",
+      "segments": [
+        {
+          "segment_id": "S089",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S104",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.9
+        }
+      ]
+    },
+    "(4,9)": {
+      "xy_grid": [
+        4,
+        9
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S104",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(5,9)": {
+      "xy_grid": [
+        5,
+        9
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S104",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(6,9)": {
+      "xy_grid": [
+        6,
+        9
+      ],
+      "node_id": "N085",
+      "segments": [
+        {
+          "segment_id": "S098",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S104",
+          "distance_from_start_m": 0.9,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S105",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(7,9)": {
+      "xy_grid": [
+        7,
+        9
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S105",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(8,9)": {
+      "xy_grid": [
+        8,
+        9
+      ],
+      "node_id": "N086",
+      "segments": [
+        {
+          "segment_id": "S105",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    },
+    "(9,9)": {
+      "xy_grid": [
+        9,
+        9
+      ],
+      "node_id": "N087",
+      "segments": [
+        {
+          "segment_id": "S106",
+          "distance_from_start_m": 0.0,
+          "distance_from_end_m": 0.6
+        }
+      ]
+    },
+    "(10,9)": {
+      "xy_grid": [
+        10,
+        9
+      ],
+      "node_id": null,
+      "segments": [
+        {
+          "segment_id": "S106",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.3
+        }
+      ]
+    },
+    "(11,9)": {
+      "xy_grid": [
+        11,
+        9
+      ],
+      "node_id": "N088",
+      "segments": [
+        {
+          "segment_id": "S102",
+          "distance_from_start_m": 0.3,
+          "distance_from_end_m": 0.0
+        },
+        {
+          "segment_id": "S106",
+          "distance_from_start_m": 0.6,
+          "distance_from_end_m": 0.0
+        }
+      ]
+    }
+  },
+  "identity_registry": {
+    "nodes": {
+      "(0,0)": "N001",
+      "(2,0)": "N002",
+      "(4,0)": "N003",
+      "(5,0)": "N004",
+      "(5.5,0)": "N005",
+      "(6,0)": "N006",
+      "(8,0)": "N007",
+      "(9,0)": "N008",
+      "(11,0)": "N009",
+      "(0,1)": "N010",
+      "(2,1)": "N011",
+      "(3,1)": "N012",
+      "(4,1)": "N013",
+      "(5,1)": "N014",
+      "(6,1)": "N015",
+      "(7,1)": "N016",
+      "(8,1)": "N017",
+      "(10,1)": "N018",
+      "(11,1)": "N019",
+      "(0,2)": "N020",
+      "(1,2)": "N021",
+      "(2,2)": "N022",
+      "(3,2)": "N023",
+      "(4,2)": "N024",
+      "(6,2)": "N025",
+      "(8,2)": "N026",
+      "(9,2)": "N027",
+      "(10,2)": "N028",
+      "(11,2)": "N029",
+      "(2,3)": "N030",
+      "(3,3)": "N031",
+      "(5,3)": "N032",
+      "(6,3)": "N033",
+      "(7,3)": "N034",
+      "(8,3)": "N035",
+      "(10,3)": "N036",
+      "(0,4)": "N037",
+      "(1,4)": "N038",
+      "(2,4)": "N039",
+      "(3,4)": "N040",
+      "(4,4)": "N041",
+      "(8,4)": "N042",
+      "(9,4)": "N043",
+      "(10,4)": "N044",
+      "(11,4)": "N045",
+      "(3,5)": "N046",
+      "(4,5)": "N047",
+      "(5,5)": "N048",
+      "(6,5)": "N049",
+      "(7,5)": "N050",
+      "(8,5)": "N051",
+      "(9,5)": "N052",
+      "(10,5)": "N053",
+      "(11,5)": "N054",
+      "(0,6)": "N055",
+      "(1,6)": "N056",
+      "(2,6)": "N057",
+      "(3,6)": "N058",
+      "(4,6)": "N059",
+      "(5,6)": "N060",
+      "(6,6)": "N061",
+      "(7,6)": "N062",
+      "(9,6)": "N063",
+      "(10,6)": "N064",
+      "(11,6)": "N065",
+      "(0,7)": "N066",
+      "(1,7)": "N067",
+      "(3,7)": "N068",
+      "(5,7)": "N069",
+      "(6,7)": "N070",
+      "(7,7)": "N071",
+      "(8,7)": "N072",
+      "(11,7)": "N073",
+      "(2,8)": "N074",
+      "(4,8)": "N075",
+      "(6,8)": "N076",
+      "(8,8)": "N077",
+      "(9,8)": "N078",
+      "(10,8)": "N079",
+      "(11,8)": "N080",
+      "(0,9)": "N081",
+      "(1,9)": "N082",
+      "(2,9)": "N083",
+      "(3,9)": "N084",
+      "(6,9)": "N085",
+      "(8,9)": "N086",
+      "(9,9)": "N087",
+      "(11,9)": "N088"
+    },
+    "segments": {
+      "(0,0)|(2,0)": "S001",
+      "(0,0)|(0,1)": "S002",
+      "(2,0)|(4,0)": "S003",
+      "(2,0)|(2,1)": "S004",
+      "(4,0)|(5,0)": "S005",
+      "(4,0)|(4,1)": "S006",
+      "(5,0)|(5.5,0)": "S007",
+      "(5,0)|(5,1)": "S008",
+      "(5.5,0)|(6,0)": "S009",
+      "(6,0)|(8,0)": "S010",
+      "(6,0)|(6,1)": "S011",
+      "(8,0)|(8,1)": "S012",
+      "(9,0)|(11,0)": "S013",
+      "(9,0)|(9,2)": "S014",
+      "(11,0)|(11,1)": "S015",
+      "(0,1)|(2,1)": "S016",
+      "(0,1)|(0,2)": "S017",
+      "(2,1)|(3,1)": "S018",
+      "(2,1)|(2,2)": "S019",
+      "(3,1)|(4,1)": "S020",
+      "(3,1)|(3,2)": "S021",
+      "(4,1)|(4,2)": "S022",
+      "(5,1)|(6,1)": "S023",
+      "(5,1)|(5,3)": "S024",
+      "(6,1)|(6,2)": "S025",
+      "(7,1)|(8,1)": "S026",
+      "(8,1)|(8,2)": "S027",
+      "(10,1)|(11,1)": "S028",
+      "(10,1)|(10,2)": "S029",
+      "(0,2)|(1,2)": "S030",
+      "(0,2)|(0,4)": "S031",
+      "(1,2)|(2,2)": "S032",
+      "(1,2)|(1,4)": "S033",
+      "(2,2)|(2,3)": "S034",
+      "(3,2)|(4,2)": "S035",
+      "(3,2)|(3,3)": "S036",
+      "(6,2)|(8,2)": "S037",
+      "(6,2)|(6,3)": "S038",
+      "(8,2)|(9,2)": "S039",
+      "(8,2)|(8,3)": "S040",
+      "(9,2)|(10,2)": "S041",
+      "(11,2)|(11,4)": "S042",
+      "(3,3)|(5,3)": "S043",
+      "(5,3)|(5,5)": "S044",
+      "(6,3)|(7,3)": "S045",
+      "(6,3)|(6,5)": "S046",
+      "(7,3)|(8,3)": "S047",
+      "(7,3)|(7,5)": "S048",
+      "(8,3)|(10,3)": "S049",
+      "(10,3)|(10,4)": "S050",
+      "(0,4)|(1,4)": "S051",
+      "(0,4)|(0,6)": "S052",
+      "(1,4)|(2,4)": "S053",
+      "(1,4)|(1,6)": "S054",
+      "(2,4)|(3,4)": "S055",
+      "(2,4)|(2,6)": "S056",
+      "(3,4)|(3,5)": "S057",
+      "(4,4)|(4,5)": "S058",
+      "(8,4)|(9,4)": "S059",
+      "(8,4)|(8,5)": "S060",
+      "(10,4)|(11,4)": "S061",
+      "(10,4)|(10,5)": "S062",
+      "(3,5)|(4,5)": "S063",
+      "(3,5)|(3,6)": "S064",
+      "(5,5)|(6,5)": "S065",
+      "(6,5)|(6,6)": "S066",
+      "(8,5)|(9,5)": "S067",
+      "(9,5)|(10,5)": "S068",
+      "(9,5)|(9,6)": "S069",
+      "(10,5)|(11,5)": "S070",
+      "(0,6)|(1,6)": "S071",
+      "(1,6)|(2,6)": "S072",
+      "(3,6)|(4,6)": "S073",
+      "(3,6)|(3,7)": "S074",
+      "(4,6)|(5,6)": "S075",
+      "(4,6)|(4,8)": "S076",
+      "(5,6)|(5,7)": "S077",
+      "(6,6)|(7,6)": "S078",
+      "(6,6)|(6,7)": "S079",
+      "(7,6)|(9,6)": "S080",
+      "(7,6)|(7,7)": "S081",
+      "(9,6)|(9,8)": "S082",
+      "(10,6)|(11,6)": "S083",
+      "(10,6)|(10,8)": "S084",
+      "(0,7)|(1,7)": "S085",
+      "(0,7)|(0,9)": "S086",
+      "(1,7)|(3,7)": "S087",
+      "(1,7)|(1,9)": "S088",
+      "(3,7)|(3,9)": "S089",
+      "(5,7)|(6,7)": "S090",
+      "(6,7)|(6,8)": "S091",
+      "(7,7)|(8,7)": "S092",
+      "(8,7)|(8,8)": "S093",
+      "(11,7)|(11,8)": "S094",
+      "(2,8)|(2,9)": "S095",
+      "(4,8)|(6,8)": "S096",
+      "(6,8)|(8,8)": "S097",
+      "(6,8)|(6,9)": "S098",
+      "(8,8)|(9,8)": "S099",
+      "(9,8)|(10,8)": "S100",
+      "(10,8)|(11,8)": "S101",
+      "(11,8)|(11,9)": "S102",
+      "(1,9)|(2,9)": "S103",
+      "(3,9)|(6,9)": "S104",
+      "(6,9)|(8,9)": "S105",
+      "(9,9)|(11,9)": "S106"
+    }
+  }
+}

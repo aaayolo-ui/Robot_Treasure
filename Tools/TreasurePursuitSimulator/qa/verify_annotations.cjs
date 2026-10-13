@@ -32,14 +32,15 @@ for (const segment of annotations.segments) {
 }
 const separation = f => Math.hypot(f[2] - f[9], f[3] - f[10]) * report.map.grid_spacing_m;
 const radius = report.config.capture_center_distance_m;
-assert.equal(report.config.turn90_s, .5);
-assert.equal(report.config.uturn_s, .5);
+assert.deepEqual(report.config, read('config.json'));
+assert.ok(report.config.measured_motion.source_log);
 assert.equal(report.config.pickup_s, 0);
-assert.equal(report.replays.length, 7);
+assert.equal(report.replays.length, 3);
+assert.ok(report.replays.every(m => m.thief_policy === "refuge"));
 assert.equal(report.replays.at(-1).thief_policy, 'refuge');
 const cases = report.replays.map(match => {
-  assert.ok(Math.abs(match.police_sensor_range_m - .9) < 1e-8);
-  assert.ok(match.police_speed_m_s >= match.thief_speed_m_s);
+  assert.ok(Math.abs(match.police_sensor_range_m - .6) < 1e-8);
+  assert.ok(match.police_speed_m_s + 1e-6 >= match.thief_speed_m_s);
   assert.equal(match.vision, 'limited');
   const contacts = match.frames.slice(0, -1).filter(f => separation(f) < radius - .0001);
   assert.equal(contacts.length, 0, `Continued contact: ${match.label}`);

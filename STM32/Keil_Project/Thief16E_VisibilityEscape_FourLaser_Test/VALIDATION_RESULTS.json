@@ -1,0 +1,61 @@
+{
+  "build_errors": 0,
+  "build_warnings": 0,
+  "flash_bytes": 43796,
+  "ram_bytes": 34368,
+  "ram_capacity_bytes": 49152,
+  "workspace_bytes": 13265,
+  "stack_bytes": 2048,
+  "algorithm": {
+    "test_checks": 10474,
+    "test_failures": 0,
+    "test_done": 1,
+    "test_initial_goal": 23,
+    "test_initial_steps": 14,
+    "test_workspace_bytes": 13265,
+    "test_routes_accepted": 108,
+    "test_max_states": 361,
+    "initial_nodes": [
+      54,
+      53,
+      44,
+      36,
+      35,
+      34,
+      33,
+      25,
+      15,
+      6,
+      4,
+      3,
+      13,
+      12,
+      23
+    ]
+  },
+  "uart": {
+    "test_checks": 435,
+    "test_failures": 0,
+    "test_done": 1
+  },
+  "preserved_baseline_files": 171,
+  "replay_ui": {
+    "scripts": 2,
+    "nodes": 88,
+    "segments": 106,
+    "node_click": true,
+    "segment_click": true,
+    "toggles": true,
+    "distinct_trails": true,
+    "hide_jump": true,
+    "decision_jump": true,
+    "scenario": true,
+    "capture_marker": true,
+    "export_matches": true,
+    "browser": false,
+    "scope": "Offline DOM/event smoke test. Browser layout and hardware remain unverified."
+  },
+  "hardware_verified": false,
+  "browser_layout_verified": false,
+  "notes": "Compile, real ARM C tests, simulations and offline UI event tests are separate from physical validation."
+}

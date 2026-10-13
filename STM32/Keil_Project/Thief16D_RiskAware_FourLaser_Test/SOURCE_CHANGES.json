@@ -1,0 +1,90 @@
+{
+  "baseline": "Thief16B_FourLaser_MapStrategy_Test",
+  "baseline_unchanged": true,
+  "changes": [
+    {
+      "status": "modified",
+      "path": ".gitignore"
+    },
+    {
+      "status": "modified",
+      "path": "Algorithm/ThiefStrategy/ThiefMapPlanner.c"
+    },
+    {
+      "status": "modified",
+      "path": "Algorithm/ThiefStrategy/ThiefMapPlanner.h"
+    },
+    {
+      "status": "added",
+      "path": "Algorithm/ThiefStrategy/ThiefMapTopology.h"
+    },
+    {
+      "status": "added",
+      "path": "Algorithm/ThiefStrategy/ThiefRiskSearch.c"
+    },
+    {
+      "status": "added",
+      "path": "Algorithm/ThiefStrategy/ThiefRiskSearch.h"
+    },
+    {
+      "status": "added",
+      "path": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h"
+    },
+    {
+      "status": "added",
+      "path": "Algorithm/ThiefStrategy/ThiefThreatModel.c"
+    },
+    {
+      "status": "added",
+      "path": "Algorithm/ThiefStrategy/ThiefThreatModel.h"
+    },
+    {
+      "status": "added",
+      "path": "BASELINE_SHA256.json"
+    },
+    {
+      "status": "modified",
+      "path": "MDK-ARM/RTE/_Thief16D_RiskAware_FourLaser_Test/RTE_Components.h"
+    },
+    {
+      "status": "modified",
+      "path": "MDK-ARM/startup_stm32f103xe.s"
+    },
+    {
+      "status": "modified",
+      "path": "MDK-ARM/Thief16D_RiskAware_FourLaser_Test.uvprojx"
+    },
+    {
+      "status": "modified",
+      "path": "README.md"
+    },
+    {
+      "status": "added",
+      "path": "Tests/generate_topology.py"
+    },
+    {
+      "status": "modified",
+      "path": "Tests/run_algorithms.py"
+    },
+    {
+      "status": "modified",
+      "path": "Tests/test_algorithms.c"
+    },
+    {
+      "status": "modified",
+      "path": "Tests/verify_thief_strategy.py"
+    },
+    {
+      "status": "modified",
+      "path": "Thief16D_RiskAware_FourLaser_Test.ioc"
+    },
+    {
+      "status": "modified",
+      "path": "User/App_ThiefStrategy.c"
+    },
+    {
+      "status": "modified",
+      "path": "VERIFICATION.md"
+    }
+  ]
+}

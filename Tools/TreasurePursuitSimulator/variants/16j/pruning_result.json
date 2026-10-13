@@ -1,0 +1,330 @@
+{
+  "cases": 36,
+  "all_decisions_identical": true,
+  "rows": [
+    {
+      "node": 11,
+      "body": 1,
+      "threat": 1,
+      "evidence": false,
+      "full_models": 96,
+      "pruned_models": 96,
+      "goal": 38
+    },
+    {
+      "node": 11,
+      "body": 1,
+      "threat": 1,
+      "evidence": true,
+      "full_models": 96,
+      "pruned_models": 96,
+      "goal": 38
+    },
+    {
+      "node": 11,
+      "body": 1,
+      "threat": 0,
+      "evidence": false,
+      "full_models": 246,
+      "pruned_models": 246,
+      "goal": 38
+    },
+    {
+      "node": 11,
+      "body": 1,
+      "threat": 0,
+      "evidence": true,
+      "full_models": 246,
+      "pruned_models": 51,
+      "goal": 38
+    },
+    {
+      "node": 11,
+      "body": 1,
+      "threat": 2,
+      "evidence": false,
+      "full_models": 246,
+      "pruned_models": 246,
+      "goal": 38
+    },
+    {
+      "node": 11,
+      "body": 1,
+      "threat": 2,
+      "evidence": true,
+      "full_models": 246,
+      "pruned_models": 246,
+      "goal": 38
+    },
+    {
+      "node": 11,
+      "body": 1,
+      "threat": 3,
+      "evidence": false,
+      "full_models": 150,
+      "pruned_models": 90,
+      "goal": 38
+    },
+    {
+      "node": 11,
+      "body": 1,
+      "threat": 3,
+      "evidence": true,
+      "full_models": 150,
+      "pruned_models": 69,
+      "goal": 38
+    },
+    {
+      "node": 12,
+      "body": 3,
+      "threat": 1,
+      "evidence": false,
+      "full_models": 150,
+      "pruned_models": 150,
+      "goal": 38
+    },
+    {
+      "node": 12,
+      "body": 3,
+      "threat": 1,
+      "evidence": true,
+      "full_models": 150,
+      "pruned_models": 80,
+      "goal": 38
+    },
+    {
+      "node": 12,
+      "body": 3,
+      "threat": 2,
+      "evidence": false,
+      "full_models": 282,
+      "pruned_models": 282,
+      "goal": 38
+    },
+    {
+      "node": 12,
+      "body": 3,
+      "threat": 2,
+      "evidence": true,
+      "full_models": 282,
+      "pruned_models": 282,
+      "goal": 38
+    },
+    {
+      "node": 12,
+      "body": 3,
+      "threat": 3,
+      "evidence": false,
+      "full_models": 132,
+      "pruned_models": 132,
+      "goal": 38
+    },
+    {
+      "node": 12,
+      "body": 3,
+      "threat": 3,
+      "evidence": true,
+      "full_models": 132,
+      "pruned_models": 132,
+      "goal": 38
+    },
+    {
+      "node": 38,
+      "body": 0,
+      "threat": 1,
+      "evidence": false,
+      "full_models": 150,
+      "pruned_models": 150,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 0,
+      "threat": 1,
+      "evidence": true,
+      "full_models": 150,
+      "pruned_models": 150,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 0,
+      "threat": 0,
+      "evidence": false,
+      "full_models": 72,
+      "pruned_models": 72,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 0,
+      "threat": 0,
+      "evidence": true,
+      "full_models": 72,
+      "pruned_models": 45,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 0,
+      "threat": 2,
+      "evidence": false,
+      "full_models": 78,
+      "pruned_models": 78,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 0,
+      "threat": 2,
+      "evidence": true,
+      "full_models": 78,
+      "pruned_models": 51,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 0,
+      "threat": 3,
+      "evidence": false,
+      "full_models": 150,
+      "pruned_models": 150,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 0,
+      "threat": 3,
+      "evidence": true,
+      "full_models": 150,
+      "pruned_models": 40,
+      "goal": 12
+    },
+    {
+      "node": 38,
+      "body": 1,
+      "threat": 1,
+      "evidence": false,
+      "full_models": 114,
+      "pruned_models": 114,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 1,
+      "threat": 1,
+      "evidence": true,
+      "full_models": 114,
+      "pruned_models": 114,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 1,
+      "threat": 0,
+      "evidence": false,
+      "full_models": 234,
+      "pruned_models": 74,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 1,
+      "threat": 0,
+      "evidence": true,
+      "full_models": 234,
+      "pruned_models": 113,
+      "goal": 62
+    },
+    {
+      "node": 38,
+      "body": 1,
+      "threat": 2,
+      "evidence": false,
+      "full_models": 234,
+      "pruned_models": 74,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 1,
+      "threat": 2,
+      "evidence": true,
+      "full_models": 234,
+      "pruned_models": 149,
+      "goal": 62
+    },
+    {
+      "node": 38,
+      "body": 1,
+      "threat": 3,
+      "evidence": false,
+      "full_models": 120,
+      "pruned_models": 120,
+      "goal": 11
+    },
+    {
+      "node": 38,
+      "body": 1,
+      "threat": 3,
+      "evidence": true,
+      "full_models": 120,
+      "pruned_models": 90,
+      "goal": 11
+    },
+    {
+      "node": 62,
+      "body": 1,
+      "threat": 1,
+      "evidence": false,
+      "full_models": 288,
+      "pruned_models": 288,
+      "goal": 11
+    },
+    {
+      "node": 62,
+      "body": 1,
+      "threat": 1,
+      "evidence": true,
+      "full_models": 288,
+      "pruned_models": 219,
+      "goal": 11
+    },
+    {
+      "node": 62,
+      "body": 1,
+      "threat": 2,
+      "evidence": false,
+      "full_models": 402,
+      "pruned_models": 402,
+      "goal": 11
+    },
+    {
+      "node": 62,
+      "body": 1,
+      "threat": 2,
+      "evidence": true,
+      "full_models": 402,
+      "pruned_models": 108,
+      "goal": 38
+    },
+    {
+      "node": 62,
+      "body": 1,
+      "threat": 3,
+      "evidence": false,
+      "full_models": 114,
+      "pruned_models": 114,
+      "goal": 11
+    },
+    {
+      "node": 62,
+      "body": 1,
+      "threat": 3,
+      "evidence": true,
+      "full_models": 114,
+      "pruned_models": 114,
+      "goal": 11
+    }
+  ]
+}

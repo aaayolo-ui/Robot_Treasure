@@ -1,0 +1,557 @@
+{
+  "seeds": [
+    7,
+    8,
+    9
+  ],
+  "config": {
+    "status": "使用2026-10-06单车全图记录的名义尺度速度和动作代价；双方共用该车基准，另一辆车未独立标定。",
+    "police_speed_m_s": 0.674,
+    "thief_speed_m_s": 0.674,
+    "turn90_s": 0.768,
+    "uturn_s": 0.282,
+    "pickup_s": 0.0,
+    "capture_center_distance_m": 0.18,
+    "sensor_range_m": 0.6,
+    "police_sensor_range_m": 0.6,
+    "sensor_half_angle_deg": 10.0,
+    "miss_probability": 0.05,
+    "horizon_s": 8.0,
+    "time_limit_s": 180.0,
+    "sensor_period_s": 0.02,
+    "frame_period_s": 0.1,
+    "pursuit_memory_s": 2.0,
+    "police_search_memory_s": 12.0,
+    "regional_search_enabled": true,
+    "police_local_search_cells": 5,
+    "police_deadend_check_cells": 4,
+    "police_deadend_recheck_s": 20.0,
+    "hide_max_straight_cells": 3,
+    "escape_risk_step_s": 0.05,
+    "escape_straight_limit_cells": 3,
+    "escape_safety_slack_s": 0.15,
+    "escape_replan_contact_s": 0.3,
+    "side_escape_cells": 2,
+    "hide_reaction_margin_s": 1.0,
+    "hide_escape_hold_s": 6.0,
+    "hide_revisit_cooldown_s": 30.0,
+    "seed": 7,
+    "measured_motion": {
+      "reverse_speed_ratio": 1.0074183976261128,
+      "forward_to_reverse_s": 0.282,
+      "reverse_to_forward_s": 0.274,
+      "source_log": "20261006-210343-671.log",
+      "source_sha256": "138576fbe7416f90fad63818e5d3d552f5463ef1cb8ddebf997868bcf0b09d12",
+      "turn90_method": "node-to-node residual after nominal straight travel; pooled for both modes",
+      "switch_method": "brake trigger to stable leading-gray; not first physical motion",
+      "dimension_calibrated": false,
+      "both_cars_share_one_vehicle_measurement": true,
+      "slow_case": {
+        "turn90_s": 0.8420476216757011,
+        "forward_to_reverse_s": 0.316,
+        "reverse_to_forward_s": 0.292
+      }
+    }
+  },
+  "comparison": [
+    {
+      "variant": "initial_hide_N044",
+      "case": "full_equal",
+      "runs": 3,
+      "thief_wins": 0,
+      "mean_s": 10.816807,
+      "min_s": 10.816807,
+      "max_s": 10.816807,
+      "plan_failures": 0,
+      "mean_escape_commands": 0,
+      "initial_hides": [
+        "N044"
+      ]
+    },
+    {
+      "variant": "initial_hide_N044",
+      "case": "full_fast20",
+      "runs": 3,
+      "thief_wins": 0,
+      "mean_s": 10.207288,
+      "min_s": 10.207288,
+      "max_s": 10.207288,
+      "plan_failures": 0,
+      "mean_escape_commands": 0,
+      "initial_hides": [
+        "N044"
+      ]
+    },
+    {
+      "variant": "initial_hide_N059",
+      "case": "full_equal",
+      "runs": 3,
+      "thief_wins": 0,
+      "mean_s": 12.062379,
+      "min_s": 12.062379,
+      "max_s": 12.062379,
+      "plan_failures": 0,
+      "mean_escape_commands": 0,
+      "initial_hides": [
+        "N059"
+      ]
+    },
+    {
+      "variant": "initial_hide_N059",
+      "case": "full_fast20",
+      "runs": 3,
+      "thief_wins": 0,
+      "mean_s": 61.320759,
+      "min_s": 61.320759,
+      "max_s": 61.320759,
+      "plan_failures": 0,
+      "mean_escape_commands": 2,
+      "initial_hides": [
+        "N059"
+      ]
+    },
+    {
+      "variant": "initial_hide_N062",
+      "case": "full_equal",
+      "runs": 3,
+      "thief_wins": 0,
+      "mean_s": 12.062379,
+      "min_s": 12.062379,
+      "max_s": 12.062379,
+      "plan_failures": 0,
+      "mean_escape_commands": 0,
+      "initial_hides": [
+        "N062"
+      ]
+    },
+    {
+      "variant": "initial_hide_N062",
+      "case": "full_fast20",
+      "runs": 3,
+      "thief_wins": 0,
+      "mean_s": 72.300197,
+      "min_s": 72.300197,
+      "max_s": 72.300197,
+      "plan_failures": 0,
+      "mean_escape_commands": 1,
+      "initial_hides": [
+        "N062"
+      ]
+    },
+    {
+      "variant": "initial_hide_N063",
+      "case": "full_equal",
+      "runs": 3,
+      "thief_wins": 0,
+      "mean_s": 12.062379,
+      "min_s": 12.062379,
+      "max_s": 12.062379,
+      "plan_failures": 0,
+      "mean_escape_commands": 0,
+      "initial_hides": [
+        "N063"
+      ]
+    },
+    {
+      "variant": "initial_hide_N063",
+      "case": "full_fast20",
+      "runs": 3,
+      "thief_wins": 0,
+      "mean_s": 34.461014,
+      "min_s": 34.461014,
+      "max_s": 34.461014,
+      "plan_failures": 0,
+      "mean_escape_commands": 1,
+      "initial_hides": [
+        "N063"
+      ]
+    }
+  ],
+  "runs": [
+    {
+      "variant": "initial_hide_N044",
+      "case": "full_equal",
+      "seed": 7,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 10.816807,
+      "initial_hide": "N044",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N044",
+      "case": "full_equal",
+      "seed": 8,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 10.816807,
+      "initial_hide": "N044",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N044",
+      "case": "full_equal",
+      "seed": 9,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 10.816807,
+      "initial_hide": "N044",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N044",
+      "case": "full_fast20",
+      "seed": 7,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 10.207288,
+      "initial_hide": "N044",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N044",
+      "case": "full_fast20",
+      "seed": 8,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 10.207288,
+      "initial_hide": "N044",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N044",
+      "case": "full_fast20",
+      "seed": 9,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 10.207288,
+      "initial_hide": "N044",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N059",
+      "case": "full_equal",
+      "seed": 7,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N059",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N059",
+      "case": "full_equal",
+      "seed": 8,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N059",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N059",
+      "case": "full_equal",
+      "seed": 9,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N059",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N059",
+      "case": "full_fast20",
+      "seed": 7,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 61.320759,
+      "initial_hide": "N059",
+      "plan_failures": 0,
+      "escape_commands": 2,
+      "arrived_hides": 2,
+      "max_states": 361
+    },
+    {
+      "variant": "initial_hide_N059",
+      "case": "full_fast20",
+      "seed": 8,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 61.320759,
+      "initial_hide": "N059",
+      "plan_failures": 0,
+      "escape_commands": 2,
+      "arrived_hides": 2,
+      "max_states": 361
+    },
+    {
+      "variant": "initial_hide_N059",
+      "case": "full_fast20",
+      "seed": 9,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 61.320759,
+      "initial_hide": "N059",
+      "plan_failures": 0,
+      "escape_commands": 2,
+      "arrived_hides": 2,
+      "max_states": 361
+    },
+    {
+      "variant": "initial_hide_N062",
+      "case": "full_equal",
+      "seed": 7,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N062",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N062",
+      "case": "full_equal",
+      "seed": 8,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N062",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N062",
+      "case": "full_equal",
+      "seed": 9,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N062",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N062",
+      "case": "full_fast20",
+      "seed": 7,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 72.300197,
+      "initial_hide": "N062",
+      "plan_failures": 0,
+      "escape_commands": 1,
+      "arrived_hides": 1,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N062",
+      "case": "full_fast20",
+      "seed": 8,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 72.300197,
+      "initial_hide": "N062",
+      "plan_failures": 0,
+      "escape_commands": 1,
+      "arrived_hides": 1,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N062",
+      "case": "full_fast20",
+      "seed": 9,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 72.300197,
+      "initial_hide": "N062",
+      "plan_failures": 0,
+      "escape_commands": 1,
+      "arrived_hides": 1,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N063",
+      "case": "full_equal",
+      "seed": 7,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N063",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N063",
+      "case": "full_equal",
+      "seed": 8,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N063",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N063",
+      "case": "full_equal",
+      "seed": 9,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 12.062379,
+      "initial_hide": "N063",
+      "plan_failures": 0,
+      "escape_commands": 0,
+      "arrived_hides": 0,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N063",
+      "case": "full_fast20",
+      "seed": 7,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 34.461014,
+      "initial_hide": "N063",
+      "plan_failures": 0,
+      "escape_commands": 1,
+      "arrived_hides": 1,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N063",
+      "case": "full_fast20",
+      "seed": 8,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 34.461014,
+      "initial_hide": "N063",
+      "plan_failures": 0,
+      "escape_commands": 1,
+      "arrived_hides": 1,
+      "max_states": 182
+    },
+    {
+      "variant": "initial_hide_N063",
+      "case": "full_fast20",
+      "seed": 9,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "duration_s": 34.461014,
+      "initial_hide": "N063",
+      "plan_failures": 0,
+      "escape_commands": 1,
+      "arrived_hides": 1,
+      "max_states": 182
+    }
+  ],
+  "variants": {
+    "initial_hide_N044": {
+      "firmware": "F:\\Robot_Treasure\\STM32\\Keil_Project\\Thief16E_VisibilityEscape_FourLaser_Test",
+      "defines": [
+        "THIEF_REACTION_HIDE_SCORE=0",
+        "THIEF_INITIAL_HIDE_NODE=44"
+      ]
+    },
+    "initial_hide_N059": {
+      "firmware": "F:\\Robot_Treasure\\STM32\\Keil_Project\\Thief16E_VisibilityEscape_FourLaser_Test",
+      "defines": [
+        "THIEF_REACTION_HIDE_SCORE=0",
+        "THIEF_INITIAL_HIDE_NODE=59"
+      ]
+    },
+    "initial_hide_N062": {
+      "firmware": "F:\\Robot_Treasure\\STM32\\Keil_Project\\Thief16E_VisibilityEscape_FourLaser_Test",
+      "defines": [
+        "THIEF_REACTION_HIDE_SCORE=0",
+        "THIEF_INITIAL_HIDE_NODE=62"
+      ]
+    },
+    "initial_hide_N063": {
+      "firmware": "F:\\Robot_Treasure\\STM32\\Keil_Project\\Thief16E_VisibilityEscape_FourLaser_Test",
+      "defines": [
+        "THIEF_REACTION_HIDE_SCORE=0",
+        "THIEF_INITIAL_HIDE_NODE=63"
+      ]
+    }
+  },
+  "source_hashes": {
+    "initial_hide_N044": {
+      "Tools/TreasurePursuitSimulator/variants/16e/arm_bridge.c": "6054e1c50da201fc8d1583633e9b58987d52da5eea14e0e3cb5fb7660b3c4400",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3ee6169fb5c0a9335f86a217170ea8c31715c3d12e1129a6695eb6293208235a",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "71075f6a3bcca0ca9de3f7f75a811b254e8c5d09d25ad18a4980d787934d3b7e",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "d6efa2b5ae34aff050cfed7770fa13fccfeb0efc8efb6ff478d11d2565293b5f",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "23ac052b9773de0c24552be208a8f71f3c6962497b0fcc36ccc9a994d7db9236",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "9adc9ed146635c7d6d2af0335e13a59606ae423aafb80f15ed8fd64b8c8cdd6a"
+    },
+    "initial_hide_N059": {
+      "Tools/TreasurePursuitSimulator/variants/16e/arm_bridge.c": "6054e1c50da201fc8d1583633e9b58987d52da5eea14e0e3cb5fb7660b3c4400",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3ee6169fb5c0a9335f86a217170ea8c31715c3d12e1129a6695eb6293208235a",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "71075f6a3bcca0ca9de3f7f75a811b254e8c5d09d25ad18a4980d787934d3b7e",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "d6efa2b5ae34aff050cfed7770fa13fccfeb0efc8efb6ff478d11d2565293b5f",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "23ac052b9773de0c24552be208a8f71f3c6962497b0fcc36ccc9a994d7db9236",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "9adc9ed146635c7d6d2af0335e13a59606ae423aafb80f15ed8fd64b8c8cdd6a"
+    },
+    "initial_hide_N062": {
+      "Tools/TreasurePursuitSimulator/variants/16e/arm_bridge.c": "6054e1c50da201fc8d1583633e9b58987d52da5eea14e0e3cb5fb7660b3c4400",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3ee6169fb5c0a9335f86a217170ea8c31715c3d12e1129a6695eb6293208235a",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "71075f6a3bcca0ca9de3f7f75a811b254e8c5d09d25ad18a4980d787934d3b7e",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "d6efa2b5ae34aff050cfed7770fa13fccfeb0efc8efb6ff478d11d2565293b5f",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "23ac052b9773de0c24552be208a8f71f3c6962497b0fcc36ccc9a994d7db9236",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "9adc9ed146635c7d6d2af0335e13a59606ae423aafb80f15ed8fd64b8c8cdd6a"
+    },
+    "initial_hide_N063": {
+      "Tools/TreasurePursuitSimulator/variants/16e/arm_bridge.c": "6054e1c50da201fc8d1583633e9b58987d52da5eea14e0e3cb5fb7660b3c4400",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3ee6169fb5c0a9335f86a217170ea8c31715c3d12e1129a6695eb6293208235a",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "71075f6a3bcca0ca9de3f7f75a811b254e8c5d09d25ad18a4980d787934d3b7e",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "d6efa2b5ae34aff050cfed7770fa13fccfeb0efc8efb6ff478d11d2565293b5f",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "23ac052b9773de0c24552be208a8f71f3c6962497b0fcc36ccc9a994d7db9236",
+      "STM32/Keil_Project/Thief16E_VisibilityEscape_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "9adc9ed146635c7d6d2af0335e13a59606ae423aafb80f15ed8fd64b8c8cdd6a"
+    }
+  },
+  "scope": "Actual Cortex-M3 C planner/gate; same roads, physics, police policy, sensors and contact judge. Ideal localization; no hardware proof."
+}

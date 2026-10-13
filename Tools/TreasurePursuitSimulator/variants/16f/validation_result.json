@@ -1,0 +1,63 @@
+{
+  "baselines_unchanged": true,
+  "baseline_files": 368,
+  "c_hashes_verified": 13,
+  "cases": [
+    {
+      "label": "完整开局 · 双方同速 · 车身碰撞",
+      "duration_s": 37.78411719601994,
+      "frames": 1891,
+      "end_geometry_gap_m": 4.38e-08,
+      "no_earlier_sample_overlap": true,
+      "terminal_body_contact": true,
+      "c_planner_fault": false,
+      "geometry_demo": false
+    },
+    {
+      "label": "完整开局 · 警方快20% · 车身碰撞",
+      "duration_s": 25.426029308790486,
+      "frames": 1273,
+      "end_geometry_gap_m": 3.85e-08,
+      "no_earlier_sample_overlap": true,
+      "terminal_body_contact": true,
+      "c_planner_fault": false,
+      "geometry_demo": false
+    },
+    {
+      "label": "藏点专项 · N023近距来车 · 车身碰撞",
+      "duration_s": 0.6083085277593746,
+      "frames": 32,
+      "end_geometry_gap_m": 5.23e-08,
+      "no_earlier_sample_overlap": true,
+      "terminal_body_contact": true,
+      "c_planner_fault": false,
+      "geometry_demo": false
+    },
+    {
+      "label": "藏点专项 · N059侧方来车 · 车身碰撞",
+      "duration_s": 11.441827819344521,
+      "frames": 574,
+      "end_geometry_gap_m": 4.98e-08,
+      "no_earlier_sample_overlap": true,
+      "terminal_body_contact": true,
+      "c_planner_fault": false,
+      "geometry_demo": false
+    },
+    {
+      "label": "仅模型验证 · 原地转向扫到旁车",
+      "duration_s": 0.40832191522916395,
+      "frames": 22,
+      "end_geometry_gap_m": 8.37e-08,
+      "no_earlier_sample_overlap": true,
+      "terminal_body_contact": true,
+      "c_planner_fault": false,
+      "geometry_demo": true
+    }
+  ],
+  "browser": false,
+  "hardware": false,
+  "nodes": 88,
+  "segments": 106,
+  "stable_numbering": true,
+  "scope": "Offline geometry/strategy replay validation, not browser or physical vehicle verification."
+}

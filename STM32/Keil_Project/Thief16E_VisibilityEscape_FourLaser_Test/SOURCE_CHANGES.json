@@ -1,0 +1,90 @@
+{
+  "baseline": "Thief16D_RiskAware_FourLaser_Test",
+  "preserved_baseline_files": 171,
+  "modified_copies": [
+    {
+      "source": ".gitignore",
+      "new": ".gitignore",
+      "added_lines": 1,
+      "removed_lines": 1
+    },
+    {
+      "source": "Thief16D_RiskAware_FourLaser_Test.ioc",
+      "new": "Thief16E_VisibilityEscape_FourLaser_Test.ioc",
+      "added_lines": 2,
+      "removed_lines": 2
+    },
+    {
+      "source": "Algorithm/ThiefStrategy/FrontLaserGate.c",
+      "new": "Algorithm/ThiefStrategy/FrontLaserGate.c",
+      "added_lines": 19,
+      "removed_lines": 0
+    },
+    {
+      "source": "Algorithm/ThiefStrategy/FrontLaserGate.h",
+      "new": "Algorithm/ThiefStrategy/FrontLaserGate.h",
+      "added_lines": 1,
+      "removed_lines": 0
+    },
+    {
+      "source": "Algorithm/ThiefStrategy/ThiefMapTopology.h",
+      "new": "Algorithm/ThiefStrategy/ThiefMapTopology.h",
+      "added_lines": 16,
+      "removed_lines": 0
+    },
+    {
+      "source": "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+      "new": "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+      "added_lines": 34,
+      "removed_lines": 13
+    },
+    {
+      "source": "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+      "new": "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+      "added_lines": 1,
+      "removed_lines": 1
+    },
+    {
+      "source": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+      "new": "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+      "added_lines": 34,
+      "removed_lines": 0
+    },
+    {
+      "source": "Algorithm/ThiefStrategy/ThiefThreatModel.c",
+      "new": "Algorithm/ThiefStrategy/ThiefThreatModel.c",
+      "added_lines": 71,
+      "removed_lines": 15
+    },
+    {
+      "source": "MDK-ARM/Thief16D_RiskAware_FourLaser_Test.uvprojx",
+      "new": "MDK-ARM/Thief16E_VisibilityEscape_FourLaser_Test.uvprojx",
+      "added_lines": 4,
+      "removed_lines": 4
+    },
+    {
+      "source": "MDK-ARM/RTE/_Thief16D_RiskAware_FourLaser_Test/RTE_Components.h",
+      "new": "MDK-ARM/RTE/_Thief16E_VisibilityEscape_FourLaser_Test/RTE_Components.h",
+      "added_lines": 2,
+      "removed_lines": 2
+    },
+    {
+      "source": "Tests/generate_topology.py",
+      "new": "Tests/generate_topology.py",
+      "added_lines": 37,
+      "removed_lines": 13
+    },
+    {
+      "source": "Tests/test_algorithms.c",
+      "new": "Tests/test_algorithms.c",
+      "added_lines": 43,
+      "removed_lines": 1
+    },
+    {
+      "source": "User/App_ThiefStrategy.c",
+      "new": "User/App_ThiefStrategy.c",
+      "added_lines": 10,
+      "removed_lines": 6
+    }
+  ]
+}

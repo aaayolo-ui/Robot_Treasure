@@ -1,0 +1,10 @@
+Added firmware files: 178; replay files: 32; Docs/16: 1.
+Copied-project differences: 14 files, +364/-424 lines (line endings normalized for review).
+Existing files unchanged: 6418; no existing file edited.
+117 hardware/control/Core/vendor/system files byte-identical to 16G.
+Keil 0 errors, 0 warnings; Flash 46508 bytes; RAM 35784 bytes.
+11170 C checks, 435 UART checks and 18 physics tests passed.
+Seven replay scenarios, 27 full comparison runs; all comparison matches eventually caught the thief.
+Offline UI/annotation checks passed; actual browser layout and hardware unverified.
+Scoped git diff has no tracked changes because all task outputs are new untracked files.
+No git add, commit, push, flashing or real motor operation.
