@@ -11,6 +11,9 @@ Debug/
 
 # Keil project temporary files
 *.uvguix.*
+*.uvgui.*
+*.uvopt
+*.saved_uv4
 *.uvoptx
 *.uvprojx.user
 
@@ -62,3 +65,21 @@ Thumbs.db
 *.avi
 *.rar
 *.7z
+
+# Generated compiler dependencies, vendor object folders and local caches
+*.crf
+*.d
+*.dep
+*.lnp
+*.build_log.htm
+**/OBJ/
+**/MDK-ARM/*_build.log
+**/MDK-ARM/build_*.log
+__pycache__/
+*.pyc
+JLinkLog.txt
+JLinkSettings.ini
+JLink Regs CM3.txt
+
+# Vendor driver installers and serial-assistant local preferences
+/硬件资料（部分已有）/UART-CH4串口扩展V3.6模块资料集/【2】软件工具/

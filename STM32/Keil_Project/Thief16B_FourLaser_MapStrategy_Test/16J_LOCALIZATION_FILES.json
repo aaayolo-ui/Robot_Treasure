@@ -1,0 +1,166 @@
+{
+  "baseline_commit": "c15d11b9ed7382862fe2c03c15bd97bbcb2b17ed",
+  "modified_files": 10,
+  "added_files": 21,
+  "tracked_added_lines": 620,
+  "tracked_removed_lines": 168,
+  "new_file_lines": 24733,
+  "git_numstat": "2\t0\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/.gitignore\n19\t0\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/FrontLaserGate.c\n1\t0\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/FrontLaserGate.h\n64\t136\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c\n7\t1\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h\n58\t3\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/MDK-ARM/Thief16B_FourLaser_MapStrategy_Test.uvprojx\n2\t0\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/README.md\n20\t7\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/run_algorithms.py\n262\t3\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/test_algorithms.c\n185\t18\tSTM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/User/App_ThiefStrategy.c\n",
+  "files": [
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/.gitignore",
+      "status": "modified",
+      "sha256": "4d5c7c0b0be60e30b63fcc965234a1faa67c9d4faef104d4016be9c5ce891cdb"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/16J_LOCALIZATION.md",
+      "status": "added",
+      "sha256": "ccac6fd71c9ee7b7154201ecaeb9954c7b76696f1c2b41f1ef01f32a15fe7008"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/16J_LOCALIZATION_FILES.json",
+      "status": "added",
+      "sha256": null
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/MapLocalization/ThiefLocalization.c",
+      "status": "added",
+      "sha256": "9025df3c2fada2d20232597d7f7aecd7774e5695b56254052e5d7095261f666b"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/MapLocalization/ThiefLocalization.h",
+      "status": "added",
+      "sha256": "55cf7417eb80e89ae9f7466af5700858c042b26d152e2701c6f9dfb674a55a7a"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/FrontLaserGate.c",
+      "status": "modified",
+      "sha256": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/FrontLaserGate.h",
+      "status": "modified",
+      "sha256": "5a24f5ed560b6494b9da50111ba1bcac58ea539b7e5464e10bd3d174f7a25e6e"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+      "status": "modified",
+      "sha256": "38ca4434357a06db3a331bfc410212569e4145acfb8b2c5f2490d7828dcf267d"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h",
+      "status": "modified",
+      "sha256": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h",
+      "status": "added",
+      "sha256": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+      "status": "added",
+      "sha256": "c46f235904a65b70612bdeb80a03b44f47b19bf0cf3c76b0cbceaab04761e42b"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+      "status": "added",
+      "sha256": "b64d786e432287481fe3f2037e5f09a9c9a5114ff904bb9f6582d77efe147ae6"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefRollout.c",
+      "status": "added",
+      "sha256": "8bb54d038dbc1b9f64e56cf6d65331311c862dfdad1f4db3ca41251723472827"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefRollout.h",
+      "status": "added",
+      "sha256": "2b79d3c16e26471c317a1883dde485e526006f7eee60c327179d8a39f319678c"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefRolloutData.h",
+      "status": "added",
+      "sha256": "6318c01c3ba7520029ed65095f364fcdf443b588aa3239e8e9212e81f3c8458d"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+      "status": "added",
+      "sha256": "e8bb99216ac9a328f9be05cd6449fab805831f42fb088e433885cda780e7cea9"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c",
+      "status": "added",
+      "sha256": "3b79648e04817e0e7d8ba3e240b97ccb20d40fcdd4b39fb27780a24e0cb15c44"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h",
+      "status": "added",
+      "sha256": "74550828eb5f9c672c3c1e5bd65f1192e8a32c035eb1cc094e2fc77444a21079"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/MDK-ARM/Thief16B_FourLaser_MapStrategy_Test.uvprojx",
+      "status": "modified",
+      "sha256": "471965d09e6751032f19e7bfd57a1f180352622d312ff12dd7c59c346966ea79"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/README.md",
+      "status": "modified",
+      "sha256": "f911b1041c64ec478234be7a90d8bc171f9f1dd161e5409ab421d9f9a8c41212"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/generate_rollout_data.py",
+      "status": "added",
+      "sha256": "5d9554afc65e2a9e972c08b997557af6cf92ef210c7faf50cfb4650fd47b342d"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/generate_topology.py",
+      "status": "added",
+      "sha256": "7df94396a14b57360d0c38487acac544f798c844a78cd71ca693f04536fc438e"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/hide_catalog.json",
+      "status": "added",
+      "sha256": "6b75944e332285bac0063524be97550b40f601bf45c229f4f97992260117e9ee"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/rollout_catalog.json",
+      "status": "added",
+      "sha256": "4232d276ab9e0b504df7bcf87e4d84676c4cee2d1513dfa9750465624e9fefa6"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/run_algorithms.py",
+      "status": "modified",
+      "sha256": "fec543c4e0f2208b8f35e95b8d7b34cc07abbe61d871af3ea2c46a8c1a9a16c3"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/test_algorithms.c",
+      "status": "modified",
+      "sha256": "4aa7bc38a35ccca527d671cfa179e714adacbdf9502597ede601f69a8de2b81d"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/test_localization.c",
+      "status": "added",
+      "sha256": "93951e6f0c39f28cd1fa3ca7b1d08489d1fedc7f276f8fafd4953b06aeea7eaa"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/Tests/verify_localization_integration.py",
+      "status": "added",
+      "sha256": "392740a43acf37f0b1f9fe5649803df8ce964fbd02f6cb7b56ab0b819ca16761"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/User/App_ThiefStrategy.c",
+      "status": "modified",
+      "sha256": "5ee098ee3fd9545d01989528992cf7dc90510d67adf04efba7afe56836011b72"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/VALIDATION_16J_LOCALIZATION.json",
+      "status": "added",
+      "sha256": "8a00371b52d16cc0114576f78081fe57747e18dc18e387ecd78789fcb93b3d43"
+    },
+    {
+      "file": "STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/VERIFICATION_16J_LOCALIZATION.md",
+      "status": "added",
+      "sha256": "6357fb92d6ee9cd8346f63381597a3d6e50c05563d1b305a7556e1f215b731eb"
+    }
+  ]
+}

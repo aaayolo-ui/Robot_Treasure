@@ -1,0 +1,2984 @@
+{
+  "schema_version": 1,
+  "method": {
+    "inputs": "Public fixed map, existing refuge exit catalog, nominal motion parameters only",
+    "corridor": "Enumerate maximal connected constant-heading chains; score length_mm * count(degree >= 3)",
+    "tie_break": "Descending score, length, branch count; ascending heading and node path",
+    "search_prior": "Minimum heading-aware nominal travel time from any dominant-corridor node, initially facing along either corridor direction, to a visible probe",
+    "probe_set": "All original nodes and segment midpoints; a discrete proxy, not the exact continuous first-detection optimum",
+    "probe_gap_guarantee": "Connected cardinal rays only; coordinate alignment cannot bridge a missing road",
+    "time_arithmetic": "Exact rational millimeter/speed travel plus configured action milliseconds; rounded up once at path output",
+    "virtual_probe_motion": "Midpoints and task-marker nodes cannot initiate a turn or reversal",
+    "tier_policy": "Tier 1 iff at least 3 distinct <= 2000 ms / <= 1 forced-turn exit targets AND patrol-search prior >= reaction budget; tier 0 otherwise",
+    "scope": "Structural stationary-refuge prior; does not forbid road traversal or override route collision safety",
+    "limitations": "Single dominant-corridor coverage heuristic; optimistic unspecified starting patrol point; no hardware guarantee or opponent identity inference",
+    "uses_global_opponent_state": false
+  },
+  "parameters": {
+    "THIEF_POLICE_MAX_MM_S": 815,
+    "THIEF_TURN_EXTRA_MS": 768,
+    "THIEF_SWITCH_TO_REV_MS": 282,
+    "THIEF_SWITCH_TO_FWD_MS": 274,
+    "THIEF_HIDE_REACTION_MS": 340,
+    "sensor_range_mm": 600,
+    "fast_exit_limit_ms": 2000,
+    "fast_exit_max_forced_turns": 1
+  },
+  "source_inputs": [
+    {
+      "path": "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c",
+      "sha256": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575"
+    },
+    {
+      "path": "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+      "sha256": "99a4dbf1e6fe97cca77d6394c3efa5e6858d9a151c8439f0a4e0a1c589beb79d"
+    },
+    {
+      "path": "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Tests/hide_catalog.json",
+      "sha256": "6b75944e332285bac0063524be97550b40f601bf45c229f4f97992260117e9ee"
+    }
+  ],
+  "dominant_corridor": {
+    "heading": 2,
+    "axis": "vertical",
+    "nodes": [
+      6,
+      15,
+      25,
+      33,
+      49,
+      61,
+      70,
+      76,
+      85
+    ],
+    "segments": [
+      11,
+      25,
+      38,
+      46,
+      66,
+      79,
+      91,
+      98
+    ],
+    "length_mm": 2700,
+    "branch_nodes": [
+      6,
+      15,
+      25,
+      33,
+      49,
+      61,
+      70,
+      76,
+      85
+    ],
+    "branch_count": 9,
+    "coverage_score": 24300
+  },
+  "all_corridors": [
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        6,
+        15,
+        25,
+        33,
+        49,
+        61,
+        70,
+        76,
+        85
+      ],
+      "segments": [
+        11,
+        25,
+        38,
+        46,
+        66,
+        79,
+        91,
+        98
+      ],
+      "length_mm": 2700,
+      "branch_nodes": [
+        6,
+        15,
+        25,
+        33,
+        49,
+        61,
+        70,
+        76,
+        85
+      ],
+      "branch_count": 9,
+      "coverage_score": 24300
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        75,
+        76,
+        77,
+        78,
+        79,
+        80
+      ],
+      "segments": [
+        96,
+        97,
+        99,
+        100,
+        101
+      ],
+      "length_mm": 2100,
+      "branch_nodes": [
+        76,
+        77,
+        78,
+        79,
+        80
+      ],
+      "branch_count": 5,
+      "coverage_score": 10500
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "segments": [
+        1,
+        3,
+        5,
+        7,
+        9,
+        10
+      ],
+      "length_mm": 2400,
+      "branch_nodes": [
+        2,
+        3,
+        4,
+        6
+      ],
+      "branch_count": 4,
+      "coverage_score": 9600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        1,
+        10,
+        20,
+        37,
+        55
+      ],
+      "segments": [
+        2,
+        17,
+        31,
+        52
+      ],
+      "length_mm": 1800,
+      "branch_nodes": [
+        10,
+        20,
+        37
+      ],
+      "branch_count": 3,
+      "coverage_score": 5400
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "segments": [
+        16,
+        18,
+        20
+      ],
+      "length_mm": 1200,
+      "branch_nodes": [
+        10,
+        11,
+        12,
+        13
+      ],
+      "branch_count": 4,
+      "coverage_score": 4800
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        4,
+        14,
+        32,
+        48
+      ],
+      "segments": [
+        8,
+        24,
+        44
+      ],
+      "length_mm": 1500,
+      "branch_nodes": [
+        4,
+        14,
+        32
+      ],
+      "branch_count": 3,
+      "coverage_score": 4500
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        40,
+        46,
+        58,
+        68,
+        84
+      ],
+      "segments": [
+        57,
+        64,
+        74,
+        89
+      ],
+      "length_mm": 1500,
+      "branch_nodes": [
+        46,
+        58,
+        68
+      ],
+      "branch_count": 3,
+      "coverage_score": 4500
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        25,
+        26,
+        27,
+        28
+      ],
+      "segments": [
+        37,
+        39,
+        41
+      ],
+      "length_mm": 1200,
+      "branch_nodes": [
+        25,
+        26,
+        27
+      ],
+      "branch_count": 3,
+      "coverage_score": 3600
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        33,
+        34,
+        35,
+        36
+      ],
+      "segments": [
+        45,
+        47,
+        49
+      ],
+      "length_mm": 1200,
+      "branch_nodes": [
+        33,
+        34,
+        35
+      ],
+      "branch_count": 3,
+      "coverage_score": 3600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        21,
+        38,
+        56
+      ],
+      "segments": [
+        33,
+        54
+      ],
+      "length_mm": 1200,
+      "branch_nodes": [
+        21,
+        38,
+        56
+      ],
+      "branch_count": 3,
+      "coverage_score": 3600
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        37,
+        38,
+        39,
+        40
+      ],
+      "segments": [
+        51,
+        53,
+        55
+      ],
+      "length_mm": 900,
+      "branch_nodes": [
+        37,
+        38,
+        39
+      ],
+      "branch_count": 3,
+      "coverage_score": 2700
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        61,
+        62,
+        63
+      ],
+      "segments": [
+        78,
+        80
+      ],
+      "length_mm": 900,
+      "branch_nodes": [
+        61,
+        62,
+        63
+      ],
+      "branch_count": 3,
+      "coverage_score": 2700
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        2,
+        11,
+        22,
+        30
+      ],
+      "segments": [
+        4,
+        19,
+        34
+      ],
+      "length_mm": 900,
+      "branch_nodes": [
+        2,
+        11,
+        22
+      ],
+      "branch_count": 3,
+      "coverage_score": 2700
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        7,
+        17,
+        26,
+        35
+      ],
+      "segments": [
+        12,
+        27,
+        40
+      ],
+      "length_mm": 900,
+      "branch_nodes": [
+        17,
+        26,
+        35
+      ],
+      "branch_count": 3,
+      "coverage_score": 2700
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        52,
+        63,
+        78
+      ],
+      "segments": [
+        69,
+        82
+      ],
+      "length_mm": 900,
+      "branch_nodes": [
+        52,
+        63,
+        78
+      ],
+      "branch_count": 3,
+      "coverage_score": 2700
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        51,
+        52,
+        53,
+        54
+      ],
+      "segments": [
+        67,
+        68,
+        70
+      ],
+      "length_mm": 900,
+      "branch_nodes": [
+        52,
+        53
+      ],
+      "branch_count": 2,
+      "coverage_score": 1800
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        66,
+        67,
+        68
+      ],
+      "segments": [
+        85,
+        87
+      ],
+      "length_mm": 900,
+      "branch_nodes": [
+        67,
+        68
+      ],
+      "branch_count": 2,
+      "coverage_score": 1800
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        20,
+        21,
+        22
+      ],
+      "segments": [
+        30,
+        32
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        20,
+        21,
+        22
+      ],
+      "branch_count": 3,
+      "coverage_score": 1800
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        84,
+        85,
+        86
+      ],
+      "segments": [
+        104,
+        105
+      ],
+      "length_mm": 1500,
+      "branch_nodes": [
+        85
+      ],
+      "branch_count": 1,
+      "coverage_score": 1500
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        58,
+        59,
+        60
+      ],
+      "segments": [
+        73,
+        75
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        58,
+        59
+      ],
+      "branch_count": 2,
+      "coverage_score": 1200
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        3,
+        13,
+        24
+      ],
+      "segments": [
+        6,
+        22
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        3,
+        13
+      ],
+      "branch_count": 2,
+      "coverage_score": 1200
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        12,
+        23,
+        31
+      ],
+      "segments": [
+        21,
+        36
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        12,
+        23
+      ],
+      "branch_count": 2,
+      "coverage_score": 1200
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        36,
+        44,
+        53
+      ],
+      "segments": [
+        50,
+        62
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        44,
+        53
+      ],
+      "branch_count": 2,
+      "coverage_score": 1200
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        31,
+        32
+      ],
+      "segments": [
+        43
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        32
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        55,
+        56,
+        57
+      ],
+      "segments": [
+        71,
+        72
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        56
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        8,
+        27
+      ],
+      "segments": [
+        14
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        27
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        34,
+        50
+      ],
+      "segments": [
+        48
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        34
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        39,
+        57
+      ],
+      "segments": [
+        56
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        39
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        59,
+        75
+      ],
+      "segments": [
+        76
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        59
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        64,
+        79
+      ],
+      "segments": [
+        84
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        79
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        67,
+        82
+      ],
+      "segments": [
+        88
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        67
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        73,
+        80,
+        88
+      ],
+      "segments": [
+        94,
+        102
+      ],
+      "length_mm": 600,
+      "branch_nodes": [
+        80
+      ],
+      "branch_count": 1,
+      "coverage_score": 600
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        14,
+        15
+      ],
+      "segments": [
+        23
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        14,
+        15
+      ],
+      "branch_count": 2,
+      "coverage_score": 600
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        16,
+        17
+      ],
+      "segments": [
+        26
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        17
+      ],
+      "branch_count": 1,
+      "coverage_score": 300
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        23,
+        24
+      ],
+      "segments": [
+        35
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        23
+      ],
+      "branch_count": 1,
+      "coverage_score": 300
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        44,
+        45
+      ],
+      "segments": [
+        61
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        44
+      ],
+      "branch_count": 1,
+      "coverage_score": 300
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        46,
+        47
+      ],
+      "segments": [
+        63
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        46
+      ],
+      "branch_count": 1,
+      "coverage_score": 300
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        48,
+        49
+      ],
+      "segments": [
+        65
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        49
+      ],
+      "branch_count": 1,
+      "coverage_score": 300
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        69,
+        70
+      ],
+      "segments": [
+        90
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        70
+      ],
+      "branch_count": 1,
+      "coverage_score": 300
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        62,
+        71
+      ],
+      "segments": [
+        81
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        62
+      ],
+      "branch_count": 1,
+      "coverage_score": 300
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        72,
+        77
+      ],
+      "segments": [
+        93
+      ],
+      "length_mm": 300,
+      "branch_nodes": [
+        77
+      ],
+      "branch_count": 1,
+      "coverage_score": 300
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        8,
+        9
+      ],
+      "segments": [
+        13
+      ],
+      "length_mm": 600,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        87,
+        88
+      ],
+      "segments": [
+        106
+      ],
+      "length_mm": 600,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        29,
+        45
+      ],
+      "segments": [
+        42
+      ],
+      "length_mm": 600,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        66,
+        81
+      ],
+      "segments": [
+        86
+      ],
+      "length_mm": 600,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        18,
+        19
+      ],
+      "segments": [
+        28
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        42,
+        43
+      ],
+      "segments": [
+        59
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        64,
+        65
+      ],
+      "segments": [
+        83
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        71,
+        72
+      ],
+      "segments": [
+        92
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 1,
+      "axis": "horizontal",
+      "nodes": [
+        82,
+        83
+      ],
+      "segments": [
+        103
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        9,
+        19
+      ],
+      "segments": [
+        15
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        18,
+        28
+      ],
+      "segments": [
+        29
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        41,
+        47
+      ],
+      "segments": [
+        58
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        42,
+        51
+      ],
+      "segments": [
+        60
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        60,
+        69
+      ],
+      "segments": [
+        77
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    },
+    {
+      "heading": 2,
+      "axis": "vertical",
+      "nodes": [
+        74,
+        83
+      ],
+      "segments": [
+        95
+      ],
+      "length_mm": 300,
+      "branch_nodes": [],
+      "branch_count": 0,
+      "coverage_score": 0
+    }
+  ],
+  "candidates": [
+    {
+      "node": 11,
+      "xy_mm": [
+        600,
+        300
+      ],
+      "tier": 1,
+      "patrol_search_ms": 2241,
+      "fast_exit_count": 4,
+      "fast_exit_targets": [
+        2,
+        10,
+        12,
+        21
+      ],
+      "fast_exits": [
+        {
+          "heading": 0,
+          "node": 2,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            11,
+            2
+          ]
+        },
+        {
+          "heading": 1,
+          "node": 12,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            11,
+            12
+          ]
+        },
+        {
+          "heading": 2,
+          "node": 21,
+          "time_ms": 1740,
+          "length_mm": 600,
+          "turns": 1,
+          "path": [
+            11,
+            22,
+            21
+          ]
+        },
+        {
+          "heading": 3,
+          "node": 10,
+          "time_ms": 971,
+          "length_mm": 600,
+          "turns": 0,
+          "path": [
+            11,
+            10
+          ]
+        }
+      ],
+      "all_exits": {
+        "0": {
+          "node": 2,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            11,
+            2
+          ]
+        },
+        "1": {
+          "node": 12,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            11,
+            12
+          ]
+        },
+        "2": {
+          "node": 21,
+          "time_ms": 1740,
+          "length_mm": 600,
+          "turns": 1,
+          "path": [
+            11,
+            22,
+            21
+          ]
+        },
+        "3": {
+          "node": 10,
+          "time_ms": 971,
+          "length_mm": 600,
+          "turns": 0,
+          "path": [
+            11,
+            10
+          ]
+        }
+      },
+      "parking_axis_mask": 10,
+      "best_prior_point": {
+        "point": "N002",
+        "xy_mm": [
+          600,
+          0
+        ],
+        "time_ms": 2241,
+        "time_rational": {
+          "numerator": 1825920,
+          "denominator": 815
+        },
+        "quarter_turns": 1,
+        "switches": 0,
+        "length_mm": 1200,
+        "start_node": 6,
+        "start_heading": 0,
+        "path": [
+          "N006",
+          "S009@mid",
+          "N005",
+          "S007@mid",
+          "N004",
+          "S005@mid",
+          "N003",
+          "S003@mid",
+          "N002"
+        ],
+        "arrival_travel_heading": 3,
+        "arrival_drive_mode": 0
+      },
+      "prior_points": [
+        {
+          "point": "N002",
+          "xy_mm": [
+            600,
+            0
+          ],
+          "time_ms": 2241,
+          "time_rational": {
+            "numerator": 1825920,
+            "denominator": 815
+          },
+          "quarter_turns": 1,
+          "switches": 0,
+          "length_mm": 1200,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N013",
+          "xy_mm": [
+            1200,
+            300
+          ],
+          "time_ms": 2641,
+          "time_rational": {
+            "numerator": 2151840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 900,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S004@mid",
+          "xy_mm": [
+            600,
+            150
+          ],
+          "time_ms": 3193,
+          "time_rational": {
+            "numerator": 2601840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 1350,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N011",
+          "xy_mm": [
+            600,
+            300
+          ],
+          "time_ms": 3377,
+          "time_rational": {
+            "numerator": 2751840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 1500,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S019@mid",
+          "xy_mm": [
+            600,
+            450
+          ],
+          "time_ms": 3561,
+          "time_rational": {
+            "numerator": 2901840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 1650,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S019@mid"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S020@mid",
+          "xy_mm": [
+            1050,
+            300
+          ],
+          "time_ms": 3593,
+          "time_rational": {
+            "numerator": 2927760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1050,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013",
+            "S020@mid"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N022",
+          "xy_mm": [
+            600,
+            600
+          ],
+          "time_ms": 3745,
+          "time_rational": {
+            "numerator": 3051840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 1800,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S019@mid",
+            "N022"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N012",
+          "xy_mm": [
+            900,
+            300
+          ],
+          "time_ms": 3777,
+          "time_rational": {
+            "numerator": 3077760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1200,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013",
+            "S020@mid",
+            "N012"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S034@mid",
+          "xy_mm": [
+            600,
+            750
+          ],
+          "time_ms": 3929,
+          "time_rational": {
+            "numerator": 3201840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 1950,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S019@mid",
+            "N022",
+            "S034@mid"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S018@mid",
+          "xy_mm": [
+            750,
+            300
+          ],
+          "time_ms": 3961,
+          "time_rational": {
+            "numerator": 3227760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1350,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013",
+            "S020@mid",
+            "N012",
+            "S018@mid"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N010",
+          "xy_mm": [
+            0,
+            300
+          ],
+          "time_ms": 4113,
+          "time_rational": {
+            "numerator": 3351840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 2100,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S001@mid",
+            "N001",
+            "S002@mid",
+            "N010"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N030",
+          "xy_mm": [
+            600,
+            900
+          ],
+          "time_ms": 4113,
+          "time_rational": {
+            "numerator": 3351840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 2100,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S019@mid",
+            "N022",
+            "S034@mid",
+            "N030"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S016@mid",
+          "xy_mm": [
+            300,
+            300
+          ],
+          "time_ms": 4513,
+          "time_rational": {
+            "numerator": 3677760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1800,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S016@mid"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        }
+      ],
+      "reasons": {
+        "three_fast_exits": true,
+        "patrol_search_covers_reaction_budget": true
+      }
+    },
+    {
+      "node": 12,
+      "xy_mm": [
+        900,
+        300
+      ],
+      "tier": 1,
+      "patrol_search_ms": 2641,
+      "fast_exit_count": 3,
+      "fast_exit_targets": [
+        11,
+        13,
+        23
+      ],
+      "fast_exits": [
+        {
+          "heading": 1,
+          "node": 13,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            12,
+            13
+          ]
+        },
+        {
+          "heading": 2,
+          "node": 23,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            12,
+            23
+          ]
+        },
+        {
+          "heading": 3,
+          "node": 11,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            12,
+            11
+          ]
+        }
+      ],
+      "all_exits": {
+        "1": {
+          "node": 13,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            12,
+            13
+          ]
+        },
+        "2": {
+          "node": 23,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            12,
+            23
+          ]
+        },
+        "3": {
+          "node": 11,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            12,
+            11
+          ]
+        }
+      },
+      "parking_axis_mask": 10,
+      "best_prior_point": {
+        "point": "N013",
+        "xy_mm": [
+          1200,
+          300
+        ],
+        "time_ms": 2641,
+        "time_rational": {
+          "numerator": 2151840,
+          "denominator": 815
+        },
+        "quarter_turns": 2,
+        "switches": 0,
+        "length_mm": 900,
+        "start_node": 6,
+        "start_heading": 0,
+        "path": [
+          "N006",
+          "S009@mid",
+          "N005",
+          "S007@mid",
+          "N004",
+          "S005@mid",
+          "N003",
+          "S006@mid",
+          "N013"
+        ],
+        "arrival_travel_heading": 2,
+        "arrival_drive_mode": 0
+      },
+      "prior_points": [
+        {
+          "point": "N013",
+          "xy_mm": [
+            1200,
+            300
+          ],
+          "time_ms": 2641,
+          "time_rational": {
+            "numerator": 2151840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 900,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N011",
+          "xy_mm": [
+            600,
+            300
+          ],
+          "time_ms": 3377,
+          "time_rational": {
+            "numerator": 2751840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 1500,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S020@mid",
+          "xy_mm": [
+            1050,
+            300
+          ],
+          "time_ms": 3593,
+          "time_rational": {
+            "numerator": 2927760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1050,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013",
+            "S020@mid"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N012",
+          "xy_mm": [
+            900,
+            300
+          ],
+          "time_ms": 3777,
+          "time_rational": {
+            "numerator": 3077760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1200,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013",
+            "S020@mid",
+            "N012"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S018@mid",
+          "xy_mm": [
+            750,
+            300
+          ],
+          "time_ms": 3961,
+          "time_rational": {
+            "numerator": 3227760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1350,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013",
+            "S020@mid",
+            "N012",
+            "S018@mid"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N023",
+          "xy_mm": [
+            900,
+            600
+          ],
+          "time_ms": 4145,
+          "time_rational": {
+            "numerator": 3377760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1500,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013",
+            "S022@mid",
+            "N024",
+            "S035@mid",
+            "N023"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N031",
+          "xy_mm": [
+            900,
+            900
+          ],
+          "time_ms": 4145,
+          "time_rational": {
+            "numerator": 3377760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1500,
+          "start_node": 49,
+          "start_heading": 0,
+          "path": [
+            "N049",
+            "S065@mid",
+            "N048",
+            "S044@mid",
+            "N032",
+            "S043@mid",
+            "N031"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S016@mid",
+          "xy_mm": [
+            300,
+            300
+          ],
+          "time_ms": 4513,
+          "time_rational": {
+            "numerator": 3677760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 1800,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S016@mid"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S021@mid",
+          "xy_mm": [
+            900,
+            450
+          ],
+          "time_ms": 4729,
+          "time_rational": {
+            "numerator": 3853680,
+            "denominator": 815
+          },
+          "quarter_turns": 4,
+          "switches": 0,
+          "length_mm": 1350,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S006@mid",
+            "N013",
+            "S020@mid",
+            "N012",
+            "S021@mid"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S036@mid",
+          "xy_mm": [
+            900,
+            750
+          ],
+          "time_ms": 5097,
+          "time_rational": {
+            "numerator": 4153680,
+            "denominator": 815
+          },
+          "quarter_turns": 4,
+          "switches": 0,
+          "length_mm": 1650,
+          "start_node": 49,
+          "start_heading": 0,
+          "path": [
+            "N049",
+            "S065@mid",
+            "N048",
+            "S044@mid",
+            "N032",
+            "S043@mid",
+            "N031",
+            "S036@mid"
+          ],
+          "arrival_travel_heading": 0,
+          "arrival_drive_mode": 0
+        }
+      ],
+      "reasons": {
+        "three_fast_exits": true,
+        "patrol_search_covers_reaction_budget": true
+      }
+    },
+    {
+      "node": 38,
+      "xy_mm": [
+        300,
+        1200
+      ],
+      "tier": 1,
+      "patrol_search_ms": 4481,
+      "fast_exit_count": 4,
+      "fast_exit_targets": [
+        21,
+        37,
+        39,
+        56
+      ],
+      "fast_exits": [
+        {
+          "heading": 0,
+          "node": 21,
+          "time_ms": 971,
+          "length_mm": 600,
+          "turns": 0,
+          "path": [
+            38,
+            21
+          ]
+        },
+        {
+          "heading": 1,
+          "node": 39,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            38,
+            39
+          ]
+        },
+        {
+          "heading": 2,
+          "node": 56,
+          "time_ms": 971,
+          "length_mm": 600,
+          "turns": 0,
+          "path": [
+            38,
+            56
+          ]
+        },
+        {
+          "heading": 3,
+          "node": 37,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            38,
+            37
+          ]
+        }
+      ],
+      "all_exits": {
+        "0": {
+          "node": 21,
+          "time_ms": 971,
+          "length_mm": 600,
+          "turns": 0,
+          "path": [
+            38,
+            21
+          ]
+        },
+        "1": {
+          "node": 39,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            38,
+            39
+          ]
+        },
+        "2": {
+          "node": 56,
+          "time_ms": 971,
+          "length_mm": 600,
+          "turns": 0,
+          "path": [
+            38,
+            56
+          ]
+        },
+        "3": {
+          "node": 37,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            38,
+            37
+          ]
+        }
+      },
+      "parking_axis_mask": 15,
+      "best_prior_point": {
+        "point": "N040",
+        "xy_mm": [
+          900,
+          1200
+        ],
+        "time_ms": 4481,
+        "time_rational": {
+          "numerator": 3651840,
+          "denominator": 815
+        },
+        "quarter_turns": 2,
+        "switches": 0,
+        "length_mm": 2400,
+        "start_node": 85,
+        "start_heading": 0,
+        "path": [
+          "N085",
+          "S104@mid",
+          "N084",
+          "S089@mid",
+          "N068",
+          "S074@mid",
+          "N058",
+          "S064@mid",
+          "N046",
+          "S057@mid",
+          "N040"
+        ],
+        "arrival_travel_heading": 0,
+        "arrival_drive_mode": 0
+      },
+      "prior_points": [
+        {
+          "point": "N040",
+          "xy_mm": [
+            900,
+            1200
+          ],
+          "time_ms": 4481,
+          "time_rational": {
+            "numerator": 3651840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 2400,
+          "start_node": 85,
+          "start_heading": 0,
+          "path": [
+            "N085",
+            "S104@mid",
+            "N084",
+            "S089@mid",
+            "N068",
+            "S074@mid",
+            "N058",
+            "S064@mid",
+            "N046",
+            "S057@mid",
+            "N040"
+          ],
+          "arrival_travel_heading": 0,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N021",
+          "xy_mm": [
+            300,
+            600
+          ],
+          "time_ms": 4881,
+          "time_rational": {
+            "numerator": 3977760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 2100,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S019@mid",
+            "N022",
+            "S032@mid",
+            "N021"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N037",
+          "xy_mm": [
+            0,
+            1200
+          ],
+          "time_ms": 5217,
+          "time_rational": {
+            "numerator": 4251840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 3000,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S001@mid",
+            "N001",
+            "S002@mid",
+            "N010",
+            "S017@mid",
+            "N020",
+            "S031@mid",
+            "N037"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S055@mid",
+          "xy_mm": [
+            750,
+            1200
+          ],
+          "time_ms": 5433,
+          "time_rational": {
+            "numerator": 4427760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 2550,
+          "start_node": 85,
+          "start_heading": 0,
+          "path": [
+            "N085",
+            "S104@mid",
+            "N084",
+            "S089@mid",
+            "N068",
+            "S074@mid",
+            "N058",
+            "S064@mid",
+            "N046",
+            "S057@mid",
+            "N040",
+            "S055@mid"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N039",
+          "xy_mm": [
+            600,
+            1200
+          ],
+          "time_ms": 5617,
+          "time_rational": {
+            "numerator": 4577760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 2700,
+          "start_node": 85,
+          "start_heading": 0,
+          "path": [
+            "N085",
+            "S104@mid",
+            "N084",
+            "S089@mid",
+            "N068",
+            "S074@mid",
+            "N058",
+            "S064@mid",
+            "N046",
+            "S057@mid",
+            "N040",
+            "S055@mid",
+            "N039"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S053@mid",
+          "xy_mm": [
+            450,
+            1200
+          ],
+          "time_ms": 5801,
+          "time_rational": {
+            "numerator": 4727760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 2850,
+          "start_node": 85,
+          "start_heading": 0,
+          "path": [
+            "N085",
+            "S104@mid",
+            "N084",
+            "S089@mid",
+            "N068",
+            "S074@mid",
+            "N058",
+            "S064@mid",
+            "N046",
+            "S057@mid",
+            "N040",
+            "S055@mid",
+            "N039",
+            "S053@mid"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N038",
+          "xy_mm": [
+            300,
+            1200
+          ],
+          "time_ms": 5985,
+          "time_rational": {
+            "numerator": 4877760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 3000,
+          "start_node": 85,
+          "start_heading": 0,
+          "path": [
+            "N085",
+            "S104@mid",
+            "N084",
+            "S089@mid",
+            "N068",
+            "S074@mid",
+            "N058",
+            "S064@mid",
+            "N046",
+            "S057@mid",
+            "N040",
+            "S055@mid",
+            "N039",
+            "S053@mid",
+            "N038"
+          ],
+          "arrival_travel_heading": 3,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S033@mid",
+          "xy_mm": [
+            300,
+            900
+          ],
+          "time_ms": 6017,
+          "time_rational": {
+            "numerator": 4903680,
+            "denominator": 815
+          },
+          "quarter_turns": 4,
+          "switches": 0,
+          "length_mm": 2400,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S019@mid",
+            "N022",
+            "S032@mid",
+            "N021",
+            "S033@mid"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S051@mid",
+          "xy_mm": [
+            150,
+            1200
+          ],
+          "time_ms": 6170,
+          "time_rational": {
+            "numerator": 5027760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 3150,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S001@mid",
+            "N001",
+            "S002@mid",
+            "N010",
+            "S017@mid",
+            "N020",
+            "S031@mid",
+            "N037",
+            "S051@mid"
+          ],
+          "arrival_travel_heading": 1,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S054@mid",
+          "xy_mm": [
+            300,
+            1500
+          ],
+          "time_ms": 6753,
+          "time_rational": {
+            "numerator": 5503680,
+            "denominator": 815
+          },
+          "quarter_turns": 4,
+          "switches": 0,
+          "length_mm": 3000,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S004@mid",
+            "N011",
+            "S019@mid",
+            "N022",
+            "S032@mid",
+            "N021",
+            "S033@mid",
+            "N038",
+            "S054@mid"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N056",
+          "xy_mm": [
+            300,
+            1800
+          ],
+          "time_ms": 7090,
+          "time_rational": {
+            "numerator": 5777760,
+            "denominator": 815
+          },
+          "quarter_turns": 3,
+          "switches": 0,
+          "length_mm": 3900,
+          "start_node": 6,
+          "start_heading": 0,
+          "path": [
+            "N006",
+            "S009@mid",
+            "N005",
+            "S007@mid",
+            "N004",
+            "S005@mid",
+            "N003",
+            "S003@mid",
+            "N002",
+            "S001@mid",
+            "N001",
+            "S002@mid",
+            "N010",
+            "S017@mid",
+            "N020",
+            "S031@mid",
+            "N037",
+            "S052@mid",
+            "N055",
+            "S071@mid",
+            "N056"
+          ],
+          "arrival_travel_heading": 1,
+          "arrival_drive_mode": 0
+        }
+      ],
+      "reasons": {
+        "three_fast_exits": true,
+        "patrol_search_covers_reaction_budget": true
+      }
+    },
+    {
+      "node": 62,
+      "xy_mm": [
+        2100,
+        1800
+      ],
+      "tier": 0,
+      "patrol_search_ms": 0,
+      "fast_exit_count": 2,
+      "fast_exit_targets": [
+        61,
+        63
+      ],
+      "fast_exits": [
+        {
+          "heading": 1,
+          "node": 63,
+          "time_ms": 971,
+          "length_mm": 600,
+          "turns": 0,
+          "path": [
+            62,
+            63
+          ]
+        },
+        {
+          "heading": 3,
+          "node": 61,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            62,
+            61
+          ]
+        }
+      ],
+      "all_exits": {
+        "1": {
+          "node": 63,
+          "time_ms": 971,
+          "length_mm": 600,
+          "turns": 0,
+          "path": [
+            62,
+            63
+          ]
+        },
+        "2": {
+          "node": 77,
+          "time_ms": 2954,
+          "length_mm": 900,
+          "turns": 2,
+          "path": [
+            62,
+            71,
+            72,
+            77
+          ]
+        },
+        "3": {
+          "node": 61,
+          "time_ms": 526,
+          "length_mm": 300,
+          "turns": 0,
+          "path": [
+            62,
+            61
+          ]
+        }
+      },
+      "parking_axis_mask": 10,
+      "best_prior_point": {
+        "point": "N061",
+        "xy_mm": [
+          1800,
+          1800
+        ],
+        "time_ms": 0,
+        "time_rational": {
+          "numerator": 0,
+          "denominator": 815
+        },
+        "quarter_turns": 0,
+        "switches": 0,
+        "length_mm": 0,
+        "start_node": 61,
+        "start_heading": 0,
+        "path": [
+          "N061"
+        ],
+        "arrival_travel_heading": 0,
+        "arrival_drive_mode": 0
+      },
+      "prior_points": [
+        {
+          "point": "N061",
+          "xy_mm": [
+            1800,
+            1800
+          ],
+          "time_ms": 0,
+          "time_rational": {
+            "numerator": 0,
+            "denominator": 815
+          },
+          "quarter_turns": 0,
+          "switches": 0,
+          "length_mm": 0,
+          "start_node": 61,
+          "start_heading": 0,
+          "path": [
+            "N061"
+          ],
+          "arrival_travel_heading": 0,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S078@mid",
+          "xy_mm": [
+            1950,
+            1800
+          ],
+          "time_ms": 953,
+          "time_rational": {
+            "numerator": 775920,
+            "denominator": 815
+          },
+          "quarter_turns": 1,
+          "switches": 0,
+          "length_mm": 150,
+          "start_node": 61,
+          "start_heading": 0,
+          "path": [
+            "N061",
+            "S078@mid"
+          ],
+          "arrival_travel_heading": 1,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N062",
+          "xy_mm": [
+            2100,
+            1800
+          ],
+          "time_ms": 1137,
+          "time_rational": {
+            "numerator": 925920,
+            "denominator": 815
+          },
+          "quarter_turns": 1,
+          "switches": 0,
+          "length_mm": 300,
+          "start_node": 61,
+          "start_heading": 0,
+          "path": [
+            "N061",
+            "S078@mid",
+            "N062"
+          ],
+          "arrival_travel_heading": 1,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S080@mid",
+          "xy_mm": [
+            2400,
+            1800
+          ],
+          "time_ms": 1505,
+          "time_rational": {
+            "numerator": 1225920,
+            "denominator": 815
+          },
+          "quarter_turns": 1,
+          "switches": 0,
+          "length_mm": 600,
+          "start_node": 61,
+          "start_heading": 0,
+          "path": [
+            "N061",
+            "S078@mid",
+            "N062",
+            "S080@mid"
+          ],
+          "arrival_travel_heading": 1,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N063",
+          "xy_mm": [
+            2700,
+            1800
+          ],
+          "time_ms": 1873,
+          "time_rational": {
+            "numerator": 1525920,
+            "denominator": 815
+          },
+          "quarter_turns": 1,
+          "switches": 0,
+          "length_mm": 900,
+          "start_node": 61,
+          "start_heading": 0,
+          "path": [
+            "N061",
+            "S078@mid",
+            "N062",
+            "S080@mid",
+            "N063"
+          ],
+          "arrival_travel_heading": 1,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "S081@mid",
+          "xy_mm": [
+            2100,
+            1950
+          ],
+          "time_ms": 2089,
+          "time_rational": {
+            "numerator": 1701840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 450,
+          "start_node": 61,
+          "start_heading": 0,
+          "path": [
+            "N061",
+            "S078@mid",
+            "N062",
+            "S081@mid"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        },
+        {
+          "point": "N071",
+          "xy_mm": [
+            2100,
+            2100
+          ],
+          "time_ms": 2273,
+          "time_rational": {
+            "numerator": 1851840,
+            "denominator": 815
+          },
+          "quarter_turns": 2,
+          "switches": 0,
+          "length_mm": 600,
+          "start_node": 61,
+          "start_heading": 0,
+          "path": [
+            "N061",
+            "S078@mid",
+            "N062",
+            "S081@mid",
+            "N071"
+          ],
+          "arrival_travel_heading": 2,
+          "arrival_drive_mode": 0
+        }
+      ],
+      "reasons": {
+        "three_fast_exits": false,
+        "patrol_search_covers_reaction_budget": false
+      }
+    }
+  ],
+  "validation": {
+    "original_node_count": 88,
+    "original_segment_count": 106,
+    "corridor_segment_partition_exact": true,
+    "map_lengths_match_coordinates": true,
+    "probe_count": 194,
+    "gap_N007_N008_rejected": true,
+    "outer_vertical_max_score": 5400,
+    "outer_long_corridor_does_not_dominate": true,
+    "N038_tier": 1,
+    "N062_tier": 0
+  }
+}

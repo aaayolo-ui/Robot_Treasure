@@ -1,5 +1,33 @@
 # Robot_Treasure 硬件接线与接口
 
+## 当前接线入口（2026-10-17，UART-CH4运行工程 / RUN4）
+
+RUN4已由COM9确认 `READY / LINK=FRAMES4 / FAULT=0 / PLAN=1`，复位后前/左/右/后有效帧数为5/5/3/5，四轮计数清零、PWM全0、STBY=0。已完成实车开机四路接收与停车状态验证；尚未完成RUN4行驶及取宝后避障验证；MCU→扩展板的配置文字应答仍未验证。详见[RUN4开机实车证据](../../STM32/Keil_Project/Thief16B_UARTCh4_MapStrategy_Test/Evidence/20261017_run4_boot_ready.json)。
+
+| 内容 | 最新文档 |
+|---|---|
+| 完整STM32引脚分配、电机/编码器/灰度/姿态/按键 | [02_STM32引脚占用总表](02_STM32引脚占用总表.md) |
+| 四激光与扩展板逐根接线、蓝牙日志链路 | [05_四方向激光扩展接线规划](05_四方向激光扩展接线规划.md) |
+| RUN4启动就绪、改动与验证边界 | [03_后续硬件扩展预留](03_后续硬件扩展预留.md)、[06_Thief16B接线复核与排查](06_Thief16B接线复核与排查.md) |
+| 工程、烧录入口、编译结果和修改清单 | [Thief16B_UARTCh4_MapStrategy_Test](../../STM32/Keil_Project/Thief16B_UARTCh4_MapStrategy_Test/README.md) |
+
+PB6→扩展板M_RX，PB7←M_TX；前/左/右/后激光T→RX1/2/3/4。扩展板3.3V并共地，TFT取消；PA2电机D PWM、PB15/DIN2、PB14/E2B保留。蓝牙日志仍是PB10→车载蓝牙RX，无线到电脑端蓝牙TX→USB转TTL RX，当前COM9、115200、8N1；PB6/PB7与日志链路分开。
+
+RUN3实车仍为FAULT=2，但28条逐次应答样本显示：115200时收到激光数据且接收错误0，没有预期OK,115200文字应答；从分离样本独立核验出20个校验正确的带标记帧，覆盖通道1～4。由此确认接收链路已有真实数据，旧版仅以文字应答作为就绪条件过严。RUN4新增四路有效帧就绪路径，**已完成实车开机四路接收与停车状态验证；尚未完成RUN4行驶及取宝后避障验证**；样本并非完整连续流，不能当作整车运行通过。 当前标识UARTCH4_RUN4，采用四路数据就绪优先与应答配置回退，详情见运行工程README。旧记录按各自日期与工程适用。
+
+<details>
+<summary>展开历史阶段记录（按当时工程与接线适用）</summary>
+
+2026-10-17 小偷运行版入口：[Thief16B_UARTCh4_MapStrategy_Test](../../STM32/Keil_Project/Thief16B_UARTCh4_MapStrategy_Test/README.md)。按用户要求停止逐项静止测试，直接接入UART-CH4四激光，PB6/PB7主口、RX1/2/3/4分别前/左/右/后，USART2全程关闭；保留原控制、定位、路线和藏点。开机自动配置并等待KEY2，配置失败保持停车。仅编译通过，尚未完成硬件验证；具体接回线束、烧录和启动说明以该运行版README为准。原已通过工程及此前静止工程均保留。
+
+2026-10-17 最新：前激光恢复对照已由用户试跑并复现左后轮异常，证据见 [06 最新复核](06_Thief16B接线复核与排查.md)。新增 [UARTCh4静止通信测试工程](../../STM32/Keil_Project/UARTCh4_FourLaser_Stationary_Test/README.md)，以PB6/PB7主串口汇聚四激光、保持USART2关闭；仅编译通过，尚未完成硬件验证。用户已确认按 [03扩展方案](03_后续硬件扩展预留.md) 改线、供电目标3.3V，用户后续复测模块VCC与空闲M_TX均约3.3V、两板GND差0.9mV；下一步先断电只接回主口M_TX→PB7、保持四个子口TX断开，人工烧录静止版核对日志，不试跑。成品板二进制转发尚待验证；下方“待实车”是此前准备时状态。
+
+2026-10-16 前激光恢复对照（待实车）：新增 [Thief16B_FrontLaserRestore_Compare_Test](../../STM32/Keil_Project/Thief16B_FrontLaserRestore_Compare_Test/README.md)，保留下述已通过工程，在相同PB15接线与控制参数下恢复前PA3/USART2接收，仍取宝后启用、65cm门槛及地图外侧屏蔽。仅编译通过，尚未完成硬件验证；不能把它与下述三激光实车通过混同。
+
+2026-10-16 [DIN2避开PA10的独立对照工程](../../STM32/Keil_Project/Thief16B_DIN2_PB15_Compare_Test/README.md)已由用户人工烧录、改线并完成一次实车验证，反馈运行、避障与藏点正常。当前接线DIN2→PB15、PA10保持输入、PB14/E2B不动；不能用旧固件搭配。前激光仍关闭，仅另外三路参与本轮；完整四激光尚未验证。[本轮实车记录](../../STM32/Keil_Project/Thief16B_DIN2_PB15_Compare_Test/Evidence/20261016_hardware_capture.md)保留日志校验及证据边界。
+
+2026-10-16 接线复核与勘误：[06_Thief16B接线复核与排查.md](06_Thief16B接线复核与排查.md)。**PB7 应为 JP3 第10脚，PB11 应为 JP1 第21脚**；旧规划中这两个排针编号已修正。本次仅核对源码及原理图，实车排针位置、板载串口隔离和故障原因仍待确认。
+
 四激光当前软件入口：[Thief16B_FourLaser_MapStrategy_Test](../../STM32/Keil_Project/Thief16B_FourLaser_MapStrategy_Test/README.md)。四路测距、触发与串口日志已实现，TFT取消。仅编译通过，尚未完成硬件验证；下方未实施描述属于早期接线规划，当前应将新接线与16B配套使用。
 
 2026-10-11 最新扩展：新增三只同款 AI-1811 朝左、右、后。根据绿深系统板原理图确定改线计划：前 PA3、左 PB7、右 PC11、后 PB11，取消 TFT、迁移左前编码器 B 相到 PB14，并断开日志设备 TX 到 PB11。请先看 [05_四方向激光扩展接线规划.md](05_四方向激光扩展接线规划.md) 及 [引脚表最新增量](02_STM32引脚占用总表.md)。这是尚未实施的软件/接线计划，当前固件不能直接使用新接线。下方单模块“计划恢复”属于早期说明；当前小偷工程已包含 PA3 接收，但移动期间关闭 USART2。
@@ -60,3 +88,5 @@ AI-1811 单模块基础 UART 读取的历史参考工程为 [`Laser12B_AI1811_Ra
 - 当前由 MD240A `VOUT 5V` 给 STM32 供电时，外部 DC-DC 输出不得同时并联到 STM32 `5V`。
 - 电池 `VIN/VM` 不得接入 STM32；电机动力电源不得经过 STM32 或外部 5V 降压输出。
 - CH340 只接串口信号和 GND 时，不接其 `5V/3.3V` 输出；ST-Link、CH340、MD240A VOUT 与后续 DC-DC 不能同时作为 STM32 供电源。
+
+</details>

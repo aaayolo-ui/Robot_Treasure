@@ -1,0 +1,173 @@
+<SUF70UninstallData>
+<DataFilePath>F:\Robot_Treasure\硬件资料（部分已有）\HC-05AT测试版\Uninstall\uninstall.dat</DataFilePath>
+<CPRegKey>SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\S761-Bluetooth1.0</CPRegKey>
+<EXELocation>C:\WINDOWS\S761-Bluetooth\uninstall.exe</EXELocation>
+<UninstallFiles>
+<File>
+<Filename>F:\Robot_Treasure\硬件资料（部分已有）\HC-05AT测试版\蓝牙测试软件.exe</Filename>
+<DecrementUsageCount>0</DecrementUsageCount>
+<UnregisterCOM>0</UnregisterCOM>
+<UnregisterFont>0</UnregisterFont>
+<FontDesc/>
+<BackupFile/>
+</File>
+</UninstallFiles>
+<UninstallShortcuts>
+<Filename>C:\Users\Administrator\Desktop\工程1.lnk</Filename>
+<Filename>C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\工程1.lnk</Filename>
+<Filename>C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\S761-Bluetooth\工程1.lnk</Filename>
+<Filename>C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\S761-Bluetooth\卸载 S761-Bluetooth.lnk</Filename>
+</UninstallShortcuts>
+<UninstallSupportFiles>
+<Filename>F:\Robot_Treasure\硬件资料（部分已有）\HC-05AT测试版\Uninstall\IRIMG1.JPG</Filename>
+<Filename>F:\Robot_Treasure\硬件资料（部分已有）\HC-05AT测试版\Uninstall\IRIMG2.JPG</Filename>
+</UninstallSupportFiles>
+<UninstallFolders>
+<FolderPath>C:\Users\ADMINI~1\AppData\Local\Temp\_ir_sf7_temp_0\vb5sp3</FolderPath>
+<FolderPath>F:\Robot_Treasure\硬件资料（部分已有）\HC-05AT测试版\Uninstall</FolderPath>
+<FolderPath>C:\WINDOWS\S761-Bluetooth</FolderPath>
+<FolderPath>C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\S761-Bluetooth</FolderPath>
+</UninstallFolders>
+<SessionVars>
+<Var>
+<Name>%ProductName%</Name>
+<Value>S761-Bluetooth</Value>
+</Var>
+<Var>
+<Name>%CompanyName%</Name>
+<Value>宁波丰吉双可电子有限公司</Value>
+</Var>
+<Var>
+<Name>%ProductVer%</Name>
+<Value>1.0</Value>
+</Var>
+<Var>
+<Name>%Copyright%</Name>
+<Value>版权 (C)2005 %CompanyName%</Value>
+</Var>
+<Var>
+<Name>%CompanyURL%</Name>
+<Value>www.nbsock.cn</Value>
+</Var>
+<Var>
+<Name>%WindowTitle%</Name>
+<Value>%ProductName% 安装</Value>
+</Var>
+<Var>
+<Name>%AppFolder%</Name>
+<Value>F:\Robot_Treasure\硬件资料（部分已有）\HC-05AT测试版</Value>
+</Var>
+<Var>
+<Name>%AppShortcutFolderName%</Name>
+<Value>%ProductName%</Value>
+</Var>
+<Var>
+<Name>%ApplicationDataFolder%</Name>
+<Value>C:\Users\Administrator\AppData\Roaming</Value>
+</Var>
+<Var>
+<Name>%CommonFilesFolder%</Name>
+<Value>C:\Program Files (x86)\Common Files</Value>
+</Var>
+<Var>
+<Name>%DesktopFolder%</Name>
+<Value>C:\Users\Administrator\Desktop</Value>
+</Var>
+<Var>
+<Name>%DesktopFolderCommon%</Name>
+<Value>C:\Users\Public\Desktop</Value>
+</Var>
+<Var>
+<Name>%FontsFolder%</Name>
+<Value>C:\Windows\Fonts</Value>
+</Var>
+<Var>
+<Name>%MyDocumentsFolder%</Name>
+<Value>C:\Users\Administrator\Documents</Value>
+</Var>
+<Var>
+<Name>%ProgramFilesFolder%</Name>
+<Value>C:\Program Files (x86)</Value>
+</Var>
+<Var>
+<Name>%StartFolder%</Name>
+<Value>C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu</Value>
+</Var>
+<Var>
+<Name>%StartFolderCommon%</Name>
+<Value>C:\ProgramData\Microsoft\Windows\Start Menu</Value>
+</Var>
+<Var>
+<Name>%StartProgramsFolder%</Name>
+<Value>C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu\Programs</Value>
+</Var>
+<Var>
+<Name>%StartProgramsFolderCommon%</Name>
+<Value>C:\ProgramData\Microsoft\Windows\Start Menu\Programs</Value>
+</Var>
+<Var>
+<Name>%StartupFolder%</Name>
+<Value>C:\Users\Administrator\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup</Value>
+</Var>
+<Var>
+<Name>%StartupFolderCommon%</Name>
+<Value>C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup</Value>
+</Var>
+<Var>
+<Name>%SystemFolder%</Name>
+<Value>C:\WINDOWS\system32</Value>
+</Var>
+<Var>
+<Name>%WindowsFolder%</Name>
+<Value>C:\WINDOWS</Value>
+</Var>
+<Var>
+<Name>%SystemDrive%</Name>
+<Value>C:</Value>
+</Var>
+<Var>
+<Name>%TempFolder%</Name>
+<Value>C:\Users\ADMINI~1\AppData\Local\Temp</Value>
+</Var>
+<Var>
+<Name>%TempLaunchFolder%</Name>
+<Value>C:\Users\ADMINI~1\AppData\Local\Temp\_ir_sf7_temp_0</Value>
+</Var>
+<Var>
+<Name>%RegOwner%</Name>
+<Value></Value>
+</Var>
+<Var>
+<Name>%RegOrganization%</Name>
+<Value></Value>
+</Var>
+<Var>
+<Name>%AppDrive%</Name>
+<Value>C:</Value>
+</Var>
+<Var>
+<Name>%DAOPath%</Name>
+<Value>%CommonFiles%\Microsoft Shared\DAO</Value>
+</Var>
+<Var>
+<Name>%SourceFilename%</Name>
+<Value>F:\Robot_Treasure\硬件资料（部分已有）\HC-05AT测试版\setup\setup.exe</Value>
+</Var>
+<Var>
+<Name>%SourceFolder%</Name>
+<Value>F:\Robot_Treasure\硬件资料（部分已有）\HC-05AT测试版\setup</Value>
+</Var>
+<Var>
+<Name>%SourceDrive%</Name>
+<Value>F:</Value>
+</Var>
+<Var>
+<Name>%SpaceAvailable%</Name>
+<Value>95.21 GB</Value>
+</Var>
+<Var>
+<Name>%SpaceRequired%</Name>
+<Value>3.53 MB</Value>
+</Var>
+</SessionVars>
+</SUF70UninstallData>

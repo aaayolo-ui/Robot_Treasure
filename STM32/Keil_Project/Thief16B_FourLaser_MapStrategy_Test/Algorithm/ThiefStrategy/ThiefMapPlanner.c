@@ -1,27 +1,35 @@
 #include "ThiefMapPlanner.h"
 #include <stddef.h>
+#include "ThiefThreatModel.h"
+#include "ThiefStrategyConfig.h"
+#include "ThiefRollout.h"
 
-#define DIST_INF 0x3FFFFFFFUL
 #define ESCAPE_ID 1601U
 #define INITIAL_ID 1600U
-#define TARGET_ESCAPE_MM 1500UL
+static uint16_t departure[MAP_ROUTE_NODE_COUNT];
+static uint16_t combined[MAP_ROUTE_NODE_COUNT];
+static ThiefDecision_t decision;
 
-static const uint16_t safe_hide_nodes[] = {
-  11U, 14U, 15U, 22U, 23U, 25U, 32U, 33U, 34U,
-  35U, 38U, 39U, 46U, 49U, 52U, 53U, 58U, 59U, 61U,
-  62U, 63U, 67U, 68U, 70U, 76U, 77U, 78U, 79U
-};
-
-/* The project stack is 1 KiB. Keep Dijkstra and path scratch buffers in
- * module RAM so a replan cannot overflow the call stack. The planner is used
- * synchronously from the main loop and is intentionally non-reentrant. */
-static uint32_t work_distance[MAP_ROUTE_NODE_COUNT];
-static uint16_t work_previous[MAP_ROUTE_NODE_COUNT];
-static uint16_t work_reverse_path[MAP_ROUTE_NODE_COUNT];
-static uint16_t work_path_a[MAP_ROUTE_NODE_COUNT];
-static uint16_t work_path_b[MAP_ROUTE_NODE_COUNT];
-static uint16_t work_path_c[MAP_ROUTE_NODE_COUNT];
-static uint8_t work_visited[MAP_ROUTE_NODE_COUNT];
+void ThiefMapPlanner_Init(void)
+{
+  ThiefRiskSearch_Init();
+  ThiefThreatModel_Init();
+  ThiefRollout_Init();
+  decision.goal_node=0U;
+}
+void ThiefMapPlanner_ObserveThreat(uint16_t node,uint8_t heading,
+    int16_t x,int16_t y,uint32_t now)
+{
+  ThiefThreatModel_Record(heading,x,y,now);
+  ThiefRiskSearch_MarkExposed(node,now);
+  ThiefRollout_MarkExposed(node,now);
+}
+const ThiefDecision_t *ThiefMapPlanner_Decision(void) {return &decision;}
+uint32_t ThiefMapPlanner_WorkBytes(void)
+{
+  return ThiefRiskSearch_WorkBytes()+ThiefThreatModel_WorkBytes()+ThiefRollout_WorkBytes()+
+    (uint32_t)(sizeof(departure)+sizeof(combined)+sizeof(decision));
+}
 
 const MapRouteNode_t *ThiefMapPlanner_Node(uint16_t node_id)
 {
@@ -72,63 +80,6 @@ static uint8_t SegmentBetween(uint16_t from, uint16_t to,
     }
   }
   return 0U;
-}
-
-static uint8_t ShortestPath(uint16_t start, uint16_t goal, uint16_t blocked,
-                            uint16_t *path, uint16_t *path_count,
-                            uint32_t *total_length)
-{
-  uint16_t i, cursor, count = 0U;
-
-  if ((ThiefMapPlanner_Node(start) == NULL) ||
-      (ThiefMapPlanner_Node(goal) == NULL) || (start == blocked)) return 0U;
-  for (i = 0U; i < MAP_ROUTE_NODE_COUNT; i++) {
-    work_distance[i] = DIST_INF;
-    work_previous[i] = 0U;
-    work_visited[i] = 0U;
-  }
-  work_distance[start - 1U] = 0U;
-
-  for (i = 0U; i < MAP_ROUTE_NODE_COUNT; i++) {
-    uint16_t pick = 0U;
-    uint32_t best = DIST_INF;
-    uint16_t s;
-    for (s = 1U; s <= MAP_ROUTE_NODE_COUNT; s++) {
-      if ((work_visited[s - 1U] == 0U) &&
-          (work_distance[s - 1U] < best)) {
-        best = work_distance[s - 1U];
-        pick = s;
-      }
-    }
-    if ((pick == 0U) || (pick == goal)) break;
-    work_visited[pick - 1U] = 1U;
-    for (s = 0U; s < MAP_ROUTE_SEGMENT_COUNT; s++) {
-      const MapRouteSegment_t *segment = &map_route_segments[s];
-      uint16_t next = 0U;
-      uint32_t candidate;
-      if (segment->start == pick) next = segment->end;
-      else if (segment->end == pick) next = segment->start;
-      if ((next == 0U) || (next == blocked)) continue;
-      candidate = work_distance[pick - 1U] + segment->length_mm;
-      if (candidate < work_distance[next - 1U]) {
-        work_distance[next - 1U] = candidate;
-        work_previous[next - 1U] = pick;
-      }
-    }
-  }
-
-  if (work_distance[goal - 1U] == DIST_INF) return 0U;
-  cursor = goal;
-  while ((cursor != 0U) && (count < MAP_ROUTE_NODE_COUNT)) {
-    work_reverse_path[count++] = cursor;
-    if (cursor == start) break;
-    cursor = work_previous[cursor - 1U];
-  }
-  if ((count == 0U) || (work_reverse_path[count - 1U] != start)) return 0U;
-  *path_count = count;
-  for (i = 0U; i < count; i++) path[i] = work_reverse_path[count - 1U - i];
-  if (total_length != NULL) *total_length = work_distance[goal - 1U];
-  return 1U;
 }
 
 static uint8_t BuildRoute(const uint16_t *nodes, uint16_t node_count,
@@ -207,72 +158,49 @@ static const uint16_t initial_treasure_path[] = {
 
 uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan)
 {
-  uint16_t *departure = work_path_b;
-  uint16_t *combined = work_path_c;
-  uint16_t departure_count, i, count;
-  const uint16_t prefix_count = (uint16_t)(sizeof(initial_treasure_path) /
-                                         sizeof(initial_treasure_path[0]));
-  if (plan == NULL) return 0U;
-  plan->valid = 0U;
-  if (initial_treasure_path[0] != THIEF_START_NODE) return 0U;
-  if (ShortestPath(4U, THIEF_FIRST_HIDE_NODE, THIEF_TREASURE_NODE,
-                   departure, &departure_count, NULL) == 0U) return 0U;
-  if ((uint32_t)prefix_count + (uint32_t)departure_count - 1UL >
-      MAP_ROUTE_NODE_COUNT) return 0U;
-  count = 0U;
-  for (i = 0U; i < prefix_count; i++) combined[count++] = initial_treasure_path[i];
-  for (i = 1U; i < departure_count; i++) combined[count++] = departure[i];
-  return BuildRoute(combined, count, 0U, INITIAL_ID, plan);
+  uint16_t departure_count,i,count;
+  uint8_t first_mode;
+  const uint16_t prefix_count=(uint16_t)(sizeof(initial_treasure_path)/sizeof(initial_treasure_path[0]));
+  if(plan==NULL) return 0U;
+  plan->valid=0U;
+  /* Preserve the exact user-selected treasure prefix, then optimize the hide. */
+  if(!ThiefRiskSearch_Select(4U,3U,0U,0U,0U,5U,0U,0UL,
+      departure,&departure_count,&first_mode,&decision)) return 0U;
+  if(prefix_count+departure_count-1U>MAP_ROUTE_NODE_COUNT) return 0U;
+  count=0U;
+  for(i=0U;i<prefix_count;i++) combined[count++]=initial_treasure_path[i];
+  for(i=1U;i<departure_count;i++) combined[count++]=departure[i];
+  if(!BuildRoute(combined,count,0U,INITIAL_ID,plan)) return 0U;
+  /* Initial telemetry reports the entire fixed-prefix + hide route, not only
+   * the N004-to-hide suffix used by the hide selector. */
+  decision.travel_ms=THIEF_STARTUP_MS;
+  for(i=0U;i<plan->route.count;i++) {
+    uint8_t turn=0U,change=0U;
+    if(i>0U) {
+      turn=(plan->steps[i-1U].action==MAP_ACTION_LEFT ||
+            plan->steps[i-1U].action==MAP_ACTION_RIGHT)?1U:0U;
+      change=(plan->steps[i-1U].action==MAP_ACTION_REVERSE)?1U:0U;
+    }
+    decision.travel_ms+=ThiefRiskSearch_LegTime(plan->steps[i].length_mm,
+        plan->steps[i].drive_mode,turn,change);
+  }
+  return 1U;
 }
 
 uint8_t ThiefMapPlanner_PlanEscape(uint16_t current_node,
-                                   uint8_t body_heading,
-                                   uint8_t threat_heading_mask,
-                                   uint16_t previous_hide_node,
-                                   ThiefRoutePlan_t *plan)
+    uint8_t body_heading,uint8_t threat_mask,uint16_t previous_hide_node,
+    uint32_t now,ThiefRoutePlan_t *plan)
 {
-  uint16_t forced_next, first_length;
-  uint16_t *candidate_path = work_path_a;
-  uint16_t *best_path = work_path_b;
-  uint16_t count, best_count = 0U;
-  uint32_t length, best_score = DIST_INF;
-  uint16_t i;
-  uint8_t mode, best_mode=1U;
-  if(plan==NULL || !threat_heading_mask) return 0U;
+  uint16_t count;
+  uint8_t mode;
+  if(plan==NULL || !threat_mask) return 0U;
   plan->valid=0U;
-  for(mode=0U;mode<2U;mode++) {
-    uint8_t away_heading=(uint8_t)((body_heading+2U*mode)%4U);
-    if((threat_heading_mask & (1U<<away_heading))!=0U) continue;
-    if(!ThiefMapPlanner_HasRoad(current_node,away_heading,&forced_next,&first_length)) continue;
-
-  for (i = 0U; i < (uint16_t)(sizeof(safe_hide_nodes) / sizeof(safe_hide_nodes[0])); i++) {
-    uint16_t goal = safe_hide_nodes[i];
-    uint8_t arrival_heading;
-    uint16_t dummy_length;
-    uint32_t score;
-    if ((goal == current_node) || (goal == previous_hide_node)) continue;
-    if (ShortestPath(forced_next, goal, current_node,
-                     &candidate_path[1], &count, &length) == 0U) continue;
-    candidate_path[0] = current_node;
-    count++;
-    length += first_length;
-    if ((count < 3U) || (length < 600UL)) continue;
-    if (SegmentBetween(candidate_path[count - 2U], goal,
-                       &arrival_heading, &dummy_length) == 0U) continue;
-    if (ThiefMapPlanner_HasRoad(goal, arrival_heading, NULL, NULL) == 0U) continue;
-    score = (length > TARGET_ESCAPE_MM) ?
-            (length - TARGET_ESCAPE_MM) : (TARGET_ESCAPE_MM - length);
-    if (score < best_score) {
-      uint16_t j;
-      best_score = score;
-      best_mode = mode;
-      best_count = count;
-      for (j = 0U; j < count; j++) best_path[j] = candidate_path[j];
-    }
-  }
-  }
-  if (best_count == 0U) return 0U;
-  return BuildRoute(best_path, best_count, best_mode, ESCAPE_ID, plan);
+  if(THIEF_ROLLOUT_ENABLED && ThiefRollout_Select(current_node,body_heading,threat_mask,
+      previous_hide_node,now,departure,&count,&mode,&decision))
+    return BuildRoute(departure,count,mode,ESCAPE_ID,plan);
+  if(!ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
+      0U,previous_hide_node,now,departure,&count,&mode,&decision)) return 0U;
+  return BuildRoute(departure,count,mode,ESCAPE_ID,plan);
 }
 
 void ThiefMapPlanner_PoseAtNode(uint16_t node_id, uint8_t body_heading,

@@ -1,0 +1,1769 @@
+{
+  "seeds": [
+    10,
+    11,
+    12
+  ],
+  "factors": [
+    1.0,
+    1.1,
+    1.2
+  ],
+  "config": {
+    "status": "使用2026-10-06单车全图记录的名义尺度速度和动作代价；双方共用该车基准，另一辆车未独立标定。",
+    "police_speed_m_s": 0.674,
+    "thief_speed_m_s": 0.674,
+    "turn90_s": 0.768,
+    "uturn_s": 0.282,
+    "pickup_s": 0.0,
+    "capture_center_distance_m": 0.18,
+    "sensor_range_m": 0.6,
+    "police_sensor_range_m": 0.6,
+    "sensor_half_angle_deg": 10.0,
+    "miss_probability": 0.05,
+    "horizon_s": 8.0,
+    "time_limit_s": 180.0,
+    "sensor_period_s": 0.02,
+    "frame_period_s": 0.02,
+    "pursuit_memory_s": 2.0,
+    "police_search_memory_s": 12.0,
+    "regional_search_enabled": true,
+    "police_local_search_cells": 5,
+    "police_deadend_check_cells": 4,
+    "police_deadend_recheck_s": 20.0,
+    "hide_max_straight_cells": 3,
+    "escape_risk_step_s": 0.05,
+    "escape_straight_limit_cells": 3,
+    "escape_safety_slack_s": 0.15,
+    "escape_replan_contact_s": 0.3,
+    "side_escape_cells": 2,
+    "hide_reaction_margin_s": 1.0,
+    "hide_escape_hold_s": 6.0,
+    "hide_revisit_cooldown_s": 30.0,
+    "seed": 7,
+    "measured_motion": {
+      "reverse_speed_ratio": 1.0074183976261128,
+      "forward_to_reverse_s": 0.282,
+      "reverse_to_forward_s": 0.274,
+      "source_log": "20261006-210343-671.log",
+      "source_sha256": "138576fbe7416f90fad63818e5d3d552f5463ef1cb8ddebf997868bcf0b09d12",
+      "turn90_method": "node-to-node residual after nominal straight travel; pooled for both modes",
+      "switch_method": "brake trigger to stable leading-gray; not first physical motion",
+      "dimension_calibrated": false,
+      "both_cars_share_one_vehicle_measurement": true,
+      "slow_case": {
+        "turn90_s": 0.8420476216757011,
+        "forward_to_reverse_s": 0.316,
+        "reverse_to_forward_s": 0.292
+      }
+    }
+  },
+  "body_model": {
+    "version": "16F-body-turn-v1",
+    "dimensions_status": "用户确认采用资料名义值，未实测整车外包络",
+    "bodies": {
+      "P": {
+        "length_m": 0.19,
+        "width_m": 0.198
+      },
+      "B": {
+        "length_m": 0.19,
+        "width_m": 0.198
+      }
+    },
+    "turn": {
+      "brake_fraction": 0.24,
+      "pivot_angle_deg": 45.0,
+      "profile": "smoothstep",
+      "center_path": "fixed_at_track_node",
+      "status": "连续角度的差速原地转向近似；制动占比和角速度曲线未实测，重新识线位移未建模"
+    },
+    "collision": {
+      "contact_tolerance_m": 1e-07,
+      "advancement_safety_factor": 0.9,
+      "max_iterations": 20000,
+      "method": "oriented_rectangle_SAT_conservative_advancement"
+    },
+    "frame_period_s": 0.02
+  },
+  "comparison_laser_range_mm": 600,
+  "selected_build_defines": [
+    "THIEF_LASER_MAX_MM=600U"
+  ],
+  "baseline_validation": {
+    "comparison": "Tools/TreasurePursuitSimulator/variants/16j/heldout_comparison.json",
+    "comparison_sha256": "ad53a85ade27c2fe6ba3c3c901f9bc919bffb2faacc1c05338f0fceb1d6f96d8",
+    "report": "Tools/TreasurePursuitSimulator/variants/16j/report.json",
+    "report_sha256": "416e9db91fc3a50b1ed8392e0ecc7813e01ab28e77947b8e43b49fa2e6e7de6c",
+    "validated_source_files": 16,
+    "config_equal": true,
+    "body_model_equal": true,
+    "arrival_limit": "Historical rows retain total arrival counts, not per-arrival nodes; actual N062 arrivals are unavailable. Compare planned N062 goals for the common metric.",
+    "collision_limit": "Historical rows retain terminal stages, not collision polygons; contact kind is stage-classified."
+  },
+  "scope": "Same finite sensors, police, measured motion and continuous body referee. ARM C planner simulation with ideal localization; no hardware evidence.",
+  "duration_note": "Longer duration is survival time under this referee, not a win unless winner is thief. Differences are limited to these seeds/factors.",
+  "summary": [
+    {
+      "variant": "16J",
+      "factor": 1.0,
+      "runs": 3,
+      "mean_s": 150.9391389930666,
+      "min_s": 142.45724291233677,
+      "max_s": 163.57478923853947,
+      "thief_wins": 0,
+      "police_wins": 3,
+      "plan_failures": 0,
+      "planned_goals": 28,
+      "planned_n062": 3,
+      "planned_n062_fraction": 0.10714285714285714,
+      "arrived_n062": null,
+      "collision_kinds": {
+        "translation_contact": 3
+      }
+    },
+    {
+      "variant": "16J",
+      "factor": 1.1,
+      "runs": 3,
+      "mean_s": 101.02572488302566,
+      "min_s": 100.48819153182417,
+      "max_s": 101.2944915586264,
+      "thief_wins": 0,
+      "police_wins": 3,
+      "plan_failures": 0,
+      "planned_goals": 18,
+      "planned_n062": 3,
+      "planned_n062_fraction": 0.16666666666666666,
+      "arrived_n062": null,
+      "collision_kinds": {
+        "translation_contact": 3
+      }
+    },
+    {
+      "variant": "16J",
+      "factor": 1.2,
+      "runs": 3,
+      "mean_s": 67.31610788062837,
+      "min_s": 67.31385682572606,
+      "max_s": 67.32060999043298,
+      "thief_wins": 0,
+      "police_wins": 3,
+      "plan_failures": 0,
+      "planned_goals": 9,
+      "planned_n062": 3,
+      "planned_n062_fraction": 0.3333333333333333,
+      "arrived_n062": null,
+      "collision_kinds": {
+        "turn_contact": 3
+      }
+    },
+    {
+      "variant": "16K",
+      "factor": 1.0,
+      "runs": 3,
+      "mean_s": 150.9391389930666,
+      "min_s": 142.45724291233677,
+      "max_s": 163.57478923853947,
+      "thief_wins": 0,
+      "police_wins": 3,
+      "plan_failures": 0,
+      "planned_goals": 28,
+      "planned_n062": 3,
+      "planned_n062_fraction": 0.10714285714285714,
+      "arrived_n062": 3,
+      "collision_kinds": {
+        "translation_contact": 3
+      }
+    },
+    {
+      "variant": "16K",
+      "factor": 1.1,
+      "runs": 3,
+      "mean_s": 101.02572488302566,
+      "min_s": 100.48819153182417,
+      "max_s": 101.2944915586264,
+      "thief_wins": 0,
+      "police_wins": 3,
+      "plan_failures": 0,
+      "planned_goals": 18,
+      "planned_n062": 3,
+      "planned_n062_fraction": 0.16666666666666666,
+      "arrived_n062": 3,
+      "collision_kinds": {
+        "translation_contact": 3
+      }
+    },
+    {
+      "variant": "16K",
+      "factor": 1.2,
+      "runs": 3,
+      "mean_s": 67.31610788062837,
+      "min_s": 67.31385682572606,
+      "max_s": 67.32060999043298,
+      "thief_wins": 0,
+      "police_wins": 3,
+      "plan_failures": 0,
+      "planned_goals": 9,
+      "planned_n062": 3,
+      "planned_n062_fraction": 0.3333333333333333,
+      "arrived_n062": 3,
+      "collision_kinds": {
+        "turn_contact": 3
+      }
+    }
+  ],
+  "paired_runs": [
+    {
+      "factor": 1.0,
+      "seed": 10,
+      "baseline_duration_s": 142.45724291233677,
+      "selected_duration_s": 142.45724291233677,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    },
+    {
+      "factor": 1.0,
+      "seed": 11,
+      "baseline_duration_s": 163.57478923853947,
+      "selected_duration_s": 163.57478923853947,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    },
+    {
+      "factor": 1.0,
+      "seed": 12,
+      "baseline_duration_s": 146.78538482832352,
+      "selected_duration_s": 146.78538482832352,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    },
+    {
+      "factor": 1.1,
+      "seed": 10,
+      "baseline_duration_s": 100.48819153182417,
+      "selected_duration_s": 100.48819153182417,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    },
+    {
+      "factor": 1.1,
+      "seed": 11,
+      "baseline_duration_s": 101.29449155862639,
+      "selected_duration_s": 101.29449155862639,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    },
+    {
+      "factor": 1.1,
+      "seed": 12,
+      "baseline_duration_s": 101.2944915586264,
+      "selected_duration_s": 101.2944915586264,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    },
+    {
+      "factor": 1.2,
+      "seed": 10,
+      "baseline_duration_s": 67.31385682572606,
+      "selected_duration_s": 67.31385682572606,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    },
+    {
+      "factor": 1.2,
+      "seed": 11,
+      "baseline_duration_s": 67.31385682572606,
+      "selected_duration_s": 67.31385682572606,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    },
+    {
+      "factor": 1.2,
+      "seed": 12,
+      "baseline_duration_s": 67.32060999043298,
+      "selected_duration_s": 67.32060999043298,
+      "duration_delta_s": 0.0,
+      "baseline_winner": "police",
+      "selected_winner": "police",
+      "baseline_planned_n062": 1,
+      "selected_planned_n062": 1,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 1
+    }
+  ],
+  "per_factor_delta": [
+    {
+      "factor": 1.0,
+      "paired_runs": 3,
+      "baseline_mean_s": 150.9391389930666,
+      "selected_mean_s": 150.9391389930666,
+      "mean_duration_delta_s": 0.0,
+      "baseline_min_s": 142.45724291233677,
+      "selected_min_s": 142.45724291233677,
+      "min_duration_delta_s": 0.0,
+      "baseline_thief_wins": 0,
+      "selected_thief_wins": 0,
+      "thief_win_delta": 0,
+      "baseline_plan_failures": 0,
+      "selected_plan_failures": 0,
+      "baseline_planned_n062": 3,
+      "selected_planned_n062": 3,
+      "planned_n062_delta": 0,
+      "baseline_planned_n062_fraction": 0.10714285714285714,
+      "selected_planned_n062_fraction": 0.10714285714285714,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 3,
+      "longer_survival_runs": 0,
+      "shorter_survival_runs": 0,
+      "unchanged_duration_runs": 3
+    },
+    {
+      "factor": 1.1,
+      "paired_runs": 3,
+      "baseline_mean_s": 101.02572488302566,
+      "selected_mean_s": 101.02572488302566,
+      "mean_duration_delta_s": 0.0,
+      "baseline_min_s": 100.48819153182417,
+      "selected_min_s": 100.48819153182417,
+      "min_duration_delta_s": 0.0,
+      "baseline_thief_wins": 0,
+      "selected_thief_wins": 0,
+      "thief_win_delta": 0,
+      "baseline_plan_failures": 0,
+      "selected_plan_failures": 0,
+      "baseline_planned_n062": 3,
+      "selected_planned_n062": 3,
+      "planned_n062_delta": 0,
+      "baseline_planned_n062_fraction": 0.16666666666666666,
+      "selected_planned_n062_fraction": 0.16666666666666666,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 3,
+      "longer_survival_runs": 0,
+      "shorter_survival_runs": 0,
+      "unchanged_duration_runs": 3
+    },
+    {
+      "factor": 1.2,
+      "paired_runs": 3,
+      "baseline_mean_s": 67.31610788062837,
+      "selected_mean_s": 67.31610788062837,
+      "mean_duration_delta_s": 0.0,
+      "baseline_min_s": 67.31385682572606,
+      "selected_min_s": 67.31385682572606,
+      "min_duration_delta_s": 0.0,
+      "baseline_thief_wins": 0,
+      "selected_thief_wins": 0,
+      "thief_win_delta": 0,
+      "baseline_plan_failures": 0,
+      "selected_plan_failures": 0,
+      "baseline_planned_n062": 3,
+      "selected_planned_n062": 3,
+      "planned_n062_delta": 0,
+      "baseline_planned_n062_fraction": 0.3333333333333333,
+      "selected_planned_n062_fraction": 0.3333333333333333,
+      "baseline_arrived_n062": null,
+      "selected_arrived_n062": 3,
+      "longer_survival_runs": 0,
+      "shorter_survival_runs": 0,
+      "unchanged_duration_runs": 3
+    }
+  ],
+  "runs": [
+    {
+      "variant": "16J",
+      "factor": 1.0,
+      "seed": 10,
+      "duration_s": 142.45724291233677,
+      "winner": "police",
+      "end_stages": [
+        "reverse_move",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 48,
+      "arrived_hides": 7,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16J",
+      "factor": 1.0,
+      "seed": 11,
+      "duration_s": 163.57478923853947,
+      "winner": "police",
+      "end_stages": [
+        "forward",
+        "forward"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 48,
+      "arrived_hides": 9,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16J",
+      "factor": 1.0,
+      "seed": 12,
+      "duration_s": 146.78538482832352,
+      "winner": "police",
+      "end_stages": [
+        "forward",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N012",
+        "N011"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 48,
+      "arrived_hides": 9,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16J",
+      "factor": 1.1,
+      "seed": 10,
+      "duration_s": 100.48819153182417,
+      "winner": "police",
+      "end_stages": [
+        "forward",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 48,
+      "arrived_hides": 5,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16J",
+      "factor": 1.1,
+      "seed": 11,
+      "duration_s": 101.29449155862639,
+      "winner": "police",
+      "end_stages": [
+        "forward",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 48,
+      "arrived_hides": 5,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16J",
+      "factor": 1.1,
+      "seed": 12,
+      "duration_s": 101.2944915586264,
+      "winner": "police",
+      "end_stages": [
+        "forward",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 48,
+      "arrived_hides": 5,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16J",
+      "factor": 1.2,
+      "seed": 10,
+      "duration_s": 67.31385682572606,
+      "winner": "police",
+      "end_stages": [
+        "reverse_move",
+        "align"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 39,
+      "arrived_hides": 2,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "turn_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16J",
+      "factor": 1.2,
+      "seed": 11,
+      "duration_s": 67.31385682572606,
+      "winner": "police",
+      "end_stages": [
+        "reverse_move",
+        "align"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 39,
+      "arrived_hides": 2,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "turn_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16J",
+      "factor": 1.2,
+      "seed": 12,
+      "duration_s": 67.32060999043298,
+      "winner": "police",
+      "end_stages": [
+        "reverse_move",
+        "align"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011"
+      ],
+      "max_model_steps": 4955,
+      "max_candidates": 39,
+      "arrived_hides": 2,
+      "arrived_hide_nodes": null,
+      "arrived_hide_events": null,
+      "arrival_source": "unavailable_in_frozen_baseline",
+      "arrived_n062": null,
+      "planned_n062": 1,
+      "collision_kind": "turn_contact",
+      "collision_kind_source": "stored_terminal_stages_and_same_body_referee",
+      "collision": null,
+      "collision_details_available": false,
+      "measurement_source": "validated_frozen_16J_heldout"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.0,
+      "seed": 10,
+      "duration_s": 142.45724291233677,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "reverse_move",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 7,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 32.8999,
+          "node": "N062",
+          "original_node": "(7,6)"
+        },
+        {
+          "t": 86.2532,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 95.6346,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 103.115,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 116.8289,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 142.1146,
+          "node": "N011",
+          "original_node": "(2,1)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 142.45724291233677,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          0.501,
+          0.3990000312604387
+        ],
+        "separation_m": 6.252087730862499e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            0.501,
+            0.5890000625208773
+          ],
+          [
+            0.501,
+            0.3990000625208774
+          ],
+          [
+            0.699,
+            0.3990000625208774
+          ],
+          [
+            0.699,
+            0.5890000625208773
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            0.5882320625226374,
+            0.399
+          ],
+          [
+            0.39823206252263743,
+            0.399
+          ],
+          [
+            0.39823206252263743,
+            0.20099999999999998
+          ],
+          [
+            0.5882320625226374,
+            0.20099999999999998
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.0,
+      "seed": 11,
+      "duration_s": 163.57478923853947,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "forward",
+        "forward"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 9,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 32.8999,
+          "node": "N062",
+          "original_node": "(7,6)"
+        },
+        {
+          "t": 86.2532,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 95.6346,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 103.115,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 116.8289,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 124.1746,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 137.9279,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 163.215,
+          "node": "N011",
+          "original_node": "(2,1)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 163.57478923853947,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          0.501,
+          0.3990000266146269
+        ],
+        "separation_m": 5.32292538935053e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            0.699,
+            0.39900005322925397
+          ],
+          [
+            0.699,
+            0.589000053229254
+          ],
+          [
+            0.501,
+            0.589000053229254
+          ],
+          [
+            0.501,
+            0.39900005322925386
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            0.38719205323096945,
+            0.20099999999999993
+          ],
+          [
+            0.5771920532309694,
+            0.20100000000000004
+          ],
+          [
+            0.5771920532309694,
+            0.399
+          ],
+          [
+            0.38719205323096934,
+            0.3989999999999999
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.0,
+      "seed": 12,
+      "duration_s": 146.78538482832352,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "forward",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N012",
+        "N011"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 9,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N011",
+        "N038",
+        "N012"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 32.8999,
+          "node": "N062",
+          "original_node": "(7,6)"
+        },
+        {
+          "t": 86.2332,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 95.6346,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 103.115,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 116.8289,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 124.1746,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 137.9279,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 144.7131,
+          "node": "N012",
+          "original_node": "(3,1)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 146.78538482832352,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          1.1009999713859906,
+          0.2010000000000001
+        ],
+        "separation_m": 5.722801876828498e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            1.100999942771981,
+            0.39900000000000013
+          ],
+          [
+            0.9109999427719809,
+            0.3989999999999999
+          ],
+          [
+            0.9109999427719812,
+            0.20099999999999987
+          ],
+          [
+            1.100999942771981,
+            0.2010000000000001
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            1.101,
+            0.3029557015687541
+          ],
+          [
+            1.101,
+            0.11295570156875413
+          ],
+          [
+            1.299,
+            0.11295570156875422
+          ],
+          [
+            1.299,
+            0.30295570156875423
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.1,
+      "seed": 10,
+      "duration_s": 100.48819153182417,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "forward",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 5,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 31.8399,
+          "node": "N062",
+          "original_node": "(7,6)"
+        },
+        {
+          "t": 82.6332,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 91.2746,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 98.315,
+          "node": "N011",
+          "original_node": "(2,1)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 100.48819153182417,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          1.1009999811117308,
+          0.20099999999999998
+        ],
+        "separation_m": 3.777653811987136e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            1.1009999622234619,
+            0.399
+          ],
+          [
+            0.9109999622234619,
+            0.399
+          ],
+          [
+            0.9109999622234619,
+            0.20099999999999998
+          ],
+          [
+            1.1009999622234619,
+            0.20099999999999998
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            1.101,
+            0.20722994988970664
+          ],
+          [
+            1.101,
+            0.017229949889706633
+          ],
+          [
+            1.299,
+            0.017229949889706667
+          ],
+          [
+            1.299,
+            0.2072299498897067
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.1,
+      "seed": 11,
+      "duration_s": 101.29449155862639,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "forward",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 5,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 31.8399,
+          "node": "N062",
+          "original_node": "(7,6)"
+        },
+        {
+          "t": 82.6332,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 91.2746,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 99.115,
+          "node": "N011",
+          "original_node": "(2,1)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 101.29449155862639,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          1.1009999665849484,
+          0.20099999999999998
+        ],
+        "separation_m": 6.683010300712056e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            1.100999933169897,
+            0.399
+          ],
+          [
+            0.910999933169897,
+            0.399
+          ],
+          [
+            0.910999933169897,
+            0.20099999999999998
+          ],
+          [
+            1.100999933169897,
+            0.20099999999999998
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            1.101,
+            0.20295223169088303
+          ],
+          [
+            1.101,
+            0.012952231690883036
+          ],
+          [
+            1.299,
+            0.012952231690883071
+          ],
+          [
+            1.299,
+            0.20295223169088308
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.1,
+      "seed": 12,
+      "duration_s": 101.2944915586264,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "forward",
+        "reverse_move"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011",
+        "N038"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 5,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062",
+        "N011",
+        "N038",
+        "N011"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 31.8399,
+          "node": "N062",
+          "original_node": "(7,6)"
+        },
+        {
+          "t": 82.6132,
+          "node": "N011",
+          "original_node": "(2,1)"
+        },
+        {
+          "t": 91.2746,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 99.115,
+          "node": "N011",
+          "original_node": "(2,1)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "translation_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 101.2944915586264,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          1.1009999665849484,
+          0.20099999999999998
+        ],
+        "separation_m": 6.683010300712056e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            1.100999933169897,
+            0.399
+          ],
+          [
+            0.910999933169897,
+            0.399
+          ],
+          [
+            0.910999933169897,
+            0.20099999999999998
+          ],
+          [
+            1.100999933169897,
+            0.20099999999999998
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            1.101,
+            0.20295223169087337
+          ],
+          [
+            1.101,
+            0.012952231690873377
+          ],
+          [
+            1.299,
+            0.012952231690873412
+          ],
+          [
+            1.299,
+            0.20295223169087342
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.2,
+      "seed": 10,
+      "duration_s": 67.31385682572606,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "reverse_move",
+        "align"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 2,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 30.9599,
+          "node": "N062",
+          "original_node": "(7,6)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "turn_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 67.31385682572606,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          2.578452383063045,
+          1.7363432316578866
+        ],
+        "separation_m": 6.03781069585807e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            2.388452352873991,
+            1.7009999999999998
+          ],
+          [
+            2.5784523528739913,
+            1.7009999999999998
+          ],
+          [
+            2.5784523528739913,
+            1.8989999999999998
+          ],
+          [
+            2.388452352873991,
+            1.8989999999999998
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            2.768612808872385,
+            1.6811796210297174
+          ],
+          [
+            2.8215475867479007,
+            1.863656768342113
+          ],
+          [
+            2.6313871911276143,
+            1.9188203789702822
+          ],
+          [
+            2.5784524132520987,
+            1.7363432316578866
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.2,
+      "seed": 11,
+      "duration_s": 67.31385682572606,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "reverse_move",
+        "align"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 2,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 30.9599,
+          "node": "N062",
+          "original_node": "(7,6)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "turn_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 67.31385682572606,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          2.578452383063045,
+          1.7363432316578866
+        ],
+        "separation_m": 6.03781069585807e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            2.388452352873991,
+            1.7009999999999998
+          ],
+          [
+            2.5784523528739913,
+            1.7009999999999998
+          ],
+          [
+            2.5784523528739913,
+            1.8989999999999998
+          ],
+          [
+            2.388452352873991,
+            1.8989999999999998
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            2.768612808872385,
+            1.6811796210297174
+          ],
+          [
+            2.8215475867479007,
+            1.863656768342113
+          ],
+          [
+            2.6313871911276143,
+            1.9188203789702822
+          ],
+          [
+            2.5784524132520987,
+            1.7363432316578866
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    },
+    {
+      "variant": "16K",
+      "factor": 1.2,
+      "seed": 12,
+      "duration_s": 67.32060999043298,
+      "winner": "police",
+      "end_reason": "capture_after_pickup",
+      "end_stages": [
+        "reverse_move",
+        "align"
+      ],
+      "plan_failures": 0,
+      "goals": [
+        "N038",
+        "N062",
+        "N011"
+      ],
+      "max_model_steps": 6729,
+      "max_candidates": 52,
+      "arrived_hides": 2,
+      "arrived_hide_nodes": [
+        "N038",
+        "N062"
+      ],
+      "arrived_hide_events": [
+        {
+          "t": 14.0352,
+          "node": "N038",
+          "original_node": "(1,4)"
+        },
+        {
+          "t": 30.9599,
+          "node": "N062",
+          "original_node": "(7,6)"
+        }
+      ],
+      "arrival_source": "actual_firmware_hide_events",
+      "arrived_n062": 1,
+      "planned_n062": 1,
+      "collision_kind": "turn_contact",
+      "collision_kind_source": "actual_body_contact_and_terminal_motion_stages",
+      "collision": {
+        "time_s": 67.32060999043298,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          2.583954862527877,
+          1.726791166683001
+        ],
+        "separation_m": 6.21013604984455e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            2.3939548314771963,
+            1.7009999999999998
+          ],
+          [
+            2.5839548314771967,
+            1.7009999999999998
+          ],
+          [
+            2.5839548314771967,
+            1.8989999999999998
+          ],
+          [
+            2.3939548314771963,
+            1.8989999999999998
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            2.7779299456749063,
+            1.6870711570629269
+          ],
+          [
+            2.816045106421442,
+            1.8732088333169987
+          ],
+          [
+            2.622070054325093,
+            1.9129288429370728
+          ],
+          [
+            2.5839548935785577,
+            1.726791166683001
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "collision_details_available": true,
+      "measurement_source": "new_ARM_C_simulation"
+    }
+  ],
+  "source_hashes": {
+    "16J": {
+      "Tools/TreasurePursuitSimulator/variants/16j/arm_bridge.c": "82d5f3f12e9d6392e7cd3f1363bf01fd6f50186ee7699d75e79b07bf3aab6bc5",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "38ca4434357a06db3a331bfc410212569e4145acfb8b2c5f2490d7828dcf267d",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "c46f235904a65b70612bdeb80a03b44f47b19bf0cf3c76b0cbceaab04761e42b",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "3b79648e04817e0e7d8ba3e240b97ccb20d40fcdd4b39fb27780a24e0cb15c44",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "6ea2b00d5a770d4d3cf231d31e5eaa391e4c9be1d5da0c42fa0e2c1058bca7eb",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.c": "8bb54d038dbc1b9f64e56cf6d65331311c862dfdad1f4db3ca41251723472827",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "e8bb99216ac9a328f9be05cd6449fab805831f42fb088e433885cda780e7cea9",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "b64d786e432287481fe3f2037e5f09a9c9a5114ff904bb9f6582d77efe147ae6",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "74550828eb5f9c672c3c1e5bd65f1192e8a32c035eb1cc094e2fc77444a21079",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "5a24f5ed560b6494b9da50111ba1bcac58ea539b7e5464e10bd3d174f7a25e6e",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.h": "2b79d3c16e26471c317a1883dde485e526006f7eee60c327179d8a39f319678c",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRolloutData.h": "6318c01c3ba7520029ed65095f364fcdf443b588aa3239e8e9212e81f3c8458d",
+      "STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+    },
+    "16K": {
+      "Tools/TreasurePursuitSimulator/variants/16k/arm_bridge.c": "266d872c5a584acff231f7194ee4365e26955b093974824a554cce35c3a112d9",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "38ca4434357a06db3a331bfc410212569e4145acfb8b2c5f2490d7828dcf267d",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "51257043fce93b78edfffa21deafd64b48494caed416511a28c30a15b3bfac4b",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "3b79648e04817e0e7d8ba3e240b97ccb20d40fcdd4b39fb27780a24e0cb15c44",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "f4b824fb397b5bc6e1708c2955832443ed3b6bac19b868a5933609f4e7644f63",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRefugePolicy.c": "1ff7d12e871973d1dfbb23820bc5c506b5a14b5298f51ba59446b873ce9d67cc",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.c": "280ab069f254e0aac4dd8b7ad0eaf2a22c68f141ee271bb91e37a2dd875e5f47",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "99a4dbf1e6fe97cca77d6394c3efa5e6858d9a151c8439f0a4e0a1c589beb79d",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "7b75c3e497cd91a5e0516b8c3d810ba8f5e9b9daf576593763f6ad12896caf9b",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "74550828eb5f9c672c3c1e5bd65f1192e8a32c035eb1cc094e2fc77444a21079",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "952c62b3fcb0559aedc8d1b26725d4126595f9869f597422c49d35484118cc71",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.h": "2b79d3c16e26471c317a1883dde485e526006f7eee60c327179d8a39f319678c",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRolloutData.h": "51709294b64b2c9baa9655538992f09830289da4b1d5c520cb3ef0faa6858ebf",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRefugePolicy.h": "21bbbd37b7d90f4c575a56c3680fc1352206aaf77afd7d73ebef84a16bab5f51",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRefugeMetadata.h": "7abed767c9562973f0e5d6ec5bcee531d6222927f3fdf973223c612acec0f6a3",
+      "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+    }
+  },
+  "complete": true
+}

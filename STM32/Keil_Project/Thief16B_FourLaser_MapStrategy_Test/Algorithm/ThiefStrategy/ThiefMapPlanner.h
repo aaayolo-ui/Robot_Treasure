@@ -2,12 +2,12 @@
 #define THIEF_MAP_PLANNER_H
 
 #include "MapRoutePlan.h"
+#include "ThiefRiskSearch.h"
 #include <stdint.h>
 
 #define THIEF_ROUTE_MAX_STEPS 48U
 #define THIEF_START_NODE 54U
 #define THIEF_TREASURE_NODE 5U
-#define THIEF_FIRST_HIDE_NODE 59U
 #define THIEF_START_BODY_HEADING 3U
 
 typedef struct {
@@ -30,10 +30,16 @@ typedef struct {
 } ThiefMapPose_t;
 
 uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan);
+void ThiefMapPlanner_Init(void);
+void ThiefMapPlanner_ObserveThreat(uint16_t node,uint8_t world_heading,
+    int16_t hit_x_mm,int16_t hit_y_mm,uint32_t now);
+const ThiefDecision_t *ThiefMapPlanner_Decision(void);
+uint32_t ThiefMapPlanner_WorkBytes(void);
 uint8_t ThiefMapPlanner_PlanEscape(uint16_t current_node,
                                    uint8_t body_heading,
                                    uint8_t threat_heading_mask,
                                    uint16_t previous_hide_node,
+                                   uint32_t now,
                                    ThiefRoutePlan_t *plan);
 void ThiefMapPlanner_PoseAtNode(uint16_t node_id, uint8_t body_heading,
                                 ThiefMapPose_t *pose);

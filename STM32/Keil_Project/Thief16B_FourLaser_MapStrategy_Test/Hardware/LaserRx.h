@@ -2,6 +2,7 @@
 #define LASER_RX_H
 #include <stdint.h>
 #include "stm32f1xx_hal.h"
+#define LASER_RX_POLL_BYTES_PER_CHANNEL 32U /* Bounded work after motion control. */
 typedef enum { LASER_FRONT=0, LASER_LEFT, LASER_RIGHT, LASER_REAR, LASER_COUNT } LaserDirection_t;
 typedef void (*LaserRx_Handler)(LaserDirection_t direction, uint16_t distance,
     uint8_t confidence, uint16_t firmware, uint32_t arrival_tick);

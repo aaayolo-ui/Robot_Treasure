@@ -21,3 +21,17 @@
 /STM32/Keil_Project/Thief16J_RefugeViability_FourLaser_Test/** -text
 /Tools/TreasurePursuitSimulator/variants/** -text
 /Tools/MapTimingLogger/datasets/*.log -text
+
+# Keep newly archived copied projects byte-identical to their recorded hashes.
+/STM32/Keil_Project/Gray12_FirstJunction_ReverseReturn_Test/** -text
+/STM32/Keil_Project/Gray12_FrontRearIR_ReverseFollow_Test/** -text
+/STM32/Keil_Project/Laser13A_ObstacleReverse_Test/** -text
+/STM32/Keil_Project/NewFront_Gray12_LineFollow_PD_Test/** -text
+/STM32/Keil_Project/NewFront_Gray12_LineFollow_P_Test/** -text
+/STM32/Keil_Project/Route15A_TwoRightTurn_Stop_Test/** -text
+/STM32/Keil_Project/Thief16B_DIN2_PB15_Compare_Test/** -text
+/STM32/Keil_Project/Thief16B_FrontLaserRestore_Compare_Test/** -text
+/STM32/Keil_Project/Thief16B_UARTCh4_MapStrategy_Test/** -text
+/STM32/Keil_Project/Thief16C_FourLaser_ControlTimingFix_Test/** -text
+/STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/** -text
+/STM32/Keil_Project/Thief16L_TerminalEscape_FourLaser_Test/** -text

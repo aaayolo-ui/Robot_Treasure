@@ -1,0 +1,2014 @@
+{
+  "status": "Rejected or non-improving development trial; not selected firmware",
+  "original_full_report_sha256": "e78e24b2cb88a5a61c77a5d0ed88889da59c35fd1ee7cb79cdd63309605f44da",
+  "config": {
+    "status": "使用2026-10-06单车全图记录的名义尺度速度和动作代价；双方共用该车基准，另一辆车未独立标定。",
+    "police_speed_m_s": 0.674,
+    "thief_speed_m_s": 0.674,
+    "turn90_s": 0.768,
+    "uturn_s": 0.282,
+    "pickup_s": 0.0,
+    "capture_center_distance_m": 0.18,
+    "sensor_range_m": 0.6,
+    "police_sensor_range_m": 0.6,
+    "sensor_half_angle_deg": 10.0,
+    "miss_probability": 0.05,
+    "horizon_s": 8.0,
+    "time_limit_s": 180.0,
+    "sensor_period_s": 0.02,
+    "frame_period_s": 0.02,
+    "pursuit_memory_s": 2.0,
+    "police_search_memory_s": 12.0,
+    "regional_search_enabled": true,
+    "police_local_search_cells": 5,
+    "police_deadend_check_cells": 4,
+    "police_deadend_recheck_s": 20.0,
+    "hide_max_straight_cells": 3,
+    "escape_risk_step_s": 0.05,
+    "escape_straight_limit_cells": 3,
+    "escape_safety_slack_s": 0.15,
+    "escape_replan_contact_s": 0.3,
+    "side_escape_cells": 2,
+    "hide_reaction_margin_s": 1.0,
+    "hide_escape_hold_s": 6.0,
+    "hide_revisit_cooldown_s": 30.0,
+    "seed": 7,
+    "measured_motion": {
+      "reverse_speed_ratio": 1.0074183976261128,
+      "forward_to_reverse_s": 0.282,
+      "reverse_to_forward_s": 0.274,
+      "source_log": "20261006-210343-671.log",
+      "source_sha256": "138576fbe7416f90fad63818e5d3d552f5463ef1cb8ddebf997868bcf0b09d12",
+      "turn90_method": "node-to-node residual after nominal straight travel; pooled for both modes",
+      "switch_method": "brake trigger to stable leading-gray; not first physical motion",
+      "dimension_calibrated": false,
+      "both_cars_share_one_vehicle_measurement": true,
+      "slow_case": {
+        "turn90_s": 0.8420476216757011,
+        "forward_to_reverse_s": 0.316,
+        "reverse_to_forward_s": 0.292
+      }
+    }
+  },
+  "source_hashes": {
+    "Tools/TreasurePursuitSimulator/variants/16k/arm_bridge.c": "266d872c5a584acff231f7194ee4365e26955b093974824a554cce35c3a112d9",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.c": "38ca4434357a06db3a331bfc410212569e4145acfb8b2c5f2490d7828dcf267d",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.c": "51257043fce93b78edfffa21deafd64b48494caed416511a28c30a15b3bfac4b",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.c": "3b79648e04817e0e7d8ba3e240b97ccb20d40fcdd4b39fb27780a24e0cb15c44",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.c": "f4b824fb397b5bc6e1708c2955832443ed3b6bac19b868a5933609f4e7644f63",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRefugePolicy.c": "1ff7d12e871973d1dfbb23820bc5c506b5a14b5298f51ba59446b873ce9d67cc",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.c": "5329ec70995351fa469601b74922d85d49b2264cc98b8346ec4c893c52318715",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "fed6f9528728a1e7dd31099520bf4ad2e5b5f9be11591bf5316b288a2dbbf7ab",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapTopology.h": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRiskSearch.h": "7b75c3e497cd91a5e0516b8c3d810ba8f5e9b9daf576593763f6ad12896caf9b",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefThreatModel.h": "74550828eb5f9c672c3c1e5bd65f1192e8a32c035eb1cc094e2fc77444a21079",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/FrontLaserGate.h": "952c62b3fcb0559aedc8d1b26725d4126595f9869f597422c49d35484118cc71",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRollout.h": "2b79d3c16e26471c317a1883dde485e526006f7eee60c327179d8a39f319678c",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRolloutData.h": "51709294b64b2c9baa9655538992f09830289da4b1d5c520cb3ef0faa6858ebf",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRefugePolicy.h": "21bbbd37b7d90f4c575a56c3680fc1352206aaf77afd7d73ebef84a16bab5f51",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/ThiefStrategy/ThiefRefugeMetadata.h": "e784f5e33f9104895430ea2057c79724670b2480dd14e37983902181d4043c5c",
+    "STM32/Keil_Project/Thief16K_RefugeAccess_FourLaser_Test/Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de"
+  },
+  "summary": [
+    {
+      "scenario": "完整开局 · 多出口藏匿 · 双方同速",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 23.266817470437626,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "完整开局 · 多出口藏匿 · 警方快20%",
+      "police_speed_m_s": 0.8088000000000001,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 21.300923648707666,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "不利停车对照 · N038同轴近距追击",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 1.0019630402047204,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "朝向对照 · N038纵向停车 · 右侧来车",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 20.953567906277044,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "不利停车对照 · N062后方来车后的强制拐弯",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 6.721825437941481,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "换线专项 · N038横向停车 · 上方两格来车",
+      "police_speed_m_s": 0.674,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 17.30665865591642,
+      "mean_max_escape_straight_m": 0.0
+    },
+    {
+      "scenario": "换线专项 · N038横向停车 · 上方来车快20%",
+      "police_speed_m_s": 0.8088000000000001,
+      "thief_speed_m_s": 0.674,
+      "runs": 1,
+      "police_wins": 1,
+      "thief_wins": 0,
+      "mean_duration_s": 2.0118179093986566,
+      "mean_max_escape_straight_m": 0.0
+    }
+  ],
+  "scope": "Actual16K ARM C planner; unchanged16F continuous bodies/referee; ideal localization/limited600mm sensors; no hardware proof. Hardwareproject inherits650mm, edge/gray masks, andgyro-graylocalization; these are not modeledbythis replay.",
+  "replays": [
+    {
+      "winner": "police",
+      "planner_events": [
+        {
+          "t": 0.0,
+          "kind": "initial",
+          "source": "16K ARM C",
+          "goal": "N038",
+          "plan": {
+            "from": [
+              54,
+              53,
+              44,
+              36,
+              35,
+              34,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              2,
+              1,
+              10,
+              20,
+              37
+            ],
+            "to": [
+              53,
+              44,
+              36,
+              35,
+              34,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              2,
+              1,
+              10,
+              20,
+              37,
+              38
+            ],
+            "length": [
+              300,
+              300,
+              300,
+              600,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              600,
+              600,
+              300,
+              300,
+              600,
+              300
+            ],
+            "step_heading": [
+              3,
+              0,
+              0,
+              3,
+              3,
+              3,
+              0,
+              0,
+              0,
+              3,
+              3,
+              3,
+              3,
+              2,
+              2,
+              2,
+              1
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              1,
+              0,
+              -1,
+              0,
+              0,
+              1,
+              0,
+              0,
+              -1,
+              0,
+              0,
+              0,
+              -1,
+              0,
+              0,
+              -1,
+              2
+            ],
+            "goal": 38,
+            "mode": 0,
+            "heading": 3,
+            "travel_ms": 14050,
+            "margin_ms": 6000,
+            "states": 182,
+            "threats": 0,
+            "degraded": false,
+            "reused_hide": false,
+            "escape_exits": 4,
+            "exit_branch_ms": 526,
+            "parking_heading": 1,
+            "first_pause_risk_ms": 6001,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 0,
+            "rollouts": 0,
+            "forecast_contact_ms": 0,
+            "terminal_escape_ms": 0,
+            "algorithm": 0,
+            "model_steps": 0,
+            "forecast_clear": false,
+            "entry_inferred": false,
+            "surviving_models": 0,
+            "risk_band_ms": 0,
+            "recovery_runway_ms": 0,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 4481
+          },
+          "original_route": [
+            "(11,5)",
+            "(10,5)",
+            "(10,4)",
+            "(10,3)",
+            "(9,3)",
+            "(8,3)",
+            "(7,3)",
+            "(6,3)",
+            "(6,2)",
+            "(6,1)",
+            "(6,0)",
+            "(5.5,0)",
+            "(5,0)",
+            "(4,0)",
+            "(3,0)",
+            "(2,0)",
+            "(1,0)",
+            "(0,0)",
+            "(0,1)",
+            "(0,2)",
+            "(0,3)",
+            "(0,4)",
+            "(1,4)"
+          ]
+        },
+        {
+          "t": 20.2,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N038",
+          "plan": {
+            "from": [
+              38,
+              39,
+              57,
+              56
+            ],
+            "to": [
+              39,
+              57,
+              56,
+              38
+            ],
+            "length": [
+              300,
+              600,
+              300,
+              600
+            ],
+            "step_heading": [
+              1,
+              2,
+              3,
+              0
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              1,
+              1,
+              1,
+              2
+            ],
+            "goal": 38,
+            "mode": 0,
+            "heading": 1,
+            "travel_ms": 5058,
+            "margin_ms": 5417,
+            "states": 52,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": true,
+            "escape_exits": 4,
+            "exit_branch_ms": 971,
+            "parking_heading": 0,
+            "first_pause_risk_ms": 20001,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 52,
+            "rollouts": 178,
+            "forecast_contact_ms": 5398,
+            "terminal_escape_ms": 5417,
+            "algorithm": 1,
+            "model_steps": 6729,
+            "forecast_clear": true,
+            "entry_inferred": true,
+            "surviving_models": 6,
+            "risk_band_ms": 20001,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 4481
+          },
+          "original_route": [
+            "(1,4)",
+            "(2,4)",
+            "(2,5)",
+            "(2,6)",
+            "(1,6)",
+            "(1,5)",
+            "(1,4)"
+          ]
+        }
+      ],
+      "duration_s": 23.266817470437626,
+      "collision": {
+        "time_s": 23.266817470437626,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          0.427148984220462,
+          1.7484330904286849
+        ],
+        "separation_m": 8.14086970613026e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            0.3462820561387407,
+            1.9291664479637434
+          ],
+          [
+            0.1728510564838865,
+            1.8515669095713148
+          ],
+          [
+            0.2537179438612593,
+            1.6708335520362563
+          ],
+          [
+            0.4271489435161135,
+            1.7484330904286849
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            0.42714902492481055,
+            1.7009999999999998
+          ],
+          [
+            0.6171490249248105,
+            1.7009999999999998
+          ],
+          [
+            0.6171490249248105,
+            1.8989999999999998
+          ],
+          [
+            0.42714902492481055,
+            1.8989999999999998
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "label": "完整开局 · 多出口藏匿 · 双方同速",
+      "fixture": null
+    },
+    {
+      "winner": "police",
+      "planner_events": [
+        {
+          "t": 0.0,
+          "kind": "initial",
+          "source": "16K ARM C",
+          "goal": "N038",
+          "plan": {
+            "from": [
+              54,
+              53,
+              44,
+              36,
+              35,
+              34,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              2,
+              1,
+              10,
+              20,
+              37
+            ],
+            "to": [
+              53,
+              44,
+              36,
+              35,
+              34,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              2,
+              1,
+              10,
+              20,
+              37,
+              38
+            ],
+            "length": [
+              300,
+              300,
+              300,
+              600,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              600,
+              600,
+              300,
+              300,
+              600,
+              300
+            ],
+            "step_heading": [
+              3,
+              0,
+              0,
+              3,
+              3,
+              3,
+              0,
+              0,
+              0,
+              3,
+              3,
+              3,
+              3,
+              2,
+              2,
+              2,
+              1
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              1,
+              0,
+              -1,
+              0,
+              0,
+              1,
+              0,
+              0,
+              -1,
+              0,
+              0,
+              0,
+              -1,
+              0,
+              0,
+              -1,
+              2
+            ],
+            "goal": 38,
+            "mode": 0,
+            "heading": 3,
+            "travel_ms": 14050,
+            "margin_ms": 6000,
+            "states": 182,
+            "threats": 0,
+            "degraded": false,
+            "reused_hide": false,
+            "escape_exits": 4,
+            "exit_branch_ms": 526,
+            "parking_heading": 1,
+            "first_pause_risk_ms": 6001,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 0,
+            "rollouts": 0,
+            "forecast_contact_ms": 0,
+            "terminal_escape_ms": 0,
+            "algorithm": 0,
+            "model_steps": 0,
+            "forecast_clear": false,
+            "entry_inferred": false,
+            "surviving_models": 0,
+            "risk_band_ms": 0,
+            "recovery_runway_ms": 0,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 4481
+          },
+          "original_route": [
+            "(11,5)",
+            "(10,5)",
+            "(10,4)",
+            "(10,3)",
+            "(9,3)",
+            "(8,3)",
+            "(7,3)",
+            "(6,3)",
+            "(6,2)",
+            "(6,1)",
+            "(6,0)",
+            "(5.5,0)",
+            "(5,0)",
+            "(4,0)",
+            "(3,0)",
+            "(2,0)",
+            "(1,0)",
+            "(0,0)",
+            "(0,1)",
+            "(0,2)",
+            "(0,3)",
+            "(0,4)",
+            "(1,4)"
+          ]
+        },
+        {
+          "t": 18.26,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N038",
+          "plan": {
+            "from": [
+              38,
+              39,
+              57,
+              56
+            ],
+            "to": [
+              39,
+              57,
+              56,
+              38
+            ],
+            "length": [
+              300,
+              600,
+              300,
+              600
+            ],
+            "step_heading": [
+              1,
+              2,
+              3,
+              0
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              1,
+              1,
+              1,
+              2
+            ],
+            "goal": 38,
+            "mode": 0,
+            "heading": 1,
+            "travel_ms": 5058,
+            "margin_ms": 5417,
+            "states": 52,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": true,
+            "escape_exits": 4,
+            "exit_branch_ms": 971,
+            "parking_heading": 0,
+            "first_pause_risk_ms": 20001,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 52,
+            "rollouts": 178,
+            "forecast_contact_ms": 5398,
+            "terminal_escape_ms": 5417,
+            "algorithm": 1,
+            "model_steps": 6729,
+            "forecast_clear": true,
+            "entry_inferred": true,
+            "surviving_models": 6,
+            "risk_band_ms": 20001,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 4481
+          },
+          "original_route": [
+            "(1,4)",
+            "(2,4)",
+            "(2,5)",
+            "(2,6)",
+            "(1,6)",
+            "(1,5)",
+            "(1,4)"
+          ]
+        }
+      ],
+      "duration_s": 21.300923648707666,
+      "collision": {
+        "time_s": 21.300923648707666,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          0.4446014539228313,
+          1.7009999999999998
+        ],
+        "separation_m": 1.3696000000784636e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            0.4446014470748313,
+            1.8989999999999998
+          ],
+          [
+            0.25460144707483123,
+            1.8989999999999998
+          ],
+          [
+            0.25460144707483123,
+            1.7009999999999998
+          ],
+          [
+            0.4446014470748313,
+            1.7009999999999998
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            0.4446014607708313,
+            1.7009999999999998
+          ],
+          [
+            0.6346014607708312,
+            1.7009999999999998
+          ],
+          [
+            0.6346014607708312,
+            1.8989999999999998
+          ],
+          [
+            0.4446014607708313,
+            1.8989999999999998
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "label": "完整开局 · 多出口藏匿 · 警方快20%",
+      "fixture": null
+    },
+    {
+      "winner": "police",
+      "planner_events": [
+        {
+          "t": 0.08,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N011",
+          "plan": {
+            "from": [
+              38,
+              37,
+              20,
+              10
+            ],
+            "to": [
+              37,
+              20,
+              10,
+              11
+            ],
+            "length": [
+              300,
+              600,
+              300,
+              600
+            ],
+            "step_heading": [
+              3,
+              0,
+              0,
+              1
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              1,
+              0,
+              1,
+              2
+            ],
+            "goal": 11,
+            "mode": 0,
+            "heading": 3,
+            "travel_ms": 4290,
+            "margin_ms": -3539,
+            "states": 25,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": false,
+            "escape_exits": 4,
+            "exit_branch_ms": 526,
+            "parking_heading": 1,
+            "first_pause_risk_ms": 751,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 25,
+            "rollouts": 150,
+            "forecast_contact_ms": 751,
+            "terminal_escape_ms": 0,
+            "algorithm": 1,
+            "model_steps": 750,
+            "forecast_clear": false,
+            "entry_inferred": false,
+            "surviving_models": 0,
+            "risk_band_ms": 720,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 2241
+          },
+          "original_route": [
+            "(1,4)",
+            "(0,4)",
+            "(0,3)",
+            "(0,2)",
+            "(0,1)",
+            "(1,1)",
+            "(2,1)"
+          ]
+        }
+      ],
+      "duration_s": 1.0019630402047204,
+      "collision": {
+        "time_s": 1.0019630402047204,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          0.12967688943471017,
+          1.1551679811500202
+        ],
+        "separation_m": 4.293461597359993e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            0.12967691090201816,
+            1.101
+          ],
+          [
+            0.31967691090201816,
+            1.101
+          ],
+          [
+            0.31967691090201816,
+            1.299
+          ],
+          [
+            0.12967691090201816,
+            1.299
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            -0.03944868931400278,
+            1.0685853854725156
+          ],
+          [
+            0.12967686796740216,
+            1.1551679811500202
+          ],
+          [
+            0.03944868931400278,
+            1.3314146145274843
+          ],
+          [
+            -0.12967686796740216,
+            1.2448320188499797
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "label": "不利停车对照 · N038同轴近距追击",
+      "fixture": [
+        38,
+        "W",
+        40,
+        "W"
+      ]
+    },
+    {
+      "winner": "police",
+      "planner_events": [
+        {
+          "t": 0.08,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N011",
+          "plan": {
+            "from": [
+              38,
+              56,
+              55,
+              37,
+              20,
+              10
+            ],
+            "to": [
+              56,
+              55,
+              37,
+              20,
+              10,
+              11
+            ],
+            "length": [
+              600,
+              300,
+              600,
+              600,
+              300,
+              600
+            ],
+            "step_heading": [
+              2,
+              3,
+              0,
+              0,
+              0,
+              1
+            ],
+            "step_mode": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "action": [
+              1,
+              1,
+              0,
+              0,
+              1,
+              2
+            ],
+            "goal": 11,
+            "mode": 1,
+            "heading": 2,
+            "travel_ms": 6804,
+            "margin_ms": -4868,
+            "states": 35,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": false,
+            "escape_exits": 4,
+            "exit_branch_ms": 971,
+            "parking_heading": 3,
+            "first_pause_risk_ms": 1936,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 35,
+            "rollouts": 138,
+            "forecast_contact_ms": 1936,
+            "terminal_escape_ms": 0,
+            "algorithm": 1,
+            "model_steps": 1671,
+            "forecast_clear": false,
+            "entry_inferred": false,
+            "surviving_models": 3,
+            "risk_band_ms": 1920,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 2241
+          },
+          "original_route": [
+            "(1,4)",
+            "(1,5)",
+            "(1,6)",
+            "(0,6)",
+            "(0,5)",
+            "(0,4)",
+            "(0,3)",
+            "(0,2)",
+            "(0,1)",
+            "(1,1)",
+            "(2,1)"
+          ]
+        },
+        {
+          "t": 9.48,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N011",
+          "plan": {
+            "from": [
+              11,
+              12,
+              23,
+              31,
+              32,
+              14,
+              4,
+              3,
+              2,
+              1,
+              10
+            ],
+            "to": [
+              12,
+              23,
+              31,
+              32,
+              14,
+              4,
+              3,
+              2,
+              1,
+              10,
+              11
+            ],
+            "length": [
+              300,
+              300,
+              300,
+              600,
+              600,
+              300,
+              300,
+              600,
+              600,
+              300,
+              600
+            ],
+            "step_heading": [
+              1,
+              2,
+              2,
+              1,
+              0,
+              0,
+              3,
+              3,
+              3,
+              2,
+              1
+            ],
+            "step_mode": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "action": [
+              1,
+              0,
+              -1,
+              -1,
+              0,
+              -1,
+              0,
+              0,
+              -1,
+              -1,
+              2
+            ],
+            "goal": 11,
+            "mode": 1,
+            "heading": 1,
+            "travel_ms": 11760,
+            "margin_ms": -8662,
+            "states": 30,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": true,
+            "escape_exits": 4,
+            "exit_branch_ms": 971,
+            "parking_heading": 3,
+            "first_pause_risk_ms": 3098,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 30,
+            "rollouts": 69,
+            "forecast_contact_ms": 3098,
+            "terminal_escape_ms": 0,
+            "algorithm": 1,
+            "model_steps": 1238,
+            "forecast_clear": false,
+            "entry_inferred": true,
+            "surviving_models": 3,
+            "risk_band_ms": 3000,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 2241
+          },
+          "original_route": [
+            "(2,1)",
+            "(3,1)",
+            "(3,2)",
+            "(3,3)",
+            "(4,3)",
+            "(5,3)",
+            "(5,2)",
+            "(5,1)",
+            "(5,0)",
+            "(4,0)",
+            "(3,0)",
+            "(2,0)",
+            "(1,0)",
+            "(0,0)",
+            "(0,1)",
+            "(1,1)",
+            "(2,1)"
+          ]
+        }
+      ],
+      "duration_s": 20.953567906277044,
+      "collision": {
+        "time_s": 20.953567906277044,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          0.5024006389911018,
+          0.39643842962937115
+        ],
+        "separation_m": 6.125783291732745e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            0.5076665366539038,
+            0.19850846564114263
+          ],
+          [
+            0.6975993303799818,
+            0.2035615703706288
+          ],
+          [
+            0.6923334633460961,
+            0.4014915343588573
+          ],
+          [
+            0.5024006696200182,
+            0.39643842962937115
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            0.3124006083621852,
+            0.20099999999999998
+          ],
+          [
+            0.5024006083621853,
+            0.20099999999999998
+          ],
+          [
+            0.5024006083621853,
+            0.399
+          ],
+          [
+            0.3124006083621852,
+            0.399
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "label": "朝向对照 · N038纵向停车 · 右侧来车",
+      "fixture": [
+        38,
+        "N",
+        40,
+        "W"
+      ]
+    },
+    {
+      "winner": "police",
+      "planner_events": [
+        {
+          "t": 4.92,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N011",
+          "plan": {
+            "from": [
+              62,
+              63,
+              78,
+              77,
+              76,
+              70,
+              61,
+              49,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              13,
+              12
+            ],
+            "to": [
+              63,
+              78,
+              77,
+              76,
+              70,
+              61,
+              49,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              13,
+              12,
+              11
+            ],
+            "length": [
+              600,
+              600,
+              300,
+              600,
+              300,
+              300,
+              300,
+              600,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300
+            ],
+            "step_heading": [
+              1,
+              2,
+              3,
+              3,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3,
+              3,
+              2,
+              3,
+              3
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              1,
+              1,
+              0,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              -1,
+              0,
+              -1,
+              1,
+              0,
+              2
+            ],
+            "goal": 11,
+            "mode": 0,
+            "heading": 1,
+            "travel_ms": 13604,
+            "margin_ms": -12079,
+            "states": 19,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": false,
+            "escape_exits": 4,
+            "exit_branch_ms": 971,
+            "parking_heading": 3,
+            "first_pause_risk_ms": 1525,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 19,
+            "rollouts": 114,
+            "forecast_contact_ms": 1525,
+            "terminal_escape_ms": 0,
+            "algorithm": 1,
+            "model_steps": 570,
+            "forecast_clear": false,
+            "entry_inferred": true,
+            "surviving_models": 0,
+            "risk_band_ms": 1440,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 2241
+          },
+          "original_route": [
+            "(7,6)",
+            "(8,6)",
+            "(9,6)",
+            "(9,7)",
+            "(9,8)",
+            "(8,8)",
+            "(7,8)",
+            "(6,8)",
+            "(6,7)",
+            "(6,6)",
+            "(6,5)",
+            "(6,4)",
+            "(6,3)",
+            "(6,2)",
+            "(6,1)",
+            "(6,0)",
+            "(5.5,0)",
+            "(5,0)",
+            "(4,0)",
+            "(4,1)",
+            "(3,1)",
+            "(2,1)"
+          ]
+        }
+      ],
+      "duration_s": 6.721825437941481,
+      "collision": {
+        "time_s": 6.721825437941481,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          2.6009999765372154,
+          1.8989999999999998
+        ],
+        "separation_m": 4.692556743179921e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            2.4109999530744313,
+            1.7009999999999998
+          ],
+          [
+            2.6009999530744317,
+            1.7009999999999998
+          ],
+          [
+            2.6009999530744317,
+            1.8989999999999998
+          ],
+          [
+            2.4109999530744313,
+            1.8989999999999998
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            2.6009999999999995,
+            1.9378783451725716
+          ],
+          [
+            2.6009999999999995,
+            1.7478783451725717
+          ],
+          [
+            2.799,
+            1.7478783451725717
+          ],
+          [
+            2.799,
+            1.9378783451725716
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "label": "不利停车对照 · N062后方来车后的强制拐弯",
+      "fixture": [
+        62,
+        "E",
+        34,
+        "S"
+      ]
+    },
+    {
+      "winner": "police",
+      "planner_events": [
+        {
+          "t": 0.08,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N011",
+          "plan": {
+            "from": [
+              38,
+              39,
+              40,
+              46,
+              58,
+              59,
+              60,
+              69,
+              70,
+              61,
+              49,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              13,
+              12
+            ],
+            "to": [
+              39,
+              40,
+              46,
+              58,
+              59,
+              60,
+              69,
+              70,
+              61,
+              49,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              13,
+              12,
+              11
+            ],
+            "length": [
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              600,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300
+            ],
+            "step_heading": [
+              1,
+              1,
+              2,
+              2,
+              1,
+              1,
+              2,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3,
+              3,
+              2,
+              3,
+              3
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              0,
+              1,
+              0,
+              -1,
+              0,
+              1,
+              -1,
+              -1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              -1,
+              0,
+              -1,
+              1,
+              0,
+              2
+            ],
+            "goal": 11,
+            "mode": 0,
+            "heading": 1,
+            "travel_ms": 15143,
+            "margin_ms": -13208,
+            "states": 52,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": false,
+            "escape_exits": 4,
+            "exit_branch_ms": 971,
+            "parking_heading": 3,
+            "first_pause_risk_ms": 1935,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 52,
+            "rollouts": 143,
+            "forecast_contact_ms": 1935,
+            "terminal_escape_ms": 0,
+            "algorithm": 1,
+            "model_steps": 2708,
+            "forecast_clear": false,
+            "entry_inferred": false,
+            "surviving_models": 3,
+            "risk_band_ms": 1920,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 2241
+          },
+          "original_route": [
+            "(1,4)",
+            "(2,4)",
+            "(3,4)",
+            "(3,5)",
+            "(3,6)",
+            "(4,6)",
+            "(5,6)",
+            "(5,7)",
+            "(6,7)",
+            "(6,6)",
+            "(6,5)",
+            "(6,4)",
+            "(6,3)",
+            "(6,2)",
+            "(6,1)",
+            "(6,0)",
+            "(5.5,0)",
+            "(5,0)",
+            "(4,0)",
+            "(4,1)",
+            "(3,1)",
+            "(2,1)"
+          ]
+        },
+        {
+          "t": 15.38,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N038",
+          "plan": {
+            "from": [
+              11,
+              10,
+              20,
+              21
+            ],
+            "to": [
+              10,
+              20,
+              21,
+              38
+            ],
+            "length": [
+              600,
+              300,
+              300,
+              600
+            ],
+            "step_heading": [
+              3,
+              2,
+              1,
+              2
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              -1,
+              -1,
+              1,
+              2
+            ],
+            "goal": 38,
+            "mode": 0,
+            "heading": 3,
+            "travel_ms": 5058,
+            "margin_ms": -3872,
+            "states": 17,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": true,
+            "escape_exits": 4,
+            "exit_branch_ms": 971,
+            "parking_heading": 2,
+            "first_pause_risk_ms": 1186,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 17,
+            "rollouts": 102,
+            "forecast_contact_ms": 1186,
+            "terminal_escape_ms": 0,
+            "algorithm": 1,
+            "model_steps": 510,
+            "forecast_clear": false,
+            "entry_inferred": false,
+            "surviving_models": 0,
+            "risk_band_ms": 1080,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 4481
+          },
+          "original_route": [
+            "(2,1)",
+            "(1,1)",
+            "(0,1)",
+            "(0,2)",
+            "(1,2)",
+            "(1,3)",
+            "(1,4)"
+          ]
+        }
+      ],
+      "duration_s": 17.30665865591642,
+      "collision": {
+        "time_s": 17.30665865591642,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          0.09900003295616538,
+          0.3320159340878287
+        ],
+        "separation_m": 6.591233071839842e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            0.09900006591233075,
+            0.20099999999999998
+          ],
+          [
+            0.28900006591233074,
+            0.20099999999999998
+          ],
+          [
+            0.28900006591233074,
+            0.399
+          ],
+          [
+            0.09900006591233072,
+            0.399
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            -0.09900000000000002,
+            0.5220159340878288
+          ],
+          [
+            -0.09899999999999999,
+            0.3320159340878287
+          ],
+          [
+            0.09900000000000002,
+            0.3320159340878287
+          ],
+          [
+            0.09899999999999999,
+            0.5220159340878288
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "label": "换线专项 · N038横向停车 · 上方两格来车",
+      "fixture": [
+        38,
+        "E",
+        21,
+        "S"
+      ]
+    },
+    {
+      "winner": "police",
+      "planner_events": [
+        {
+          "t": 0.08,
+          "kind": "escape",
+          "source": "16K ARM C",
+          "goal": "N011",
+          "plan": {
+            "from": [
+              38,
+              39,
+              40,
+              46,
+              58,
+              59,
+              60,
+              69,
+              70,
+              61,
+              49,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              13,
+              12
+            ],
+            "to": [
+              39,
+              40,
+              46,
+              58,
+              59,
+              60,
+              69,
+              70,
+              61,
+              49,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              13,
+              12,
+              11
+            ],
+            "length": [
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              600,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300,
+              300
+            ],
+            "step_heading": [
+              1,
+              1,
+              2,
+              2,
+              1,
+              1,
+              2,
+              1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              3,
+              3,
+              2,
+              3,
+              3
+            ],
+            "step_mode": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "action": [
+              0,
+              1,
+              0,
+              -1,
+              0,
+              1,
+              -1,
+              -1,
+              0,
+              0,
+              0,
+              0,
+              0,
+              -1,
+              0,
+              -1,
+              1,
+              0,
+              2
+            ],
+            "goal": 11,
+            "mode": 0,
+            "heading": 1,
+            "travel_ms": 15143,
+            "margin_ms": -13221,
+            "states": 52,
+            "threats": 1,
+            "degraded": true,
+            "reused_hide": false,
+            "escape_exits": 4,
+            "exit_branch_ms": 971,
+            "parking_heading": 3,
+            "first_pause_risk_ms": 1922,
+            "approach_mask": 0,
+            "firmware_version": 1611,
+            "candidates": 52,
+            "rollouts": 143,
+            "forecast_contact_ms": 1922,
+            "terminal_escape_ms": 0,
+            "algorithm": 1,
+            "model_steps": 2708,
+            "forecast_clear": false,
+            "entry_inferred": false,
+            "surviving_models": 3,
+            "risk_band_ms": 1920,
+            "recovery_runway_ms": 883,
+            "refuge_class": 1,
+            "fast_escape_exits": 4,
+            "patrol_detection_ms": 2241
+          },
+          "original_route": [
+            "(1,4)",
+            "(2,4)",
+            "(3,4)",
+            "(3,5)",
+            "(3,6)",
+            "(4,6)",
+            "(5,6)",
+            "(5,7)",
+            "(6,7)",
+            "(6,6)",
+            "(6,5)",
+            "(6,4)",
+            "(6,3)",
+            "(6,2)",
+            "(6,1)",
+            "(6,0)",
+            "(5.5,0)",
+            "(5,0)",
+            "(4,0)",
+            "(4,1)",
+            "(3,1)",
+            "(2,1)"
+          ]
+        }
+      ],
+      "duration_s": 2.0118179093986566,
+      "collision": {
+        "time_s": 2.0118179093986566,
+        "geometry": "oriented_rectangles",
+        "contact_point_m": [
+          0.8009999625608171,
+          1.299
+        ],
+        "separation_m": 7.48783657300578e-08,
+        "tolerance_m": 1e-07,
+        "police_polygon_m": [
+          [
+            0.8009999251216341,
+            1.299
+          ],
+          [
+            0.6109999251216341,
+            1.299
+          ],
+          [
+            0.6109999251216341,
+            1.101
+          ],
+          [
+            0.8009999251216341,
+            1.101
+          ]
+        ],
+        "thief_polygon_m": [
+          [
+            0.8009999999999999,
+            1.425493270934695
+          ],
+          [
+            0.8009999999999999,
+            1.235493270934695
+          ],
+          [
+            0.9989999999999999,
+            1.235493270934695
+          ],
+          [
+            0.9989999999999999,
+            1.425493270934695
+          ]
+        ],
+        "body_dimensions_status": "用户确认采用资料名义值，未实测整车外包络"
+      },
+      "label": "换线专项 · N038横向停车 · 上方来车快20%",
+      "fixture": [
+        38,
+        "E",
+        21,
+        "S"
+      ]
+    }
+  ]
+}

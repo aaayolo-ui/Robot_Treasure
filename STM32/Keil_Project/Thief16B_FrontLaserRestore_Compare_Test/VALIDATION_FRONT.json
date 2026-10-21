@@ -1,0 +1,188 @@
+{
+  "status": "仅编译通过，尚未完成硬件验证",
+  "hardware_tested": false,
+  "new_project": "Thief16B_FrontLaserRestore_Compare_Test",
+  "parent_project": "Thief16B_DIN2_PB15_Compare_Test",
+  "parent_verified_report": "../Thief16B_DIN2_PB15_Compare_Test/Evidence/20261016_hardware_capture.md",
+  "parent_unchanged": true,
+  "build": {
+    "compiler": "ARMCC5.06 update5 build528",
+    "errors": 0,
+    "warnings": 0,
+    "code_bytes": 51040,
+    "ro_data_bytes": 148944,
+    "rw_data_bytes": 368,
+    "zi_data_bytes": 42296,
+    "flash_bytes": 200352,
+    "ram_bytes": 42664,
+    "axf_sha256": "e4c13edc1314ff8caf967ef0e95e3050264eb78bc1507cff0470e1da6d3da0bf",
+    "hex_sha256": "8f18f0dd390888080f23404e7fea7c8f7d3eafbe10f5442a32fcf6bea1d26073",
+    "hex_file_bytes": 562713
+  },
+  "CPU_tests": {
+    "uart": {
+      "test_checks": 1263,
+      "test_failures": 0,
+      "test_done": 1,
+      "test_first_line": 0
+    },
+    "pins": {
+      "checks": 71,
+      "failures": 0,
+      "calls": [
+        "MX_GPIO_Init",
+        "HAL_TIM_MspPostInit",
+        "HAL_TIM_MspPostInit",
+        "HAL_TIM_Encoder_MspInit",
+        "HAL_TIM_Encoder_MspInit",
+        "HAL_TIM_Encoder_MspInit",
+        "HAL_UART_MspInit",
+        "HAL_UART_MspInit",
+        "HAL_UART_MspInit",
+        "HAL_UART_MspInit",
+        "HAL_UART_MspInit",
+        "HAL_UART_MspDeInit",
+        "HAL_UART_MspDeInit",
+        "HAL_UART_MspDeInit",
+        "TreasureMotorSnapshot_ReadDIn2PinMap",
+        "TreasureMotorSnapshot_ReadDIn2PinMap"
+      ],
+      "axf_sha256": "e4c13edc1314ff8caf967ef0e95e3050264eb78bc1507cff0470e1da6d3da0bf",
+      "scope": "Actual linked GPIO/MSP and pin readback executed on emulated MMIO; not hardware proof",
+      "physical_interfaces_accessed": false
+    },
+    "treasure_gate": {
+      "test_checks": 5947,
+      "test_failures": 0,
+      "test_done": 1,
+      "test_first_line": 0
+    },
+    "integration": {
+      "parent_inputs_checked": 197,
+      "unchanged_copied_files": 187,
+      "adjusted_copied_files": [
+        ".gitignore",
+        "Hardware/LaserRx.c",
+        "MDK-ARM/RTE/_Thief16B_FrontLaserRestore_Compare_Test/RTE_Components.h",
+        "MDK-ARM/Thief16B_FrontLaserRestore_Compare_Test.uvprojx",
+        "Tests/run_algorithms.py",
+        "Tests/test_uart.c",
+        "Tests/verify_din2_pin_init.py",
+        "Thief16B_FrontLaserRestore_Compare_Test.ioc",
+        "User/App_ThiefStrategy.c",
+        "MDK-ARM/Thief16B_FrontLaserRestore_Compare_Test.uvoptx"
+      ],
+      "unique_keil_source_paths": 100,
+      "duplicate_sources": 0,
+      "parent_unchanged": true,
+      "front_receiver_restored": true,
+      "runtime_behavior_change": "Front UART2 RX restored after treasure; DIN2 stays PB15",
+      "not_physical_mux_proof": true
+    }
+  },
+  "copied_inputs": 197,
+  "unchanged_copied_files": 187,
+  "changed_copied_files": [
+    {
+      "source": ".gitignore",
+      "new_path": ".gitignore",
+      "source_sha256": "048614a8f1f85158765e31e6440e9f556e18551f86a413c751081c561e1fff10",
+      "new_sha256": "3c5e3ae09c33ffcd44d136e658872487c72dd5caa35c0b67c6b3ce13ec58b427",
+      "added_lines": 1,
+      "removed_lines": 1
+    },
+    {
+      "source": "Hardware/LaserRx.c",
+      "new_path": "Hardware/LaserRx.c",
+      "source_sha256": "d0dc38f3326f107943cee891fd4af3c9a9892541e8ea71e62686c373b805ea90",
+      "new_sha256": "4e0850010e456af2a2998b12b368920641407d1e10c341f57983081fa3ccd72f",
+      "added_lines": 3,
+      "removed_lines": 8
+    },
+    {
+      "source": "MDK-ARM/RTE/_Thief16B_DIN2_PB15_Compare_Test/RTE_Components.h",
+      "new_path": "MDK-ARM/RTE/_Thief16B_FrontLaserRestore_Compare_Test/RTE_Components.h",
+      "source_sha256": "d30aa328299637ef5a9a29701acf1fad3ff0a5f60a776d66843028ed0c6302f0",
+      "new_sha256": "5e16842fd1689f73fd1201015dd791913cbae400556feafeb541b8f4ed8f5ba0",
+      "added_lines": 2,
+      "removed_lines": 2
+    },
+    {
+      "source": "MDK-ARM/Thief16B_DIN2_PB15_Compare_Test.uvprojx",
+      "new_path": "MDK-ARM/Thief16B_FrontLaserRestore_Compare_Test.uvprojx",
+      "source_sha256": "9225a4fc4d8cd80026b30979ede11ff0ce3e68faae5430aca6f7e5e0cb812c0b",
+      "new_sha256": "0ff23e6364f0c91216afbfcc5059eafadcd36b5fcd88269b319f4f45c199a27b",
+      "added_lines": 4,
+      "removed_lines": 4
+    },
+    {
+      "source": "Tests/run_algorithms.py",
+      "new_path": "Tests/run_algorithms.py",
+      "source_sha256": "de007e18052413732fddad653990b90abbadd167c90725f758422825d71d16c9",
+      "new_sha256": "388abf0d60a37da31ce1cc9313f593235fa287826fce2decd1e9ffa50b1ffefe",
+      "added_lines": 1,
+      "removed_lines": 0
+    },
+    {
+      "source": "Tests/test_uart.c",
+      "new_path": "Tests/test_uart.c",
+      "source_sha256": "7df9ee89e0efff372609ac3e9039c8c54e413ad228c3d164ad63facbc96be23f",
+      "new_sha256": "17116fa1b31bd6a5f1e8463391e4b776939780e10abacad58f442b4af69c7760",
+      "added_lines": 68,
+      "removed_lines": 20
+    },
+    {
+      "source": "Tests/verify_din2_pin_init.py",
+      "new_path": "Tests/verify_din2_pin_init.py",
+      "source_sha256": "87ae57eb845699c7107ece3d169cd9699781c541fddeb722d4e95ba385dd0eaf",
+      "new_sha256": "a8b83071fee8b9e461f762cb88667660cb86447a4d7b122ef7767685c4bda9d4",
+      "added_lines": 1,
+      "removed_lines": 1
+    },
+    {
+      "source": "Thief16B_DIN2_PB15_Compare_Test.ioc",
+      "new_path": "Thief16B_FrontLaserRestore_Compare_Test.ioc",
+      "source_sha256": "ff2f5e1538b83fae755799d0e8fce2fe5284055716a89024941fd589b9e373cd",
+      "new_sha256": "f7775291785234cb626aec93e0ed197b067de008494110a1ecae5d7a5df1ae71",
+      "added_lines": 2,
+      "removed_lines": 2
+    },
+    {
+      "source": "User/App_ThiefStrategy.c",
+      "new_path": "User/App_ThiefStrategy.c",
+      "source_sha256": "e91c53a44f2fb315fa50ad59d717756989ff7d286fca70f56de73ae281696caf",
+      "new_sha256": "a814187f9f8464098df1533325f47e89ca52ed5c63b950770bb7b56b350554a1",
+      "added_lines": 3,
+      "removed_lines": 3
+    },
+    {
+      "source": "MDK-ARM/Thief16B_DIN2_PB15_Compare_Test.uvoptx",
+      "new_path": "MDK-ARM/Thief16B_FrontLaserRestore_Compare_Test.uvoptx",
+      "source_sha256": "dabe4c0788bb6d96595d443453e83acf1a56df06bed4e9ad30aed8333144f597",
+      "new_sha256": "7676157febbb8cf8c02602b64c853d13a9909de7ae4183eff2c8688dea9de6ae",
+      "added_lines": 1,
+      "removed_lines": 1
+    }
+  ],
+  "C_H_copy_diff": {
+    "added": 76,
+    "removed": 33
+  },
+  "runtime_C_H_diff": {
+    "added": 6,
+    "removed": 11
+  },
+  "runtime_change": "Restore front USART2 RX after treasure; maintain DIN2 at PB15",
+  "wiring_change_from_parent": false,
+  "motor_pid_route_parameters_changed": false,
+  "four_laser_policy": {
+    "start": "AFTER_N005",
+    "detection_mm": 650,
+    "outside_map_mask_preserved": true,
+    "work_budget_bytes_per_channel": 32
+  },
+  "not_flashed_by_agent": true,
+  "motors_not_started_by_agent": true,
+  "physical_interfaces_accessed_by_tests": false,
+  "known_limit": "CPU stubs and emulated MMIO cannot reproduce physical USART2/TIM5 output priority. Actual PA2 PWM and four-laser motion must be checked by a user-operated route capture."
+}

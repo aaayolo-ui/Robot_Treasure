@@ -1,0 +1,221 @@
+{
+  "date": "2026-10-14",
+  "project": "Thief16K_RefugeAccess_FourLaser_Test",
+  "method": "Actual ARMCC5 C programs executed in Unicorn Cortex-M3 CPU emulator",
+  "scope": "Offline source/algorithm/parser checks; no board, flashing, motors or real-time planner budget test",
+  "hardware_status": "仅编译通过，尚未完成硬件验证",
+  "source_hashes": {
+    "Algorithm/GrayCoordinate/gray_coordinate.c": "30362773539993b30b13554b9e2c51821796357c2a8723f15bc71999c50cc68a",
+    "Algorithm/GrayCoordinate/gray_coordinate.h": "8693ed6ce8767ddc7458baf698858594411da941a1259a2451e1c323f37a9a68",
+    "Algorithm/GrayPosition/gray_position.c": "92373c03f101e3e43ce0a68e53f2415860a3e778c56d9d927f7b80fb63857a2d",
+    "Algorithm/GrayPosition/gray_position.h": "e8e806a6a9e102dd5ecc9d66cace8dbe93609887240b20d00aa21c2eeea51a29",
+    "Algorithm/MapLocalization/MapLaserMask.c": "ed832f14e3e588648825eee64a6cdb1c0e92c7cde9f43d0c18c9a831c58d2af7",
+    "Algorithm/MapLocalization/MapLaserMask.h": "9b01f3e75930010f6dd5bef720a6a286ee9fab786cefd3d0423549c54afbfa91",
+    "Algorithm/MapLocalization/ThiefLocalization.c": "9025df3c2fada2d20232597d7f7aecd7774e5695b56254052e5d7095261f666b",
+    "Algorithm/MapLocalization/ThiefLocalization.h": "55cf7417eb80e89ae9f7466af5700858c042b26d152e2701c6f9dfb674a55a7a",
+    "Algorithm/MapLocalization/TreasureLaserStart.c": "7d5384b216af74a19b32c271396123556c45f6b56ebda89c4639f962069639ef",
+    "Algorithm/MapLocalization/TreasureLaserStart.h": "291f88d69a8e67faaff43d255d637e7abc6304208147fdec37f2b8f32cd3bd32",
+    "Algorithm/MapRoute/MapRouteNavigator.c": "aa3ac346d8bf742f92ef06f85b3029d26e753353f823bb3782f0a50a0889f3f2",
+    "Algorithm/MapRoute/MapRouteNavigator.h": "b1f2c6dfbecf8ac024255908b2c9917aff66836922f3ed6caf06421362a81239",
+    "Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+    "Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de",
+    "Algorithm/MapRoute/TreasureGrayMask.c": "f8a2ee94e37932facdff438c003b79c2dfd7e2966e8ff377d2311c0aba7dc49a",
+    "Algorithm/MapRoute/TreasureGrayMask.h": "92cb737ffa62c05a4c7e9e7ecc5a16beedf158365067270968da636e7154260b",
+    "Algorithm/SpeedPI/WheelSpeedPi.c": "f1b50234c4be60581dae2ae50884412f84b72a6e6f9178024a586e6a1a6cd669",
+    "Algorithm/SpeedPI/WheelSpeedPi.h": "44d207e3089df655a4184e58ad42eb6c783cededefaf527a7d2df7dcfa47b484",
+    "Algorithm/ThiefStrategy/FrontLaserGate.c": "f4b824fb397b5bc6e1708c2955832443ed3b6bac19b868a5933609f4e7644f63",
+    "Algorithm/ThiefStrategy/FrontLaserGate.h": "952c62b3fcb0559aedc8d1b26725d4126595f9869f597422c49d35484118cc71",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "38ca4434357a06db3a331bfc410212569e4145acfb8b2c5f2490d7828dcf267d",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+    "Algorithm/ThiefStrategy/ThiefMapTopology.h": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de",
+    "Algorithm/ThiefStrategy/ThiefRefugeMetadata.h": "7abed767c9562973f0e5d6ec5bcee531d6222927f3fdf973223c612acec0f6a3",
+    "Algorithm/ThiefStrategy/ThiefRefugePolicy.c": "1ff7d12e871973d1dfbb23820bc5c506b5a14b5298f51ba59446b873ce9d67cc",
+    "Algorithm/ThiefStrategy/ThiefRefugePolicy.h": "21bbbd37b7d90f4c575a56c3680fc1352206aaf77afd7d73ebef84a16bab5f51",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c": "51257043fce93b78edfffa21deafd64b48494caed416511a28c30a15b3bfac4b",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.h": "7b75c3e497cd91a5e0516b8c3d810ba8f5e9b9daf576593763f6ad12896caf9b",
+    "Algorithm/ThiefStrategy/ThiefRollout.c": "280ab069f254e0aac4dd8b7ad0eaf2a22c68f141ee271bb91e37a2dd875e5f47",
+    "Algorithm/ThiefStrategy/ThiefRollout.h": "2b79d3c16e26471c317a1883dde485e526006f7eee60c327179d8a39f319678c",
+    "Algorithm/ThiefStrategy/ThiefRolloutData.h": "51709294b64b2c9baa9655538992f09830289da4b1d5c520cb3ef0faa6858ebf",
+    "Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "99a4dbf1e6fe97cca77d6394c3efa5e6858d9a151c8439f0a4e0a1c589beb79d",
+    "Algorithm/ThiefStrategy/ThiefThreatModel.c": "3b79648e04817e0e7d8ba3e240b97ccb20d40fcdd4b39fb27780a24e0cb15c44",
+    "Algorithm/ThiefStrategy/ThiefThreatModel.h": "74550828eb5f9c672c3c1e5bd65f1192e8a32c035eb1cc094e2fc77444a21079",
+    "Hardware/LaserRx.c": "4e0850010e456af2a2998b12b368920641407d1e10c341f57983081fa3ccd72f",
+    "Hardware/LaserRx.h": "9f5b26fc6d6a8bd7c7a0da11142ecc3c6b7c594a35ea31d5fc22dd9b57c96bbd",
+    "Tests/run_algorithms.py": "0f9b4bdbff92532a342a861773e872d7f810b99a253d8d305447332673e69c4b",
+    "Tests/stubs/main.h": "147104d6fab1d0c91bb02f663f9d07e186abdba451edf397fff5e2b58c4deff5",
+    "Tests/stubs/stm32f1xx_hal.h": "6ab7867212fd224dd52363b3a85aebe2755c1b557f6301972bcb81c727a15aa8",
+    "Tests/test_algorithms.c": "3f8de5e2daec53acba27e8eb21fac0f109160f511bdac6c8ef033c098f9ef188",
+    "Tests/test_edge_mask.c": "d530b4e713127f039bfc65fe9bbfa9fb7577e6f73022706c441e70fbb74e3234",
+    "Tests/test_localization.c": "dc3821d481e4abbd4a200dbc9d82be5bd5c53ba431a6ed0bfc84cacc203901e2",
+    "Tests/test_refuge_policy.c": "5b704d9140d15070c9f0ccbe9004254bdc511ea2d3e0a2648e48603654c01d6a",
+    "Tests/test_treasure_gray.c": "e89088de6592a92c9634d9c60b0d28702697d0ac5f3b12ba9d844b92211fe6b3",
+    "Tests/test_treasure_laser.c": "6a5002d64d70933ec328f77aeb819048531125f5e56daf2907957dd4cf336666",
+    "Tests/test_uart.c": "6659e70f5ef998f7e49022c3e257f07bce0fb1b03e72b654a23617672f7437e9"
+  },
+  "modes": [
+    {
+      "mode": "algorithms",
+      "arguments": [],
+      "exit_code": 0,
+      "host_elapsed_s": 4.922,
+      "result": {
+        "test_checks": 11625,
+        "test_failures": 0,
+        "test_done": 1,
+        "test_initial_goal": 38,
+        "test_initial_steps": 17,
+        "test_workspace_bytes": 15226,
+        "test_routes_accepted": 108,
+        "test_max_states": 361,
+        "initial_nodes": [
+          54,
+          53,
+          44,
+          36,
+          35,
+          34,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          2,
+          1,
+          10,
+          20,
+          37,
+          38
+        ]
+      },
+      "compiler_warnings": [],
+      "passed": true
+    },
+    {
+      "mode": "refuge_policy",
+      "arguments": [
+        "--refuge-policy"
+      ],
+      "exit_code": 0,
+      "host_elapsed_s": 1.703,
+      "result": {
+        "test_checks": 1620,
+        "test_failures": 0,
+        "test_done": 1,
+        "test_first_line": 0
+      },
+      "compiler_warnings": [],
+      "passed": true
+    },
+    {
+      "mode": "refuge_policy_off",
+      "arguments": [
+        "--refuge-policy",
+        "--define=THIEF_REFUGE_POLICY=0"
+      ],
+      "exit_code": 0,
+      "host_elapsed_s": 1.719,
+      "result": {
+        "test_checks": 1620,
+        "test_failures": 0,
+        "test_done": 1,
+        "test_first_line": 0
+      },
+      "compiler_warnings": [],
+      "passed": true
+    },
+    {
+      "mode": "localization",
+      "arguments": [
+        "--localization"
+      ],
+      "exit_code": 0,
+      "host_elapsed_s": 3.046,
+      "result": {
+        "test_checks": 5579,
+        "test_failures": 0,
+        "test_done": 1,
+        "test_routes": 62,
+        "test_confirmed_nodes": 464,
+        "test_first_line": 0,
+        "test_first_error": 0,
+        "test_first_from": 0,
+        "test_first_to": 0,
+        "test_first_phase": 0
+      },
+      "compiler_warnings": [],
+      "passed": true
+    },
+    {
+      "mode": "treasure_gray",
+      "arguments": [
+        "--treasure-gray"
+      ],
+      "exit_code": 0,
+      "host_elapsed_s": 2.188,
+      "result": {
+        "test_checks": 196829,
+        "test_failures": 0,
+        "test_done": 1,
+        "test_first_line": 0,
+        "test_patterns": 32768
+      },
+      "compiler_warnings": [],
+      "passed": true
+    },
+    {
+      "mode": "edge_mask",
+      "arguments": [
+        "--edge-mask"
+      ],
+      "exit_code": 0,
+      "host_elapsed_s": 1.953,
+      "result": {
+        "test_checks": 2297,
+        "test_failures": 0,
+        "test_done": 1,
+        "test_first_line": 0,
+        "test_node_poses": 704,
+        "test_midpoint_poses": 848
+      },
+      "compiler_warnings": [],
+      "passed": true
+    },
+    {
+      "mode": "treasure_laser",
+      "arguments": [
+        "--treasure-laser"
+      ],
+      "exit_code": 0,
+      "host_elapsed_s": 1.969,
+      "result": {
+        "test_checks": 5947,
+        "test_failures": 0,
+        "test_done": 1,
+        "test_first_line": 0
+      },
+      "compiler_warnings": [],
+      "passed": true
+    },
+    {
+      "mode": "uart",
+      "arguments": [
+        "--uart"
+      ],
+      "exit_code": 0,
+      "host_elapsed_s": 0.515,
+      "result": {
+        "test_checks": 824,
+        "test_failures": 0,
+        "test_done": 1
+      },
+      "compiler_warnings": [],
+      "passed": true
+    }
+  ],
+  "complete": true,
+  "source_unchanged_during_run": true,
+  "all_passed": true,
+  "total_checks": 226341,
+  "total_failures": 0
+}

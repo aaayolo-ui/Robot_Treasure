@@ -23,6 +23,7 @@ typedef struct {
   uint8_t history_count;
   uint8_t accepted_count;
   uint8_t distance_index;
+  uint8_t near_previous;
   uint16_t valid_distances[5];
   int16_t hit_x_mm;
   int16_t hit_y_mm;
@@ -33,7 +34,7 @@ void FrontLaserGate_Init(FrontLaserGate_t *gate);
 void FrontLaserGate_ResetEvidence(FrontLaserGate_t *gate);
 uint8_t FrontLaserGate_Observe(FrontLaserGate_t *gate,
                                const ThiefMapPose_t *pose,
-                               uint8_t hiding,
+                               uint8_t detection_enabled,
                                uint16_t distance_mm,
                                uint8_t confidence,
                                uint16_t firmware);

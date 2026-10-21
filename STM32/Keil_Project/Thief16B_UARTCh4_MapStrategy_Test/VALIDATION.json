@@ -1,0 +1,683 @@
+{
+  "date": "2026-10-17",
+  "project": "Thief16B_UARTCh4_MapStrategy_Test",
+  "status": "已完成实车开机四路接收与停车状态验证；尚未完成RUN4行驶及取宝后避障验证",
+  "compiler": "ARMCC5.06 update5 build528",
+  "build_errors": 0,
+  "build_warnings": 0,
+  "memory_bytes": {
+    "code": 53912,
+    "ro": 149632,
+    "rw": 428,
+    "zi": 41836
+  },
+  "axf_sha256": "ab6e3f56f7437b4f08da150c70dabf9d78159ddb4649611c01bd125d65bf64a8",
+  "hex_sha256": "4dffaadf0daf5b80936bcd8f3f9fe12d3ae7ead5e3c670803d945d85b744b36b",
+  "code_checks": {
+    "test_checks": 22938,
+    "test_failures": 0,
+    "test_first_line": 0,
+    "test_done": 1,
+    "completed": true,
+    "diagnostics": [],
+    "source_sha256": {
+      "Tests\\test_uartch4.c": "7142c72b6e3f4ab2f07d8a76c9c7b62c26890a3bda1ea2afc796d13a52bf4161",
+      "Hardware\\UartCh4.c": "f9645614cf20387eeec3a951af7ebfe38ace042aaa985b0ffa447bff93ec37a1",
+      "Hardware\\LaserRx.c": "49e0fd0abcd7b1d4091cbfc1a004a15f06c61e805bc374ae369853eb3ed86733",
+      "Algorithm\\LaserMux\\AI1811Mux.c": "add00192a144847f090f2a7af2f6f31e6401643fd7d471ee78500dab8a0b2a00"
+    },
+    "scope": "ARMCC5 UART-CH4 transport and decoder on CPU fixtures; not real module or motor proof"
+  },
+  "source_and_project_isolation": {
+    "checks": 407,
+    "failures": 0,
+    "baseline_files_unchanged": 202,
+    "keil_inputs": 104,
+    "scope": "Source and project configuration only; no hardware or serial access"
+  },
+  "hardware_state": {
+    "running_version_flashed": true,
+    "real_module_protocol_verified": false,
+    "real_vehicle_run_verified": false,
+    "user_requested_no_more_staged_stationary_tests": true,
+    "owned_stationary_capture_stopped": true,
+    "old_capture_raw_log_preserved": true,
+    "serial_commands_sent_by_agent": false,
+    "motors_started_by_agent": false,
+    "user_reported_module_supply_v": 3.3,
+    "user_reported_module_ground_offset_v": 0.0009,
+    "user_reported_idle_m_tx_v": 3.3,
+    "user_reported_no_movement": true,
+    "running_version_identity_confirmed": true,
+    "no_start_cause_confirmed": false,
+    "no_start_capture": "Tools/MapTimingLogger/logs/UARTCh4_NoStart_20261017-205654-731/20261017-205655-724.log",
+    "no_start_capture_bytes_observed": 0,
+    "run2_firmware_identity_confirmed": true,
+    "run2_application_config_failure_confirmed": true,
+    "run2_missing_ack_physical_cause_confirmed": false,
+    "run2_evidence": "Evidence/20261017_run2_config_failed.json",
+    "wiring_confirmed_by_user": true,
+    "bluetooth_log_reception_confirmed_on_run2": true,
+    "run3_firmware_identity_confirmed": true,
+    "run3_four_channel_tagged_frame_samples_verified": true,
+    "run3_text_configuration_ack_received": false,
+    "current_version_hardware_pass": false,
+    "command_channel_transmission_verified": false,
+    "complete_contiguous_receive_stream_verified": false,
+    "current_version_boot_receive_ready_verified": true,
+    "current_version_parked_state_verified": true,
+    "run4_boot_evidence": "Evidence/20261017_run4_boot_ready.json"
+  },
+  "runtime": {
+    "main_uart": "USART1 remap PB6/PB7 115200",
+    "children": "1=front 2=left 3=right 4=rear 115200",
+    "usart2_initialized": false,
+    "uart4_initialized": false,
+    "motor_d_pwm": "PA2/TIM5_CH3",
+    "din2": "PB15",
+    "encoder_b_b": "PB14",
+    "startup": "Passive 115200, all four channels >=3 CRC-valid frames, >=20ms first-to-last and <=250ms age within 1200ms; FRAMES4 ready without configuration writes. Otherwise ACK configuration fallback; manual KEY2 only.",
+    "data_gate": "Only after treasure; 650mm and map-edge mask retained",
+    "poll_budget_bytes": 128,
+    "frame_checks": "Channel tag, AA05, eight bytes, additive checksum, 250ms freshness",
+    "preserved": "All existing Control/Algorithm source files and original motor/encoder/gyro drivers",
+    "startup_progress": "Independent debug output serviced during boot waits; stopped READY/FAULT status repeats every second; rejected KEY2 gives reason",
+    "startup_trace": "32 attempts max, first 24 raw bytes, errors and ACK outcome; parked-only, failed-init trace may repeat after 15s",
+    "uart_error_recovery": "Do not rearm erroneous byte completion before HAL ErrorCallback",
+    "pre_treasure_data": "Only private link-proof callback; no strategy input, then clear decoder and disable receive until treasure",
+    "readiness_sources": "FRAMES4 proves receive service; ACK is the existing configuration fallback; NONE blocks start",
+    "command_ack_uncertainty": "FRAMES4 does not prove MCU-to-module command reception"
+  },
+  "limitations": [
+    "Four-channel receive readiness verified on real car at boot; configuration command ACK, all binary/framing edge cases and moving reception not fully validated",
+    "GPIO/pin symptoms are not oscilloscope or unique physical root-cause proof",
+    "Software checks do not prove completed vehicle run or successful repair"
+  ],
+  "firmware_revision": "UARTCH4_RUN4",
+  "build_log": "MDK-ARM/build_uartch4_run4.log",
+  "startup_update_scope": "Readiness from actual validated receive service rather than requiring only text ACK; preserved manual start, treasure gate, route, motor control and localization protections",
+  "previous_firmware_observation": {
+    "observed_firmware": "UARTCH4_RUN2",
+    "raw_source": "F:\\Robot_Treasure\\Tools\\MapTimingLogger\\logs\\UARTCh4_Run2_LinkRecovery_20261017-211826-409\\20261017-211827-244.log",
+    "snapshot_bytes": 244668,
+    "snapshot_sha256": "3931ecca568a9c28247ee7da916492f1667e95f65d30e4679f40a5b4590f6e1e",
+    "complete_status_count": 188,
+    "last_status": {
+      "mcu_ms": "177919",
+      "state": "FAULT",
+      "ready": "0",
+      "fault": "2",
+      "reason": "UARTCH4_CONFIG_FAILED",
+      "key_lock": "0",
+      "plan": "0",
+      "pwm": "0,0,0,0",
+      "stby": "0"
+    },
+    "confirmed": "Application rejected startup because expansion configuration did not obtain its required ACK; snapshot shows PWM 0,0,0,0 and STBY 0",
+    "not_confirmed": [
+      "Physical cause of missing ACK",
+      "Correct lossless four-sensor module framing",
+      "Completed vehicle run"
+    ],
+    "serial_errors_observed": [
+      0,
+      474,
+      980
+    ]
+  },
+  "run3_observation": {
+    "observed_firmware": "UARTCH4_RUN3",
+    "raw_source": "F:\\Robot_Treasure\\Tools\\MapTimingLogger\\logs\\UARTCh4_Run2_LinkRecovery_20261017-211826-409\\20261017-211827-244.log",
+    "snapshot_bytes": 351504,
+    "snapshot_sha256": "2df8b827575fe8064ab314f62ebe53b55b20c7fce18f71926c95c6857c124fb5",
+    "attempts": [
+      {
+        "i": 0,
+        "baud": 115200,
+        "channel": 0,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 222,
+        "errors": 0,
+        "mask": 0,
+        "ms": 120,
+        "hex": "AF3223AA0568007F0364FDAA0568007B0364F9AA0568007B"
+      },
+      {
+        "i": 1,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 525,
+        "errors": 0,
+        "mask": 0,
+        "ms": 300,
+        "hex": "700364EE3323AA056800490164C5AA056800490164C5AA05"
+      },
+      {
+        "i": 2,
+        "baud": 115200,
+        "channel": 0,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 214,
+        "errors": 0,
+        "mask": 0,
+        "ms": 121,
+        "hex": "3123AA056700350164B0AA056700350164B0AA0567003601"
+      },
+      {
+        "i": 3,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 528,
+        "errors": 0,
+        "mask": 0,
+        "ms": 301,
+        "hex": "0164B1AA056700360164B1AA056700360164B13223AA0568"
+      },
+      {
+        "i": 4,
+        "baud": 9600,
+        "channel": 0,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 53,
+        "errors": 48,
+        "mask": 6,
+        "ms": 130,
+        "hex": "F7FFF7FFF7"
+      },
+      {
+        "i": 5,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 525,
+        "errors": 0,
+        "mask": 0,
+        "ms": 300,
+        "hex": "6800780364F6AA056800780364F6AA0568006B0364E93323"
+      },
+      {
+        "i": 6,
+        "baud": 9600,
+        "channel": 0,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 59,
+        "errors": 47,
+        "mask": 6,
+        "ms": 134,
+        "hex": "FFFFFFF7F7FFFFFFF7F7F7F7"
+      },
+      {
+        "i": 7,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 528,
+        "errors": 0,
+        "mask": 0,
+        "ms": 301,
+        "hex": "3223AA056800780364F6AA056800730364F13323AA056800"
+      },
+      {
+        "i": 8,
+        "baud": 19200,
+        "channel": 0,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 108,
+        "errors": 100,
+        "mask": 6,
+        "ms": 125,
+        "hex": "7F7F7FFF7F7FFF7F"
+      },
+      {
+        "i": 9,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 524,
+        "errors": 0,
+        "mask": 0,
+        "ms": 300,
+        "hex": "680082036400AA056800730364F1AA056800730364F13323"
+      },
+      {
+        "i": 10,
+        "baud": 19200,
+        "channel": 0,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 105,
+        "errors": 91,
+        "mask": 6,
+        "ms": 127,
+        "hex": "FF7F7F7FFF7FFF7F7F7FFF7F7F7F"
+      },
+      {
+        "i": 11,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 528,
+        "errors": 0,
+        "mask": 0,
+        "ms": 301,
+        "hex": "AA0567003A0164B5AA0567003A0164B53223AA0568007303"
+      },
+      {
+        "i": 12,
+        "baud": 14400,
+        "channel": 0,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 65,
+        "errors": 63,
+        "mask": 2,
+        "ms": 126,
+        "hex": "DFDF"
+      },
+      {
+        "i": 13,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 525,
+        "errors": 0,
+        "mask": 0,
+        "ms": 300,
+        "hex": "0164B6AA0567003B0164B63223AA056800700364EEAA0568"
+      },
+      {
+        "i": 14,
+        "baud": 14400,
+        "channel": 0,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 67,
+        "errors": 64,
+        "mask": 2,
+        "ms": 129,
+        "hex": "FFDFFF"
+      },
+      {
+        "i": 15,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 512,
+        "errors": 0,
+        "mask": 0,
+        "ms": 301,
+        "hex": "3123AA056700370164B2AA056700360164B13223AA056800"
+      },
+      {
+        "i": 16,
+        "baud": 4800,
+        "channel": 0,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 5,
+        "errors": 5,
+        "mask": 2,
+        "ms": 140,
+        "hex": ""
+      },
+      {
+        "i": 17,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 526,
+        "errors": 0,
+        "mask": 0,
+        "ms": 300,
+        "hex": "6700340164AF3223AA056800750364F3AA0568009003640E"
+      },
+      {
+        "i": 18,
+        "baud": 4800,
+        "channel": 0,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 7,
+        "errors": 7,
+        "mask": 2,
+        "ms": 149,
+        "hex": ""
+      },
+      {
+        "i": 19,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 527,
+        "errors": 0,
+        "mask": 0,
+        "ms": 301,
+        "hex": "64B83423AA056800440164C0AA056800440164C03123AA05"
+      },
+      {
+        "i": 20,
+        "baud": 2400,
+        "channel": 0,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 0,
+        "errors": 0,
+        "mask": 0,
+        "ms": 161,
+        "hex": ""
+      },
+      {
+        "i": 21,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 525,
+        "errors": 0,
+        "mask": 0,
+        "ms": 300,
+        "hex": "6800780364F6AA056800780364F6AA056800750364F33323"
+      },
+      {
+        "i": 22,
+        "baud": 2400,
+        "channel": 0,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 0,
+        "errors": 0,
+        "mask": 0,
+        "ms": 178,
+        "hex": ""
+      },
+      {
+        "i": 23,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 527,
+        "errors": 0,
+        "mask": 0,
+        "ms": 301,
+        "hex": "6700300164ABAA0567002E0164A93223AA056800C8006443"
+      },
+      {
+        "i": 24,
+        "baud": 1200,
+        "channel": 0,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 0,
+        "errors": 0,
+        "mask": 0,
+        "ms": 203,
+        "hex": ""
+      },
+      {
+        "i": 25,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 0,
+        "tx": 1,
+        "ack": 0,
+        "rx": 514,
+        "errors": 0,
+        "mask": 0,
+        "ms": 300,
+        "hex": "3423AA056800440164C0AA056800440164C03123AA056700"
+      },
+      {
+        "i": 26,
+        "baud": 1200,
+        "channel": 0,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 0,
+        "errors": 0,
+        "mask": 0,
+        "ms": 236,
+        "hex": ""
+      },
+      {
+        "i": 27,
+        "baud": 115200,
+        "channel": 1,
+        "crlf": 1,
+        "tx": 1,
+        "ack": 0,
+        "rx": 528,
+        "errors": 0,
+        "mask": 0,
+        "ms": 301,
+        "hex": "3123AA0567002B0164A6AA056700280164A33223AA056800"
+      }
+    ],
+    "valid_explicitly_tagged_frames": [
+      {
+        "try": 0,
+        "channel": 2,
+        "distance_mm": 895,
+        "confidence": 100,
+        "hex": "AA0568007F0364FD"
+      },
+      {
+        "try": 0,
+        "channel": 2,
+        "distance_mm": 891,
+        "confidence": 100,
+        "hex": "AA0568007B0364F9"
+      },
+      {
+        "try": 1,
+        "channel": 3,
+        "distance_mm": 329,
+        "confidence": 100,
+        "hex": "AA056800490164C5"
+      },
+      {
+        "try": 1,
+        "channel": 3,
+        "distance_mm": 329,
+        "confidence": 100,
+        "hex": "AA056800490164C5"
+      },
+      {
+        "try": 2,
+        "channel": 1,
+        "distance_mm": 309,
+        "confidence": 100,
+        "hex": "AA056700350164B0"
+      },
+      {
+        "try": 2,
+        "channel": 1,
+        "distance_mm": 309,
+        "confidence": 100,
+        "hex": "AA056700350164B0"
+      },
+      {
+        "try": 7,
+        "channel": 2,
+        "distance_mm": 888,
+        "confidence": 100,
+        "hex": "AA056800780364F6"
+      },
+      {
+        "try": 7,
+        "channel": 2,
+        "distance_mm": 883,
+        "confidence": 100,
+        "hex": "AA056800730364F1"
+      },
+      {
+        "try": 13,
+        "channel": 2,
+        "distance_mm": 880,
+        "confidence": 100,
+        "hex": "AA056800700364EE"
+      },
+      {
+        "try": 15,
+        "channel": 1,
+        "distance_mm": 311,
+        "confidence": 100,
+        "hex": "AA056700370164B2"
+      },
+      {
+        "try": 15,
+        "channel": 1,
+        "distance_mm": 310,
+        "confidence": 100,
+        "hex": "AA056700360164B1"
+      },
+      {
+        "try": 17,
+        "channel": 2,
+        "distance_mm": 885,
+        "confidence": 100,
+        "hex": "AA056800750364F3"
+      },
+      {
+        "try": 17,
+        "channel": 2,
+        "distance_mm": 912,
+        "confidence": 100,
+        "hex": "AA0568009003640E"
+      },
+      {
+        "try": 19,
+        "channel": 4,
+        "distance_mm": 324,
+        "confidence": 100,
+        "hex": "AA056800440164C0"
+      },
+      {
+        "try": 19,
+        "channel": 4,
+        "distance_mm": 324,
+        "confidence": 100,
+        "hex": "AA056800440164C0"
+      },
+      {
+        "try": 23,
+        "channel": 2,
+        "distance_mm": 200,
+        "confidence": 100,
+        "hex": "AA056800C8006443"
+      },
+      {
+        "try": 25,
+        "channel": 4,
+        "distance_mm": 324,
+        "confidence": 100,
+        "hex": "AA056800440164C0"
+      },
+      {
+        "try": 25,
+        "channel": 4,
+        "distance_mm": 324,
+        "confidence": 100,
+        "hex": "AA056800440164C0"
+      },
+      {
+        "try": 27,
+        "channel": 1,
+        "distance_mm": 299,
+        "confidence": 100,
+        "hex": "AA0567002B0164A6"
+      },
+      {
+        "try": 27,
+        "channel": 1,
+        "distance_mm": 296,
+        "confidence": 100,
+        "hex": "AA056700280164A3"
+      }
+    ],
+    "directions_observed": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "confirmed": "All four channel tags have CRC-valid AI1811 binary frames in actual boot trace prefixes; 115200 attempts have zero errors but no expected OK,115200 token; app remained FAULT=2 PWM=0 STBY=0",
+    "limits": "Prefixes are separate samples, not a contiguous full stream. MCU-to-module command reception and complete vehicle behavior remain unproven."
+  },
+  "run4_boot_observation": {
+    "date": "2026-10-17",
+    "firmware": "UARTCH4_RUN4",
+    "scope": "Real-car boot receive readiness and parked state only; no route pass claimed",
+    "source_log": "Tools/MapTimingLogger/logs/UARTCh4_Run4_Boot_20261017-214913-958/20261017-214914-828.log",
+    "source_prefix_bytes_observed": 463860,
+    "source_prefix_sha256": "f087791280039595afe7825db757484485d25d6db8d93b5f2257290fdab04093",
+    "source_segment_start_byte": 375523,
+    "evidence_raw_bytes": 3424,
+    "evidence_raw_sha256": "ddf59616befa2cf60c009d6f55eaf88b4a95503c7de2856ee2fcbc60058108c6",
+    "source": "FRAMES4",
+    "baud": 115200,
+    "valid_frames_front_left_right_rear": [
+      5,
+      5,
+      3,
+      5
+    ],
+    "ready_status_lines": [
+      "BOOT_STATUS FW=UARTCH4_RUN4 T=1000 STATE=READY UARTCH4_READY=1 LINK=FRAMES4 FAULT=0 REASON=NONE KEY_LOCK=0 PLAN=1 PWM=0,0,0,0 STBY=0",
+      "BOOT_STATUS FW=UARTCH4_RUN4 T=2000 STATE=READY UARTCH4_READY=1 LINK=FRAMES4 FAULT=0 REASON=NONE KEY_LOCK=0 PLAN=1 PWM=0,0,0,0 STBY=0"
+    ],
+    "wheel_counter_reset_observed": true,
+    "all_observed_pwm_zero": true,
+    "stby_zero": true,
+    "route_plan": "N054 HEAD=W FIRST=N053 GOAL=N038",
+    "user_reported_placement": "N054 facing N053; reset",
+    "route_run_verified": false,
+    "configuration_command_ack_verified": false,
+    "serial_writes_by_agent": false,
+    "motors_started_by_agent": false,
+    "firmware_hex_sha256": "4dffaadf0daf5b80936bcd8f3f9fe12d3ae7ead5e3c670803d945d85b744b36b"
+  }
+}

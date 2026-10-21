@@ -1,0 +1,29 @@
+{
+  "observed_firmware": "UARTCH4_RUN2",
+  "raw_source": "F:\\Robot_Treasure\\Tools\\MapTimingLogger\\logs\\UARTCh4_Run2_LinkRecovery_20261017-211826-409\\20261017-211827-244.log",
+  "snapshot_bytes": 244668,
+  "snapshot_sha256": "3931ecca568a9c28247ee7da916492f1667e95f65d30e4679f40a5b4590f6e1e",
+  "complete_status_count": 188,
+  "last_status": {
+    "mcu_ms": "177919",
+    "state": "FAULT",
+    "ready": "0",
+    "fault": "2",
+    "reason": "UARTCH4_CONFIG_FAILED",
+    "key_lock": "0",
+    "plan": "0",
+    "pwm": "0,0,0,0",
+    "stby": "0"
+  },
+  "confirmed": "Application rejected startup because expansion configuration did not obtain its required ACK; snapshot shows PWM 0,0,0,0 and STBY 0",
+  "not_confirmed": [
+    "Physical cause of missing ACK",
+    "Correct lossless four-sensor module framing",
+    "Completed vehicle run"
+  ],
+  "serial_errors_observed": [
+    0,
+    474,
+    980
+  ]
+}

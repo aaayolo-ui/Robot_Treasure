@@ -1,0 +1,4 @@
+MDK-ARM/Thief16B_UARTCh4_MapStrategy_Test/
+MDK-ARM/build*.log
+Tests/build/
+__pycache__/

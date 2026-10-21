@@ -37,7 +37,7 @@
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
           <BinPath></BinPath>
-          <IncludePath></IncludePath>
+          <IncludePath>;../Algorithm/MapLocalization</IncludePath>
           <LibPath></LibPath>
           <RegisterFilePath></RegisterFilePath>
           <DBRegisterFilePath></DBRegisterFilePath>
@@ -336,7 +336,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Hardware;../Hardware/NCHD12;../System;../Control;../Algorithm/MapRoute;../Algorithm/SpeedPI;../Algorithm/GrayPosition;../Algorithm/GrayCoordinate;../User;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Algorithm/ThiefStrategy</IncludePath>
+              <IncludePath>../Core/Inc;../Hardware;../Hardware/NCHD12;../System;../Control;../Algorithm/MapRoute;../Algorithm/SpeedPI;../Algorithm/GrayPosition;../Algorithm/GrayCoordinate;../User;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;../Algorithm/ThiefStrategy;../Algorithm/MapLocalization</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -354,7 +354,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <IncludePath>;../Algorithm/MapLocalization</IncludePath>
             </VariousControls>
           </Aads>
           <LDads>
@@ -796,6 +796,16 @@
               <FilePath>..\Algorithm\MapRoute\MapRoutePlan.c</FilePath>
             </File>
             <File>
+              <FileName>TreasureGrayMask.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Algorithm/MapRoute/TreasureGrayMask.c</FilePath>
+            </File>
+            <File>
+              <FileName>TreasureGrayMask.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/MapRoute/TreasureGrayMask.h</FilePath>
+            </File>
+            <File>
               <FileName>ThiefMapPlanner.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Algorithm/ThiefStrategy/ThiefMapPlanner.c</FilePath>
@@ -814,6 +824,81 @@
               <FileName>FrontLaserGate.h</FileName>
               <FileType>5</FileType>
               <FilePath>../Algorithm/ThiefStrategy/FrontLaserGate.h</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefRiskSearch.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefRiskSearch.c</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefRiskSearch.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefRiskSearch.h</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefThreatModel.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefThreatModel.c</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefThreatModel.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefThreatModel.h</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefRollout.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefRollout.c</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefRollout.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefRollout.h</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefRolloutData.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefRolloutData.h</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefMapTopology.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefMapTopology.h</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefStrategyConfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/ThiefStrategy/ThiefStrategyConfig.h</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefLocalization.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Algorithm/MapLocalization/ThiefLocalization.c</FilePath>
+            </File>
+            <File>
+              <FileName>ThiefLocalization.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/MapLocalization/ThiefLocalization.h</FilePath>
+            </File>
+            <File>
+              <FileName>TreasureLaserStart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Algorithm/MapLocalization/TreasureLaserStart.c</FilePath>
+            </File>
+            <File>
+              <FileName>TreasureLaserStart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/MapLocalization/TreasureLaserStart.h</FilePath>
+            </File>
+            <File>
+              <FileName>MapLaserMask.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../Algorithm/MapLocalization/MapLaserMask.c</FilePath>
+            </File>
+            <File>
+              <FileName>MapLaserMask.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>../Algorithm/MapLocalization/MapLaserMask.h</FilePath>
             </File>
           </Files>
         </Group>

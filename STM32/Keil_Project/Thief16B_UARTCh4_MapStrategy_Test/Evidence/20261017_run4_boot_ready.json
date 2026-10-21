@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-17",
+  "firmware": "UARTCH4_RUN4",
+  "scope": "Real-car boot receive readiness and parked state only; no route pass claimed",
+  "source_log": "Tools/MapTimingLogger/logs/UARTCh4_Run4_Boot_20261017-214913-958/20261017-214914-828.log",
+  "source_prefix_bytes_observed": 463860,
+  "source_prefix_sha256": "f087791280039595afe7825db757484485d25d6db8d93b5f2257290fdab04093",
+  "source_segment_start_byte": 375523,
+  "evidence_raw_bytes": 3424,
+  "evidence_raw_sha256": "ddf59616befa2cf60c009d6f55eaf88b4a95503c7de2856ee2fcbc60058108c6",
+  "source": "FRAMES4",
+  "baud": 115200,
+  "valid_frames_front_left_right_rear": [
+    5,
+    5,
+    3,
+    5
+  ],
+  "ready_status_lines": [
+    "BOOT_STATUS FW=UARTCH4_RUN4 T=1000 STATE=READY UARTCH4_READY=1 LINK=FRAMES4 FAULT=0 REASON=NONE KEY_LOCK=0 PLAN=1 PWM=0,0,0,0 STBY=0",
+    "BOOT_STATUS FW=UARTCH4_RUN4 T=2000 STATE=READY UARTCH4_READY=1 LINK=FRAMES4 FAULT=0 REASON=NONE KEY_LOCK=0 PLAN=1 PWM=0,0,0,0 STBY=0"
+  ],
+  "wheel_counter_reset_observed": true,
+  "all_observed_pwm_zero": true,
+  "stby_zero": true,
+  "route_plan": "N054 HEAD=W FIRST=N053 GOAL=N038",
+  "user_reported_placement": "N054 facing N053; reset",
+  "route_run_verified": false,
+  "configuration_command_ack_verified": false,
+  "serial_writes_by_agent": false,
+  "motors_started_by_agent": false,
+  "firmware_hex_sha256": "4dffaadf0daf5b80936bcd8f3f9fe12d3ae7ead5e3c670803d945d85b744b36b"
+}

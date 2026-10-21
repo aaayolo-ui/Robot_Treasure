@@ -1,0 +1,452 @@
+#include "ThiefRollout.h"
+#include "ThiefMapPlanner.h"
+#include "ThiefThreatModel.h"
+#include "ThiefStrategyConfig.h"
+#include "ThiefMapTopology.h"
+#include "ThiefRolloutData.h"
+#include "ThiefRefugePolicy.h"
+#include <stddef.h>
+#include <string.h>
+
+/* Bounded maximin over loop-free alternatives and finite-observation pursuit
+ * models. These are hypotheses from a measured point, never world truth.
+ * Tables are immutable Flash; runtime uses integer coordinates and milliseconds. */
+typedef struct {
+  uint16_t node,to,total,elapsed,length,goal,last;
+  uint8_t h,mode,phase,turning,index,first,last_seen_h;
+} Actor;
+typedef struct {int32_t x,y;int16_t hx,hy;} Box;
+typedef struct {uint16_t contact,travel;int32_t escape,gap;uint8_t clear;} Score;
+static uint32_t exposed_at[88];
+static uint8_t exposed[88];
+static uint32_t model_steps;
+static uint16_t model_count;
+typedef struct {uint32_t last_clear,first_hit;uint16_t own,node;uint8_t clear_count,valid;} EntryEvidence;
+static EntryEvidence entry[4];
+static uint16_t entry_age;
+static uint8_t entry_heading=4U;
+
+/* Sorted, conservative contact-time bands. Once the earliest danger band
+ * ties, preserve more complete-transfer hypotheses and more time before the
+ * next mandatory corner. Coverage is not a measured probability of winning. */
+static int8_t RiskOrder(const uint16_t *a,const uint16_t *b,uint8_t ac,uint8_t bc,
+                        uint16_t ar,uint16_t br) {
+  uint8_t k;
+  if(THIEF_ROLLOUT_RISK_TIERS) {
+    if(a[0]!=b[0]) return a[0]>b[0]?1:-1;
+    if(ac!=bc) return ac>bc?1:-1;
+    if(ar!=br) return ar>br?1:-1;
+  }
+  for(k=0U;k<THIEF_ROLLOUT_MODELS;k++) if(a[k]!=b[k]) return a[k]>b[k]?1:-1;
+  return 0;
+}
+
+static int32_t Abs(int32_t x) {return x<0L?-x:x;}
+static uint16_t S(uint16_t n,uint8_t h,uint8_t mode) {return (uint16_t)((n-1U)*8U+h*2U+mode);}
+static uint32_t MoveMs(uint16_t mm,uint8_t mode,uint32_t speed) {
+  if(mode) speed=speed*THIEF_REVERSE_MM_S/THIEF_FORWARD_MM_S;
+  return ((uint32_t)mm*1000UL+speed-1UL)/speed;
+}
+static Box Pose(const Actor *a) {
+  Box b;
+  uint8_t body=(uint8_t)((a->h+2U*a->mode)%4U);
+  b.x=map_route_nodes[a->node-1U].x_half*150L;
+  b.y=map_route_nodes[a->node-1U].y_half*150L;
+  if(a->phase==2U) {
+    int32_t d=(int32_t)((uint32_t)a->length*a->elapsed/a->total);
+    if(a->h==0U) b.y-=d;else if(a->h==1U) b.x+=d;
+    else if(a->h==2U) b.y+=d;else b.x-=d;
+  }
+  b.hx=(body%2U)?95:99;b.hy=(body%2U)?99:95;
+  if(a->phase==1U && a->turning) b.hx=b.hy=138; /* ceil half diagonal */
+  return b;
+}
+static uint8_t Visible(Box a,Box b) {
+  int32_t dx=Abs(a.x-b.x),dy=Abs(a.y-b.y),major=dx>dy?dx:dy,minor=dx>dy?dy:dx;
+  return (uint8_t)(dx*dx+dy*dy<=360000L && minor*1000L<=major*177L);
+}
+static uint8_t Slab(int32_t d,int32_t v,int32_t r,int32_t *lo,int32_t *hi) {
+  int32_t a,b,l,h;
+  if(!v) return (uint8_t)(Abs(d)<=r);
+  a=(-r-d)*1024L/v;b=(r-d)*1024L/v;l=(a<b?a:b)-1L;h=(a>b?a:b)+1L;
+  if(l>*lo) *lo=l;if(h<*hi) *hi=h;
+  return (uint8_t)(*lo<=*hi);
+}
+static int32_t ContactFraction(Box a0,Box a1,Box b0,Box b1) {
+  int32_t lo=0L,hi=1024L;
+  int32_t rx=(a0.hx>a1.hx?a0.hx:a1.hx)+(b0.hx>b1.hx?b0.hx:b1.hx)+2L;
+  int32_t ry=(a0.hy>a1.hy?a0.hy:a1.hy)+(b0.hy>b1.hy?b0.hy:b1.hy)+2L;
+  int32_t dx=a0.x-b0.x,dy=a0.y-b0.y;
+  if(Slab(dx,(a1.x-b1.x)-dx,rx,&lo,&hi) &&
+      Slab(dy,(a1.y-b1.y)-dy,ry,&lo,&hi)) return lo<0L?0L:lo;
+  return -1L;
+}
+static int32_t FloorDiv(int32_t a,int32_t positive) {
+  return a>=0L?a/positive:-((-a+positive-1L)/positive);
+}
+/* Feasible fraction 0..256 of a linear half-plane c+v*t >= 0. */
+static uint8_t HalfPlane(int32_t c,int32_t v,int32_t *lo,int32_t *hi) {
+  int32_t t;
+  if(!v) return (uint8_t)(c>=0L);
+  if(v>0L) {t=-FloorDiv(c*256L,v);if(t>*lo) *lo=t;}
+  else {t=FloorDiv(c*256L,-v);if(t<*hi) *hi=t;}
+  return (uint8_t)(*lo<=*hi);
+}
+static uint8_t InRange(int32_t x,int32_t y,int32_t vx,int32_t vy,int32_t t) {
+  x+=vx*t/256L;y+=vy*t/256L;
+  return (uint8_t)(x*x+y*y<=360000L);
+}
+/* A committed move cannot change heading before its next phase endpoint.
+ * Check the complete relative-motion interval for any cardinal laser view,
+ * including a short glimpse that falls between coarse replay frames. */
+static uint8_t VisibleDuring(Box a0,Box a1,Box b0,Box b1) {
+  int32_t x=b0.x-a0.x,y=b0.y-a0.y;
+  int32_t vx=(b1.x-a1.x)-x,vy=(b1.y-a1.y)-y;
+  uint8_t h;
+  if(Visible(a0,b0) || Visible(a1,b1)) return 1U;
+  if((x>600L && x+vx>600L) || (x<-600L && x+vx<-600L) ||
+     (y>600L && y+vy>600L) || (y<-600L && y+vy<-600L)) return 0U;
+  for(h=0U;h<4U;h++) {
+    int32_t u=h%2U?x:y,v=h%2U?y:x;
+    int32_t du=h%2U?vx:vy,dv=h%2U?vy:vx,lo=0L,hi=256L,t;
+    if(h==0U || h==3U) {u=-u;du=-du;}
+    if(!HalfPlane(u,du,&lo,&hi) ||
+       !HalfPlane(u*177L-v*1000L,du*177L-dv*1000L,&lo,&hi) ||
+       !HalfPlane(u*177L+v*1000L,du*177L+dv*1000L,&lo,&hi)) continue;
+    t=lo;
+    if(vx || vy) {
+      int64_t dot=(int64_t)x*vx+(int64_t)y*vy;
+      int64_t squared=(int64_t)vx*vx+(int64_t)vy*vy;
+      t=(int32_t)(-dot*256L/squared);if(t<lo)t=lo;if(t>hi)t=hi;
+    }
+    if(InRange(x,y,vx,vy,t) || (t<hi && InRange(x,y,vx,vy,t+1L))) return 1U;
+  }
+  return 0U;
+}
+static void Command(Actor *a,uint8_t out,uint32_t speed,uint32_t turn) {
+  uint8_t d=(uint8_t)((out+4U-a->h)%4U);
+  uint32_t wait=0UL;
+  a->turning=(uint8_t)(d%2U);
+  if(d==2U) a->mode^=1U;
+  if(a->first==1U) {wait=0UL;a->first=0U;a->turning=0U;}
+  else if(a->first==2U) {
+    wait=d%2U?turn:d==2U?(a->mode?THIEF_SWITCH_TO_REV_MS:THIEF_SWITCH_TO_FWD_MS):0UL;
+    wait=wait>entry_age?wait-entry_age:0UL;a->first=0U;
+  }
+  else if(d%2U) wait=turn;
+  else if(d==2U) wait=a->mode?THIEF_SWITCH_TO_REV_MS:THIEF_SWITCH_TO_FWD_MS;
+  a->h=out;a->to=rollout_next[a->node-1U][out];
+  a->length=rollout_length[a->node-1U][out];a->elapsed=0U;
+  a->phase=(uint8_t)(wait?1U:2U);
+  a->total=(uint16_t)(wait?wait:MoveMs(a->length,a->mode,speed));
+}
+static void Advance(Actor *a,uint16_t dt,uint32_t speed) {
+  if(a->phase==3U) return;
+  a->elapsed=(uint16_t)(a->elapsed+dt);
+  if(a->elapsed<a->total) return;
+  a->elapsed=0U;
+  if(a->phase==1U) {a->phase=2U;a->total=(uint16_t)MoveMs(a->length,a->mode,speed);}
+  else if(a->phase==2U) {a->last=a->node;a->node=a->to;a->to=0U;a->phase=0U;}
+}
+static uint8_t Direction(uint16_t from,uint16_t to) {
+  uint8_t h;
+  for(h=0U;h<4U;h++) if(rollout_next[from-1U][h]==to) return h;
+  return 4U;
+}
+static uint8_t BestPolice(uint16_t node,uint8_t heading,uint8_t mode,uint16_t goal,uint32_t speed) {
+  uint32_t best=0xFFFFFFFFUL;uint8_t h,result=4U;
+  for(h=0U;h<4U;h++) {
+    uint16_t next=rollout_next[node-1U][h];uint8_t d=(uint8_t)((h+4U-heading)%4U),m;
+    uint32_t cost;
+    if(!next || (map_route_nodes[node-1U].kind==0U && d)) continue;
+    m=(uint8_t)(mode^(d==2U));
+    cost=MoveMs(rollout_length[node-1U][h],m,speed)+
+      (d%2U?THIEF_ROLLOUT_POLICE_TURN_MS:d==2U?(m?THIEF_SWITCH_TO_REV_MS:THIEF_SWITCH_TO_FWD_MS):0UL)+
+      rollout_police_ms[goal-1U][S(next,h,m)];
+    if(cost<best) {best=cost;result=h;}
+  }
+  return result;
+}
+static uint8_t Seed(Actor *p,int16_t x,int16_t y,Box own,uint32_t speed,uint8_t bias) {
+  uint16_t n;
+  for(n=1U;n<=88U;n++) if(map_route_nodes[n-1U].x_half*150==x && map_route_nodes[n-1U].y_half*150==y) {
+    memset(p,0,sizeof(*p));p->node=n;p->first=1U;
+    p->h=(uint8_t)(Abs(own.x-x)>Abs(own.y-y)?(own.x>x?1U:3U):(own.y>y?2U:0U));
+    if(entry_heading<4U) {
+      uint8_t h,choices[2],count=0U;
+      for(h=0U;h<4U;h++) if(h%2U!=entry_heading%2U && rollout_next[n-1U][h])
+        choices[count++]=(uint8_t)((h+2U)%4U);
+      if(count) {p->h=choices[bias%count];p->first=2U;}
+    }
+    p->last_seen_h=4U;return 1U;
+  }
+  for(n=0U;n<106U;n++) {
+    const MapRouteSegment_t *e=&map_route_segments[n];
+    int32_t ax=map_route_nodes[e->start-1U].x_half*150L,ay=map_route_nodes[e->start-1U].y_half*150L;
+    int32_t bx=map_route_nodes[e->end-1U].x_half*150L,by=map_route_nodes[e->end-1U].y_half*150L;
+    uint16_t progress=(uint16_t)(Abs(x-ax)+Abs(y-ay));uint8_t out=e->heading;
+    if((ax==bx && x==ax && y>=(ay<by?ay:by) && y<=(ay>by?ay:by)) ||
+       (ay==by && y==ay && x>=(ax<bx?ax:bx) && x<=(ax>bx?ax:bx))) {
+      memset(p,0,sizeof(*p));p->first=0U;p->last_seen_h=4U;
+      if(Abs(own.x-ax)+Abs(own.y-ay)<=Abs(own.x-bx)+Abs(own.y-by)) {
+        p->node=e->end;out=(uint8_t)((out+2U)%4U);progress=(uint16_t)(e->length_mm-progress);
+      } else p->node=e->start;
+      p->h=out;p->to=rollout_next[p->node-1U][out];p->length=e->length_mm;p->phase=2U;
+      p->total=(uint16_t)MoveMs(p->length,0U,speed);
+      p->elapsed=(uint16_t)((uint32_t)progress*p->total/p->length);return 1U;
+    }
+  }
+  return 0U;
+}
+static int32_t Reach(const Actor *p,uint16_t goal,uint32_t speed) {
+  int32_t value=rollout_police_ms[goal-1U][S(p->node,p->h,p->mode)];
+  if(p->phase==1U) value=(int32_t)(p->total-p->elapsed)+
+      (int32_t)MoveMs(p->length,p->mode,speed)+rollout_police_ms[goal-1U][S(p->to,p->h,p->mode)];
+  else if(p->phase==2U) value=(int32_t)(p->total-p->elapsed)+rollout_police_ms[goal-1U][S(p->to,p->h,p->mode)];
+  return value;
+}
+static void ObservedGoal(Actor *p,const Actor *b,uint8_t branch_bias) {
+  p->goal=b->phase==2U?b->to:b->node;
+  if(b->phase==2U) p->last_seen_h=b->h;
+  if(branch_bias>=2U && p->last_seen_h<4U) {
+    uint16_t at=b->phase==2U?b->to:b->node;
+    uint16_t ahead=rollout_next[at-1U][p->last_seen_h];
+    p->goal=ahead?ahead:at;
+  }
+}
+static Score Run(const RolloutRoute_t *r,uint8_t body,int16_t px,int16_t py,uint32_t speed,uint8_t branch_bias) {
+  Actor b,p;Score score;Box b0,p0,b1,p1;
+  uint8_t seen_count[88]={0};uint32_t now=0UL,limit=(uint32_t)r->time_ms+THIEF_ROLLOUT_HOLD_MS;
+  const uint8_t *path=&rollout_nodes[r->offset];
+  memset(&b,0,sizeof(b));memset(&score,0,sizeof(score));b.node=path[0];b.h=body;b.index=1U;
+  b.first=1U;score.travel=r->time_ms;score.contact=(uint16_t)limit;score.clear=1U;
+  if(!Seed(&p,px,py,Pose(&b),speed,branch_bias)) {score.clear=0U;score.contact=0U;score.escape=-6000L;return score;}
+  while(now<limit && now<THIEF_ROLLOUT_MAX_MS) {
+    uint16_t dt;uint8_t out;int32_t contact;
+    if(b.phase==0U) {
+      if(b.index>=r->count) b.phase=3U;
+      else {
+        uint8_t initial=b.first;
+        out=Direction(b.node,path[b.index++]);
+        Command(&b,out,THIEF_FORWARD_MM_S,THIEF_TURN_EXTRA_MS);
+        if(initial) {b.phase=1U;b.total=THIEF_STARTUP_MS;b.turning=0U;}
+      }
+    }
+    b0=Pose(&b);p0=Pose(&p);
+    if(Visible(p0,b0)) {
+      /* Project only the observed movement direction. Reading the route's
+       * next chosen turn here would give this hypothesis hidden intent. */
+      ObservedGoal(&p,&b,branch_bias);
+    }
+    if(p.phase==0U) {
+      if(!p.goal) p.goal=b.node; /* Initial sighting exists, including the root. */
+      if(p.node==p.goal) {
+        uint8_t best_visits=255U,k;
+        out=4U;
+        for(k=0U;k<4U;k++) {
+          uint8_t h=(uint8_t)(((p.last_seen_h<4U?p.last_seen_h:p.h)+(branch_bias?4U-k:k))%4U);
+          uint16_t next=rollout_next[p.node-1U][h];
+          if(!next || next==p.last || (map_route_nodes[p.node-1U].kind==0U && h!=p.h)) continue;
+          if(seen_count[next-1U]<best_visits) {best_visits=seen_count[next-1U];out=h;}
+        }
+        if(out==4U) out=(uint8_t)((p.h+2U)%4U);
+      } else out=BestPolice(p.node,p.h,p.mode,p.goal,speed);
+      if(out>3U || !rollout_next[p.node-1U][out]) break;
+      if(seen_count[p.node-1U]<254U) seen_count[p.node-1U]++;
+      Command(&p,out,speed,THIEF_ROLLOUT_POLICE_TURN_MS);
+    }
+    dt=(uint16_t)(limit-now);
+    if(b.phase!=3U && b.total-b.elapsed<dt) dt=(uint16_t)(b.total-b.elapsed);
+    if(p.total-p.elapsed<dt) dt=(uint16_t)(p.total-p.elapsed);
+    if(limit-now<dt) dt=(uint16_t)(limit-now);
+    if(!dt) break;
+    /* Endpoint pose before changing phases: the entire interval has constant
+     * velocity, or stationary centre plus a conservative rotating-body hull. */
+    b.elapsed=(uint16_t)(b.elapsed+dt);p.elapsed=(uint16_t)(p.elapsed+dt);
+    b1=Pose(&b);p1=Pose(&p);
+    b.elapsed=(uint16_t)(b.elapsed-dt);p.elapsed=(uint16_t)(p.elapsed-dt);
+    if(VisibleDuring(p0,p1,b0,b1)) ObservedGoal(&p,&b,branch_bias);
+    model_steps++;
+    contact=ContactFraction(b0,b1,p0,p1);
+    if(contact>=0L) {score.clear=0U;score.contact=(uint16_t)(now+(uint32_t)dt*contact/1024UL);break;}
+    Advance(&b,dt,THIEF_FORWARD_MM_S);Advance(&p,dt,speed);
+    now+=dt;
+  }
+  if(now<limit && score.clear) {score.clear=0U;score.contact=(uint16_t)now;}
+  score.escape=-6000L;
+  {
+    uint16_t goal=path[r->count-1U];uint8_t i;
+    for(i=0U;i<2U;i++) {
+      uint8_t h=(uint8_t)((r->body+2U*i)%4U);uint16_t branch=rollout_branch[goal-1U][h];
+      int32_t value;
+      if(!branch) continue;
+      value=Reach(&p,branch,speed)-(int32_t)thief_exit_branch_ms[goal-1U][h]-
+        (int32_t)(THIEF_CONTACT_MM*1000UL/speed)-(int32_t)THIEF_TIMING_GUARD_MS;
+      if(value>score.escape) score.escape=value;
+    }
+  }
+  b1=Pose(&b);p1=Pose(&p);
+  score.gap=Abs(b1.x-p1.x)+Abs(b1.y-p1.y);
+  return score;
+}
+void ThiefRollout_ResetEvidence(void) {memset(entry,0,sizeof(entry));entry_heading=4U;entry_age=0U;}
+void ThiefRollout_Init(void) {memset(exposed,0,sizeof(exposed));model_steps=0UL;model_count=0U;ThiefRollout_ResetEvidence();}
+void ThiefRollout_Evidence(uint16_t own,uint8_t h,uint16_t distance,uint8_t confidence,uint32_t tick) {
+  EntryEvidence *e;uint16_t n,mm,total=0U;uint8_t steps=0U;
+  if(!own || own>88U || h>3U) return;
+  e=&entry[h];
+  if(e->own!=own) {memset(e,0,sizeof(*e));e->own=own;}
+  if(confidence<20U || !distance) {e->clear_count=0U;e->valid=0U;return;}
+  if(distance>THIEF_LASER_MAX_MM) {
+    if(tick-e->last_clear>80UL) e->clear_count=0U;
+    if(e->clear_count<255U) e->clear_count++;e->last_clear=tick;e->valid=0U;return;
+  }
+  if(e->valid) return;
+  if(e->clear_count<4U || tick-e->last_clear>80UL) {e->clear_count=0U;return;}
+  e->clear_count=0U;n=own;
+  while(steps++<88U && total<=THIEF_LASER_MAX_MM) {
+    uint16_t next=rollout_next[n-1U][h];
+    if(!next) break;mm=rollout_length[n-1U][h];total=(uint16_t)(total+mm);n=next;
+    /* The ray was clear, then a car appeared at its ending junction. There
+     * is no road beyond it, so under the reference motion model the car
+     * arrived through a side arm and has to change travel direction. */
+    if(Abs((int32_t)distance-total)<=2L && !rollout_next[n-1U][h] &&
+        map_route_nodes[n-1U].degree>=2U) {
+      e->node=n;e->first_hit=tick;e->valid=1U;break;
+    }
+  }
+}
+void ThiefRollout_MarkExposed(uint16_t n,uint32_t now) {
+  if(!n || n>88U) return;exposed[n-1U]=1U;exposed_at[n-1U]=now;
+}
+uint8_t ThiefRollout_Select(uint16_t node,uint8_t body,uint8_t mask,uint16_t previous,uint32_t now,
+    uint16_t *path,uint16_t *count,uint8_t *mode,ThiefDecision_t *d) {
+  uint16_t a,z,i,best=0xFFFFU,evaluated=0U,max_shelter_delay=0U;int16_t px,py;
+  uint8_t best_clear=0U,best_cool=1U,best_coverage=0U,best_refuge=0U;uint16_t best_runway=0U;uint16_t best_contact=0U,best_time=65535U;
+  int32_t best_escape=-0x7FFFFFFFL,best_gap=-1L;
+  uint16_t best_rank[THIEF_ROLLOUT_MODELS]={0};
+  if(!node || node>88U || body>3U || !path || !count || !mode || !d) return 0U;
+  if(!ThiefThreatModel_Snapshot(now,&px,&py)) return 0U;
+  entry_heading=4U;entry_age=0U;
+  {
+    uint8_t h;
+    for(h=0U;h<4U;h++) if(THIEF_ENTRY_EVIDENCE && entry[h].valid && entry[h].own==node && now-entry[h].first_hit<=250UL &&
+        px==map_route_nodes[entry[h].node-1U].x_half*150 && py==map_route_nodes[entry[h].node-1U].y_half*150) {
+      entry_heading=h;entry_age=(uint16_t)(now-entry[h].first_hit);break;
+    }
+  }
+  a=rollout_start[(node-1U)*4U+body];z=rollout_start[(node-1U)*4U+body+1U];
+  for(i=1U;i<=88U;i++) {
+    uint16_t delay=ThiefRefugePolicy_PatrolDetectionMs(i);
+    if(ThiefRefugePolicy_FastExits(i)>=4U && delay>max_shelter_delay) max_shelter_delay=delay;
+  }
+  model_steps=0UL;model_count=0U;
+  for(i=a;i<z;i++) {
+    const RolloutRoute_t *r=&rollout_routes[i];uint16_t contact=65535U;uint8_t clear=1U,model,cool,pruned=0U;
+    uint16_t goal=rollout_nodes[r->offset+r->count-1U];
+    uint8_t refuge=ThiefRefugePolicy_Class(goal);
+    int32_t escape=0x7FFFFFFFL,gap=0x7FFFFFFFL;
+    uint16_t rank[THIEF_ROLLOUT_MODELS];int8_t rank_order=0,slack_order;uint8_t coverage=0U;
+    uint16_t runway=thief_straight_runway_mm[goal-1U][r->body];
+    uint16_t back=thief_straight_runway_mm[goal-1U][(r->body+2U)%4U];
+    if(!THIEF_REFUGE_RETURN_CYCLES && rollout_nodes[r->offset]==goal) continue;
+    if(rollout_nodes[r->offset]==goal &&
+        (ThiefRefugePolicy_FastExits(goal)<4U ||
+         ThiefRefugePolicy_PatrolDetectionMs(goal)<max_shelter_delay)) continue;
+    if(back<runway) runway=back;
+    if(mask&(1U<<r->first)) continue;
+    cool=(uint8_t)(goal==previous || (exposed[goal-1U] && now-exposed_at[goal-1U]<THIEF_HIDE_COOLDOWN_MS));
+    for(model=0U;model<THIEF_ROLLOUT_MODELS;model++) {
+      uint8_t branches=(uint8_t)(THIEF_ROLLOUT_MODELS/2U);
+      /* Fastest interception first. Unknown futures optimistically remain
+       * clear; if even that vector loses, completing this candidate cannot
+       * change the maximin/leximin result. This is an exact pruning rule. */
+      uint8_t scenario=(uint8_t)(THIEF_ROLLOUT_MODELS-1U-model),k;
+      uint16_t bound[THIEF_ROLLOUT_MODELS];
+      Score s=Run(r,body,px,py,scenario<branches?THIEF_FORWARD_MM_S:THIEF_POLICE_MAX_MM_S,(uint8_t)(scenario%branches));
+      model_count++;if(!s.clear) clear=0U;
+      rank[model]=s.clear?20001U:THIEF_ROLLOUT_RISK_TIERS?
+          (uint16_t)(s.contact/THIEF_ROLLOUT_TIME_BUCKET_MS*THIEF_ROLLOUT_TIME_BUCKET_MS):s.contact;
+      if(s.clear) coverage++;
+      if(s.contact<contact) contact=s.contact;
+      if(s.escape<escape) escape=s.escape;if(s.gap<gap) gap=s.gap;
+      if(THIEF_ROLLOUT_PRUNE && best!=0xFFFFU) {
+        for(k=0U;k<THIEF_ROLLOUT_MODELS;k++) bound[k]=k<=model?rank[k]:20001U;
+        for(k=1U;k<THIEF_ROLLOUT_MODELS;k++) {
+          uint16_t value=bound[k];uint8_t j=k;
+          while(j && bound[j-1U]>value) {bound[j]=bound[j-1U];j--;}
+          bound[j]=value;
+        }
+        if((best_clear && !clear) || (!best_clear && RiskOrder(bound,best_rank,
+            (uint8_t)(coverage+THIEF_ROLLOUT_MODELS-1U-model),best_coverage,
+            runway,best_runway)<0)) {pruned=1U;break;}
+      }
+    }
+    evaluated++;
+    if(pruned) continue;
+    /* Leximin retains the second/third worst futures when the first risky
+     * corner is common to many routes. Goal value after a modeled collision
+     * must not be used as if the car had reached that goal. */
+    for(model=1U;model<THIEF_ROLLOUT_MODELS;model++) {
+      uint16_t value=rank[model];uint8_t j=model;
+      while(j && rank[j-1U]>value) {rank[j]=rank[j-1U];j--;}
+      rank[j]=value;
+    }
+    rank_order=RiskOrder(rank,best_rank,coverage,best_coverage,runway,best_runway);
+    if(!clear) escape=0L;
+    if(rollout_nodes[r->offset]==goal &&
+        (!clear || escape<=(int32_t)(THIEF_HIDE_REACTION_MS+THIEF_TIMING_GUARD_MS))) continue;
+    slack_order=ThiefRefugePolicy_CompareSlack(escape,refuge,best_escape,best_refuge);
+    /* Clear transfers preserve larger dynamic terminal-slack bands; refuge
+     * class only breaks positive same-band ties.
+     * Only degraded decisions use the bounded uncertainty/coverage hierarchy.
+     * Long straight distance alone must never displace a clear transfer. */
+    if(best==0xFFFFU || clear>best_clear || (clear==best_clear &&
+       ((!clear && rank_order>0) || ((clear || rank_order==0) &&
+       (slack_order>0 || (slack_order==0 &&
+       (cool<best_cool || (cool==best_cool &&
+       (gap>best_gap || (gap==best_gap && r->time_ms<best_time)))))))))) {
+      best=i;best_coverage=coverage;best_runway=runway;best_clear=clear;best_contact=contact;best_escape=escape;best_cool=cool;best_gap=gap;best_time=r->time_ms;
+      best_refuge=refuge;
+      memcpy(best_rank,rank,sizeof(best_rank));
+    }
+  }
+  if(best==0xFFFFU) return 0U;
+  {
+    const RolloutRoute_t *r=&rollout_routes[best];uint16_t goal=rollout_nodes[r->offset+r->count-1U];
+    for(i=0U;i<r->count;i++) path[i]=rollout_nodes[r->offset+i];
+    *count=r->count;*mode=r->mode;memset(d,0,sizeof(*d));
+    d->goal_node=goal;d->travel_ms=r->time_ms;d->states_expanded=evaluated;d->threat_count=1U;
+    d->degraded=(uint8_t)(!best_clear || best_cool || best_escape<=0L);d->reused_hide=best_cool;
+    d->escape_exits=thief_exit_count[goal-1U];d->parking_heading=r->body;
+    d->exit_branch_ms=thief_exit_branch_ms[goal-1U][r->body];
+    d->worst_margin_ms=best_clear?best_escape:(int32_t)best_contact-(int32_t)r->time_ms;
+    d->first_pause_risk_ms=best_clear?20001U:best_contact;
+    d->candidates_evaluated=evaluated;d->model_rollouts=model_count;d->forecast_contact_ms=best_contact;
+    d->terminal_escape_ms=best_escape;d->planner_kind=1U;
+    d->model_steps=model_steps;d->forecast_clear=best_clear;
+    d->entry_inferred=(uint8_t)(entry_heading<4U);
+    d->surviving_models=best_coverage;d->risk_band_ms=best_rank[0];
+    d->recovery_runway_ms=(uint16_t)((uint32_t)best_runway*1000UL/
+        (THIEF_FORWARD_MM_S>THIEF_REVERSE_MM_S?THIEF_FORWARD_MM_S:THIEF_REVERSE_MM_S));
+    d->refuge_class=ThiefRefugePolicy_Class(goal);
+    d->fast_escape_exits=ThiefRefugePolicy_FastExits(goal);
+    d->patrol_detection_ms=ThiefRefugePolicy_PatrolDetectionMs(goal);
+  }
+  return 1U;
+}
+uint32_t ThiefRollout_WorkBytes(void) {return (uint32_t)(sizeof(exposed_at)+sizeof(exposed)+sizeof(model_steps)+sizeof(model_count)+sizeof(entry)+sizeof(entry_age)+sizeof(entry_heading));}
+#ifdef THIEF_ROLLOUT_TEST
+int8_t ThiefRollout_TestOrder(const uint16_t *a,const uint16_t *b,uint8_t ac,uint8_t bc,uint16_t ar,uint16_t br) {
+  return RiskOrder(a,b,ac,bc,ar,br);
+}
+uint8_t ThiefRollout_TestView(int32_t x0,int32_t y0,int32_t x1,int32_t y1) {
+  Box a={0,0,95,99},b0={x0,y0,95,99},b1={x1,y1,95,99};
+  return VisibleDuring(a,a,b0,b1);
+}
+int32_t ThiefRollout_TestSweep(int32_t x0,int32_t y0,int32_t x1,int32_t y1,uint8_t rotating) {
+  Box a0={x0,y0,95,99},a1={x1,y1,95,99},b={0,0,95,99};
+  if(rotating) b.hx=b.hy=138;
+  return ContactFraction(a0,a1,b,b);
+}
+#endif

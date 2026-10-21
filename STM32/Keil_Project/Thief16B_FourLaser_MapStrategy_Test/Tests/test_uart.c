@@ -36,7 +36,9 @@ void test_main(void)
  unsigned d,j,before;
  uint32_t bad,drop,errors;
  unsigned char frames[4][8];
- LaserRx_Init();check(LaserRx_IsEnabled());
+ LaserRx_Init();check(!LaserRx_IsEnabled());
+ for(d=0;d<4;d++) check(buffers[id(ports[d])]==0);
+ check(LaserRx_SetEnabled(1));
  for(d=0;d<4;d++) {
   unsigned sum=0;
   frames[d][0]=0xAA;frames[d][1]=5;frames[d][2]=123;frames[d][3]=0;
@@ -63,5 +65,23 @@ void test_main(void)
  byte(1,0xAA);check(LaserRx_SetEnabled(0));check(!LaserRx_IsEnabled());
  check(deinit[3]==0 && deinit[1]>0 && deinit[2]>0 && deinit[4]>0);
  check(LaserRx_SetEnabled(1));frame(1,305,0);LaserRx_Poll(handler);check(last[1]==305);
+ /* Four simultaneous backlogs cannot make one poll monopolize control.
+  * Ten frames=80bytes per channel. Each poll drains32bytes/four frames. */
+ {
+  unsigned baseline[4];
+  check(LASER_RX_POLL_BYTES_PER_CHANNEL==32U);
+  for(d=0;d<4;d++) {
+   baseline[d]=received[d];
+   for(j=0;j<10;j++) frame(d,400U+d,0);
+  }
+  LaserRx_Poll(handler);
+  for(d=0;d<4;d++) check(received[d]==baseline[d]+4U);
+  LaserRx_Poll(handler);
+  for(d=0;d<4;d++) check(received[d]==baseline[d]+8U);
+  LaserRx_Poll(handler);
+  for(d=0;d<4;d++) check(received[d]==baseline[d]+10U && last[d]==400U+d);
+  /* Enabled->enabled is a no-op: do not drop a partial frame on route start. */
+  frame(0,450,0);check(LaserRx_SetEnabled(1));LaserRx_Poll(handler);check(last[0]==450);
+ }
  test_done=1;while(1){}
 }

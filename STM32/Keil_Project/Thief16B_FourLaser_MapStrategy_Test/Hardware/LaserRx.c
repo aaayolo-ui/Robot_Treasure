@@ -32,7 +32,6 @@ void LaserRx_Init(void)
 {
   memset(channels,0,sizeof(channels));
   enabled=0U;
-  (void)LaserRx_SetEnabled(1U);
 }
 uint8_t LaserRx_IsEnabled(void) { return enabled; }
 uint8_t LaserRx_SetEnabled(uint8_t value)
@@ -41,8 +40,9 @@ uint8_t LaserRx_SetEnabled(uint8_t value)
   uint8_t stopped=1U;
   if(value && enabled) return 1U;
   enabled=0U;
-  /* All detection is stationary, as in 16A. Gate UART4 as well: PC10 is encoder A.
-   * Keep USART3 clock and TX alive for logs; abort only its RX transaction. */
+  /* Before treasure, keep the RX-only ports off. After treasure they stay on
+   * across routes. MSP touches PA3/PB7/PC11 only, never motor PWM PA2 or
+   * encoder PC10. Keep USART3 TX alive for logs; abort only its RX. */
   for(i=0;i<LASER_COUNT;i++) {
     (void)HAL_UART_AbortReceive(ports[i]);
     if(i!=LASER_REAR && HAL_UART_DeInit(ports[i])!=HAL_OK) stopped=0U;
@@ -120,7 +120,7 @@ static void Byte(LaserChannel *c, uint8_t b, uint32_t tick,
 void LaserRx_Poll(LaserRx_Handler handler)
 {
   int i;
-  uint8_t b;
+  uint8_t b, budget;
   uint32_t tick, irq;
   LaserChannel *c;
   if(!enabled) return;
@@ -132,7 +132,9 @@ void LaserRx_Poll(LaserRx_Handler handler)
       __set_PRIMASK(irq);
       if(handler) handler((LaserDirection_t)i,0U,0U,0U,HAL_GetTick());
     }
-    while(c->tail!=c->head) {
+    budget=LASER_RX_POLL_BYTES_PER_CHANNEL;
+    while(c->tail!=c->head && budget>0U) {
+      budget--;
       b=c->fifo[c->tail]; tick=c->tick[c->tail];
       c->tail=(uint16_t)((c->tail+1U)%FIFO_SIZE);
       if((uint32_t)(HAL_GetTick()-tick)>FRESH_MS) { c->count=0U; continue; }

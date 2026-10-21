@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-13",
+  "hardware_status": "仅编译通过，尚未完成硬件验证",
+  "scope": "N004<->N006 north-side outer two gray channels during translation",
+  "mask_module_reused_from": "F:\\Robot_Treasure\\STM32\\Keil_Project\\Gray12_MapFullRoute_TreasureMask_Test\\Algorithm\\MapRoute",
+  "mask_module_byte_identical": true,
+  "masked_before_position_and_classification": true,
+  "post_turn_alignment_uses_full_gray": true,
+  "south_side_real_branches_preserved": true,
+  "unchanged_low_level_sources_since_request": 117,
+  "build": {
+    "errors": 0,
+    "warnings": 0,
+    "code_bytes": 48892,
+    "ro_bytes": 148280,
+    "rw_bytes": 348,
+    "zi_bytes": 35036,
+    "flash_bytes": 197172,
+    "ram_bytes": 35384
+  },
+  "this_request_tests": {
+    "treasure_gray": {
+      "test_checks": 196829,
+      "test_failures": 0,
+      "test_done": 1,
+      "test_first_line": 0,
+      "test_patterns": 32768
+    },
+    "integration": {
+      "baseline_commit": "c15d11b9ed7382862fe2c03c15bd97bbcb2b17ed",
+      "strategy_files_identical_to_16j": [
+        "ThiefMapPlanner.c",
+        "ThiefMapPlanner.h",
+        "ThiefMapTopology.h",
+        "ThiefRiskSearch.c",
+        "ThiefRiskSearch.h",
+        "ThiefRollout.h",
+        "ThiefRolloutData.h",
+        "ThiefThreatModel.c",
+        "ThiefThreatModel.h"
+      ],
+      "strategy_files_adjusted_for_laser65": [
+        "FrontLaserGate.c",
+        "FrontLaserGate.h",
+        "ThiefRollout.c",
+        "ThiefStrategyConfig.h"
+      ],
+      "hardware_files_adjusted_for_laser65": [
+        "Hardware/LaserRx.c",
+        "Hardware/LaserRx.h"
+      ],
+      "protected_files_unchanged": 115,
+      "project_entries": 96,
+      "duplicate_sources": false,
+      "target_debug_flash_unchanged": true,
+      "laser_before_treasure_off": true,
+      "bounded_uart_poll": true,
+      "replan_mode": "settled_hide_only",
+      "boundary_mask_before_all_evidence": true,
+      "boundary_unmask_requires_fresh_frames": true,
+      "treasure_gray_module_identical_to_prior_full_route": true,
+      "treasure_gray_filters_before_position_and_branch": true,
+      "treasure_gray_post_turn_alignment_unmasked": true,
+      "hardware": false
+    }
+  },
+  "flashed": false,
+  "real_motors_run": false,
+  "staged": false,
+  "committed": false,
+  "pushed": false
+}

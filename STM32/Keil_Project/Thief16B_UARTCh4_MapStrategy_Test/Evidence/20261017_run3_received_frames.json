@@ -1,0 +1,522 @@
+{
+  "observed_firmware": "UARTCH4_RUN3",
+  "raw_source": "F:\\Robot_Treasure\\Tools\\MapTimingLogger\\logs\\UARTCh4_Run2_LinkRecovery_20261017-211826-409\\20261017-211827-244.log",
+  "snapshot_bytes": 351504,
+  "snapshot_sha256": "2df8b827575fe8064ab314f62ebe53b55b20c7fce18f71926c95c6857c124fb5",
+  "attempts": [
+    {
+      "i": 0,
+      "baud": 115200,
+      "channel": 0,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 222,
+      "errors": 0,
+      "mask": 0,
+      "ms": 120,
+      "hex": "AF3223AA0568007F0364FDAA0568007B0364F9AA0568007B"
+    },
+    {
+      "i": 1,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 525,
+      "errors": 0,
+      "mask": 0,
+      "ms": 300,
+      "hex": "700364EE3323AA056800490164C5AA056800490164C5AA05"
+    },
+    {
+      "i": 2,
+      "baud": 115200,
+      "channel": 0,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 214,
+      "errors": 0,
+      "mask": 0,
+      "ms": 121,
+      "hex": "3123AA056700350164B0AA056700350164B0AA0567003601"
+    },
+    {
+      "i": 3,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 528,
+      "errors": 0,
+      "mask": 0,
+      "ms": 301,
+      "hex": "0164B1AA056700360164B1AA056700360164B13223AA0568"
+    },
+    {
+      "i": 4,
+      "baud": 9600,
+      "channel": 0,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 53,
+      "errors": 48,
+      "mask": 6,
+      "ms": 130,
+      "hex": "F7FFF7FFF7"
+    },
+    {
+      "i": 5,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 525,
+      "errors": 0,
+      "mask": 0,
+      "ms": 300,
+      "hex": "6800780364F6AA056800780364F6AA0568006B0364E93323"
+    },
+    {
+      "i": 6,
+      "baud": 9600,
+      "channel": 0,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 59,
+      "errors": 47,
+      "mask": 6,
+      "ms": 134,
+      "hex": "FFFFFFF7F7FFFFFFF7F7F7F7"
+    },
+    {
+      "i": 7,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 528,
+      "errors": 0,
+      "mask": 0,
+      "ms": 301,
+      "hex": "3223AA056800780364F6AA056800730364F13323AA056800"
+    },
+    {
+      "i": 8,
+      "baud": 19200,
+      "channel": 0,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 108,
+      "errors": 100,
+      "mask": 6,
+      "ms": 125,
+      "hex": "7F7F7FFF7F7FFF7F"
+    },
+    {
+      "i": 9,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 524,
+      "errors": 0,
+      "mask": 0,
+      "ms": 300,
+      "hex": "680082036400AA056800730364F1AA056800730364F13323"
+    },
+    {
+      "i": 10,
+      "baud": 19200,
+      "channel": 0,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 105,
+      "errors": 91,
+      "mask": 6,
+      "ms": 127,
+      "hex": "FF7F7F7FFF7FFF7F7F7FFF7F7F7F"
+    },
+    {
+      "i": 11,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 528,
+      "errors": 0,
+      "mask": 0,
+      "ms": 301,
+      "hex": "AA0567003A0164B5AA0567003A0164B53223AA0568007303"
+    },
+    {
+      "i": 12,
+      "baud": 14400,
+      "channel": 0,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 65,
+      "errors": 63,
+      "mask": 2,
+      "ms": 126,
+      "hex": "DFDF"
+    },
+    {
+      "i": 13,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 525,
+      "errors": 0,
+      "mask": 0,
+      "ms": 300,
+      "hex": "0164B6AA0567003B0164B63223AA056800700364EEAA0568"
+    },
+    {
+      "i": 14,
+      "baud": 14400,
+      "channel": 0,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 67,
+      "errors": 64,
+      "mask": 2,
+      "ms": 129,
+      "hex": "FFDFFF"
+    },
+    {
+      "i": 15,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 512,
+      "errors": 0,
+      "mask": 0,
+      "ms": 301,
+      "hex": "3123AA056700370164B2AA056700360164B13223AA056800"
+    },
+    {
+      "i": 16,
+      "baud": 4800,
+      "channel": 0,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 5,
+      "errors": 5,
+      "mask": 2,
+      "ms": 140,
+      "hex": ""
+    },
+    {
+      "i": 17,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 526,
+      "errors": 0,
+      "mask": 0,
+      "ms": 300,
+      "hex": "6700340164AF3223AA056800750364F3AA0568009003640E"
+    },
+    {
+      "i": 18,
+      "baud": 4800,
+      "channel": 0,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 7,
+      "errors": 7,
+      "mask": 2,
+      "ms": 149,
+      "hex": ""
+    },
+    {
+      "i": 19,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 527,
+      "errors": 0,
+      "mask": 0,
+      "ms": 301,
+      "hex": "64B83423AA056800440164C0AA056800440164C03123AA05"
+    },
+    {
+      "i": 20,
+      "baud": 2400,
+      "channel": 0,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 0,
+      "errors": 0,
+      "mask": 0,
+      "ms": 161,
+      "hex": ""
+    },
+    {
+      "i": 21,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 525,
+      "errors": 0,
+      "mask": 0,
+      "ms": 300,
+      "hex": "6800780364F6AA056800780364F6AA056800750364F33323"
+    },
+    {
+      "i": 22,
+      "baud": 2400,
+      "channel": 0,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 0,
+      "errors": 0,
+      "mask": 0,
+      "ms": 178,
+      "hex": ""
+    },
+    {
+      "i": 23,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 527,
+      "errors": 0,
+      "mask": 0,
+      "ms": 301,
+      "hex": "6700300164ABAA0567002E0164A93223AA056800C8006443"
+    },
+    {
+      "i": 24,
+      "baud": 1200,
+      "channel": 0,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 0,
+      "errors": 0,
+      "mask": 0,
+      "ms": 203,
+      "hex": ""
+    },
+    {
+      "i": 25,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 0,
+      "tx": 1,
+      "ack": 0,
+      "rx": 514,
+      "errors": 0,
+      "mask": 0,
+      "ms": 300,
+      "hex": "3423AA056800440164C0AA056800440164C03123AA056700"
+    },
+    {
+      "i": 26,
+      "baud": 1200,
+      "channel": 0,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 0,
+      "errors": 0,
+      "mask": 0,
+      "ms": 236,
+      "hex": ""
+    },
+    {
+      "i": 27,
+      "baud": 115200,
+      "channel": 1,
+      "crlf": 1,
+      "tx": 1,
+      "ack": 0,
+      "rx": 528,
+      "errors": 0,
+      "mask": 0,
+      "ms": 301,
+      "hex": "3123AA0567002B0164A6AA056700280164A33223AA056800"
+    }
+  ],
+  "valid_explicitly_tagged_frames": [
+    {
+      "try": 0,
+      "channel": 2,
+      "distance_mm": 895,
+      "confidence": 100,
+      "hex": "AA0568007F0364FD"
+    },
+    {
+      "try": 0,
+      "channel": 2,
+      "distance_mm": 891,
+      "confidence": 100,
+      "hex": "AA0568007B0364F9"
+    },
+    {
+      "try": 1,
+      "channel": 3,
+      "distance_mm": 329,
+      "confidence": 100,
+      "hex": "AA056800490164C5"
+    },
+    {
+      "try": 1,
+      "channel": 3,
+      "distance_mm": 329,
+      "confidence": 100,
+      "hex": "AA056800490164C5"
+    },
+    {
+      "try": 2,
+      "channel": 1,
+      "distance_mm": 309,
+      "confidence": 100,
+      "hex": "AA056700350164B0"
+    },
+    {
+      "try": 2,
+      "channel": 1,
+      "distance_mm": 309,
+      "confidence": 100,
+      "hex": "AA056700350164B0"
+    },
+    {
+      "try": 7,
+      "channel": 2,
+      "distance_mm": 888,
+      "confidence": 100,
+      "hex": "AA056800780364F6"
+    },
+    {
+      "try": 7,
+      "channel": 2,
+      "distance_mm": 883,
+      "confidence": 100,
+      "hex": "AA056800730364F1"
+    },
+    {
+      "try": 13,
+      "channel": 2,
+      "distance_mm": 880,
+      "confidence": 100,
+      "hex": "AA056800700364EE"
+    },
+    {
+      "try": 15,
+      "channel": 1,
+      "distance_mm": 311,
+      "confidence": 100,
+      "hex": "AA056700370164B2"
+    },
+    {
+      "try": 15,
+      "channel": 1,
+      "distance_mm": 310,
+      "confidence": 100,
+      "hex": "AA056700360164B1"
+    },
+    {
+      "try": 17,
+      "channel": 2,
+      "distance_mm": 885,
+      "confidence": 100,
+      "hex": "AA056800750364F3"
+    },
+    {
+      "try": 17,
+      "channel": 2,
+      "distance_mm": 912,
+      "confidence": 100,
+      "hex": "AA0568009003640E"
+    },
+    {
+      "try": 19,
+      "channel": 4,
+      "distance_mm": 324,
+      "confidence": 100,
+      "hex": "AA056800440164C0"
+    },
+    {
+      "try": 19,
+      "channel": 4,
+      "distance_mm": 324,
+      "confidence": 100,
+      "hex": "AA056800440164C0"
+    },
+    {
+      "try": 23,
+      "channel": 2,
+      "distance_mm": 200,
+      "confidence": 100,
+      "hex": "AA056800C8006443"
+    },
+    {
+      "try": 25,
+      "channel": 4,
+      "distance_mm": 324,
+      "confidence": 100,
+      "hex": "AA056800440164C0"
+    },
+    {
+      "try": 25,
+      "channel": 4,
+      "distance_mm": 324,
+      "confidence": 100,
+      "hex": "AA056800440164C0"
+    },
+    {
+      "try": 27,
+      "channel": 1,
+      "distance_mm": 299,
+      "confidence": 100,
+      "hex": "AA0567002B0164A6"
+    },
+    {
+      "try": 27,
+      "channel": 1,
+      "distance_mm": 296,
+      "confidence": 100,
+      "hex": "AA056700280164A3"
+    }
+  ],
+  "directions_observed": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "confirmed": "All four channel tags have CRC-valid AI1811 binary frames in actual boot trace prefixes; 115200 attempts have zero errors but no expected OK,115200 token; app remained FAULT=2 PWM=0 STBY=0",
+  "limits": "Prefixes are separate samples, not a contiguous full stream. MCU-to-module command reception and complete vehicle behavior remain unproven."
+}

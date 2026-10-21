@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-13",
+  "project": "Thief16B_FourLaser_MapStrategy_Test",
+  "hardware_status": "仅编译通过，尚未完成硬件验证",
+  "laser_max_mm": 650,
+  "start_marker": "N005",
+  "start_leg": "N006->N004",
+  "start_progress_mm": 150,
+  "moving_detection": "valid XY observations update threat memory; replanning at settled hides only",
+  "build": {
+    "errors": 0,
+    "warnings": 0,
+    "code_bytes": 48248,
+    "ro_bytes": 148208,
+    "rw_bytes": 348,
+    "zi_bytes": 35020,
+    "flash_bytes": 196456,
+    "ram_bytes": 35368,
+    "configured_flash_bytes": 262144,
+    "configured_ram_bytes": 49152
+  },
+  "checks_total": 23558,
+  "test_results": {
+    "treasure_laser_result": {
+      "test_checks": 5947,
+      "test_failures": 0,
+      "test_done": 1,
+      "test_first_line": 0
+    },
+    "uart_result": {
+      "test_checks": 824,
+      "test_failures": 0,
+      "test_done": 1
+    },
+    "localization_result": {
+      "test_checks": 5162,
+      "test_failures": 0,
+      "test_done": 1,
+      "test_routes": 58,
+      "test_confirmed_nodes": 436,
+      "test_first_line": 0,
+      "test_first_error": 0,
+      "test_first_from": 0,
+      "test_first_to": 0,
+      "test_first_phase": 0
+    },
+    "result": {
+      "test_checks": 11625,
+      "test_failures": 0,
+      "test_done": 1,
+      "test_initial_goal": 38,
+      "test_initial_steps": 17,
+      "test_workspace_bytes": 15222,
+      "test_routes_accepted": 108,
+      "test_max_states": 361,
+      "initial_nodes": [
+        54,
+        53,
+        44,
+        36,
+        35,
+        34,
+        33,
+        25,
+        15,
+        6,
+        4,
+        3,
+        2,
+        1,
+        10,
+        20,
+        37,
+        38
+      ]
+    },
+    "integration_result": {
+      "baseline_commit": "c15d11b9ed7382862fe2c03c15bd97bbcb2b17ed",
+      "strategy_files_identical_to_16j": [
+        "ThiefMapPlanner.c",
+        "ThiefMapPlanner.h",
+        "ThiefMapTopology.h",
+        "ThiefRiskSearch.c",
+        "ThiefRiskSearch.h",
+        "ThiefRollout.h",
+        "ThiefRolloutData.h",
+        "ThiefThreatModel.c",
+        "ThiefThreatModel.h"
+      ],
+      "strategy_files_adjusted_for_laser65": [
+        "FrontLaserGate.c",
+        "FrontLaserGate.h",
+        "ThiefRollout.c",
+        "ThiefStrategyConfig.h"
+      ],
+      "hardware_files_adjusted_for_laser65": [
+        "Hardware/LaserRx.c",
+        "Hardware/LaserRx.h"
+      ],
+      "protected_files_unchanged": 115,
+      "project_entries": 92,
+      "duplicate_sources": false,
+      "target_debug_flash_unchanged": true,
+      "laser_before_treasure_off": true,
+      "bounded_uart_poll": true,
+      "replan_mode": "settled_hide_only",
+      "hardware": false
+    }
+  },
+  "flashed": false,
+  "real_motors_run": false,
+  "git_staged": false,
+  "committed": false,
+  "pushed": false
+}

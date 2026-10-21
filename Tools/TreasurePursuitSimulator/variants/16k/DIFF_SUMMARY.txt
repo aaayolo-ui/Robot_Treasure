@@ -1,0 +1,10 @@
+16K review scope: independent firmware + replay + Docs/22.
+Git tracked files changed in this scope: 0.
+Untracked added files: 242 (all listed in FILE_MANIFEST.md).
+Copied-source comparison with current16B: 175 byte-identical, 16 changed, 11 new firmware files.
+Text comparison: +5450/-922 lines (normalized line endings; most changes are generated route tables/catalog).
+All117low-level files remain byte-identical. Map roads and annotations remain unchanged.
+Full Keil: 0 errors,0 warnings;Flash200388B,RAM35392B.
+Eight actualARM C modes:226341 checks,0 failures. Pruned/exhaustive36;legacy-off36.
+Sevenfixtures+ninecompletepairedmatches unchanged16J outcomes and N062usage.
+No hardware,flashing,motors,git add,commit orpush actions.

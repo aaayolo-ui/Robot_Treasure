@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-13",
+  "hardware_status": "仅编译通过，尚未完成硬件验证",
+  "field_road_centerline_bounds_mm": {
+    "x": [
+      0,
+      3300
+    ],
+    "y": [
+      0,
+      2700
+    ]
+  },
+  "field_physical_bounds_mm": {
+    "x": [
+      -150,
+      3450
+    ],
+    "y": [
+      -150,
+      2850
+    ]
+  },
+  "software_detection_mask": true,
+  "power_or_emission_control": false,
+  "sensor_bits": [
+    "front",
+    "left",
+    "right",
+    "rear"
+  ],
+  "mask_orientation": "body_heading; independent of reverse travel",
+  "laser_max_mm": 650,
+  "starts_after": "N005",
+  "unchanged_hardware_control_sources_since_request": 117,
+  "build": {
+    "errors": 0,
+    "warnings": 0,
+    "code_bytes": 48692,
+    "ro_bytes": 148212,
+    "rw_bytes": 348,
+    "zi_bytes": 35036,
+    "flash_bytes": 196904,
+    "ram_bytes": 35384
+  },
+  "this_request_cpu_tests": {
+    "edge_mask": {
+      "test_checks": 2297,
+      "test_failures": 0,
+      "test_done": 1,
+      "test_first_line": 0,
+      "test_node_poses": 704,
+      "test_midpoint_poses": 848
+    },
+    "treasure_laser": {
+      "test_checks": 5947,
+      "test_failures": 0,
+      "test_done": 1,
+      "test_first_line": 0
+    },
+    "integration": {
+      "baseline_commit": "c15d11b9ed7382862fe2c03c15bd97bbcb2b17ed",
+      "strategy_files_identical_to_16j": [
+        "ThiefMapPlanner.c",
+        "ThiefMapPlanner.h",
+        "ThiefMapTopology.h",
+        "ThiefRiskSearch.c",
+        "ThiefRiskSearch.h",
+        "ThiefRollout.h",
+        "ThiefRolloutData.h",
+        "ThiefThreatModel.c",
+        "ThiefThreatModel.h"
+      ],
+      "strategy_files_adjusted_for_laser65": [
+        "FrontLaserGate.c",
+        "FrontLaserGate.h",
+        "ThiefRollout.c",
+        "ThiefStrategyConfig.h"
+      ],
+      "hardware_files_adjusted_for_laser65": [
+        "Hardware/LaserRx.c",
+        "Hardware/LaserRx.h"
+      ],
+      "protected_files_unchanged": 115,
+      "project_entries": 94,
+      "duplicate_sources": false,
+      "target_debug_flash_unchanged": true,
+      "laser_before_treasure_off": true,
+      "bounded_uart_poll": true,
+      "replan_mode": "settled_hide_only",
+      "boundary_mask_before_all_evidence": true,
+      "boundary_unmask_requires_fresh_frames": true,
+      "hardware": false
+    }
+  },
+  "this_request_assertions": 8244,
+  "previous_tests": "UART/localization/16J strategy tests are in VALIDATION_LASER65.json; their source files unchanged in this request; not rerun.",
+  "flashed": false,
+  "real_motors_run": false,
+  "staged": false,
+  "committed": false,
+  "pushed": false
+}

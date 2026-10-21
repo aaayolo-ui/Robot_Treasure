@@ -1,0 +1,108 @@
+{
+  "status": "一次三激光对照实车验证通过；前激光关闭；完整四激光尚未验证",
+  "hardware_tested": true,
+  "build": {
+    "compiler": "ARMCC5.06 update5 build528",
+    "errors": 0,
+    "warnings": 0,
+    "code_bytes": 51016,
+    "ro_data_bytes": 148988,
+    "rw_data_bytes": 368,
+    "zi_data_bytes": 42296,
+    "flash_bytes": 200372,
+    "ram_bytes": 42664
+  },
+  "cpu_pin_init_test": {
+    "checks": 71,
+    "failures": 0,
+    "calls": [
+      "MX_GPIO_Init",
+      "HAL_TIM_MspPostInit",
+      "HAL_TIM_MspPostInit",
+      "HAL_TIM_Encoder_MspInit",
+      "HAL_TIM_Encoder_MspInit",
+      "HAL_TIM_Encoder_MspInit",
+      "HAL_UART_MspInit",
+      "HAL_UART_MspInit",
+      "HAL_UART_MspInit",
+      "HAL_UART_MspInit",
+      "HAL_UART_MspInit",
+      "HAL_UART_MspDeInit",
+      "HAL_UART_MspDeInit",
+      "HAL_UART_MspDeInit",
+      "TreasureMotorSnapshot_ReadDIn2PinMap",
+      "TreasureMotorSnapshot_ReadDIn2PinMap"
+    ],
+    "axf_sha256": "8d4bf32b3abc8b11cbb43053360c7589664b9d50f4d4fd8d4c583593f7e2aacb",
+    "scope": "Actual linked GPIO/MSP and pin readback executed on emulated MMIO; not hardware proof",
+    "physical_interfaces_accessed": false
+  },
+  "source_parent_unchanged_files": 196,
+  "unchanged_c_h_files": 175,
+  "keil_unique_file_paths": 100,
+  "ioc_unique_pin_count": 42,
+  "changed_copied_files": [
+    ".gitignore",
+    "Core/Inc/main.h",
+    "Hardware/TreasureMotorSnapshot.c",
+    "Hardware/TreasureMotorSnapshot.h",
+    "MDK-ARM/RTE/_Thief16B_DIN2_PB15_Compare_Test/RTE_Components.h",
+    "MDK-ARM/Thief16B_DIN2_PB15_Compare_Test.uvprojx",
+    "Thief16B_DIN2_PB15_Compare_Test.ioc",
+    "User/App_ThiefStrategy.c",
+    "MDK-ARM/Thief16B_DIN2_PB15_Compare_Test.uvoptx"
+  ],
+  "C_H_copy_diff": {
+    "added": 28,
+    "removed": 5
+  },
+  "main_gpio_body_unchanged": true,
+  "clock_msp_irq_pid_route_motor_encoder_laser_unchanged": true,
+  "runtime_pin_change": "DIN2 PA10 -> PB15; PA10 remains input; PB14 encoder stays",
+  "laser_condition": "Front USART2 remains OFF as in parent; other three unchanged",
+  "hardware_actions_taken": [
+    "User flashed firmware",
+    "User moved DIN2 PA10 to PB15 with power disconnected",
+    "User reset and positioned at N054 toward N053",
+    "User started with KEY2 and stopped with key",
+    "User stopped capture with Ctrl+C"
+  ],
+  "known_limit": "No valid parent FrontUartOff route result; improvement alone cannot distinguish this migration from USART2 disable compared with last failing four-laser run",
+  "initial_build_status": "仅编译通过，尚未完成硬件验证",
+  "hardware_actions_performed_by": "human_user_only",
+  "hardware_validation": {
+    "date_client": "2026-10-16",
+    "report": "Evidence/20261016_hardware_capture.md",
+    "analysis": "Evidence/20261016_route_verified.json",
+    "port": "COM9",
+    "baud": 115200,
+    "front_USART2_enabled": false,
+    "DIN2": "PB15",
+    "user_report": "非常不错，而且避障和藏点也没问题",
+    "pin_config": {
+      "PA10_CFG": 4,
+      "PB15_CFG": 2,
+      "DIN2_LEVEL": 0,
+      "STBY": 0
+    },
+    "TW_complete_groups": 95,
+    "MT3_crc_valid_records": 253,
+    "MT3_invalid_records": 0,
+    "queue_lost": 0,
+    "PA2_post_checked": 104285,
+    "PA2_post_mismatch": 0,
+    "PA1_post_checked": 104970,
+    "PA1_post_mismatch": 0,
+    "software_route_destinations": [
+      "N038",
+      "N011"
+    ],
+    "final_stop": "KEY_STOP FROM=DONE",
+    "complete_four_laser_validated": false,
+    "unique_root_cause_established": false,
+    "repeated_reliability_tested": false,
+    "capture_metadata": "F:\\Robot_Treasure\\Tools\\MapTimingLogger\\logs\\DIN2_PB15_20261016-213704-394\\20261016-213705-696.json",
+    "snapshot_sha256": "cdfc2553fa5c87a5c30a54ce4a528c2f9b56c780287360207f3882586bf9de90",
+    "final_raw_log_sha256": "24f6b9273e3007298123300b61bf8ad8098dd70e93ce6374052c5d565a54ae97"
+  }
+}

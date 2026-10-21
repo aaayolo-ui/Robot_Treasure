@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "compiler": "*** Using Compiler 'V5.06 update 5 (build 528)', folder: 'D:\\keil5\\ARM\\ARMCC\\Bin'",
+  "flash_bytes": 215460,
+  "ram_bytes": 36480,
+  "code": 54480,
+  "ro_data": 160628,
+  "rw_data": 352,
+  "zi_data": 36128,
+  "startup_stack_bytes": 1024,
+  "static_callgraph_max_bytes": 752,
+  "static_callgraph_unknown": true,
+  "callgraph_and_profiles_do_not_certify_IRQ_stack": true,
+  "hardware": false,
+  "status": "仅编译通过，尚未完成硬件验证",
+  "log_sha256": "e9293bc36e64c40f167ddb324ab5782d468e0b5d90b45da23fad2dbf1e968040"
+}
