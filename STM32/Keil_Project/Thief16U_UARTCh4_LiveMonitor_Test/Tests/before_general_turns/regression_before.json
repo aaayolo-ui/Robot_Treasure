@@ -1,0 +1,21 @@
+{
+  "checks": 6,
+  "cases": {},
+  "failures": [
+    {
+      "case": "all_map_quarter_turns",
+      "error": "one shared axis stage exists for all mapped turns"
+    },
+    {
+      "case": "n078_original_log",
+      "error": "N078 shared axis stage"
+    },
+    {
+      "case": "n011_exit_policy",
+      "error": "N011 world-direction priority selects correct first exit"
+    }
+  ],
+  "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe",
+  "test_sha256": "1a07c50a61cc07a3d655f70c553c15905d868ca2a4a28ee5f750793b73fa4d20",
+  "hardware_tested": false
+}

@@ -1,0 +1,15 @@
+Failed to find real location of D:\python\python.exe
+DOCUMENTS7_FAIL: rear pursuit while forward: do not stop/replan merely because the pursuer remains behind
+DOCUMENTS7_FAIL: front pursuit while reverse: do not stop/replan merely because the pursuer remains behind
+DOCUMENTS7_FAIL: Documents7 zero-distance reverse: remain at the confirmed node instead of driving to the next junction
+DOCUMENTS7_FAIL: symmetric zero-distance forward: remain at the confirmed node instead of driving to the next junction
+DOCUMENTS7_FAIL: left obstacle at unmoved departure: remain at the confirmed node instead of driving to the next junction
+DOCUMENTS7_FAIL: right obstacle at unmoved departure: remain at the confirmed node instead of driving to the next junction
+DOCUMENTS7_FAIL: zero-distance after FOLLOW: remain at the confirmed node instead of driving to the next junction
+Traceback (most recent call last):
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16R_UARTCh4_DepartureIntercept_Test\Tests\test_app_runtime.py", line 211, in <module>
+    departure_laser_plans=documents7_cases()
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16R_UARTCh4_DepartureIntercept_Test\Tests\test_app_runtime.py", line 209, in documents7_cases
+    assert not failures,'; '.join(failures)
+           ^^^^^^^^^^^^
+AssertionError: rear pursuit while forward: do not stop/replan merely because the pursuer remains behind; front pursuit while reverse: do not stop/replan merely because the pursuer remains behind; Documents7 zero-distance reverse: remain at the confirmed node instead of driving to the next junction; symmetric zero-distance forward: remain at the confirmed node instead of driving to the next junction; left obstacle at unmoved departure: remain at the confirmed node instead of driving to the next junction; right obstacle at unmoved departure: remain at the confirmed node instead of driving to the next junction; zero-distance after FOLLOW: remain at the confirmed node instead of driving to the next junction

@@ -1,0 +1,26 @@
+{
+  "firmware": "UARTCH4_16V_N002_BRANCH_SL1",
+  "modified": [
+    "User/App_ThiefStrategy.c",
+    "Tests/test_arrival_gate.py",
+    "Tests/test_hide_routes_stable4.py",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "added": [
+    "Tests/test_n002_branch.py"
+  ],
+  "reports": [
+    "Tests/results_n002_branch.json",
+    "Tests/results_arrival_gate.json",
+    "Tests/results_hide_routes_stable4.json",
+    "Tests/results_n038_main60.json"
+  ],
+  "expected_before_failure": "Tests/results_n002_branch_before.json",
+  "axf_sha256": "998ea57c5f7fe8ba4f16dbee3e1cf3af92aabd7e227b09a3884932b2e3ce3b81",
+  "checks": 385,
+  "unchanged_production_files": 192,
+  "hardware_tested": false,
+  "backup": "C:\\Users\\Administrator\\Desktop\\N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)\\Reference\\N063_MAIN60_before_n002_branch"
+}

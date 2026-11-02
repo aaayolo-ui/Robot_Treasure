@@ -1,0 +1,283 @@
+--- 16U_RUN5/User/App_ThiefStrategy.c
++++ 16U_RUN6/User/App_ThiefStrategy.c
+@@ -53,6 +53,7 @@
+ #define ROUTE_RESTART_BLIND_MM              180L
+ #define ROUTE_FRONT_RECOVERY_MS             200U /* Brake and retry a transient front-gray fault. */
+ #define ROUTE_FRONT_RECOVERY_VALID_SAMPLES    2U
++#define ROUTE_MAP_GRAY_YAW_TOL_X100       1000L /* User-selected +/-10 deg. */
+ #define ROUTE_GYRO_RECOVERY_MS              600U /* Brake while waiting for fresh YAW. */
+ #define ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS 1200U
+ #define ROUTE_MAX_RUN_MS                  1200000U
+@@ -1000,8 +1001,8 @@
+       step->from_node==thief_localization.step.from_node &&
+       step->to_node==thief_localization.step.to_node &&
+       thief_localization.yaw_cw_sign!=0 &&
+-      thief_localization.heading_error_x100>=-500 &&
+-      thief_localization.heading_error_x100<=500 &&
++      thief_localization.heading_error_x100>=-ROUTE_MAP_GRAY_YAW_TOL_X100 &&
++      thief_localization.heading_error_x100<=ROUTE_MAP_GRAY_YAW_TOL_X100 &&
+       mm>=0L && mm<=(int32_t)step->length_mm) ? 1U : 0U;
+ }
+ 
+@@ -1159,9 +1160,19 @@
+   RestartLineInput input;
+   RestartLineOutput output;
+   int32_t mm=Route_LegProgress();
+-  if(!Route_MapGrayContext() || front_state==ROUTE_GRAY_I2C_ERROR ||
+-      mm-map_gray_start_mm>=80L || (uint32_t)(now-map_gray_tick)>=1000U) {
+-    map_gray_active=0U;Route_StopFault("MAP_GRAY_REACQUIRE_FAILED");return;
++  const char *failure=!Route_MapGrayContext()?"CONTEXT":
++      front_state==ROUTE_GRAY_I2C_ERROR?"I2C":
++      mm-map_gray_start_mm>=80L?"DISTANCE":
++      (uint32_t)(now-map_gray_tick)>=1000U?"TIMEOUT":NULL;
++  if(failure!=NULL) {
++    map_gray_active=0U;Route_StopFault("MAP_GRAY_REACQUIRE_FAILED");
++    /* Print only after the fault brake. Preserve the actual current sample
++     * and cause so a later stop can be diagnosed without guessing. */
++    UartDebug_Printf("MAP_GRAY_END CAUSE=%s RAW=%03X FRONT=%s PH=%u LOC=%s YAW_ERR=%d MM=%ld USED=%ld WAIT_MS=%lu\r\n",
++        failure,(unsigned)sample->front_raw12,Route_GrayStateName(front_state),
++        (unsigned)thief_localization.phase,ThiefLocalization_ErrorText(thief_localization.error),
++        (int)thief_localization.heading_error_x100,(long)mm,(long)(mm-map_gray_start_mm),
++        (unsigned long)(now-map_gray_tick));return;
+   }
+   /* A real branch in its distance window is an observed arrival, never a
+    * synthesized front-line sample. Preserve the normal gray/node checks. */
+@@ -1655,7 +1666,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN5 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN6 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1678,7 +1689,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN5 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN6 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1727,7 +1738,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_RUN5 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_RUN6 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- 16U_RUN5/Tests/test_documents14.py
++++ 16U_RUN6/Tests/test_documents14.py
+@@ -0,0 +1,86 @@
++"""Documents14: preserve actual visible gray during normal yaw variation.
++Real linked ARM code with synthetic sensor/encoder inputs; no physical test.
++"""
++from pathlib import Path
++import sys,json
++setup=Path(__file__).with_name('test_documents13.py').read_text(encoding='utf-8')
++exec(compile(setup.split('failures=[];passed=[]')[0],str(Path(__file__).with_name('test_documents13.py')),'exec'))
++
++def log_replay():
++    global clock,odom,gray_raw,gray_state,rear_valid,yaw
++    start(40,2,46,2);member('thief_localization','yaw_cw_sign',-1)
++    ret('Route_AllWheelsStopped',0)
++    clock=54425;odom=14;gray_raw=0;gray_state=2;rear_valid=2;yaw=-81
++    call('Thief_UpdatePose');tick(20)
++    check(var('route_state')==8 and var('map_gray_active')==1,'Documents14 begins exit-line recovery')
++    odom=38;gray_raw=0x10;gray_state=1;rear_valid=1;yaw=-466
++    call('Thief_UpdatePose');tick(105)
++    check(var('route_active')==1,'visible front at4.66 degrees remains active')
++    odom=41;yaw=-651
++    call('Thief_UpdatePose');tick(60)
++    check(var('route_active')==1 and var('map_gray_active')==1,
++          'Documents14 actual front line must survive6.51-degree yaw without fault')
++    ret('Route_AllWheelsStopped',1)
++    for _ in range(6):tick()
++    check(var('route_state')==2 and not var('map_gray_active'),'real line plus measured stop resumes normal follow')
++    check(member('thief_localization','confirmed_node')==40,'recovery never invents arrival at N046')
++    check(sum(targets[-1][:2])//2>=2000,'16T normal speed retained after recovery')
++
++def heading_sweep():
++    global odom,gray_raw,gray_state,rear_valid,yaw
++    count=0
++    for mode in [0,1]:
++      for sign in [-1,1]:
++       for angle in [-1000,-999,-800,-651,-501,0,501,651,800,999,1000]:
++        start(38,1,37 if mode else 39,3 if mode else 1,mode)
++        member('thief_localization','yaw_cw_sign',sign)
++        ret('Route_AllWheelsStopped',1)
++        odom=20;gray_raw=0;gray_state=2;rear_valid=1;yaw=angle
++        call('Thief_UpdatePose');tick()
++        check(var('map_gray_active')==1,'localized road remains eligible inside user-selected10deg')
++        gray_raw=0x10;gray_state=1
++        for _ in range(3):tick()
++        check(var('route_state')==2 and member('thief_localization','error')==0,
++              f'real gray inside10deg resumes {mode=} {sign=} {angle=}')
++        count+=1
++    return count
++
++def recovery_limit():
++    global odom,gray_raw,gray_state,yaw,clock
++    for angle in [-1001,1001]:
++        start();odom=20;gray_raw=0;gray_state=2;tick()
++        check(var('map_gray_active')==1,'recovery begins within yaw limit')
++        yaw=angle;call('Thief_UpdatePose');clock+=20;call('App_ThiefStrategy_Task')
++        check(var('route_active')==0 and reason()=='MAP_GRAY_REACQUIRE_FAILED',
++              'recovery respects requested10deg limit')
++        check(member('thief_localization','error')==0,'normal localization tolerance is unchanged')
++
++def original_rejections():
++    global odom,gray_raw,gray_state,rear_valid,yaw,clock
++    for angle in [-2501,2501]:
++        start();odom=20;gray_raw=0x10;gray_state=1;yaw=angle
++        call('App_ThiefStrategy_Task')
++        check(var('route_active')==0 and reason()=='LOC_HEADING_MISMATCH',
++              'original localization still rejects an actual out-of-tolerance heading')
++    start();gray_raw=0;gray_state=2;odom=20
++    hook('JY61P_GetLastUpdateMs',lambda:clock-200)
++    call('App_ThiefStrategy_Task')
++    check(var('route_active')==0 and reason()=='LOC_GYRO_STALE','stale gyro is still rejected')
++    hook('JY61P_GetLastUpdateMs',lambda:clock)
++
++failures=[];passed=[];sweep_cases=0
++for fn in [log_replay,heading_sweep,recovery_limit,original_rejections]:
++    try:
++        result=fn()
++        if fn==heading_sweep:sweep_cases=result
++        passed.append(fn.__name__);print(fn.__name__+': PASS',flush=True)
++    except AssertionError as e:failures.append(dict(case=fn.__name__,error=str(e)));print(fn.__name__+': FAIL '+str(e),flush=True)
++result=dict(checks=checks,failures=failures,passed=passed,heading_sweep_cases=sweep_cases,
++ firmware_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False,
++ app_source_sha256=hashlib.sha256((ROOT/'User/App_ThiefStrategy.c').read_bytes()).hexdigest(),
++ test_script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
++ helper_sha256={n:hashlib.sha256((ROOT/'Tests'/n).read_bytes()).hexdigest() for n in
++    ['test_app_runtime.py','test_escape_completion.py','test_documents13.py']})
++out=ROOT/'Tests'/('before_documents14/regression_before.json' if '--before' in sys.argv else 'results_documents14.json')
++out.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8');print(json.dumps(result,indent=2))
++sys.exit(bool(failures))
+--- 16U_RUN5/Tests/verify_snapshot.py
++++ 16U_RUN6/Tests/verify_snapshot.py
+@@ -59,8 +59,8 @@
+ assert escape_result['test_script_sha256']==sha(ROOT/'Tests/test_escape_completion.py')
+ assert len(escape_result['escapes'])==36 and len(escape_result['ignored'])==4
+ assert len(escape_result['interceptions'])==4
+-assert 'UARTCH4_16U_RUN5' in app
+-before=ROOT/'Tests/before_speed16t'
++assert 'UARTCH4_16U_RUN6' in app
++before=ROOT/'Tests/before_documents14'
+ before_hashes=json.loads((before/'source_sha256.json').read_text())
+ fix_sources=[rel for rel,value in before_hashes.items() if sha(ROOT/rel)!=value]
+ assert fix_sources==['User/App_ThiefStrategy.c'],fix_sources
+@@ -76,6 +76,21 @@
+ assert reference_speed['app_source_sha256']==speed['reference_source_sha256']
+ assert reference_speed['firmware_sha256']==sha(OLD/'MDK-ARM'/OLD.name/(OLD.name+'.axf'))
+ assert 'FollowSmoothing_LimitBase' not in app
++regression14=json.loads((ROOT/'Tests/results_documents14.json').read_text())
++assert not regression14['failures'] and regression14['heading_sweep_cases']==44
++assert regression14['firmware_sha256']==sha(axf)
++assert regression14['app_source_sha256']==sha(ROOT/'User/App_ThiefStrategy.c')
++assert regression14['test_script_sha256']==sha(ROOT/'Tests/test_documents14.py')
++assert 'ROUTE_MAP_GRAY_YAW_TOL_X100       1000L' in app
++assert 'recovery_limit' in regression14['passed']
++for name,value in regression14['helper_sha256'].items():assert sha(ROOT/'Tests'/name)==value
++before14=json.loads((before/'regression_before.json').read_text())
++assert {x['case'] for x in before14['failures']}=={'log_replay','heading_sweep'}
++assert before14['test_script_sha256']==sha(before/'test_documents14_before.py')
++log14=(before/'Documents14.txt').read_text(encoding='utf-8',errors='replace')
++assert 'RAW=010,E00 YAW_ERR=-466' in log14 and 'YAW_ERR=-651' in log14
++assert 'MAP_GRAY_END CAUSE=' in app
++
+ regression=json.loads((ROOT/'Tests/results_documents13.json').read_text())
+ assert not regression['failures'] and regression['firmware_sha256']==sha(axf)
+ assert regression['app_source_sha256']==sha(ROOT/'User/App_ThiefStrategy.c')
+@@ -89,18 +104,18 @@
+ assert '#define THIEF_LASER_TRIGGER_MM 1000U' in (ROOT/'Algorithm/ThiefStrategy/ThiefStrategyConfig.h').read_text()
+ for name,value in prior_regression['helper_sha256'].items():assert sha(ROOT/'Tests'/name)==value
+ fix_diff=[]
+-fix_files=['User/App_ThiefStrategy.c','Tests/test_documents12.py','Tests/test_speed16t.py','Tests/verify_snapshot.py','README.md']
++fix_files=['User/App_ThiefStrategy.c','Tests/test_documents14.py','Tests/verify_snapshot.py','README.md']
+ for rel in fix_files:
+     old=before/rel;current=ROOT/rel
+     fix_diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+-        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN4/'+rel,tofile='16U_RUN5/'+rel))
+-(ROOT/'SPEED16T_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
++        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN5/'+rel,tofile='16U_RUN6/'+rel))
++(ROOT/'DOCUMENTS14_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
+ old_project=OLD/'MDK-ARM'/(OLD.name+'.uvprojx')
+ assert (ROOT/(ROOT.name+'.ioc')).read_text(encoding='utf-8')==\
+     (OLD/(OLD.name+'.ioc')).read_text(encoding='utf-8').replace(OLD.name,ROOT.name), 'CubeMX settings changed'
+ diff.extend(difflib.unified_diff(old_project.read_text(encoding='utf-8').splitlines(True),
+     project.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/project.uvprojx',tofile='16U/project.uvprojx'))
+-for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py','Tests/test_documents12.py','Tests/test_documents13.py','Tests/test_speed16t.py']:
++for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py','Tests/test_documents12.py','Tests/test_documents13.py','Tests/test_speed16t.py','Tests/test_documents14.py']:
+     p=ROOT/rel;old=OLD/rel
+     diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+         p.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/'+rel,tofile='16U/'+rel))
+@@ -115,17 +130,19 @@
+  unchanged_source_count=len(equal),unchanged_hardware_core=True,project_file_count=len(paths),
+  duplicate_sources=0,compile_errors=0,compile_warnings=0,hex_sha256=sha(hexfile),
+  algorithm_checks=result['test_checks'],application_checks=app_result['checks'],
+- hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN5',
+- speed_restore_source_files=fix_sources,speed_restore_files=fix_files,
++ hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN6',
++ documents14_source_files=fix_sources,documents14_fix_files=fix_files,
++ documents14_checks=regression14['checks'],heading_sweep_cases=regression14['heading_sweep_cases'],gray_recovery_yaw_tolerance_x100=1000,
++ documents14_log_sha256=sha(before/'Documents14.txt'),
+  speed_restore_checks=speed['checks'],reference_speed_checks=reference_speed['checks'],speed_curves_match_16t=True,
+  documents13_checks=regression['checks'],documents12_checks=prior_regression['checks'],
+  brake_credit_matrix_cases=prior_regression['brake_credit_matrix_cases'],trigger_center_mm=1000,
+- speed_restore_backup=str(before),escape_completion_checks=escape_result['checks'],
++ documents14_backup=str(before),speed_restore_backup=str(ROOT/'Tests/before_speed16t'),escape_completion_checks=escape_result['checks'],
+  escape_completion_cases=len(escape_result['escapes']),ignored_no_road_cases=len(escape_result['ignored']),
+  interception_completion_cases=len(escape_result['interceptions']),
+  generated_evidence=['build_16U.log','Tests/results_16m.json','Tests/results_app_runtime.json',
+  'Tests/Documents10_evidence.json','Tests/results_escape_completion.json',
+- 'Tests/before_documents13/regression_before.json','Tests/results_documents12.json','Tests/results_documents13.json','DOCUMENTS13_CHANGESET.patch','Tests/results_speed16t.json','Tests/results_speed16t_reference.json','SPEED16T_CHANGESET.patch','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
+- notes='16U RUN5 restores16T normal-speed targets and retains gray recovery/1000mm trigger in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_speed16t. No hardware execution.')
++ 'Tests/before_documents13/regression_before.json','Tests/results_documents12.json','Tests/results_documents13.json','DOCUMENTS13_CHANGESET.patch','Tests/results_speed16t.json','Tests/results_speed16t_reference.json','SPEED16T_CHANGESET.patch','DOCUMENTS14_CHANGESET.patch','Tests/results_documents14.json','Tests/before_documents14/regression_before.json','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
++ notes='16U RUN6 uses user-selected10deg gray-recovery tolerance;16T speeds and1000mm trigger retained in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_documents14. No hardware execution.')
+ (ROOT/'VALIDATION_16U.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+ print(json.dumps({k:v for k,v in report.items() if k!='baseline_sha256_at_verification'},indent=2,ensure_ascii=False))
+--- 16U_RUN5/README.md
++++ 16U_RUN6/README.md
+@@ -1,3 +1,37 @@
++# 16U RUN6：修复Documents14在线误停车
++
++本次直接修改用户指定桌面16U，固件标识 **UARTCH4_16U_RUN6**。保留16T正常速度、1000 mm中心触发和原有地图辅助灰度恢复。
++
++## 本次原因与修改
++
++Documents14中，54445 ms开始恢复时前后灰度均为000；54550 ms已读到前010、后E00，YAW误差为-4.66°；54610 ms误差为-6.51°，随即 `MAP_GRAY_REACQUIRE_FAILED`。当时恢复约166 ms、位移约27 mm，均未达到1000 ms或80 mm的上限。因此该次停止由新增的独立5°恢复门槛触发，不能认定小车物理偏出黑线；日志也显示前板已有黑线读数。
++
++按用户指定，将灰度恢复航向范围从±5°改为 **±10°**，参数为 `ROUTE_MAP_GRAY_YAW_TOL_X100=1000`。正常定位的25°容差没有修改；陀螺仪新鲜度、实际前后灰度、地图步骤及恢复距离/时间约束继续有效。连续真实前板读数确认后恢复正常循迹，不制造前板数据、不虚构到达节点。
++
++若恢复仍失败，新日志 `MAP_GRAY_END` 在制动之后打印具体 `CONTEXT/I2C/DISTANCE/TIMEOUT` 原因、当前前板原始值、灰度状态、定位状态、航向误差、已移动距离和持续时间，便于核对真实触发条件。
++
++## 验证
++
++- 原RUN5复现Documents14的恢复误停，以及合法航向变化被重复限制的情况，证据在 `Tests/before_documents14/regression_before.json`。
++- 新增390项检查通过，其中44组覆盖正反行驶、两种YAW符号、±5°附近、±6.51°、±8°及指定±10°边界；实际前板重新读到线后均能恢复。
++- 新增恢复过程±10.01°拒绝检查；超出原定位容差和陀螺仪过期仍由原定位逻辑拒绝。
++- 正常速度输出与16T参考固件一致，47项速度检查通过；原应用4980项、Documents13的139项、Documents12的2735项以及五藏点路线23657项检查通过。
++- ARMCC5全量编译 **0 Error(s), 0 Warning(s)**。Code54336、RO9672、RW504、ZI41384字节。
++
++应用测试运行真实链接ARM代码，使用合成传感器与轮速输入。它证明软件状态和目标输出，不证明实车传感器覆盖、打滑或机械状态。
++
++**仅编译通过，尚未完成硬件验证。** 未自动烧录、占用串口或驱动电机。
++
++## 文件与交付
++
++修改：`User/App_ThiefStrategy.c`、`Tests/verify_snapshot.py`、本README。新增 `Tests/test_documents14.py`、`Tests/results_documents14.json`、`DOCUMENTS14_CHANGESET.patch`；编译日志、已有测试输出、累计差异与验证报告同步更新。原RUN5应用、固件AXF、Documents14完整日志在 `Tests/before_documents14/`，其源文件散列和修复前失败记录一并保留。
++
++新HEX/AXF仍在 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test/`；工程名保留原样。烧录后核对 **UARTCH4_16U_RUN6**。最终报告为 `VALIDATION_16U.json`，增量差异为 `DOCUMENTS14_CHANGESET.patch`。
++
++复核时先编译工程，再运行已有应用、完整路线、Documents12/13及速度测试，追加 `E:/Python/python.exe Tests/test_documents14.py`，最后执行 `E:/Python/python.exe Tests/verify_snapshot.py`。
++
++以下为此前版本说明；涉及独立5°恢复条件的旧描述已由RUN6取代。
++
+ # 16U RUN5：恢复16T正常速度，保留灰度误停修复
+ 
+ 本次按用户指定的16T速度恢复正常运动，直接修改桌面16U，固件标识 **UARTCH4_16U_RUN5**。1000 mm中心触发和地图辅助灰度恢复继续有效。

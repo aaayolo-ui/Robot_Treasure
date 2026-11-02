@@ -1,0 +1,273 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR2",
+  "baseline_axf_sha256": "b2205b6197523eae5ef83b4e801688401aeb493d9ce64ae3cd6e49a62ea675ba",
+  "firmware_sha256": "51aef090e1b578d7490351b21ed670ae519b5bfaa02c0e3bf39ae25f18f3a489",
+  "hex_sha256": "53ccb9594c48c2814bcb714f45b68462a40f93d8fbcda4c34722ad85d087b3e7",
+  "checks": 2950,
+  "cases": {
+    "text_mask_matrix": 192,
+    "side_fragments_are_not_nodes": 24,
+    "eighteen_ms_restart": 1,
+    "n007_turn_phase": 4,
+    "n038_north_runway": [
+      {
+        "frames": 616,
+        "node": 35,
+        "body": 1,
+        "fixes": [
+          39,
+          40,
+          46,
+          58,
+          59,
+          60,
+          69,
+          70,
+          61,
+          49,
+          33,
+          34,
+          35
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 616,
+        "node": 35,
+        "body": 3,
+        "fixes": [
+          39,
+          40,
+          46,
+          58,
+          59,
+          60,
+          69,
+          70,
+          61,
+          49,
+          33,
+          34,
+          35
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    ],
+    "fragment_retry_then_complete": {
+      "frames": 1408,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        7,
+        17,
+        26,
+        35,
+        36,
+        44,
+        53,
+        52,
+        63,
+        78,
+        77,
+        76,
+        75,
+        59,
+        58,
+        46,
+        40,
+        39,
+        38,
+        37,
+        20,
+        10,
+        11
+      ],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    }
+  },
+  "pure_checks": 366181,
+  "regression_scripts": [
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "a4239e56146219971a83e52f775f570e47c8d2c890169351182388251c2823b1"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "e66b2ccfc8a2ab8380b6eb85112d1ab37486b8d27291035fae01f12f75bace51"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "89435d576e0be05279cff5270051c9a9effaa0c29d9ca3c5a397d0998e5d6701"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "36eef906a81ade575f0334edc15289916f301f3648c31f2ac5f42c1de41fd87d"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "4cdc339d3d4440ce61c1de8a7374c2d9b49f3f890e4aaa1d721ac0ab87c72cce"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "601778f081dcc694d59ad007d4cd69db71e5e9ea0a23a2a1e7adc57732067a30"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "33975339adfacc2e060e3791ae4c5208928832adff4c1943357ee17ced782158"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "cbce15ba54e6f23f126632ed6d51fc5aecbd6c3ef9fb643e25493cc4799f5fda"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "b25a67a2bc283195e03911e5d93d5d892d1328a57700d6f0f6b94a4b819ba048"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "c12b00de00edeb31219d403120ae6326fc849b269b0ed670f88d3256f770a4a2"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "065110682068154aba9237d5bdf92303f6e8028ff05977f946cf909b333c4133"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "526f3077b4159fdfc85f513deba7ac8bfce62506a775ec0bb130c12c71d97cbc"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "df6ea0e1d1320d76eb53a8968cbccb83152285f6d2b03a81566307ebe441bc5d"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "329665b8f204d823dbe41d7e2206e2afa5f9fea34832dbab3609e2d9182c62da"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "ebc9ee2d51413e19857f7d233c360bb79786c801468354f3a136b67fdacbbc4d"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "37c93b5f6c92193fe5e7dad85e514c0f2fb844d76fe62be6c88c2ec2613c7000"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "4304f4ed727ad9b41de1edb72e83e87a0e7c79b9ee969c350dda11279a916632"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "0555aa757c929ce3af8234dcd79d571e4e41aa1ae7d6b6cc699500ceef9d1144"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "054df37d44bacb3c390c8219e779bb0a2935556e679ad835dda18092e4451021"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "acedcafcb91a430f46b0c649c67a7f8af3cb879548acde646ed1586d4b460ee0"
+    },
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "47ccfcb9a1bfbf1ffe8370728f8a99bf40bfdd2645d1ac065ea498d4f3585d20"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "5fcad09a3d10fa59823d0d73978e52cc871df73a5a0bf855fdba86c938b5c9c1"
+    }
+  ],
+  "changed_production": [
+    "User/App_ThiefStrategy.c",
+    "Algorithm/MapRoute/TreasureGrayMask.c",
+    "Algorithm/MapRoute/TreasureGrayMask.h",
+    "Algorithm/MapLocalization/ThiefLocalization.c",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.h"
+  ],
+  "files": {
+    "User/App_ThiefStrategy.c": "2acbc6a6fc02a6adc24ce2755dab5c013ac455236e039de2dc34d0cf9be75d33",
+    "Algorithm/MapRoute/TreasureGrayMask.c": "95c1e6f6c0a98f4a3928df04c33af3b0cf3958790ab5e1b9ec0f9b8d2795eb09",
+    "Algorithm/MapRoute/TreasureGrayMask.h": "c53161a7d0f042c7781fc6b32130b3ea79b826ed473153af38c70ce1e444a30b",
+    "Algorithm/MapLocalization/ThiefLocalization.c": "9cf1769a2a975e13f55f6b1b03b87d5a375bab7a9d6f75e5517d6828687c7fb4",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "3046253b1ebf978d4f0138ae26c61d20d259b3419489f10956f26a6d837cc371",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c": "b5337ba37071c93553d9081065d48ce037c163cdf6bc96d148ed000cd1d28482",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.h": "b27aad41f37cd0fec74487f12fefd9475a65c701cefff38a9de179a875f79171",
+    "README.md": "4549c8676787b3889a83985c68b5fd0cab5a7a7bec5c3cfc6af2b7a4e4f82605",
+    "AGENTS.md": "63ff209ce46a8fbd46f34a5b8b4b7cbc62f633adfa6d7cc404e33fbc78bb613e",
+    "Docs/修改规范与回归清单.md": "7441da9e039c49d45f645740a7b640114edcfb3b307125a8f6038aaafd49c9e7",
+    "Tests/test_treasure_fix.py": "7cad2b65cde25636e1f21601f13752a4760282a464a7240c8056afaa11f4619b",
+    "Tests/test_documents12.py": "c46ae28bc1353e48b5b0e501941fa50d6c33aee121190d76017ee005210ba8c3",
+    "Tests/test_documents22.py": "830ef5cac974bf458cc8cc8f71001a9a80230117d24b5f9ef72ebd9c65754278",
+    "Tests/test_documents123154.py": "6e979797c42748428f163b6791b1b90d7db8f409152b72644ba57f3a1f4dd360",
+    "Tests/run_monitor_suite.py": "4e9c113b7fb71d1f75c00c80cabcbbba3aa68d1c80e14dcb14dbb7496d7b67f9",
+    "Tests/validate_monitor2.py": "709c1272748625b715e8a30cfb10dd033071f8b0ed505068ab262d05fa6b3911",
+    "TREASURE_ROUTE_CHANGESET.patch": "c4961cc717089bc37d47391121ee1b19ea6a7e099eb6f8ae905a98503841f691",
+    "build_monitor2.log": "b275b6c9da35553579eae9f8c33d9a455b3b257fcaef0843839fdcc3e800d57b"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limits": [
+    "actual text footprint and sensor mounting remain unmeasured",
+    "no independent absolute positioning",
+    "not a guarantee against every physical line-loss fault"
+  ]
+}

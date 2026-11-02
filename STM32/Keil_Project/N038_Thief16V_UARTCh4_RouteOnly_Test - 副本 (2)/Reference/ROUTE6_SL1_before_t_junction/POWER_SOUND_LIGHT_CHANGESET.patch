@@ -1,0 +1,96 @@
+--- ROUTE6/Hardware/PowerSoundLight.c
++++ ROUTE6_SL1/Hardware/PowerSoundLight.c
+@@ -0,0 +1,17 @@
++#include "PowerSoundLight.h"
++#include "stm32f1xx_hal.h"
++
++void PowerSoundLight_Init(void)
++{
++  GPIO_InitTypeDef gpio = {0};
++
++  __HAL_RCC_GPIOA_CLK_ENABLE();
++  /* Load the active level before enabling the output. The hardware latch
++   * keeps both light and buzzer on without periodic software updates. */
++  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
++  gpio.Pin = GPIO_PIN_3;
++  gpio.Mode = GPIO_MODE_OUTPUT_PP;
++  gpio.Pull = GPIO_NOPULL;
++  gpio.Speed = GPIO_SPEED_FREQ_LOW;
++  HAL_GPIO_Init(GPIOA, &gpio);
++}
+--- ROUTE6/Hardware/PowerSoundLight.h
++++ ROUTE6_SL1/Hardware/PowerSoundLight.h
+@@ -0,0 +1,7 @@
++#ifndef POWER_SOUND_LIGHT_H
++#define POWER_SOUND_LIGHT_H
++
++/* A013-ST011: VCC=3.3V, GND=GND, active-low IN=PA3. */
++void PowerSoundLight_Init(void);
++
++#endif
+--- ROUTE6/Core/Src/main.c
++++ ROUTE6_SL1/Core/Src/main.c
+@@ -22,6 +22,7 @@
+ /* Private includes ----------------------------------------------------------*/
+ /* USER CODE BEGIN Includes */
+ #include "App_ThiefStrategy.h"
++#include "PowerSoundLight.h"
+ 
+ /* USER CODE END Includes */
+ 
+@@ -115,6 +116,7 @@
+   MX_UART5_Init();
+   MX_USART1_UART_Init();
+   /* USER CODE BEGIN 2 */
++  PowerSoundLight_Init();
+   App_ThiefStrategy_Init();
+ 
+   /* USER CODE END 2 */
+--- ROUTE6/User/App_ThiefStrategy.c
++++ ROUTE6_SL1/User/App_ThiefStrategy.c
+@@ -1834,7 +1834,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE6_SHORT_RETURN STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1860,7 +1860,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE6_SHORT_RETURN ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1909,7 +1909,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE6_SHORT_RETURN T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- ROUTE6/MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx
++++ ROUTE6_SL1/MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx
+@@ -496,6 +496,16 @@
+           <GroupName>Hardware</GroupName>
+           <Files>
+             <File>
++              <FileName>PowerSoundLight.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>../Hardware/PowerSoundLight.c</FilePath>
++            </File>
++            <File>
++              <FileName>PowerSoundLight.h</FileName>
++              <FileType>5</FileType>
++              <FilePath>../Hardware/PowerSoundLight.h</FilePath>
++            </File>
++            <File>
+               <FileName>MotorDriver.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>../Hardware/MotorDriver.c</FilePath>

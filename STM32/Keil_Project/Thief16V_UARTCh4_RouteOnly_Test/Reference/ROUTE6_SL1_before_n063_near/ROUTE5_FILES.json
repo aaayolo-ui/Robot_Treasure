@@ -1,0 +1,246 @@
+{
+  "baseline": "Reference/ROUTE4_before_rear_retrace",
+  "changes": [
+    {
+      "path": "Control/RestartLineSearch.c",
+      "status": "modified",
+      "sha256": "a903b1b505977cedde953601133ab888c45ef22edc9e301212e93a6df1637554"
+    },
+    {
+      "path": "User/App_ThiefStrategy.c",
+      "status": "modified",
+      "sha256": "51977ae00e16d3a22b6303816bc0b987b4a0d41f31c9e16bc62a38e65b8f3371"
+    },
+    {
+      "path": "Docs/ROUTE5_\u540e\u677f\u9000\u56de\u63a5\u7ebf\u8bf4\u660e.md",
+      "status": "added",
+      "sha256": "177cba16b877951c1926fec03ef5e08e4785bb30cd96774921c7b906d7fa48e6"
+    },
+    {
+      "path": "Docs/\u4fee\u6539\u89c4\u8303\u4e0e\u56de\u5f52\u6e05\u5355.md",
+      "status": "modified",
+      "sha256": "0ae50f2ec026127d2f6eeebc5e934033bd58d663393f849b0c85adc2a5fea047"
+    },
+    {
+      "path": "Tests/rear_retrace_before.json",
+      "status": "added",
+      "sha256": "e9d08a6cd17269b522aecf13e000433fca06ae6c9d1f707b0eb1471aa08d6e51"
+    },
+    {
+      "path": "Tests/results_escape_completion.json",
+      "status": "modified",
+      "sha256": "4d60cec8cb212d0e23310cac7f06d0e70c4b6e3f07323ccec5ff4a21191e2e7d"
+    },
+    {
+      "path": "Tests/results_hide_routes_stable4.json",
+      "status": "modified",
+      "sha256": "b3424e7b09f7c0d59427c1ad36eea2c730c77d3ede270ba9fa1f11cfd9cb2a50"
+    },
+    {
+      "path": "Tests/results_left800.json",
+      "status": "modified",
+      "sha256": "01f5cdaa88f1146c9dc658109c2ceddb6e882fd2290276a80e5bead8b0be2c1c"
+    },
+    {
+      "path": "Tests/results_live_monitor.json",
+      "status": "modified",
+      "sha256": "2dacd3bae1b03fb8246db2ad61a8709451462a4e3c10cedb615bda323dda1e69"
+    },
+    {
+      "path": "Tests/results_n011_first_plan_stable10.json",
+      "status": "modified",
+      "sha256": "86baa3a8ccf426eca689422b76b2e5067841ccc52bf5f3034dc6e18072ca854a"
+    },
+    {
+      "path": "Tests/results_n068_recovery.json",
+      "status": "modified",
+      "sha256": "8563f68ae8df871d11e69476ee903df025b51e1b525f62861f993d2ebbc4250f"
+    },
+    {
+      "path": "Tests/results_rear_retrace.json",
+      "status": "added",
+      "sha256": "e0a4ea83a9e0b5bf7c83d865abf71ee32974d2628f89de95e660c0ba63282fa2"
+    },
+    {
+      "path": "Tests/results_strategy_stable2.json",
+      "status": "modified",
+      "sha256": "f9b247c276250045f318b3d6816e7493f1eaee8277e48f69ee2220fee022ab45"
+    },
+    {
+      "path": "Tests/results_temp78_stable3.json",
+      "status": "modified",
+      "sha256": "12780d20e4fa5ca97ca1e1284da1ee282b603b455d85c05bf5003cb342c8ce35"
+    },
+    {
+      "path": "Tests/results_trace_recovery.json",
+      "status": "modified",
+      "sha256": "ca1bc0afef1031530a850f46fda29ba7bc4c2114d0a67a37b7b9a61347f64d4e"
+    },
+    {
+      "path": "Tests/results_trace_return.json",
+      "status": "modified",
+      "sha256": "ad48dd2989152a2639bc77ac69944edaedd2310124d8e757087d31802208070b"
+    },
+    {
+      "path": "Tests/results_turn_resume.json",
+      "status": "modified",
+      "sha256": "0f49569b1bdc33fb08610add3d0fdd344aa11449b73a89cb110edde6b410ef26"
+    },
+    {
+      "path": "Tests/route5_inputs.json",
+      "status": "added",
+      "sha256": "775d5f28de9425daa456a04c5589e166f5deec04c329aaf8a3db8e4de3c783ed"
+    },
+    {
+      "path": "Tests/route5_suites.json",
+      "status": "added",
+      "sha256": "82fcbdbde55e386fc56d4eaf0e02a6a4578388b8bc0bc4c0a8d079342f28d340"
+    },
+    {
+      "path": "Tests/route5_test_escape_completion.py.log",
+      "status": "added",
+      "sha256": "ce8a9ec6bc786bd74a2f9287288d2864719a9326b62d3a619caec3f362d0722f"
+    },
+    {
+      "path": "Tests/route5_test_hide_routes_stable4.py.log",
+      "status": "added",
+      "sha256": "b3424e7b09f7c0d59427c1ad36eea2c730c77d3ede270ba9fa1f11cfd9cb2a50"
+    },
+    {
+      "path": "Tests/route5_test_left800.py.log",
+      "status": "added",
+      "sha256": "e3bc6ec8daf796e2d9b9745ec69a78d80613e254a8d35142470086a2ac12ff50"
+    },
+    {
+      "path": "Tests/route5_test_live_monitor.py.log",
+      "status": "added",
+      "sha256": "ca2ed0a2379f310576a78ce08d31c5800bc7e676048484b2e68f442e0fe3acb3"
+    },
+    {
+      "path": "Tests/route5_test_n011_first_plan_stable10.py.log",
+      "status": "added",
+      "sha256": "f140b444ecfe8c40c0ed4da7b9037f2509870127564ca1b1ee49e3b7ab349b3f"
+    },
+    {
+      "path": "Tests/route5_test_n068_recovery.py.log",
+      "status": "added",
+      "sha256": "67705b5aef191ba9bbee6c511bf53f1e5aec4ea83783711d4c3530b0cc5fc9eb"
+    },
+    {
+      "path": "Tests/route5_test_rear_retrace.py.log",
+      "status": "added",
+      "sha256": "99ddc37b110c9e287de4654dd85546e087641499e0c19088c84c43bc6281cd59"
+    },
+    {
+      "path": "Tests/route5_test_strategy_stable2.py.log",
+      "status": "added",
+      "sha256": "f9b247c276250045f318b3d6816e7493f1eaee8277e48f69ee2220fee022ab45"
+    },
+    {
+      "path": "Tests/route5_test_temp78_stable3.py.log",
+      "status": "added",
+      "sha256": "12780d20e4fa5ca97ca1e1284da1ee282b603b455d85c05bf5003cb342c8ce35"
+    },
+    {
+      "path": "Tests/route5_test_trace_front_probe.py.log",
+      "status": "added",
+      "sha256": "c2b5842d1e29d8b8165780cfaf9557540d1823f38b694b385226c3c58267a5e2"
+    },
+    {
+      "path": "Tests/route5_test_trace_recovery.py.log",
+      "status": "added",
+      "sha256": "d92454b4b1de2f454cbe1f7ad75485686e45f3b513cd28726d1943117fb4fcd0"
+    },
+    {
+      "path": "Tests/route5_test_trace_return.py.log",
+      "status": "added",
+      "sha256": "668cf6036494479d8646723a25104ce2b7be3e26a63db5692dba0f0f265d293c"
+    },
+    {
+      "path": "Tests/route5_test_turn_resume.py.log",
+      "status": "added",
+      "sha256": "3f73958fc44ba8dfd69285ab559dac571d832e9503b2032690c430beb9ec7766"
+    },
+    {
+      "path": "Tests/route5_test_west63.py.log",
+      "status": "added",
+      "sha256": "c2b5842d1e29d8b8165780cfaf9557540d1823f38b694b385226c3c58267a5e2"
+    },
+    {
+      "path": "Tests/run_route5.py",
+      "status": "added",
+      "sha256": "3a81cc33483b9471df5eb527f5bb48c1e42c3005735155ae39b9b7a154a7865a"
+    },
+    {
+      "path": "Tests/test_rear_retrace.py",
+      "status": "added",
+      "sha256": "e86506b70abc5a259554ac9e0cf57efa408f94ead52c2c9996e9c79bb56ef963"
+    },
+    {
+      "path": "Tests/trace_front_after.json",
+      "status": "modified",
+      "sha256": "0760047b71e2217440298eaf230fdb97cc064907da9dd55d1b847c27c8888fec"
+    },
+    {
+      "path": "Tests/validate_route5.py",
+      "status": "added",
+      "sha256": "31128b9cd647b0626a033083128ba1a95775606b2d66df873f52f6eb4d9c8c95"
+    },
+    {
+      "path": "Tests/west63_after.json",
+      "status": "modified",
+      "sha256": "0760047b71e2217440298eaf230fdb97cc064907da9dd55d1b847c27c8888fec"
+    },
+    {
+      "path": "AGENTS.md",
+      "status": "modified",
+      "sha256": "e4f86f6a1eecbf46624b2d350f9cf7bb92a493cce4825f38735907d748355cd7"
+    },
+    {
+      "path": "build_route5.log",
+      "status": "added",
+      "sha256": "fa3e740b1242715812b08ccf5eccbfd398f63a95293cde73c7534285839ff958"
+    },
+    {
+      "path": "README.md",
+      "status": "modified",
+      "sha256": "629e14b8a2454a86c83df5ba6521fe6447f1072c2aec5d6ac2e6742a8245356e"
+    },
+    {
+      "path": "ROUTE5_CHANGESET.patch",
+      "status": "added",
+      "sha256": "3cc10a5ab1709405cca39d4a70ec6deb6af5fc03da2d2468fbe2201d70058905"
+    },
+    {
+      "path": "VALIDATION_ROUTE5.json",
+      "status": "added",
+      "sha256": "81ca1fb792f5c37b27c6e137d05b046846dbcc90f83f15ea1d09938e02386636"
+    },
+    {
+      "path": "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.axf",
+      "status": "modified",
+      "sha256": "84d1eb0745bc4d7730745c61f8e39e3ed237f773cef11375dca29fb4d6bf4d53"
+    },
+    {
+      "path": "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.build_log.htm",
+      "status": "modified",
+      "sha256": "eb0710ec5a20f3e52d40ecf02f49f78a0db62ff6876465ebbaee8688de050a96"
+    },
+    {
+      "path": "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.hex",
+      "status": "modified",
+      "sha256": "d34d5f6ef534da6b17a1d05af549ace8fb738e2095cc1954accd9f1e87e75020"
+    },
+    {
+      "path": "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.htm",
+      "status": "modified",
+      "sha256": "d25bbd319bc5cf144d40ade236f26062d465bd5b54024d6ff81fcda64c606b36"
+    },
+    {
+      "path": "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.map",
+      "status": "modified",
+      "sha256": "d307a830ead12c7d3e99f62ac478b983aad21a63bc570e1e0fbe2f009d3ce204"
+    }
+  ],
+  "excluded": "Keil object intermediates and Tests/build dependency cache"
+}

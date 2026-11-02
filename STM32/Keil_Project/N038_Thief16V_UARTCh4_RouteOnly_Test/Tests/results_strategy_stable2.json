@@ -1,0 +1,9 @@
+{
+  "firmware": "UARTCH4_16V_STABLE10_95RPM",
+  "checks": 229,
+  "failures": [],
+  "expected_before_failure": false,
+  "axf_sha256": "cb168090130c7a2ea61a2f6bc2791f1e08f406e1282bdf32296342f7849a87dc",
+  "test_sha256": "918bf592c2e46b418fc6a8f8571feb7fb7154b5eb91e792b15d72def33dc8a9b",
+  "hardware_tested": false
+}

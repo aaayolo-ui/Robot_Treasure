@@ -1,0 +1,122 @@
+--- ROUTE5/Control/RestartLineSearch.c
++++ ROUTE6/Control/RestartLineSearch.c
+@@ -8,9 +8,17 @@
+ #define SWEEP 2U
+ #define FAILED 3U
+ #define BACKTRACK 4U
++#define HANDOFF 5U
+ static int16_t Clamp(int32_t x, int16_t bound)
+ {
+   return (int16_t)(x>bound?bound:x < -bound?-bound:x);
++}
++static uint8_t LineAligned(const RestartLineInput *in)
++{
++  int32_t d=(int32_t)in->leading_error-in->trailing_error;
++  return (uint8_t)(in->leading_valid && in->trailing_valid &&
++      in->leading_error>=-150 && in->leading_error<=150 &&
++      in->trailing_error>=-150 && in->trailing_error<=150 && d>=-100 && d<=100);
+ }
+ static void BrakeTo(RestartLineSearch *s, uint8_t next)
+ {
+@@ -33,8 +41,9 @@
+     out->brake=1U;
+     if(in->stopped) s->stopped_count++;else s->stopped_count=0U;
+     if(s->stopped_count>=2U) {
+-      s->phase=(s->next_phase==BACKTRACK && !in->leading_valid && in->trailing_valid)?
+-          BACKTRACK:(visible?TRACK:s->next_phase);
++      s->phase=s->next_phase==HANDOFF?HANDOFF:
++          ((s->next_phase==BACKTRACK && in->trailing_valid)?
++          BACKTRACK:(visible?TRACK:s->next_phase));
+       s->line_count=0U;
+       if(s->phase==FAILED) out->failed=1U;
+     }
+@@ -54,14 +63,31 @@
+     return;
+   }
+   if(s->phase==FAILED) {out->brake=1U;out->failed=1U;return;}
++  if(s->phase==HANDOFF) {
++    if(LineAligned(in)) {
++      out->ready=1U;
++      turn=Clamp(in->leading_error,200);
++      out->left_x10=(int16_t)(500+turn);out->right_x10=(int16_t)(500-turn);
++    } else {
++      s->phase=in->trailing_valid?BACKTRACK:TRACK;s->line_count=0U;out->brake=1U;
++    }
++    return;
++  }
+   if(s->phase==BACKTRACK) {
+-    if(in->leading_valid || !in->trailing_valid) {
++    if(!in->trailing_valid) {
+       s->line_count=0U;s->sweep_count=0U;s->target_yaw=(int16_t)(s->bias*400);
+       BrakeTo(s,in->leading_valid?TRACK:SWEEP);out->brake=1U;return;
+     }
++    /* A momentary front stripe is not proof that the chassis follows the
++     * road. Keep rear-led correction until BOTH boards agree for 3 samples. */
++    if(LineAligned(in)) {
++      if(s->line_count<3U)s->line_count++;
++      if(s->line_count>=3U){BrakeTo(s,HANDOFF);out->brake=1U;return;}
++    } else s->line_count=0U;
+     /* In reverse the trailing stripe is the leading evidence. Its lateral
+      * sign is inverted; TravelFrame still maps the four physical wheels once. */
+-    turn=Clamp(-(int32_t)in->trailing_error,200);
++    turn=Clamp(-(int32_t)in->trailing_error+
++        (in->leading_valid?(int32_t)in->leading_error-in->trailing_error:0L),200);
+     out->left_x10=(int16_t)(-500+turn);out->right_x10=(int16_t)(-500-turn);
+     return;
+   }
+--- ROUTE5/User/App_ThiefStrategy.c
++++ ROUTE6/User/App_ThiefStrategy.c
+@@ -177,7 +177,6 @@
+ static uint32_t turn_stop_frame_count;
+ static int16_t turn_start_angle_x100;
+ static RouteState_t front_resume_state;
+-static int32_t front_resume_base_rpm_x10;
+ static uint8_t front_recovery_valid_count;
+ static uint8_t gyro_paused;
+ static uint32_t gyro_pause_tick;
+@@ -1176,7 +1175,6 @@
+ {
+   ThiefLocYaw_t yaw;Thief_LocalYaw(&yaw);
+   front_resume_state=route_state;
+-  front_resume_base_rpm_x10=follow_smoothing.base_rpm_x10;
+   front_recovery_valid_count=0U;gray_missing_active=0U;
+   gray_entry_yaw=yaw.yaw_x100;gray_log_tick=now;
+   if(route_trail.returning && front_resume_state==ROUTE_STATE_AFTER_TURN_FORWARD) {
+@@ -1836,7 +1834,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE5_RETRACE STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE6_SHORT_RETURN STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1862,7 +1860,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE5_RETRACE ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE6_SHORT_RETURN ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1911,7 +1909,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE5_RETRACE T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ROUTE6_SHORT_RETURN T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2595,7 +2593,9 @@
+           junction_armed=0U;front_was_valid=0U;rearm_valid_count=0U;
+         }
+         if(output.ready && front_recovery_valid_count>=ROUTE_FRONT_RECOVERY_VALID_SAMPLES) {
+-            Route_EnterFollow(now,1U,front_resume_base_rpm_x10,0U);
++            /* The search is moving at 50RPM. Seed PID from that speed rather
++             * than jumping straight back to its pre-loss cruising target. */
++            Route_EnterFollow(now,1U,500L,0U);
+             if(front_resume_state==ROUTE_STATE_MAP_PASS) {
+               /* The straight-pass owner must confirm and commit this node;
+                * retain its first-detection encoder anchor through recovery. */

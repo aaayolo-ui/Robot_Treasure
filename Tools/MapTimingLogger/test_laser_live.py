@@ -90,6 +90,7 @@ class LaserLiveIntegrationTests(unittest.TestCase):
 
     def test_reader_discards_inflight_old_port_data_and_closes_before_switch(self):
         feed = self.feed
+        feed.serial_enabled = True  # This reader test explicitly opts into connection.
         readers = []
 
         class Finished(Exception):

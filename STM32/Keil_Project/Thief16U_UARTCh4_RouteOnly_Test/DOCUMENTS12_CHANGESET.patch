@@ -1,0 +1,762 @@
+--- 16U_RUN2/Algorithm/MapRoute/MapRouteNavigator.c
++++ 16U_RUN3/Algorithm/MapRoute/MapRouteNavigator.c
+@@ -133,6 +133,14 @@
+   return (travel_mm > ((int32_t)step->length_mm * 16L / 10L + 100L)) ? 1U : 0U;
+ }
+ 
++uint8_t MapRouteNavigator_InArrivalWindow(const MapRouteNavigator_t *nav, int32_t travel_mm)
++{
++  const MapRouteStep_t *step=MapRouteNavigator_Current(nav);
++  return (step!=NULL && !nav->fault && !nav->arrived &&
++      travel_mm>=(int32_t)step->length_mm*4L/10L-50L &&
++      !MapRouteNavigator_TooFar(nav,travel_mm)) ? 1U : 0U;
++}
++
+ MapRouteAction_t MapRouteNavigator_Arrive(MapRouteNavigator_t *nav,
+                                          uint16_t raw12, int32_t travel_mm)
+ {
+--- 16U_RUN2/Algorithm/MapRoute/MapRouteNavigator.h
++++ 16U_RUN3/Algorithm/MapRoute/MapRouteNavigator.h
+@@ -17,5 +17,6 @@
+ void MapRouteNavigator_Observe(MapRouteNavigator_t *nav, uint16_t raw12);
+ uint8_t MapRouteNavigator_ConfirmTurn(const MapRouteNavigator_t *nav);
+ uint8_t MapRouteNavigator_Advance(MapRouteNavigator_t *nav);
++uint8_t MapRouteNavigator_InArrivalWindow(const MapRouteNavigator_t *nav, int32_t travel_mm);
+ uint8_t MapRouteNavigator_TooFar(const MapRouteNavigator_t *nav, int32_t travel_mm);
+ #endif
+--- 16U_RUN2/Algorithm/ThiefStrategy/FrontLaserGate.c
++++ 16U_RUN3/Algorithm/ThiefStrategy/FrontLaserGate.c
+@@ -179,6 +179,22 @@
+   return 0U;
+ }
+ 
++/* At rest, isolated reflections must not launch an escape. Moving obstacle
++ * response still uses Observe's immediate current-frame result. */
++uint8_t FrontLaserGate_HideConfirmed(const FrontLaserGate_t *gate)
++{
++  uint8_t i,index;
++  uint16_t minimum=65535U,maximum=0U;
++  if(gate==NULL || gate->status!=FRONT_LASER_OPPONENT ||
++      (gate->valid_history&7U)!=7U || gate->confidence<THIEF_NEAR_CONFIDENCE) return 0U;
++  for(i=1U;i<=3U;i++) {
++    index=(uint8_t)((gate->distance_index+5U-i)%5U);
++    if(gate->valid_distances[index]<minimum) minimum=gate->valid_distances[index];
++    if(gate->valid_distances[index]>maximum) maximum=gate->valid_distances[index];
++  }
++  return maximum-minimum<=120U ? 1U : 0U;
++}
++
+ const char *FrontLaserGate_StatusText(FrontLaserGateStatus_t status)
+ {
+   static const char *const text[] = {
+--- 16U_RUN2/Algorithm/ThiefStrategy/FrontLaserGate.h
++++ 16U_RUN3/Algorithm/ThiefStrategy/FrontLaserGate.h
+@@ -42,6 +42,7 @@
+                                uint8_t direction);
+ /* Direction: front=0, left=1, right=2, rear=3. Keep telemetry raw. */
+ uint16_t FrontLaserGate_CenterDistanceMm(uint16_t raw_mm, uint8_t direction);
++uint8_t FrontLaserGate_HideConfirmed(const FrontLaserGate_t *gate);
+ const char *FrontLaserGate_StatusText(FrontLaserGateStatus_t status);
+ 
+ #endif
+--- 16U_RUN2/Control/FollowSmoothing.c
++++ 16U_RUN3/Control/FollowSmoothing.c
+@@ -88,3 +88,14 @@
+   output->right_target_rpm_x10 = smoothing->base_rpm_x10 -
+                                   smoothing->correction_rpm_x10;
+ }
++
++void FollowSmoothing_LimitBase(FollowSmoothing_t *s, int32_t limit,
++                               LineFollowPID_Output_t *o)
++{
++  if(o->base_rpm_x10<=limit) return;
++  o->final_correction_rpm_x10=o->final_correction_rpm_x10*limit/o->base_rpm_x10;
++  o->base_rpm_x10=limit;
++  o->left_target_rpm_x10=limit+o->final_correction_rpm_x10;
++  o->right_target_rpm_x10=limit-o->final_correction_rpm_x10;
++  s->base_rpm_x10=o->base_rpm_x10;s->correction_rpm_x10=o->final_correction_rpm_x10;
++}
+--- 16U_RUN2/Control/FollowSmoothing.h
++++ 16U_RUN3/Control/FollowSmoothing.h
+@@ -16,4 +16,7 @@
+                            uint32_t elapsed_ms,
+                            LineFollowPID_Output_t *output);
+ 
++/* Scale both sides together to retain curvature while acquiring a line. */
++void FollowSmoothing_LimitBase(FollowSmoothing_t *smoothing, int32_t limit,
++                               LineFollowPID_Output_t *output);
+ #endif
+--- 16U_RUN2/User/App_ThiefStrategy.c
++++ 16U_RUN3/User/App_ThiefStrategy.c
+@@ -33,9 +33,9 @@
+ 
+ /* RPM targets use x10 units. Keep the user's cruise/turn settings separate. */
+ #define ROUTE_LEAVE_START_RPM_X10          2000L
+-#define ROUTE_LEAVE_INITIAL_RPM_X10        2000L
++#define ROUTE_LEAVE_INITIAL_RPM_X10        1000L
+ #define ROUTE_LEAVE_RAMP_STEP_RPM_X10       10L
+-#define ROUTE_AFTER_TURN_START_RPM_X10     2000L
++#define ROUTE_AFTER_TURN_START_RPM_X10     1000L
+ #define ROUTE_TURN_EQUAL_PWM                550L
+ #define ROUTE_TURN_APPROACH_RPM_X10       1000L
+ #define ROUTE_TURN_APPROACH_DELAY_MS        180U /* Controlled forward approach before braking. */
+@@ -170,6 +170,11 @@
+ static uint8_t branch_headings;
+ static uint8_t node_centered;
+ static uint8_t departure_centered;
++static int32_t node_stop_counts;
++static uint8_t node_stop_counts_valid;
++static uint32_t node_approach_ms=ROUTE_TURN_APPROACH_DELAY_MS;
++static uint32_t departure_approach_ms;
++static uint16_t departure_known_clearance[4];
+ static uint8_t departure_branch_headings;
+ static uint8_t departure_reacquire;
+ static uint8_t restart_search_active;
+@@ -334,7 +339,8 @@
+     thief_laser_seen[i]=0U;
+     return;
+   }
+-  if(!thief_laser_seen[i] || (uint32_t)(tick-thief_last_laser_tick[i])>250U || !distance)
++  if(!thief_laser_seen[i] || (uint32_t)(tick-thief_last_laser_tick[i])>
+++      (thief_strategy_state==THIEF_STRATEGY_HIDING?100U:250U) || !distance)
+     FrontLaserGate_ResetEvidence(&thief_laser[i]);
+   thief_last_laser_tick[i]=tick;
+   thief_laser_seen[i]=1U;
+@@ -350,6 +356,9 @@
+       allow,
+       distance,confidence,firmware,i)) {
+     if(thief_strategy_state==THIEF_STRATEGY_HIDING) {
++      if(!FrontLaserGate_HideConfirmed(&thief_laser[i])) {
++        thief_laser[i].status=FRONT_LASER_UNSTABLE;return;
++      }
+       ThiefMapPlanner_ObserveThreat(thief_pose.node_id,sensor_pose.body_heading,
+           thief_laser[i].hit_x_mm,thief_laser[i].hit_y_mm,tick);
+       thief_escape_requested=1U;
+@@ -438,7 +447,8 @@
+   Route_MapContext();
+   map_leg_start_counts = MapRoutePosition_ForwardCounts();
+   map_progress_offset_mm = 0L;
+-  node_centered=0U;
++  node_centered=0U;node_stop_counts_valid=0U;
++  junction_armed=0U;junction_latched=0U;front_was_valid=0U;rearm_valid_count=0U;
+   branch_node=0U;branch_headings=0U;
+   /* A frame from before this confirmed outgoing axis must not be projected
+    * with the new heading, even if it is under the moving age limit. */
+@@ -1049,6 +1059,9 @@
+                                  control.final_correction_rpm_x10;
+   FollowSmoothing_Apply(&follow_smoothing, sample->position_error_x100,
+                          elapsed_ms, &control);
++  /* Acquire the outgoing line before accelerating, including reverse starts. */
++  if(map_nav.arrived || departure_turn || Route_LegProgress()<100L)
++    FollowSmoothing_LimitBase(&follow_smoothing,1000L,&control);
+   TravelFrame_SetWheelTargets(control.left_target_rpm_x10,
+                                       control.right_target_rpm_x10,
+                                       control.left_target_rpm_x10,
+@@ -1113,6 +1126,8 @@
+   route_active=0U;
+   route_state=ROUTE_STATE_DONE;
+   node_centered=centered;
++  node_stop_counts=MapRoutePosition_ForwardCounts();node_stop_counts_valid=1U;
++  node_approach_ms=ROUTE_TURN_APPROACH_DELAY_MS;
+   thief_previous_hide_node=thief_current_node;
+   thief_current_node=node;
+   thief_body_heading=body;
+@@ -1219,6 +1234,10 @@
+       thief_localization.confirmed_node==thief_plan.route.start_node);
+   departure_entry_mode=TravelFrame_IsReverse();
+   departure_centered=node_centered;
++  departure_approach_ms=departure_centered?0U:ROUTE_TURN_APPROACH_DELAY_MS;
++  if(departure_reacquire && !departure_centered && node_stop_counts_valid)
++    departure_approach_ms=MapRoutePosition_RemainingApproachMs(node_approach_ms,
++        MapRoutePosition_DistanceMm(node_stop_counts),ROUTE_TURN_APPROACH_RPM_X10);
+   departure_branch_headings=(departure_reacquire && branch_node==thief_plan.route.start_node)?
+       branch_headings:0U;
+   node_centered=0U;
+@@ -1343,7 +1362,7 @@
+   if(departure_turn) {
+     turn_target_state=turn_delta==1U?ROUTE_STATE_TURN_RIGHT:ROUTE_STATE_TURN_LEFT;
+ #if ROUTE_TURN_APPROACH_DELAY_MS > 0U
+-    if(departure_centered) {
++    if(departure_centered || !departure_approach_ms) {
+       Route_EnterTurnStop(now);
+     } else {
+     /* A gray-arrival stop leaves the leading sensor at the junction. Move
+@@ -1378,6 +1397,17 @@
+       thief_laser_seen[i] && (uint32_t)(now-thief_last_laser_tick[i])<=250UL)
+     clearance[(thief_pose.body_heading+laser_heading_offset[i])%4U]=
+         FrontLaserGate_CenterDistanceMm(thief_laser[i].distance_mm,i);
++  /* The planner already chose an exit around these side/rear hits. Do not
++   * cancel that same departure at zero displacement. A new direction or a
++   * substantially closer hit remains an immediate interception. */
++  if(map_nav.step==0U && !retreat_active && Route_LegProgress()<100L &&
++      (uint32_t)(now-run_start_tick)<500U) {
++    for(i=0U;i<4U;i++) if(i!=s->heading && departure_known_clearance[i] &&
++        (int32_t)clearance[i]+100L>=departure_known_clearance[i]) mask&=(uint8_t)~(1U<<i);
++  }
++  /* A target only behind the travel direction is being left behind. Keep the
++   * chosen refuge route rather than braking again at every junction. */
++  if(!mask || !(mask&(uint8_t)~(1U<<((s->heading+2U)%4U)))) return;
+   replan_after_leg=1U;
+   if(ThiefIntercept_ShouldReverse(s->heading,mask,clearance,
+       (uint8_t)(intercept_has_reversed &&
+@@ -1389,8 +1419,8 @@
+     turn_stop_stable_count=0U;last_control_tick=now;
+   } else {
+     intercept_continues++;
+-    /* Rear-only pursuit or reverse cooldown: keep moving away, stop at the
+-     * next confirmed junction and choose another route there. */
++    /* A new front/side hit during reversal cooldown is handled at the next
++     * confirmed node; rear-only pursuit returned above without truncation. */
+     thief_plan.steps[map_nav.step].action=MAP_ACTION_STOP;
+     thief_plan.route.count=(uint16_t)(map_nav.step+1U);
+     thief_localization.step.action=MAP_ACTION_STOP;
+@@ -1434,6 +1464,7 @@
+     UartDebug_Printf("INTERCEPT_AT_START N=%u MM=%ld\r\n",
+         (unsigned)old.from_node,(long)progress);
+     Route_FinishNodeStop(now,old.from_node,thief_localization.body_heading,departure_centered);
++    node_approach_ms=departure_approach_ms;
+     return;
+   }
+   back=old;back.from_node=old.to_node;back.to_node=old.from_node;
+@@ -1486,7 +1517,10 @@
+   map_progress_offset_mm=0L;departure_turn=0U;replan_after_leg=0U;
+   retreat_active=0U;intercept_pending=0U;intercept_has_reversed=0U;
+   node_centered=0U;departure_centered=0U;branch_node=0U;branch_headings=0U;
+-  departure_branch_headings=0U;
++  departure_branch_headings=0U;node_stop_counts_valid=0U;
++  node_approach_ms=ROUTE_TURN_APPROACH_DELAY_MS;
++  departure_known_clearance[0]=0U;departure_known_clearance[1]=0U;
++  departure_known_clearance[2]=0U;departure_known_clearance[3]=0U;
+   MapTimingLog_Init();
+   TreasureWheelLog_Init();
+   TreasureMotorSnapshot_Init();
+@@ -1528,7 +1562,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN2 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN3 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1551,7 +1585,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN2 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN3 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1600,7 +1634,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_RUN2 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_RUN3 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -1758,6 +1792,14 @@
+       UartDebug_Printf("ESCAPE_PLAN_FAILED AT=N%03u BODY=%u\r\n",
+           (unsigned)thief_current_node, (unsigned)thief_body_heading);
+       goto task_end;
++    }
++    {
++      uint8_t i;
++      for(i=0U;i<4U;i++) departure_known_clearance[i]=0U;
++      for(i=0U;i<LASER_COUNT;i++) if(thief_laser[i].status==FRONT_LASER_OPPONENT &&
++          thief_laser_seen[i] && (uint32_t)(now-thief_last_laser_tick[i])<=250U)
++        departure_known_clearance[(thief_body_heading+laser_heading_offset[i])%4U]=
++            FrontLaserGate_CenterDistanceMm(thief_laser[i].distance_mm,i);
+     }
+     thief_previous_hide_node = old_hide;
+     if ((uint32_t)(SystemTime_GetMs()-planning_started)>THIEF_PLAN_BUDGET_MS) {
+@@ -1813,7 +1855,8 @@
+    * for the 20 ms PID schedule used to extend it by up to one control period. */
+   if ((route_active != 0U) &&
+       (route_state == ROUTE_STATE_TURN_APPROACH) &&
+-      ((uint32_t)(now - route_state_tick) >= ROUTE_TURN_APPROACH_DELAY_MS))
++      ((uint32_t)(now - route_state_tick) >=
++        (departure_turn?departure_approach_ms:ROUTE_TURN_APPROACH_DELAY_MS)))
+   {
+     Route_EnterTurnStop(now);
+     goto task_end;
+@@ -1840,6 +1883,7 @@
+     }
+     if ((map_nav.arrived == 0U) && (Route_IsJunctionCandidate(front_state) != 0U) &&
+         (junction_armed != 0U) &&
++        MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress()) &&
+         (junction_latched == 0U) &&
+         (front_was_valid != 0U))
+     {
+@@ -1979,6 +2023,7 @@
+       front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
+       if (!departure_turn && (map_nav.arrived == 0U) && (Route_IsJunctionCandidate(front_state) != 0U) &&
+           (junction_armed != 0U) &&
++        MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress()) &&
+           (junction_latched == 0U) &&
+           (front_was_valid != 0U))
+       {
+@@ -2026,7 +2071,7 @@
+         Route_ConfirmTurnDirection(sample.front_raw12);
+       }
+       if ((uint32_t)(now - route_state_tick) >=
+-          ROUTE_TURN_APPROACH_DELAY_MS)
++          (departure_turn?departure_approach_ms:ROUTE_TURN_APPROACH_DELAY_MS))
+       {
+         Route_EnterTurnStop(now);
+       }
+@@ -2297,7 +2342,8 @@
+         if (route_state == ROUTE_STATE_FOLLOW)
+         {
+           if ((map_nav.arrived == 0U) && (Route_IsJunctionCandidate(front_state) != 0U) &&
+-              (junction_armed != 0U) && (junction_latched == 0U) &&
++              (junction_armed != 0U) &&
++        MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress()) && (junction_latched == 0U) &&
+               (front_was_valid != 0U))
+           {
+             Route_HandleJunction(SystemTime_GetMs(), elapsed_ms, front_state, sample.front_raw12);
+--- 16U_RUN2/User/MapRoutePosition.c
++++ 16U_RUN3/User/MapRoutePosition.c
+@@ -23,3 +23,15 @@
+   return (int32_t)(((int64_t)counts * MAP_ROUTE_WHEEL_CIRCUMFERENCE_UM) /
+                    ((int64_t)MOTOR_ENCODER_COUNTS_PER_REV * 1000L));
+ }
++
++/* Use the same wheel scale as odometry; credit the translation already done
++ * during braking instead of applying another full pre-turn approach. */
++uint32_t MapRoutePosition_RemainingApproachMs(uint32_t requested_ms, int32_t traveled_mm,
++                                             int32_t rpm_x10)
++{
++  uint32_t used;
++  if(traveled_mm<=0L || rpm_x10<=0L) return requested_ms;
++  used=(uint32_t)((int64_t)traveled_mm*600000000LL/
++      ((int64_t)rpm_x10*MAP_ROUTE_WHEEL_CIRCUMFERENCE_UM));
++  return used>=requested_ms ? 0U : requested_ms-used;
++}
+--- 16U_RUN2/User/MapRoutePosition.h
++++ 16U_RUN3/User/MapRoutePosition.h
+@@ -5,4 +5,6 @@
+ #define MAP_ROUTE_WHEEL_CIRCUMFERENCE_UM 204204UL
+ int32_t MapRoutePosition_ForwardCounts(void);
+ int32_t MapRoutePosition_DistanceMm(int32_t start_counts);
++uint32_t MapRoutePosition_RemainingApproachMs(uint32_t requested_ms, int32_t traveled_mm,
++                                             int32_t rpm_x10);
+ #endif
+--- 16U_RUN2/Tests/test_app_runtime.py
++++ 16U_RUN3/Tests/test_app_runtime.py
+@@ -328,14 +328,14 @@
+         events.clear();call('Thief_InterceptReact',clock)
+         try:
+             if case in ['rear pursuit while forward','front pursuit while reverse']:
+-                # Keep moving away, but stop at the next node and replan.
++                # Keep moving away along the complete planned route.
+                 for _ in range(4):
+                     clock+=20;call('Thief_OnLaserFrame',threat,150,100,1,clock)
+                     call('Thief_InterceptReact',clock)
+-                check(get(local_route+fields(types['MapRoute_t'])['count'][0],2)==1 and
+-                      get(local_steps+fields(types['MapRouteStep_t'])['action'][0],1)==2 and
+-                      var('replan_after_leg')==1 and 'Route_BrakeControl' not in events,
+-                      case+': keep moving away and replan at the next node')
++                check(get(local_route+fields(types['MapRoute_t'])['count'][0],2)==2 and
++                      get(local_steps+fields(types['MapRouteStep_t'])['action'][0],1)==0 and
++                      var('replan_after_leg')==0 and 'Route_BrakeControl' not in events,
++                      case+': keep moving away without truncating the refuge route')
+             else:
+                 check(var('route_state')==12 and events==['Route_BrakeControl'],case+' brake first')
+                 clock+=20;call('Thief_InterceptStopped',clock)
+@@ -366,7 +366,8 @@
+         var('branch_node',38);var('branch_headings',5)
+         call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
+         clock+=1
+-        for _ in range(2):call('Thief_OnLaserFrame',direction,150,100,1,clock)
++        for _ in range(3):
++            clock+=20;call('Thief_OnLaserFrame',direction,150,100,1,clock)
+         check(var('thief_escape_requested')==1,label+' wakes hiding through the real laser gate')
+         call('App_ThiefStrategy_Task')
+         heading=get(local_steps+fields(types['MapRouteStep_t'])['heading'][0],1)
+--- 16U_RUN2/Tests/test_escape_completion.py
++++ 16U_RUN3/Tests/test_escape_completion.py
+@@ -116,7 +116,8 @@
+     for body in ([1,3] if node in [11,38,35] else [0,2]):
+         for direction,label in enumerate(['FRONT','LEFT','RIGHT','REAR']):
+             fresh(node,body)
+-            clock+=1;call('Thief_OnLaserFrame',direction,150,100,1,clock)
++            for _ in range(3):
++                clock+=20;call('Thief_OnLaserFrame',direction,150,100,1,clock)
+             if not var('thief_escape_requested'):
+                 # A nonexistent road/off-map ray is intentionally not an opponent.
+                 sensor=(body+[0,3,1,2][direction])%4
+@@ -135,7 +136,10 @@
+ # End-to-end one-shot obstacle while already escaping, all body-relative lasers.
+ interceptions=[]
+ for direction,label in [(0,'FRONT'),(3,'REAR')]:
+-    fresh(38,1);clock+=1;call('Thief_OnLaserFrame',3,150,100,1,clock);tick()
++    fresh(38,1)
++    for _ in range(3):
++        clock+=20;call('Thief_OnLaserFrame',3,150,100,1,clock)
++    tick()
+     result=complete_route(intercept=direction)
+     check(result['intercepted'],'partial-leg laser must actually trigger')
+     check(result['node'] in [11,38,26,35,63],'intercepted escape completes at a permitted hide')
+@@ -145,7 +149,10 @@
+ # Trigger after Route_Start but before translation: exercise real cancellation,
+ # settle, replan, turn and complete route, rather than forcing a threat mask.
+ for direction,label in [(1,'LEFT'),(2,'RIGHT')]:
+-    fresh(38,1);clock+=1;call('Thief_OnLaserFrame',3,150,100,1,clock);tick()
++    fresh(38,1)
++    for _ in range(3):
++        clock+=20;call('Thief_OnLaserFrame',3,150,100,1,clock)
++    tick()
+     call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
+     clock+=1;call('Thief_OnLaserFrame',direction,150,100,1,clock)
+     check(var('intercept_pending')==1,'side threat at departure crosses the real laser gate')
+--- 16U_RUN2/Tests/test_documents12.py
++++ 16U_RUN3/Tests/test_documents12.py
+@@ -0,0 +1,138 @@
++"""Documents12 and repeated-stop regressions against actual linked ARM code.
++Sensor, encoder and motor interfaces are stubs; this is not a hardware test.
++"""
++from pathlib import Path
++import sys,json
++setup=Path(__file__).with_name('test_escape_completion.py').read_text(encoding='utf-8-sig')
++exec(compile(setup.split('# Log regression:')[0],str(Path(__file__).with_name('test_escape_completion.py')),'exec'))
++
++def frames(direction,distance=150,confidence=100,count=3):
++    global clock
++    for _ in range(count):
++        clock+=20;call('Thief_OnLaserFrame',direction,distance,confidence,1,clock)
++
++def early_junction():
++    global odom,gray_raw,gray_state
++    fresh(22,0);setstep(22,11,0,0,300);call('Route_Start')
++    for _ in range(4):tick()
++    odom=43;gray_raw=0xc60;gray_state=4
++    tick()
++    check(member('thief_localization','confirmed_node')==22 and not member('map_nav','arrived'),
++          '43mm branch-shaped reading is not N011')
++    check(var('junction_count')==0,'early reading cannot advance junction index')
++    result=complete_route()
++    check(result['node']==11,'ignored early branch does not prevent real N011 arrival')
++
++def noisy_hide():
++    global clock
++    fresh(38,1)
++    for distance,confidence in [(391,0),(380,60),(422,0),(387,20),(395,0)]:
++        frames(2,distance,confidence,1)
++        check(not var('thief_escape_requested'),'isolated Documents12 right-laser frame must not wake hide')
++        tick();check(var('thief_strategy_state')==2,'no fresh confirmation means keep hiding')
++    frames(2,380,60,2)
++    check(not var('thief_escape_requested'),'two frames are not enough at rest')
++    frames(2,385,60,1)
++    check(var('thief_escape_requested')==1,'third consecutive valid frame wakes hide')
++    tick();check(var('route_active')==1,'stable confirmed detection starts escape')
++
++def repeated_side():
++    fresh(38,1);frames(2,380,60);tick()
++    check(at(current(),'MapRouteStep_t','heading')==1,'reported departure goes east away from south hit')
++    for _ in range(4):
++        frames(2,380,60,1);tick()
++        check(var('route_active') and var('route_state')!=12,'known side hit does not cancel unmoved departure')
++    frames(0,150,100,1);tick()
++    check(var('route_state')==12,'new obstacle in the actual travel direction brakes immediately')
++    result=complete_route();check(result['node'] in [11,38,26,35,63],'new interception still completes refuge route')
++
++def rear_pursuit():
++    fresh(38,1);setstep(38,39,1,0,300,action=0)
++    setstep(39,40,1,0,300,index=1);record(route,'MapRoute_t',dict(count=2))
++    call('Route_Start');call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
++    for _ in range(5):frames(3,150,100,1);tick()
++    check(at(route,'MapRoute_t','count')==2 and not var('replan_after_leg'),
++          'rear-only pursuit keeps the complete route instead of stopping at N039')
++
++def brake_credit():
++    global odom,clock,gray_raw,gray_state
++    for slide in [0,30,70]:
++        fresh(38,1,0);setstep(38,37,3,1,300);call('Route_Start')
++        var('replan_after_leg',1);odom=300;clock+=400
++        call('Route_HandleJunction',clock,20,5,0xbff)
++        tick(40);tick(60)
++        odom=slide
++        setstep(37,20,0,0,600);call('Route_Start')
++        check(var('route_state')==(4 if slide==70 else 3),
++              f'N037 root approach credits braking travel {slide=}')
++        if 'departure_approach_ms' in symbols:
++            expected=180-min(180,slide*600000000//(1000*204204))
++            check(var('departure_approach_ms')==expected,'remaining approach matches existing wheel scale')
++        # Turn/start code and real navigator must still complete the outgoing edge.
++        result=complete_route();check(result['node']==20,'N037 credit does not skip outgoing edge')
++
++def launch_speed():
++    global odom
++    targets=[]
++    def capture():
++        targets.append(tuple(int.from_bytes(u.reg_read(r).to_bytes(4,'little'),'little',signed=True)
++                       for r in [UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2,UC_ARM_REG_R3]));return 0
++    hook('TravelFrame_SetWheelTargets',capture)
++    fresh(38,1);setstep(38,37,3,1,300);call('Route_Start')
++    for _ in range(6):tick()
++    check(targets and max((a+b)//2 for a,b,_,_ in targets)<=1000,'reverse startup acquires line at <=100 RPM')
++    odom=150;targets.clear()
++    for _ in range(5):tick()
++    check(any((a+b)//2>1000 for a,b,_,_ in targets),'normal cruise resumes after departure zone')
++    event('TravelFrame_SetWheelTargets')
++
++def brake_credit_matrix():
++    global odom,clock
++    cases=0
++    def road(node,h):
++        if not call('ThiefMapPlanner_HasRoad',node,h,0x2000c400,0x2000c402):return None
++        target,length=get(0x2000c400,2),get(0x2000c402,2)
++        if not at(call('ThiefMapPlanner_Node',target),'MapRouteNode_t','kind'):return None
++        return target,length
++    for node in [11,38,26,35,63,37,78]:
++      for entry_road in range(4):
++        incoming=road(node,entry_road)
++        if incoming is None:continue
++        source,length=incoming;heading=(entry_road+2)%4
++        for mode in [0,1]:
++          body=(heading+2*mode)%4
++          for out in [(body+1)%4,(body+3)%4]:
++            outgoing=road(node,out)
++            if outgoing is None:continue
++            target,next_length=outgoing
++            for slide in [0,30,70]:
++                fresh(source,body,0);setstep(source,node,heading,mode,length);call('Route_Start')
++                var('replan_after_leg',1);odom=length;clock+=600
++                call('Route_HandleJunction',clock,20,3,0xfff)
++                check(var('thief_current_node')==node,'matrix arrival reaches expected real node')
++                tick(40);tick(60);odom=slide
++                setstep(node,target,out,0,next_length);call('Route_Start')
++                expected=180-min(180,slide*600000000//(1000*204204))
++                check(var('departure_approach_ms')==expected and var('route_state')==(4 if not expected else 3),
++                      f'braking credit applies to every physical entry frame {node=} {mode=} {body=} {out=} {slide=}')
++                check(call('TravelFrame_IsReverse')==mode,'credited approach preserves actual incoming frame')
++                cases+=1
++    return cases
++
++matrix_cases=0
++failures=[];passed=[]
++for fn in [early_junction,noisy_hide,repeated_side,rear_pursuit,brake_credit,launch_speed,brake_credit_matrix]:
++    try:
++        value=fn()
++        if fn==brake_credit_matrix:matrix_cases=value
++        passed.append(fn.__name__);print(fn.__name__+': PASS',flush=True)
++    except AssertionError as e:failures.append(dict(case=fn.__name__,error=str(e)));print(fn.__name__+': FAIL '+str(e),flush=True)
++result=dict(checks=checks,failures=failures,passed=passed,hardware_tested=False,brake_credit_matrix_cases=matrix_cases,
++ helper_sha256={name:hashlib.sha256((ROOT/'Tests'/name).read_bytes()).hexdigest() for name in ['test_app_runtime.py','test_escape_completion.py']},
++ firmware_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),
++ app_source_sha256=hashlib.sha256((ROOT/'User/App_ThiefStrategy.c').read_bytes()).hexdigest(),
++ test_script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
++out=ROOT/'Tests'/('before_documents12/regression_before.json' if '--before' in sys.argv else 'results_documents12.json')
++out.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
++print(json.dumps(result,indent=2))
++sys.exit(bool(failures))
+--- 16U_RUN2/Tests/test_16m.c
++++ 16U_RUN3/Tests/test_16m.c
+@@ -25,6 +25,13 @@
+   CHECK(ThiefIntercept_HideAxis(plan.goal_node)&(1U<<plan.final_body_heading));
+   MapRouteNavigator_StartRuntime(&nav,&plan.route,plan.steps);
+   CHECK(!nav.fault);
++  {
++    int32_t minimum=(int32_t)plan.steps[0].length_mm*4L/10L-50L;
++    CHECK(!MapRouteNavigator_InArrivalWindow(&nav,minimum-1L));
++    CHECK(MapRouteNavigator_InArrivalWindow(&nav,minimum));
++    CHECK(MapRouteNavigator_InArrivalWindow(&nav,plan.steps[0].length_mm));
++    CHECK(!MapRouteNavigator_InArrivalWindow(&nav,(int32_t)plan.steps[0].length_mm*16L/10L+101L));
++  }
+   for(i=0U;i<plan.route.count;i++) {
+     CHECK(plan.steps[i].length_mm>0U);
+     CHECK(ThiefMapPlanner_Node(plan.steps[i].to_node)->kind!=0U);
+@@ -94,6 +101,17 @@
+     p.body_heading=1U;FrontLaserGate_ResetEvidence(&g);
+     CHECK(FrontLaserGate_Observe(&g,&p,1U,400U,30U,1U,i));
+   }
++  ThiefMapPlanner_PoseAtNode(1U,1U,&p);FrontLaserGate_Init(&g);
++  CHECK(FrontLaserGate_Observe(&g,&p,1U,380U,60U,1U,0U));
++  CHECK(!FrontLaserGate_HideConfirmed(&g));
++  CHECK(!FrontLaserGate_Observe(&g,&p,1U,422U,0U,1U,0U));
++  CHECK(!FrontLaserGate_HideConfirmed(&g));
++  for(i=0U;i<3U;i++) {
++    CHECK(FrontLaserGate_Observe(&g,&p,1U,380U,60U,1U,0U));
++    CHECK(FrontLaserGate_HideConfirmed(&g)==(i==2U));
++  }
++  FrontLaserGate_ResetEvidence(&g);
++  CHECK(!FrontLaserGate_HideConfirmed(&g));
+   CHECK(!MapLaserMask_FrameAllowed(15U,0U,100U,100U));
+   CHECK(!MapLaserMask_FrameAllowed(15U,0U,99U,100U));
+   CHECK(MapLaserMask_FrameAllowed(15U,0U,101U,100U));
+--- 16U_RUN2/Tests/verify_snapshot.py
++++ 16U_RUN3/Tests/verify_snapshot.py
+@@ -17,9 +17,8 @@
+         if not old.exists() or sha(p)!=sha(old):
+             diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+                 p.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/'+rel,tofile='16U/'+rel))
+-assert set(changed)=={'Algorithm/ThiefStrategy/FrontLaserGate.c',
+- 'Algorithm/ThiefStrategy/ThiefInterceptPolicy.c',
+- 'Algorithm/ThiefStrategy/ThiefStrategyConfig.h','User/App_ThiefStrategy.c'} and not added, 'unexpected firmware source changes'
++expected_run3=['Algorithm/MapRoute/MapRouteNavigator.c', 'Algorithm/MapRoute/MapRouteNavigator.h', 'Algorithm/ThiefStrategy/FrontLaserGate.c', 'Algorithm/ThiefStrategy/FrontLaserGate.h', 'Control/FollowSmoothing.c', 'Control/FollowSmoothing.h', 'User/App_ThiefStrategy.c', 'User/MapRoutePosition.c', 'User/MapRoutePosition.h']
++assert set(changed)==set(expected_run3+['Algorithm/ThiefStrategy/ThiefInterceptPolicy.c','Algorithm/ThiefStrategy/ThiefStrategyConfig.h']) and not added
+ for directory in ['Core','Drivers','Hardware','System']:
+     assert not any(p.startswith(directory+'/') for p in changed+added),directory+' unexpectedly changed'
+ project=ROOT/'MDK-ARM'/(ROOT.name+'.uvprojx')
+@@ -60,26 +59,32 @@
+ assert escape_result['test_script_sha256']==sha(ROOT/'Tests/test_escape_completion.py')
+ assert len(escape_result['escapes'])==36 and len(escape_result['ignored'])==4
+ assert len(escape_result['interceptions'])==4
+-assert 'UARTCH4_16U_RUN2' in app
+-before=ROOT/'Tests/before_documents11'
++assert 'UARTCH4_16U_RUN3' in app
++before=ROOT/'Tests/before_documents12'
+ before_hashes=json.loads((before/'source_sha256.json').read_text())
+ fix_sources=[rel for rel,value in before_hashes.items() if sha(ROOT/rel)!=value]
+-assert fix_sources==['User/App_ThiefStrategy.c'],fix_sources
+-assert 'MAP_REQUIRED_BRANCH_NOT_SEEN' in (before/'regression_before.txt').read_text(encoding='utf-8-sig')
++assert set(fix_sources)==set(expected_run3),fix_sources
++before_regression=json.loads((before/'regression_before.json').read_text())
++assert len(before_regression['failures'])==6
++regression=json.loads((ROOT/'Tests/results_documents12.json').read_text())
++assert not regression['failures'] and regression['firmware_sha256']==sha(axf)
++assert regression['app_source_sha256']==sha(ROOT/'User/App_ThiefStrategy.c')
++assert regression['test_script_sha256']==sha(ROOT/'Tests/test_documents12.py')
++for name,value in regression['helper_sha256'].items():assert sha(ROOT/'Tests'/name)==value
++assert regression['brake_credit_matrix_cases']==240
+ fix_diff=[]
+-fix_files=['User/App_ThiefStrategy.c','Tests/test_app_runtime.py','Tests/test_escape_completion.py',
+-           'Tests/verify_snapshot.py','README.md']
++fix_files=expected_run3+['Tests/test_app_runtime.py','Tests/test_escape_completion.py','Tests/test_documents12.py','Tests/test_16m.c','Tests/verify_snapshot.py','README.md']
+ for rel in fix_files:
+     old=before/rel;current=ROOT/rel
+     fix_diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+-        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN1/'+rel,tofile='16U_RUN2/'+rel))
+-(ROOT/'DOCUMENTS11_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
++        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN2/'+rel,tofile='16U_RUN3/'+rel))
++(ROOT/'DOCUMENTS12_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
+ old_project=OLD/'MDK-ARM'/(OLD.name+'.uvprojx')
+ assert (ROOT/(ROOT.name+'.ioc')).read_text(encoding='utf-8')==\
+     (OLD/(OLD.name+'.ioc')).read_text(encoding='utf-8').replace(OLD.name,ROOT.name), 'CubeMX settings changed'
+ diff.extend(difflib.unified_diff(old_project.read_text(encoding='utf-8').splitlines(True),
+     project.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/project.uvprojx',tofile='16U/project.uvprojx'))
+-for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py']:
++for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py','Tests/test_documents12.py']:
+     p=ROOT/rel;old=OLD/rel
+     diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+         p.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/'+rel,tofile='16U/'+rel))
+@@ -94,14 +99,15 @@
+  unchanged_source_count=len(equal),unchanged_hardware_core=True,project_file_count=len(paths),
+  duplicate_sources=0,compile_errors=0,compile_warnings=0,hex_sha256=sha(hexfile),
+  algorithm_checks=result['test_checks'],application_checks=app_result['checks'],
+- hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN2',
+- documents11_fix_source_files=fix_sources,documents11_fix_files=fix_files,
+- documents11_backup=str(before),escape_completion_checks=escape_result['checks'],
++ hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN3',
++ documents12_fix_source_files=fix_sources,documents12_fix_files=fix_files,
++ documents12_checks=regression['checks'],brake_credit_matrix_cases=regression['brake_credit_matrix_cases'],
++ documents12_backup=str(before),escape_completion_checks=escape_result['checks'],
+  escape_completion_cases=len(escape_result['escapes']),ignored_no_road_cases=len(escape_result['ignored']),
+  interception_completion_cases=len(escape_result['interceptions']),
+  generated_evidence=['build_16U.log','Tests/results_16m.json','Tests/results_app_runtime.json',
+  'Tests/Documents10_evidence.json','Tests/results_escape_completion.json',
+- 'Tests/before_documents11/regression_before.txt','DOCUMENTS11_CHANGESET.patch','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
+- notes='16U RUN2 is an in-place Documents11 fix in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_documents11. No hardware execution.')
++ 'Tests/before_documents12/regression_before.json','Tests/results_documents12.json','DOCUMENTS12_CHANGESET.patch','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
++ notes='16U RUN3 is an in-place Documents12 fix in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_documents12. No hardware execution.')
+ (ROOT/'VALIDATION_16U.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+ print(json.dumps({k:v for k,v in report.items() if k!='baseline_sha256_at_verification'},indent=2,ensure_ascii=False))
+--- 16U_RUN2/README.md
++++ 16U_RUN3/README.md
+@@ -1,52 +1,62 @@
+-# 16U RUN2：修复 Documents11 中逃跑重规划后的误停车
++# 16U RUN3：减少重复避让、起步出线和误判路口停车
+ 
+-本次直接修改用户指定的桌面 `Thief16U_UARTCh4_ImmediateRetreat700_Test` 工程。启动标识为 **`UARTCH4_16U_RUN2`**，策略标识仍为 `ALGO=16U`，触发中心距离仍为 **700 mm**。
++直接修改用户指定的桌面 16U 工程，启动标识为 **UARTCH4_16U_RUN3**。700 mm 中心触发距离、1000 mm 原始有效距离上限、五藏点和停车轴向不变。保留 RUN2 的已确认节点起步支路修复。
+ 
+-## 停车原因
++## 日志结论
+ 
+-Documents11.txt 第 2008 行记录 N063 触发逃跑；第 2124–2125 行记录回到 N078，灰度 `DF4`，`CENTERED=0`；第 2143 行附近显示 `NODE_BRANCH_REUSE N=78 ABS=2 ENTRY=2 PORTS=1`。重新规划的首段是 N078→N077，车身朝南，需要向右转往西，但保留的灰度支路证据只有东侧。第 2167 行因此触发 `MAP_REQUIRED_BRANCH_NOT_SEEN`，进入 FAULT。
++- Documents12 第 911 行：N038 由右激光 `D=380 C=60` 触发逃跑，前后有置信度为 0 的读数。不是定时自动换点；日志无法判断实际物体身份，也不能证明始终有障碍。
++- 第 925、946 行：两次 `INTERCEPT_AT_START N=38 MM=0`，还没有位移就重新制动、规划，造成停顿。
++- 第 1167 行：`MAP_NODE_DISTANCE_OR_ORDER`。N022 转向 N011 后约行驶 43 mm，就再次识别到支路形状；该 300 mm 路段的最早有效到达门槛为 70 mm，不应当作下一节点并锁死停车。
++- 该日志没有记录用户另述的 N038→N037 出线。其物理原因尚未确认；代码中存在刹车滑行后仍补走完整入路口延时的问题，本次一并处理。
+ 
+-这次支路证据没有丢失，而是只观测到了另一侧。确认到达路口不等于灰度板同时看到了所有支路。不能用“没读到所选支路”否定已确认节点上、地图校验通过的重新出发。
++## 本次修复
+ 
+-## 修改范围
++1. 藏点静止时连续 **3 帧**有效近距离数据、距离跨度不超过 120 mm 才触发。无效帧或大于 100 ms 的帧间隔中断确认。50 Hz 数据约增加 40 ms 确认时间；行驶中的新拦截仍保持原快速判定。
++2. 已纳入规划的同一侧向/后方目标，在首段前 100 mm 且前 500 ms 内不重复取消起步。行进前方、新方向、距离比原记录更近超过 100 mm 的侧向目标仍触发拦截。
++3. 目标仅在行进后方时继续沿已选路线远离，不再每过一个路口就停车重规划。正反行驶均以实际行进方向判断。
++4. 未到有效距离窗口的支路形状不触发节点到达，不增加路口计数、不修改坐标、不锁死停车；新路段重新清理路口触发状态。
++5. 回撤停点的刹车位移用编码器计入，从原 180 ms、100 RPM 入路口动作中扣除。按现有名义轮径，30 mm 剩余约 92 ms，70 mm 无需再补走；正反行驶和零位移取消重启均覆盖。
++6. 起步与转弯后找线种子速度降至约 **100 RPM**；对齐阶段及每段前 100 mm 的循迹平均目标速度上限为 100 RPM，左右轮按比例缩放保留曲率，之后恢复巡航。
+ 
+-- 只改一个固件源文件：`User/App_ThiefStrategy.c`。删除已确认节点重新出发时的重复支路否决条件，更新 RUN2 标识。
+-- 起步仍须通过运行时地图路线校验、当前确认节点匹配以及新鲜 YAW 检查；转弯之后仍须满足出口灰度稳定、YAW 方向与角度对齐，才正式进入下一路段。
+-- 继续使用已有 180 ms 入路口延时；已居中的藏点跳过重复前进。保留途中普通路口的支路确认、手动停止、持续失线恢复和电机/陀螺仪故障处理。
+-- 五个藏点及停车轴向不变：N011/N038/N035 横向，N026/N063 纵向。700 mm 触发、原有效测距范围、地图外及无道路过滤不变。
+-- 不修改引脚、时钟、CubeMX 配置或电机底层；未烧录，未连接串口，未驱动电机。
++保留地图外/无道路过滤、手动停止和必要的持续失线、电机、陀螺仪故障处理。未改地图拓扑、底层引脚、时钟、CubeMX 或 Keil 工程配置。
+ 
+-## 验证证据
++## 验证结果及限制
+ 
+-- 原固件在新增 Documents11 回归中复现 `N078: MAP_REQUIRED_BRANCH_NOT_SEEN`，记录位于 `Tests/before_documents11/regression_before.txt`。
+-- 修复后同一回归能执行右转并到达 N077。
+-- 通过五藏点 × 两种合法停车朝向 × 四路激光的 40 组合检查：36 个方向有道路，真实激光判定和规划器均触发，并在合成灰度/YAW/编码器输入下完成整条路线、到达下一藏点且轴向正确；4 个方向没有地图道路，维持忽略，不伪造为小车。
+-- 四路激光的再次拦截完成测试：前后激光在已行驶路段触发；左右激光在路口起步、尚未位移时触发。覆盖制动、回撤或继续远离、停稳重规划、再启动及最终到达藏点。
+-- 无效起点、路段中途冒充节点、地图不存在的边仍被拒绝。
+-- 原有 4980 项应用检查、272703 项算法检查通过；包括 508 种根节点转弯与 128 种支路缓存组合。
+-- 对本工程执行 Keil ARMCC5 全量重编译：**0 Error(s), 0 Warning(s)**。日志 `build_16U.log`；完整校验及固件散列 `VALIDATION_16U.json`。
++- 修改前 RUN2 的六项定向回归失败记录：`Tests/before_documents12/regression_before.json`；修复后通过。
++- 2735 项定向应用检查通过，其中 240 种刹车补偿组合覆盖五藏点、N037、N078、可用入路方向、正反行驶和不同滑行距离。
++- 原有 4980 项应用检查通过，含 508 种根节点转弯、128 种支路缓存组合。
++- 五藏点 × 两种停车朝向 × 四路激光：36 个有道路方向触发后完成路线到下一藏点，4 个无道路方向按原规则忽略；四路再次拦截流程通过，共 23657 项检查。
++- ARMCC5 算法回归 274234 项检查通过。
++- 本工程 ARMCC5 全量编译：**0 Error(s), 0 Warning(s)**。Code 53420、RO 9492、RW 484、ZI 41380 字节。
+ 
+-应用测试运行实际链接的 ARM 固件，硬件接口被替代为合成输入；没有验证实车打滑、灰度板安装偏差、真实电机响应或激光误判。**仅编译通过，尚未完成硬件验证**。不能据此承诺任何硬件状况下都一定成功逃跑。
++应用测试执行实际链接 ARM 固件，但硬件接口使用合成灰度、YAW、编码器和电机反馈。补偿采用原有名义轮径，未进行实车标定。三帧确认减少孤立误测，不能识别物体身份；持续有效的近距离返回仍会触发避让。
+ 
+-## 文件与复核
++**仅编译通过，尚未完成硬件验证。** 未自动烧录、连接串口或驱动电机，不能把离线通过当作任何实际情况下都不会出线的保证。
+ 
+-打开 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test.uvprojx`。本次生成的 HEX 与 AXF 位于 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test/`。
++## 修改文件与备份
+ 
+-- `Tests/test_escape_completion.py`：Documents11 回归、40 组合检查和完整逃跑路线测试。
+-- `Tests/results_escape_completion.json`：每个起点、朝向、激光、目标藏点、途中确认节点及测试固件散列。
+-- `Tests/test_app_runtime.py` / `Tests/results_app_runtime.json`：原应用回归，已更新已确认节点起步的预期行为。
+-- `Tests/run_16m.py` / `Tests/results_16m.json`：算法回归。
+-- `Tests/verify_snapshot.py`：源码、工程引用、测试固件一致性和文件改动审计。
+-- `DOCUMENTS11_CHANGESET.patch`：这次 RUN1→RUN2 的改动；`SOURCE_CHANGESET.patch`：相对 16T 的累计改动。
+-- `Tests/before_documents11/`：本次修改前文件、原 AXF、原串口日志与源码散列。保留原版本便于对比和回退。
++固件修改：
+ 
+-在此工程目录依次运行：
++- `User/App_ThiefStrategy.c`
++- `User/MapRoutePosition.c`、`User/MapRoutePosition.h`
++- `Algorithm/MapRoute/MapRouteNavigator.c`、`Algorithm/MapRoute/MapRouteNavigator.h`
++- `Algorithm/ThiefStrategy/FrontLaserGate.c`、`Algorithm/ThiefStrategy/FrontLaserGate.h`
++- `Control/FollowSmoothing.c`、`Control/FollowSmoothing.h`
++
++测试及说明修改：`Tests/test_app_runtime.py`、`Tests/test_escape_completion.py`、`Tests/test_16m.c`、`Tests/verify_snapshot.py`、本 README。新增 `Tests/test_documents12.py`、`Tests/results_documents12.json`、`DOCUMENTS12_CHANGESET.patch`；编译日志、其他测试结果、累计差异及 `VALIDATION_16U.json` 同步更新。
++
++原 RUN2 文件、AXF 和 Documents12 原日志在 `Tests/before_documents12/`。更早证据在 `Tests/before_documents11/`，原 `DOCUMENTS11_CHANGESET.patch` 保留。`DOCUMENTS12_CHANGESET.patch` 是 RUN2→RUN3 的增量；`SOURCE_CHANGESET.patch` 是相对 16T 的累计差异。当前目录没有 Git 元数据，未提交或推送。
++
++打开 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test.uvprojx`。新 HEX/AXF 在 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test/`。烧录后核对 **UARTCH4_16U_RUN3**。
++
++先编译本工程，再依次执行：
+ 
+ ```powershell
+ E:/Python/python.exe Tests/run_16m.py
+ E:/Python/python.exe Tests/test_app_runtime.py
+ E:/Python/python.exe Tests/test_escape_completion.py
++E:/Python/python.exe Tests/test_documents12.py
+ E:/Python/python.exe Tests/verify_snapshot.py
+ ```
+ 
+-请先在 Keil 编译本工程，再运行上述应用测试。新增测试可附加 `--documents11-only` 仅验证日志对应的起步问题。
++验证报告包含测试固件 SHA-256，最终审计检查源码、测试记录和生成固件的一致性。

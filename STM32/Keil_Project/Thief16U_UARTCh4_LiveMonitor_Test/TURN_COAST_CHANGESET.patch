@@ -1,0 +1,361 @@
+--- MONITOR8/User/App_ThiefStrategy.c
++++ MONITOR9/User/App_ThiefStrategy.c
+@@ -213,6 +213,8 @@
+ static int16_t last_leading_error;
+ static uint8_t last_leading_mode;
+ static uint32_t restart_log_tick;
++static uint8_t turn_coast_braking;
++static uint32_t turn_coast_frame;
+ static uint32_t yaw_reference_since,yaw_reference_last,yaw_reference_apply;
+ static int32_t yaw_reference_mm;
+ static int16_t yaw_reference_sample;
+@@ -946,29 +948,47 @@
+ }
+ #endif
+ 
++static uint16_t Route_TurnNode(void)
++{
++  const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++  return step?(departure_turn?step->from_node:step->to_node):0U;
++}
++
++static int32_t Route_TurnPwm(void)
++{
++  ThiefLocYaw_t yaw;int16_t error;uint16_t node=Route_TurnNode();
++  /* Already rotating wheels need less drive near the exit, not a series of
++   * stationary alignment pulses. Normal turns elsewhere keep their PWM. */
++  if((node==4U || node==6U) && Route_TurnExitContext(&error,&yaw) &&
++      error>=-2500 && error<=2500)return 350L;
++  return ROUTE_TURN_EQUAL_PWM;
++}
++
+ static void Route_DriveRightTurn(uint32_t elapsed_ms)
+ {
++  int32_t pwm=Route_TurnPwm();
+   Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_LEFT,
+-                             ROUTE_TURN_EQUAL_PWM);
++                             pwm);
+   Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_RIGHT,
+-                             -ROUTE_TURN_EQUAL_PWM);
++                             -pwm);
+   Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_LEFT,
+-                             ROUTE_TURN_EQUAL_PWM);
++                             pwm);
+   Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_RIGHT,
+-                             -ROUTE_TURN_EQUAL_PWM);
++                             -pwm);
+   Chassis_UpdateFeedback(elapsed_ms);
+ }
+ 
+ static void Route_DriveLeftTurn(uint32_t elapsed_ms)
+ {
++  int32_t pwm=Route_TurnPwm();
+   Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_LEFT,
+-                             -ROUTE_TURN_EQUAL_PWM);
++                             -pwm);
+   Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_RIGHT,
+-                             ROUTE_TURN_EQUAL_PWM);
++                             pwm);
+   Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_LEFT,
+-                             -ROUTE_TURN_EQUAL_PWM);
++                             -pwm);
+   Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_RIGHT,
+-                             ROUTE_TURN_EQUAL_PWM);
++                             pwm);
+   Chassis_UpdateFeedback(elapsed_ms);
+ }
+ 
+@@ -1095,6 +1115,14 @@
+   UartDebug_Printf("TURN_DONE=%s START=%d CURRENT=%d DELTA=%d\r\n",
+                    finish_reason, (int)turn_start_angle_x100,
+                    (int)current_angle_x100, (int)delta);
++  turn_coast_braking=(uint8_t)(Route_TurnNode()==4U || Route_TurnNode()==6U);
++  if(turn_coast_braking) {
++    /* Kill residual opposite wheel speeds once; do not rotate/fine-trim
++     * while stopped, and do not confuse a target angle with zero momentum. */
++    Route_BrakeControl();turn_stop_stable_count=0U;
++    turn_coast_frame=JY61P_GetFrameCount();
++    UartDebug_SendString("TURN_COAST_BRAKE\r\n");return;
++  }
+   Route_DriveStraight(elapsed_ms);
+ }
+ 
+@@ -1455,7 +1483,7 @@
+   }
+ }
+ 
+-static uint8_t Route_MapGrayContext(void)
++static uint8_t Route_MapRoadIdentity(void)
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+   return (step!=NULL && thief_localization.initialized &&
+@@ -1463,9 +1491,16 @@
+       thief_localization.phase==THIEF_LOC_ON_LEG && !map_nav.arrived && !departure_turn &&
+       step->from_node==thief_localization.step.from_node &&
+       step->to_node==thief_localization.step.to_node &&
+-      thief_localization.yaw_cw_sign!=0 &&
++      thief_localization.yaw_cw_sign!=0) ? 1U : 0U;
++}
++
++static uint8_t Route_MapGrayContext(void)
++{
++  /* Direct road following retains its10degree acceptance. A wider heading
++   * excursion may still recover on the same committed edge. */
++  return (uint8_t)(Route_MapRoadIdentity() &&
+       thief_localization.heading_error_x100>=-ROUTE_MAP_GRAY_YAW_TOL_X100 &&
+-      thief_localization.heading_error_x100<=ROUTE_MAP_GRAY_YAW_TOL_X100) ? 1U : 0U;
++      thief_localization.heading_error_x100<=ROUTE_MAP_GRAY_YAW_TOL_X100);
+ }
+ 
+ static void Route_EnterFrontRecovery(uint32_t now, RouteGrayState_t cause)
+@@ -1711,7 +1746,7 @@
+   if(front_state==ROUTE_GRAY_NO_LINE && rear_state==ROUTE_GRAY_NO_LINE) {
+     if(!map_gray_missing_active) {map_gray_missing_active=1U;map_gray_missing_tick=now;}
+   } else map_gray_missing_active=0U;
+-  failure=!Route_MapGrayContext()?"CONTEXT":
++  failure=!Route_MapRoadIdentity()?"CONTEXT":
+       front_state==ROUTE_GRAY_I2C_ERROR?"I2C":
+       (map_gray_missing_active && (uint32_t)(now-map_gray_missing_tick)>=2000U)?"BOTH_NO_LINE":NULL;
+   if(failure!=NULL) {
+@@ -1724,6 +1759,17 @@
+         (unsigned)thief_localization.phase,ThiefLocalization_ErrorText(thief_localization.error),
+         (int)thief_localization.heading_error_x100,(long)mm,(long)(mm-map_gray_start_mm),
+         (unsigned long)(now-map_gray_tick));return;
++  }
++  if(thief_localization.heading_error_x100< -ROUTE_MAP_GRAY_YAW_TOL_X100 ||
++      thief_localization.heading_error_x100>ROUTE_MAP_GRAY_YAW_TOL_X100) {
++    /* A heading excursion does not erase the committed edge. Transfer into
++     * the existing measured yaw recovery without renewing BOTH-white time. */
++    map_gray_active=0U;turn_exit_active=1U;turn_exit_line_phase=0U;
++    turn_exit_drive_enabled=0U;turn_exit_trim_started=0U;turn_exit_boost=0U;
++    turn_exit_return_used=0U;turn_exit_return_driving=0U;
++    turn_exit_tick=now;turn_exit_best_error=32767;turn_exit_log_tick=now-100U;
++    Route_BrakeControl();RoadHeading_Reset(&turn_exit_heading,now);
++    Route_TurnExitRecover(now,elapsed_ms,sample);return;
+   }
+   /* A real trailing line guides continued travel. Do not reverse merely
+    * because search odometry passed80mm; the observed node remains primary. */
+@@ -2069,7 +2115,7 @@
+   uint8_t turn_delta=0U;
+ 
+   map_distance_warned=0U;retreat_far_pending=0U;route_identity_phase=0U;
+-  yaw_reference_since=0U;yaw_reference_last=0U;
++  yaw_reference_since=0U;yaw_reference_last=0U;turn_coast_braking=0U;
+   map_leg_started_tick=SystemTime_GetMs();
+   restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+@@ -2446,7 +2492,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR8 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR9 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2469,7 +2515,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR8 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR9 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2519,7 +2565,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR8 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR9 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -3205,6 +3251,24 @@
+       break;
+ 
+     case ROUTE_STATE_AFTER_TURN_FORWARD:
++      if(turn_coast_braking) {
++        Route_BrakeControl();Chassis_UpdateFeedback(elapsed_ms);
++        if(Route_AllWheelsStopped()) {
++          if(turn_stop_stable_count<ROUTE_TURN_STOP_STABLE_SAMPLES)turn_stop_stable_count++;
++        } else turn_stop_stable_count=0U;
++        if(turn_stop_stable_count>=ROUTE_TURN_STOP_STABLE_SAMPLES &&
++            Route_IsTurnAngleFresh(now,turn_angle_valid) &&
++            JY61P_GetFrameCount()!=turn_coast_frame) {
++          turn_coast_braking=0U;route_state_tick=now;Route_ResetControl(1U);
++          Route_DriveStraight(elapsed_ms);
++          UartDebug_SendString("TURN_COAST_RELEASE\r\n");
++        } else if((uint32_t)(now-route_state_tick)>=ROUTE_TURN_STOP_MAX_MS &&
++            turn_stop_stable_count<ROUTE_TURN_STOP_STABLE_SAMPLES)Route_StopFault("BRAKE_NOT_STOPPED");
++        else if((uint32_t)(now-route_state_tick)>=ROUTE_GYRO_RECOVERY_MS &&
++            (!Route_IsTurnAngleFresh(now,turn_angle_valid) ||
++             JY61P_GetFrameCount()==turn_coast_frame))Route_StopFault("JY61P_STALE");
++        break;
++      }
+       if ((uint32_t)(now - route_state_tick) >=
+           ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS)
+       {
+--- MONITOR8/Tests/test_turn_coast.py
++++ MONITOR9/Tests/test_turn_coast.py
+@@ -0,0 +1,91 @@
++"""030845: terminal turn PWM/brake handoff and >10degree road recovery."""
++from pathlib import Path
++import sys,json,hashlib
++src=Path(__file__).with_name('test_documents15.py').read_text(encoding='utf-8').split('parking_pwm=[]')[0]
++src=src.replace('Tests/before_documents15/original.axf','Tests/before_turn_coast/original.axf')
++exec(compile(src,str(Path(__file__).with_name('test_documents15.py')),'exec'))
++pwm=[]
++def capture():
++    v=u.reg_read(UC_ARM_REG_R1);pwm.append(v-2**32 if v>=2**31 else v);return 0
++hook('Chassis_SetWheelLogicalPwm',capture)
++for n in ['Route_DriveLeftTurn','Route_DriveRightTurn']:
++    if n in hooks:u.hook_del(hooks.pop(n))
++
++def pending(node=6,mode=0,sign=-1,quarter=-1):
++    global odom,clock,yaw,gray_raw,gray_state,rear_valid
++    source=(15 if node==6 else 14) if quarter<0 else (4 if node==6 else 3)
++    target=(4 if node==6 else 3) if quarter<0 else (15 if node==6 else 14)
++    incoming=0 if quarter<0 else 1;outgoing=3 if quarter<0 else 2
++    fresh(source,(incoming+2*mode)%4);member('thief_localization','yaw_cw_sign',sign)
++    setstep(source,node,incoming,mode,300,action=quarter);setstep(node,target,outgoing,mode,300,index=1)
++    if node==6:record(steps+(16 if quarter<0 else 0),'MapRouteStep_t',dict(segment_count=2))
++    record(route,'MapRoute_t',dict(count=2));call('Route_Start');odom=300;clock+=500
++    call('Route_HandleJunction',clock,20,4 if quarter<0 else 5,0xc60 if quarter<0 else 0x63)
++    var('turn_start_angle_x100',18000 if mode else 0)
++    gray_raw=0x60;gray_state=1;rear_valid=1
++
++def terminal_pwm():
++    global yaw
++    for mode in [0,1]:
++      for sign in [-1,1]:
++       for quarter in [-1,1]:
++        pending(mode=mode,sign=sign,quarter=quarter);yaw=quarter*sign*6000;pwm.clear()
++        call('Route_DriveLeftTurn' if quarter<0 else 'Route_DriveRightTurn',20)
++        check(len(pwm)==4 and all(abs(v)==550 for v in pwm),'large angle retains normal turn PWM')
++        yaw=quarter*sign*7500;pwm.clear();call('Route_DriveLeftTurn' if quarter<0 else 'Route_DriveRightTurn',20)
++        check(len(pwm)==4 and all(0<abs(v)<550 for v in pwm),'terminal angle reduces actual four-wheel PWM')
++    return 8
++
++def measured_brake_handoff():
++    global clock,yaw
++    for node in [4,6]:
++      for mode in [0,1]:
++       for sign in [-1,1]:
++        pending(node,mode,sign);yaw=-sign*8058;events.clear()
++        call('Route_EnterAfterTurnForward',clock,20,0x2000ce00,yaw)
++        check('Route_DriveStraight' not in events,'80.58degree sample cannot translate with residual wheel rotation')
++        ret('Route_AllWheelsStopped',0);events.clear()
++        for _ in range(5):tick()
++        check('Route_DriveStraight' not in events and var('route_state')==7,'measured rotating wheels keep the one-shot brake')
++        ret('Route_AllWheelsStopped',1);yaw=-sign*8800
++        frozen=var('turn_coast_frame');hook('JY61P_GetFrameCount',lambda:frozen)
++        for _ in range(3):tick()
++        check(var('route_state')==7,'measured stop still needs a post-brake gyro frame')
++        hook('JY61P_GetFrameCount',lambda:clock)
++        for _ in range(8):tick()
++        check(var('route_state')!=7,'one brake releases promptly without stationary angle fine trim')
++        check(var('route_active'),'handoff remains runnable')
++    return 8
++
++def road_heading_context():
++    global yaw,clock,gray_raw,gray_state,rear_valid,odom
++    for mode in [0,1]:
++      for sign in [-1,1]:
++        fresh(4,(3+2*mode)%4);member('thief_localization','yaw_cw_sign',sign)
++        setstep(4,3,3,mode,300);call('Route_Start');tick()
++        yaw=sign*1217;member('thief_localization','heading_error_x100',1217)
++        gray_raw=0;gray_state=2;rear_valid=2;odom=142
++        var('map_gray_active',1);var('route_state',8);var('front_resume_state',2)
++        var('front_state',2);var('map_gray_start_mm',46);var('map_gray_tick',clock-210)
++        var('map_gray_missing_active',1);var('map_gray_missing_tick',clock-210)
++        sample=allocate('RouteGraySample_t',0x2000cd00)
++        call('Route_MapGrayRecover',clock,20,sample)
++        check(var('route_active') and var('thief_strategy_state')!=4,'12.17degree yaw cannot become CONTEXT fault after210ms')
++        check('turn_exit_active' in symbols and var('turn_exit_active'),'large yaw uses measured heading recovery')
++        check(var('map_gray_missing_tick')==clock-210,'recovery transfer preserves the continuous white timer')
++        # A continuous two-board white interval still expires, not renewed by transfer.
++        var('map_gray_missing_active',1);var('map_gray_missing_tick',clock-2000)
++        clock+=20;call('Route_TurnExitRecover',clock,20,sample)
++        check(var('route_state')==10,'continuous both-board loss still stops after2seconds')
++    return 4
++
++failures=[];cases={}
++for fn in [terminal_pwm,measured_brake_handoff,road_heading_context]:
++    try:cases[fn.__name__]=fn()
++    except Exception as e:failures.append(dict(case=fn.__name__,error=str(e)))
++axf=ROOT/'MDK-ARM'/ROOT.name/(ROOT.name+'.axf')
++if '--before' in sys.argv:axf=ROOT/'Tests/before_turn_coast/original.axf'
++r=dict(cases=cases,failures=failures,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),
++       test_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),hardware_tested=False)
++out=ROOT/('Tests/before_turn_coast/regression_before.json' if '--before' in sys.argv else 'Tests/results_turn_coast.json')
++out.write_text(json.dumps(r,indent=2),encoding='utf-8');print(json.dumps(r,indent=2));sys.exit(bool(failures))
+--- MONITOR8/Tests/test_yaw_reference.py
++++ MONITOR9/Tests/test_yaw_reference.py
+@@ -57,8 +57,10 @@
+             check(call('Route_HasReachedTurnAngle',call('TravelFrame_Yaw',yaw))==0,'46.57degree rotation still has a large map-axis error')
+         yaw=(-sign*8800+18000)%36000-18000
+         call('Route_EnterAfterTurnForward',clock,20,0x2000ce00,yaw)
+-        check('Route_DriveStraight' in events,'aligned treasure exit starts moving without stationary fine trim')
+-        check(member('thief_localization','phase')==2,'starting motion alone never confirms outgoing leg')
++        check('Route_DriveStraight' not in events,'one measured brake absorbs residual spin before translation')
++        for _ in range(8):tick()
++        check(var('route_state')!=7,'one brake releases without stationary angle fine trim')
++        check(member('thief_localization','confirmed_node')==node,'handoff never invents the next node')
+     return 8
+ 
+ def reference_wrap_reverse():
+--- MONITOR8/Tests/test_documents14.py
++++ MONITOR9/Tests/test_documents14.py
+@@ -51,8 +51,8 @@
+         start();odom=20;gray_raw=0;gray_state=2;tick()
+         check(var('map_gray_active')==1,'recovery begins within yaw limit')
+         yaw=angle;call('Thief_UpdatePose');clock+=20;call('App_ThiefStrategy_Task')
+-        check(var('route_active')==0 and reason()=='MAP_GRAY_REACQUIRE_FAILED',
+-              'recovery respects requested10deg limit')
++        check(var('route_active') and var('turn_exit_active') and not call('Route_MapGrayContext'),
++              'outside10deg keeps the committed road but requires heading recovery, not direct following or a fault')
+         check(member('thief_localization','error')==0,'normal localization tolerance is unchanged')
+ 
+ def original_rejections():
+--- MONITOR8/README.md
++++ MONITOR9/README.md
+@@ -1,3 +1,16 @@
++# 16U MONITOR9：转弯末段减力、一次消余转与偏航恢复
++
++当前UARTCH4_16U_MONITOR9。MONITOR8源码/AXF/测试/规范及030845日志保存在Tests/before_turn_coast；验收VALIDATION_MONITOR9.json，差异TURN_COAST_CHANGESET.patch。
++
++- 030845 N006在YAW80.58度交接后约122ms转到100.67度。N004/N006现仍以地图出口±10度结束旋转，但距出口≤25度时四轮旋转PWM从550降为350；之后仅一次短制动，测得连续两次车轮停稳及制动后的新鲜YAW，即恢复轮速控制并前进。不设置±2度驻车微调，不发反复角度纠正脉冲；一般节点的原旋转参数保持。350PWM是待实车验证的末段参数，软件测试不能证明其实际减速和摩擦效果。
++- 道路上下文仍核对已提交路段、定位状态、有效估计与陀螺仪方向，但不把超过±10度当作路段身份消失。已在找线中的偏航超限会转入现有测量停稳/航向纠偏恢复，保留连续双板无线计时，不再因日志中的12.17度在210ms报CONTEXT。真正路段不匹配、硬件/过期数据等原异常仍独立处理，未放宽定位节点确认或±10度灰度恢复标准。
++- TURN_COAST_BRAKE/RELEASE表示一次消余转制动/恢复前进。直道YAW基准学习、真实轮速控制重启、正常直行速度、路线评分、候选定位、前后1000/左右800及双板连续无线2秒保持。
++
++Tests/test_turn_coast.py复现旧版3个失败，覆盖左右转弯末段实际PWM、N004/N006正反帧/陀螺仪符号、未停稳/无制动后新YAW不能起步，以及12.17度恢复和计时连续性。test_yaw_reference.py按本次一次制动要求更新，旧脚本保留；原角度学习及跨±180度测试保持。
++仅编译通过，尚未完成硬件验证。需实测末段350PWM、制动时间、惯性与实际出口居中情况；不保证所有实物出线均已消除。
++
++以下MONITOR8及更早内容为历史。
++
+ # 16U MONITOR8：宝藏口直接巡线、恢复真实轮速控制
+ 
+ 当前UARTCH4_16U_MONITOR8。用户实测025736显示TURN_AXIS_READY YAW_ERR=43后已进入FOLLOW，随后四路编码器持续不变：制动关闭轮速PI，而原keep_speed_loop分支未重新使能。进入巡线现在只在真实轮速控制仍启用时保留PI，否则复用原ResetControl(1)恢复控制。
+--- MONITOR8/AGENTS.md
++++ MONITOR9/AGENTS.md
+@@ -1,4 +1,6 @@
+ # 本工程修改前必读
++
++最新MONITOR9见规范最前章节：N004/N006出口25度内PWM350，达±10度后一次测量消余转制动与制动后新YAW再前进，不恢复驻车±2度脉冲微调。道路身份与±10度恢复条件分离；找线偏航过大转现有航向恢复，不因12.17度报CONTEXT，且不能重置连续双板无线2秒。正常直行/藏点参数和直道基准学习保持。基线Tests/before_turn_coast，验收VALIDATION_MONITOR9.json。
+ 
+ 最新MONITOR8覆盖下文MONITOR7的宝藏口微调：取消N004/N006原地±2度/三帧停稳等待，已知方向时出口±10度直接接原前进/灰度。保留直道航向基准学习。进入巡线仅在轮速控制真实启用时允许keep_speed_loop，否则重新启用。新增测试必须执行真实PI使能与PWM计算，不能只看目标/状态打印。基线Tests/before_turn_resume，验收VALIDATION_MONITOR8.json。
+ 
+--- MONITOR8/Docs/修改规范与回归清单.md
++++ MONITOR9/Docs/修改规范与回归清单.md
+@@ -1,4 +1,10 @@
+ # 修改规范与回归清单
++
++## 当前MONITOR9：末段转向减力、消余转制动与道路偏航恢复
++
++用户批准修030845的转弯交接后过冲和找线210ms因CONTEXT停车。N004/N006末段距出口≤25度时旋转PWM350（大角度及其他普通节点仍550），出口±10度结束旋转后仅一次短制动，连续两次轮速停稳和制动后新鲜YAW后恢复原轮速控制并前进。不要求±2度、不反复原地修角，不改变原入中心180ms或正常直行速度。实际摩擦与350PWM效果需实测。
++Route_MapRoadIdentity核对已提交道路身份/有效估计；Route_MapGrayContext额外保留原±10度直接巡线限制。MapGrayRecover只因真实道路身份失效才报CONTEXT，偏航超10度移交原TurnExitRecover，保留双板连续无线计时。test_documents14的10度即停车断言按本次用户要求改为继续航向恢复且禁止直接巡线，旧脚本保存基线。节点/出口确认、真实硬件/定位异常保持，不宣称任意偏航永不停。直道YAW参考学习、MONITOR8真实PI启用、路线评分、候选消歧、激光800/1000保持。
++新增test_turn_coast.py覆盖实际左右PWM与正反帧/符号、一次制动真实停稳与新帧、12.17度不早停及2秒失线连续性。test_yaw_reference.py的交接断言按本次要求修改，基线Tests/before_turn_coast保留旧脚本。验收VALIDATION_MONITOR9.json，差异TURN_COAST_CHANGESET.patch。仅编译通过，尚未完成硬件验证。
+ 
+ ## 当前MONITOR8：取消宝藏口原地微调，修复制动后巡线使能
+ 

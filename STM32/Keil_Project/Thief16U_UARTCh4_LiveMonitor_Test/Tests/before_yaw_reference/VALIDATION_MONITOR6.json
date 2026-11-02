@@ -1,0 +1,227 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR6",
+  "firmware_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95",
+  "hex_sha256": "2f06d9ef6a37900ebd7429efa0cb8d3caa735d72eae0316e27bdc1144b58c2aa",
+  "limits_raw_mm": {
+    "front": 1000,
+    "left": 800,
+    "right": 800,
+    "rear": 1000
+  },
+  "new_checks": 92,
+  "supplemental": {
+    "exit_stall": 988,
+    "road_probe": 1798,
+    "left800": 442
+  },
+  "pure_checks": 366155,
+  "pure_cases": 378,
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "151f15958f3cccfaf921b4ef9b3a628d2cddbd55728202649d63c82a80da0d4a",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "a99ccee97b4e66adf021d6c7bcf63069eedf4239f5e0e6ab730c2c9f4b23fbab",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "f11c84efa52e40400557ac232476d83ff071ef96cf2523df46c4e2aae7a686c1",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "bc5f04cb08e4392b7c7ba1c72e242382c025bedfa34714de37ab156cced480e0",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "3ed7dc37ed5b84637e3bdb4b5d92923b3e12ea90f4e4efb196dfeea34fbe3559",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "6f8da81bfdfc6ddebf25169d62e16de6bdd762cb9b942bbeecb331eed4066722",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "989e3e7e790509e51ba297834ea4289cc3282eb1261648c5d08e2772d5dd60ad",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "d63f8cd5674f9eb9c888be781a13b94951430305e30d7e693ba6df1d064947f9",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "5b5cfce333134f5d08fe0fee9b359512be2f3ff8972918540f74b04f20c8366f",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "1e65f5b6f36837fd4d8e8b98de11281c2467eadde47b71661d7eb386f24f8da5",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "f0ca1d67228cd756b4477af54af2bd93e3951d20c485e3c83cb4fd76f23dc4d0",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "1d7cb9df2f625f1f5dd87cbd4050908d86acc6ddaf1535e31b2af9677fc3ac61",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "39713d159ecc0a2d740e9591b19bc038880fc3b1100a4d2dfa98a5bb2c6b255f",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "e5029304f18eba13d7aa68fac22157e86601413a865b2f8e5df20edbec3851fd",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "b73dd3e9110aede8724f7032432f9399bc96b112bc533372c5d43a5dc2a9f178",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "51f96f4fb623df58f42a97104d6da810f31bf4293cf7bc352a93d0ad58a4cccf",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "4e395d06da537ae7d1c1038336f5a9c8098f89aff530179ba4655de4bccefcd8",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "44a0d98721d0209a961c95b2a242e0a0499c09c3cda4639d3c56474c6e61ce76",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "01ee0bf7d55a0c2c529161b8f605e39443a4be1cb6fd580d4b12aaf706cd0041",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "b40cf2a176b8e22879c7902a478b25687bd6f8da4ca6d0fc23cf33f2a45cbc85",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "8408ee4572117fb2d1ab93b411f84511156d20af6fcb3651003929b28c57d0d5",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "57220be5b2f11977a7469e33a2a1487507894a2b0fa496ed220d495fc70b391c",
+      "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95"
+    }
+  ],
+  "before_failures": [
+    {
+      "case": "n011_departure",
+      "error": "full-route score beats forced north pivot atN011"
+    },
+    {
+      "case": "ambiguous_n006",
+      "error": "late similar gray cannot immediately certifyN006"
+    },
+    {
+      "case": "n007_observed_reanchor",
+      "error": "late similar gray cannot immediately certifyN006"
+    },
+    {
+      "case": "exact_log_reversal",
+      "error": "actual728mm observation does not falsely reconfirm N006"
+    },
+    {
+      "case": "candidates_follow_shape",
+      "error": "candidate API exists"
+    },
+    {
+      "case": "ambiguity_laser_priority",
+      "error": "late similar gray cannot immediately certifyN006"
+    },
+    {
+      "case": "ambiguity_loss_deadline",
+      "error": "late similar gray cannot immediately certifyN006"
+    },
+    {
+      "case": "observer_control_cadence",
+      "error": "late similar gray cannot immediately certifyN006"
+    }
+  ],
+  "files": {
+    "User/App_ThiefStrategy.c": "ec9bfc4d5751cfd440d98dc99c239d5b686aa1089beab443a4125746c3d20b20",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "233f3affd693298fc0f74fd70bc75a5f9b91e9dff4964102840a11cdd2d8f347",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c": "dc9d1b3a659f09cd358fb45ee0e290e9a57b3a801442dda0310e3eb216cdab9b",
+    "Algorithm/MapLocalization/ThiefLocalization.c": "9ce189b4bd97a17495ea4049bf84f78c18396a0154288cdd812ab60dcb03c4b7",
+    "Algorithm/MapLocalization/ThiefLocalization.h": "440e04ff2c1bebbf2be3952e45d8c0a9d565d2e8d3dc76b378b2b6296bd944f4",
+    "Tests/test_treasure_fix.py": "cfc09e11ae5470d30ac2bee04196e6f6e044ff2afba28a150c791c3d2135c63c",
+    "Tests/test_gray_priority.py": "8e5a471fa86cc41b57d59241b4fba63deca8e5522735aef189b8f07355a4c28a",
+    "Tests/test_documents123154.py": "afd6f93ed9c8c9ccfb0166cdeb320d651f5a7f03c7a1d96ceed372c441c26058",
+    "Tests/test_documents18.py": "43c6b5a5b74b0f231eceec3827668b0a27b481290316d6ea627828b307d001e4",
+    "Tests/test_route_identity.py": "14e3a57dfb93311df08bfdfab63d646e04a2eb9995ce205bac0c67b13f3ec641",
+    "README.md": "230df626b33c2c671290b9ff8364cc77231c91d0ac12bc43cb8486585f863b07",
+    "AGENTS.md": "702dadfca95eec27c06abc8ce328d4ef1115a7b5d68359773ca0738578367d9a",
+    "Docs/修改规范与回归清单.md": "5bd4283ba7f5720a5668d6f8e83266afa6455836a1787a7bc06c215f5927a433",
+    "Tests/validate_monitor6.py": "24a1108bba8d5c194662da89309bbceb8f2d753d4e57d42f6fe3ca8b83732095",
+    "ROUTE_IDENTITY_CHANGESET.patch": "8dcae69321029df945d62400166f265980af1cb710bf33bdfb23a64e0ca97480",
+    "build_monitor6.log": "1afcf784f9d7c5ff66557ac1c6753e6c2d538ce2377fe7a140f0e284de5e00ba",
+    "Tests/results_route_identity.json": "158ac17dc3759275374cad336b14b97eef3f1ec8dde5d981fd8d3dc2562254ee",
+    "Tests/results_exit_stall.json": "82ebe861d1f36a346e297bbf8f526dafab61ab8a15d9120f8ed8fe80aba415af",
+    "Tests/results_road_probe.json": "6c0f53ccd4fbc1c4b1856972016b7b694fd92cf8632d4a7b574c2274df2a1fe9",
+    "Tests/results_left800.json": "45d5decf058c50b5b3033e5546d82d65488b6d3a68dbf5dad0f4217d365a4f43",
+    "Tests/results_monitor_suite.json": "b429579f94f5e512e0db99d2542da14816bf491efe0ec828dad209a1facf1601",
+    "Tests/results_16m.json": "84e70d4e0ff2d74c44088eb89fd908a98889737b04d3ac1972afce4fcab1215b"
+  },
+  "desktop_files": {
+    "assets/laser_live_server.py": "845ca0e8a90ea44f0e013f45ffff8c9b3b13f0e70cd7054f2881b3ee635fad26",
+    "assets/laser_live.html": "1bcdf28121cfdccb4cc3fcd57f39f9466c0abb531d0fe5aed360838fa4c9f212",
+    "README.md": "e6776bada9a10dbec02a797635a05cf881515004497fd1d1264962946382c2d8",
+    "test_identity_monitor.py": "fba1a57942504df6b5d120c84b8c2c0ebbc17cd9b22eff8852453ecd4539a8d8",
+    "小车串口监控一体助手.exe": "3dd50f3300156d167857524c6e2a6a60a2293d192331f55945ff43fa7aaf9136"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "Bounded local candidates cannot guarantee globally unique localization.",
+    "The N011 replay selects N012-N013, with N063 as goal via N026; the goal is not fixed to N026.",
+    "Actual gray coverage, centering, traction and moving-obstacle performance require physical tests.",
+    "Continuous both-board loss still stops after 2000ms."
+  ]
+}

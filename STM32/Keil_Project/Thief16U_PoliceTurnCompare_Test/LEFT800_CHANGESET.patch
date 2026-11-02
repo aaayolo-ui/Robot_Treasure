@@ -1,0 +1,54 @@
+--- MONITOR2/Algorithm/ThiefStrategy/ThiefStrategyConfig.h
++++ MONITOR3/Algorithm/ThiefStrategy/ThiefStrategyConfig.h
+@@ -9,9 +9,10 @@
+ /* Software acceptance range, not the sensor's physical ranging limit. */
+ #define THIEF_LASER_CHANNEL_MASK 0x0FU /* CH1 front, CH2 left, CH3 right, CH4 rear. */
+ #define THIEF_LASER_MAX_MM 1000U
+-#define THIEF_LASER_TRIGGER_MM 1000U /* Front/left/rear raw trigger distance. */
+-#define THIEF_LASER_RIGHT_MAX_MM 900U
+-#define THIEF_LASER_CHANNEL_MAX_MM(ch) ((ch)==2U?THIEF_LASER_RIGHT_MAX_MM:THIEF_LASER_MAX_MM)
++#define THIEF_LASER_TRIGGER_MM 1000U /* Front/rear raw trigger distance. */
++#define THIEF_LASER_LEFT_MAX_MM 800U
++#define THIEF_LASER_RIGHT_MAX_MM 800U
++#define THIEF_LASER_CHANNEL_MAX_MM(ch) ((ch)==1U?THIEF_LASER_LEFT_MAX_MM:((ch)==2U?THIEF_LASER_RIGHT_MAX_MM:THIEF_LASER_MAX_MM))
+ #define THIEF_LASER_SIDE_OFFSET_MM 100U
+ #define THIEF_LASER_REAR_OFFSET_MM 150U
+ /* New front probe uses the same center offset as rear; sides retain100mm. */
+--- MONITOR2/User/App_ThiefStrategy.c
++++ MONITOR3/User/App_ThiefStrategy.c
+@@ -341,7 +341,7 @@
+   }
+   TreasureWheelLog_Event(TREASURE_WHEEL_AFTER_LASER,SystemTime_GetMs(),(uint8_t)route_state);
+   thief_treasure_passed=1U;
+-  UartDebug_SendString("TREASURE_N005 LASER_RX=FOUR_UARTCH4 FRONT_UART2=OFF VALID_RAW_MM=1000 TRIGGER_RAW_MM=1000 RIGHT_RAW_MM=900\r\n");
++  UartDebug_SendString("TREASURE_N005 LASER_RX=FOUR_UARTCH4 FRONT_UART2=OFF VALID_RAW_MM=1000 TRIGGER_RAW_MM=1000 LEFT_RAW_MM=800 RIGHT_RAW_MM=800\r\n");
+   return 1U;
+ }
+ static void Thief_UpdateLaserMask(uint32_t now)
+@@ -2183,7 +2183,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR2 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR3 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2206,7 +2206,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR2 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR3 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2256,7 +2256,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR2 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR3 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,

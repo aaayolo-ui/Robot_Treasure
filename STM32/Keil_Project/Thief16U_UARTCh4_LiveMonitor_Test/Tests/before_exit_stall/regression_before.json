@@ -1,0 +1,31 @@
+{
+  "checks": 255,
+  "failures": [
+    {
+      "case": "stagnant_yaw",
+      "error": "stagnant15.46degree yaw must escalate to four-wheel measured PWM pulses"
+    },
+    {
+      "case": "side_guidance",
+      "error": "actual side gray must steer toward observed side, not stale/default bias"
+    },
+    {
+      "case": "boost_stop_and_fresh_yaw",
+      "error": "standstill and fresh yaw authorize measured recovery pulse"
+    },
+    {
+      "case": "failed_probe_return",
+      "error": "failed100mm probe must retrace toward its measured origin"
+    },
+    {
+      "case": "return_origin_bound",
+      "error": "return stage really reached"
+    }
+  ],
+  "cases": {
+    "continuous_loss_still_stops": 1
+  },
+  "hardware_tested": false,
+  "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9",
+  "test_sha256": "29df2554bf0aee3b5ce2fc70d30f61cdc5835dbe5479694af4598dc5367863ee"
+}

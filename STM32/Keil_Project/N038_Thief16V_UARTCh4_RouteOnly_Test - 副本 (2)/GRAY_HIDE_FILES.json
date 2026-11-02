@@ -1,0 +1,29 @@
+{
+  "firmware": "UARTCH4_16V_GRAY_HIDE1_SL1",
+  "modified": [
+    "User/App_ThiefStrategy.c",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "added": [
+    "Tests/test_gray_hide.py"
+  ],
+  "hashes": {
+    "User/App_ThiefStrategy.c": "b7f61486248adc4d8f25da46c36da42900cca5af4a0b2e08e4b073bfcff41e63",
+    "README.md": "eace1bbb66aae68d3daa54324dc06633625c68e295db849159c5b23ce1b605a3",
+    "AGENTS.md": "0ed5ef92ba568eda6542723bd418d1af57589c897876905df385dc622f27d428",
+    "Docs/修改规范与回归清单.md": "33a67c2126a4683f54fb9e9964ba6cc4a032b8a4123fae2e2216fd91eee590a2",
+    "Tests/test_gray_hide.py": "3431b320a24124dee092ff47f1d8b6710589500a1bf78ddc2c4c4abbbbdddb32"
+  },
+  "backup_files": 301,
+  "axf_sha256": "b5d270b50510bbdee7f08a8e9af45b8ebd7eeece8b6ae0cb126df12f8f335141",
+  "hex_sha256": "201bf74c8ae2be6153015436465e65f009e372030ea292d1f2190d09369a9473",
+  "tests": [
+    "results_gray_hide.json",
+    "results_hide_routes_stable4.json"
+  ],
+  "hardware_tested": false,
+  "flashed": false,
+  "motors_run": false
+}

@@ -1,0 +1,29 @@
+{
+  "firmware": "LASER_RANGE_CAL_3",
+  "unique_project_files": 104,
+  "compile": "0 Error(s), 0 Warning(s)",
+  "hex_sha256": "3b19125b9095f5b80ee4e2e598513cc3e9489dd73b4591eddf310e8f7aed4b5f",
+  "offline_tests": {
+    "result": "PASS",
+    "channels": 4,
+    "raw_range_and_statistics": true,
+    "timeout_and_retry": true,
+    "display_hz": 10,
+    "actual_50_hz_traffic": true,
+    "zero_confidence_counts_for_hz": true,
+    "motor_enable_symbol_absent": true,
+    "hardware_tested": false
+  },
+  "web_tests": 77,
+  "mount_offsets_mm": {
+    "left": 100,
+    "right": 100,
+    "rear": 150,
+    "front": null
+  },
+  "mount_uncertainty_mm": 50,
+  "strategy_modified": false,
+  "browser_verified": "Live COM9 stats and approximate mounting offsets; actual front RX around 49 Hz",
+  "flashed_by_agent": false,
+  "new_firmware_hardware_tested": false
+}

@@ -1,0 +1,87 @@
+{
+  "firmware": "UARTCH4_16V_STABLE4",
+  "checks": 62,
+  "failures": [],
+  "lifecycles": [
+    {
+      "threat_heading": 0,
+      "wait": {
+        "frames": 76,
+        "node": 78,
+        "body": 0,
+        "fixes": [
+          78
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      },
+      "escape": {
+        "frames": 733,
+        "node": 11,
+        "body": 1,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "threat_heading": 3,
+      "wait": {
+        "frames": 76,
+        "node": 78,
+        "body": 0,
+        "fixes": [
+          78
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      },
+      "escape": {
+        "frames": 748,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          63,
+          52
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    }
+  ],
+  "expected_before_failure": false,
+  "axf_sha256": "e3f3ba49beecf48cbe028fd1fd89543f5aaf53d6f9da2f544247e4dc40fd3935",
+  "test_sha256": "d9b863b24d014ceb9973830fda815b9910219ba690a05a0a2f300eba9624af34",
+  "hardware_tested": false
+}

@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "C:\Users\Administrator\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16U_UARTCh4_ImmediateRetreat700_Test\Tests\test_escape_completion.py", line 105, in <module>
+    tick(180);tick(20);tick(60)
+  File "C:\Users\Administrator\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16U_UARTCh4_ImmediateRetreat700_Test\Tests\test_escape_completion.py", line 45, in tick
+    check(var('route_state')!=10 and var('thief_strategy_state')!=4,
+  File "C:\Users\Administrator\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16U_UARTCh4_ImmediateRetreat700_Test\Tests\test_app_runtime.py", line 120, in check
+    assert x,message
+AssertionError: no latched fault at N078: MAP_REQUIRED_BRANCH_NOT_SEEN

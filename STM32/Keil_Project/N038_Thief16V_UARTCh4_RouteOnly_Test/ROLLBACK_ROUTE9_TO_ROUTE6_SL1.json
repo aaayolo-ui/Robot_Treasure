@@ -1,0 +1,13 @@
+{
+  "firmware": "UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1",
+  "baseline": "Robot_Treasure-main\\STM32\\Keil_Project\\Thief16V_UARTCh4_RouteOnly_Test\\Reference\\ROUTE6_SL1_before_t_junction",
+  "source_config_docs_matching": 207,
+  "hex_identical_to_baseline": true,
+  "hex_sha256": "2036a3410b5e9d42e356d21b1ab3f292b521611748c60dfd9c49d3d32e5b7201",
+  "axf_sha256": "d1defea1fc8e8d553beb3672d717c48be1c61f465022d8a0e1b808203d4838f4",
+  "checks": 16,
+  "failures": [],
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false
+}

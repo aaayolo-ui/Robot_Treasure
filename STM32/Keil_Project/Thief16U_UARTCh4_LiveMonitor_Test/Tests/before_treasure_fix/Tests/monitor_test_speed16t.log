@@ -1,0 +1,102 @@
+{
+  "checks": 47,
+  "failures": 0,
+  "curves": {
+    "forward": [
+      [
+        2120,
+        2120,
+        2120,
+        2120
+      ],
+      [
+        2240,
+        2240,
+        2240,
+        2240
+      ],
+      [
+        2360,
+        2360,
+        2360,
+        2360
+      ],
+      [
+        2480,
+        2480,
+        2480,
+        2480
+      ]
+    ],
+    "reverse": [
+      [
+        2120,
+        2120,
+        2120,
+        2120
+      ],
+      [
+        2240,
+        2240,
+        2240,
+        2240
+      ],
+      [
+        2360,
+        2360,
+        2360,
+        2360
+      ],
+      [
+        2480,
+        2480,
+        2480,
+        2480
+      ]
+    ],
+    "turn_exit": [
+      [
+        2120,
+        2120,
+        2120,
+        2120
+      ],
+      [
+        2240,
+        2240,
+        2240,
+        2240
+      ],
+      [
+        2360,
+        2360,
+        2360,
+        2360
+      ],
+      [
+        2480,
+        2480,
+        2480,
+        2480
+      ]
+    ]
+  },
+  "parameters": {
+    "ROUTE_LEAVE_INITIAL_RPM_X10": "2000L",
+    "ROUTE_LEAVE_START_RPM_X10": "2000L",
+    "ROUTE_AFTER_TURN_START_RPM_X10": "2000L",
+    "ROUTE_LEAVE_RAMP_STEP_RPM_X10": "10L",
+    "ROUTE_TURN_APPROACH_RPM_X10": "1000L",
+    "ROUTE_TURN_APPROACH_DELAY_MS": "180U",
+    "ROUTE_TURN_EQUAL_PWM": "550L",
+    "ROUTE_TURN_TARGET_ANGLE_X100": "4500L",
+    "ROUTE_PID_CENTER_GAIN_PCT": "300L",
+    "ROUTE_PID_SIDE_GAIN_PCT": "400L",
+    "ROUTE_PID_CENTER_EDGE_GAIN_PCT": "400L"
+  },
+  "firmware_sha256": "b2205b6197523eae5ef83b4e801688401aeb493d9ce64ae3cd6e49a62ea675ba",
+  "hardware_tested": false,
+  "app_source_sha256": "1d75bad867788f130a2c813174637e536601e1c48911a2ea06c686355851dfbc",
+  "test_script_sha256": "bf3d5a07fa64624ebc8e0fee231dd483435e5ebc27d6a387ad1bf1d31b44cbd2",
+  "reference_source_sha256": "d4bf3954958d2c285b21e6dabc26c3300b24d00ac1951e7b1aeb4c26c3567d42"
+}

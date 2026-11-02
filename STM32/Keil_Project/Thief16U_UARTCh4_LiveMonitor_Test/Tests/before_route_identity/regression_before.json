@@ -1,0 +1,41 @@
+{
+  "checks": 23,
+  "failures": [
+    {
+      "case": "n011_departure",
+      "error": "full-route score beats forced north pivot atN011"
+    },
+    {
+      "case": "ambiguous_n006",
+      "error": "late similar gray cannot immediately certifyN006"
+    },
+    {
+      "case": "n007_observed_reanchor",
+      "error": "late similar gray cannot immediately certifyN006"
+    },
+    {
+      "case": "exact_log_reversal",
+      "error": "actual728mm observation does not falsely reconfirm N006"
+    },
+    {
+      "case": "candidates_follow_shape",
+      "error": "candidate API exists"
+    },
+    {
+      "case": "ambiguity_laser_priority",
+      "error": "late similar gray cannot immediately certifyN006"
+    },
+    {
+      "case": "ambiguity_loss_deadline",
+      "error": "late similar gray cannot immediately certifyN006"
+    },
+    {
+      "case": "observer_control_cadence",
+      "error": "late similar gray cannot immediately certifyN006"
+    }
+  ],
+  "cases": {},
+  "hardware_tested": false,
+  "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d",
+  "test_sha256": "14e3a57dfb93311df08bfdfab63d646e04a2eb9995ce205bac0c67b13f3ec641"
+}

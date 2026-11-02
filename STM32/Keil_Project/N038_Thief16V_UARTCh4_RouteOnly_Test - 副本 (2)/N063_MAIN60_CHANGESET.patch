@@ -1,0 +1,109 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -1182,7 +1182,7 @@
+   Thief_LocalYaw(&yaw);
+   delta=Route_TurnAngleDeltaX100(yaw.yaw_x100,park_start_yaw);
+   progress=(int32_t)delta*thief_localization.yaw_cw_sign*park_turn_quarter;
+-  if(park_turn_pending==2U && progress<(thief_current_node==38U?6000L:7000L)) {
++  if(park_turn_pending==2U && progress<((thief_current_node==38U || thief_current_node==63U)?6000L:7000L)) {
+     if((uint32_t)(now-hide_log_tick)>=100U) {
+       hide_log_tick=now;UartDebug_Printf("PARK_MAIN N=%u DEG_X100=%ld AGE=%lu\r\n",
+           (unsigned)thief_current_node,(long)progress,(unsigned long)(now-yaw.stamp_ms));
+@@ -1914,7 +1914,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ARRIVAL_GATE_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_N063_MAIN60_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1940,7 +1940,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ARRIVAL_GATE_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N063_MAIN60_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1989,7 +1989,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ARRIVAL_GATE_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_N063_MAIN60_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- before/Tests/test_n038_main60.py
++++ after/Tests/test_n038_main60.py
+@@ -4,7 +4,7 @@
+ setup=(ROOT/'Tests/test_quick350.py').read_text(encoding='utf-8').split('try:')[0]
+ exec(compile(setup,str(ROOT/'Tests/test_quick350.py'),'exec'))
+ try:
+- for node,threshold in [(38,6000),(63,7000),(11,7000)]:
++ for node,threshold in [(38,6000),(63,6000),(11,7000)]:
+   for quarter in [-1,1]:
+    for sign in [-1,1]:
+     for progress in [threshold-100,threshold]:
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,17 @@
++# N063_MAIN60_SL1：N063主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N063_MAIN60_SL1，仅修改用户指定桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/ARRIVAL_GATE_before_n063_main60。
++
++依用户确认仅将N063停车主旋转切换点由70°改60°，之后沿用原低速YAW接近出口及前后灰度对齐，最终目标仍90°竖停。N038保持60°，N011等其他停车仍70°；灰度出口接管范围80°至100°及用户微调350保持。路线、巡线PID、速度、激光、提前认点修复及MAP_REQUIRED_BRANCH_NOT_SEEN停车条件均未改。本轮没有修复185848日志中N013支路确认失败。
++
++ARMCC5全量编译0错误0警告；停车切换角度专项75项、快速灰度对齐33项ARM离线检查通过，共108项。Tests/test_n038_main60.py已更新N063预期60°，覆盖左右旋转、两种陀螺仪符号和切换边界；N011仍70°。仅仿真传感器与电机反馈，不代表实物过冲已解决。证据N063_MAIN60_FILES.json、N063_MAIN60_CHANGESET.patch、build_n063_main60.log和本轮两份结果。
++
++当前路线规则核对：N063南侧来车且无北侧威胁时走N062→N061→N049→N033→N025→N015→N006→N005→N004→N003→N002→N011，N011横停；若同时有西侧威胁，先前的去N078规则优先。N063北侧来车时动态选择N011或N038。其他动态规划可能选中N011；从N011离开后半途遇阻，记录路线返回可能回N011。首次藏点仍N038。
++
++仅编译通过，尚未完成硬件验证。未烧录、未运行实物电机、未占串口、未提交推送。
++
++---
++
+ # ARRIVAL_GATE_SL1：修复N011至N002提前认点（本段优先）
+ 
+ 当前FW=UARTCH4_16V_ARRIVAL_GATE_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/MAIN60_before_arrival_gate。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,17 @@
++# N063_MAIN60_SL1：N063主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N063_MAIN60_SL1，仅修改用户指定桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/ARRIVAL_GATE_before_n063_main60。
++
++依用户确认仅将N063停车主旋转切换点由70°改60°，之后沿用原低速YAW接近出口及前后灰度对齐，最终目标仍90°竖停。N038保持60°，N011等其他停车仍70°；灰度出口接管范围80°至100°及用户微调350保持。路线、巡线PID、速度、激光、提前认点修复及MAP_REQUIRED_BRANCH_NOT_SEEN停车条件均未改。本轮没有修复185848日志中N013支路确认失败。
++
++ARMCC5全量编译0错误0警告；停车切换角度专项75项、快速灰度对齐33项ARM离线检查通过，共108项。Tests/test_n038_main60.py已更新N063预期60°，覆盖左右旋转、两种陀螺仪符号和切换边界；N011仍70°。仅仿真传感器与电机反馈，不代表实物过冲已解决。证据N063_MAIN60_FILES.json、N063_MAIN60_CHANGESET.patch、build_n063_main60.log和本轮两份结果。
++
++当前路线规则核对：N063南侧来车且无北侧威胁时走N062→N061→N049→N033→N025→N015→N006→N005→N004→N003→N002→N011，N011横停；若同时有西侧威胁，先前的去N078规则优先。N063北侧来车时动态选择N011或N038。其他动态规划可能选中N011；从N011离开后半途遇阻，记录路线返回可能回N011。首次藏点仍N038。
++
++仅编译通过，尚未完成硬件验证。未烧录、未运行实物电机、未占串口、未提交推送。
++
++---
++
+ # ARRIVAL_GATE_SL1：修复N011至N002提前认点（本段优先）
+ 
+ 当前FW=UARTCH4_16V_ARRIVAL_GATE_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/MAIN60_before_arrival_gate。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,17 @@
++# N063_MAIN60_SL1：N063主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N063_MAIN60_SL1，仅修改用户指定桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/ARRIVAL_GATE_before_n063_main60。
++
++依用户确认仅将N063停车主旋转切换点由70°改60°，之后沿用原低速YAW接近出口及前后灰度对齐，最终目标仍90°竖停。N038保持60°，N011等其他停车仍70°；灰度出口接管范围80°至100°及用户微调350保持。路线、巡线PID、速度、激光、提前认点修复及MAP_REQUIRED_BRANCH_NOT_SEEN停车条件均未改。本轮没有修复185848日志中N013支路确认失败。
++
++ARMCC5全量编译0错误0警告；停车切换角度专项75项、快速灰度对齐33项ARM离线检查通过，共108项。Tests/test_n038_main60.py已更新N063预期60°，覆盖左右旋转、两种陀螺仪符号和切换边界；N011仍70°。仅仿真传感器与电机反馈，不代表实物过冲已解决。证据N063_MAIN60_FILES.json、N063_MAIN60_CHANGESET.patch、build_n063_main60.log和本轮两份结果。
++
++当前路线规则核对：N063南侧来车且无北侧威胁时走N062→N061→N049→N033→N025→N015→N006→N005→N004→N003→N002→N011，N011横停；若同时有西侧威胁，先前的去N078规则优先。N063北侧来车时动态选择N011或N038。其他动态规划可能选中N011；从N011离开后半途遇阻，记录路线返回可能回N011。首次藏点仍N038。
++
++仅编译通过，尚未完成硬件验证。未烧录、未运行实物电机、未占串口、未提交推送。
++
++---
++
+ # ARRIVAL_GATE_SL1：修复N011至N002提前认点（本段优先）
+ 
+ 当前FW=UARTCH4_16V_ARRIVAL_GATE_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/MAIN60_before_arrival_gate。

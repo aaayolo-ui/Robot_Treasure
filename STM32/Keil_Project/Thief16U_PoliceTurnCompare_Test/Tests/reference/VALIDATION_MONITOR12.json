@@ -1,0 +1,307 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR12",
+  "firmware_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "hex_sha256": "f1666f98bdbb952ec756afdb7ea4d2d16f217b183574eb0447e1b9df021a95ab",
+  "before_failures": [
+    {
+      "case": "five_degree_handoff",
+      "error": "5degree residual must hand to real gray rather than stationary2degree trim"
+    },
+    {
+      "case": "rear_width_follow",
+      "error": "wide rear branch must not become dual-board heading error"
+    },
+    {
+      "case": "rear_width_recovery",
+      "error": "wide rear cannot steer recovery; narrow rear can"
+    },
+    {
+      "case": "first_unknown_sign_turn",
+      "error": "removing fine trim must not leave the first unknown-sign turn at45degrees"
+    }
+  ],
+  "new_checks": 63,
+  "new_cases": {
+    "five_degree_handoff": 4,
+    "rear_width_follow": 2,
+    "rear_width_recovery": 4,
+    "first_unknown_sign_turn": 1
+  },
+  "general": {
+    "all_map_quarter_turns": {
+      "combinations": 1016,
+      "nodes": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        42,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        51,
+        52,
+        53,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        82,
+        83,
+        84,
+        85,
+        88
+      ]
+    },
+    "n078_original_log": 4,
+    "n011_exit_policy": {
+      "body_directions": 4,
+      "world_threats": 2,
+      "blocked_cases": 3
+    }
+  },
+  "extra": {
+    "yaw_reference": {
+      "straight_reference": 70,
+      "treasure_turn_handoff": 8,
+      "reference_wrap_reverse": 4
+    },
+    "turn_resume": {
+      "resume_after_brake": 2,
+      "continuous_loop_kept": 1
+    },
+    "monitor7_restore": {
+      "overshoot_axis": 4
+    }
+  },
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "e95d9e0f10ac94db7b5411001fa794d4847028b311eda74737c8b3b723fc8eb0",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "7fddd96f228f38cc375cb74a0f4bf01d09d228d39c9c1e63e8bc33dca82f596d",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "d812a3e17146463465b05a76241166e308f53a693e7b6a96a2a8db957adaec11",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "5b6c4ec4f5251a9c49611dd03c404173346767d6a6cad83e639177c1647f814a",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "8056ef6cc9c731294cd7bc719e2924376ae6a0f12c2e6e5cb90987461d124b39",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "e29e3fdec5fb63f0f174a0ea71cd8b585b31144a0e8380da9a6823ac8bf3b37b",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "4f1aab61d06e709d5f1fae5703e2e3130a6117814628d9e7c645c13568a89310",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "83657b9fa85ad0eda11c034b68bcb91af8ed49ab1796ca1da8b1798af0855ff3",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "ef6ee28d65663b3155dd347737326ebfc245a30a2275563971e1dfb761f5034b",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "c559e3e11f8c07896c69f2fbd4e70770baf318501ca91c22850123faf3cf37c9",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "077583dd64a2f35cf342c28f93844f66ead5117b42a1224a699d462c14c97f84",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "2a640aae6017396bd2dfe81f9e3cbd20437bbab718edadf83c8b191076587bf4",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "d6dfd6af735c33de5e1c9a513d74f6004a0b3538047da71ad123f31641ced058",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "ef749bcfb1d3542cda181f32ee579bc6769fe06c067092791537f7265e685d12",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "df1612b82aaccf8f610b34fe3edcd2eb0c8cc98e0b6175b4fbe8dadd84bb21c7",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "311e0eed7ef5eb6e2c13c1062d9e13d355f70162eb220c1aea5916073a83c2df",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "dfc7f3540105cc382cff3a2c53f146f069df11f9b92cffcaa2eada4a8766a7b6",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "d482f1de7a908271856b989165f5b87b0e2f180c3f04c08be45f3db4d6cd276d",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "7548541a658f003d8cc938bee4e00c7b2ae519e07c77725d04446b6f9a3ba9d7",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "373a00278263b4225dbbe3b235c0227fc16a9911033621b9953aa5518167e349",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "7418e9468fc9f19f0e7fc7caa41a599d6a4d3358c3b100ce5765fda91c622171",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "f0f98fd125f04efdd53c792b160773916212e2e37160d2ffa1514c11f4da9602",
+      "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750"
+    }
+  ],
+  "supplemental": {
+    "route_identity": 92,
+    "exit_stall": 1064,
+    "road_probe": 1830,
+    "left800": 442
+  },
+  "unchanged_algorithm_checks": 366155,
+  "unchanged_algorithm_evidence": "source hashes revalidated; algorithm modules unchanged since MONITOR11",
+  "user_selected_policy": "User chose actual map exit direction, no mandatory +/-2degree fine trim, real gray PID handles small residuals.",
+  "files": {
+    "User/App_ThiefStrategy.c": "06b6d8e087a952938e0be3eb7ac697c5da94a085e24d318f61c64d6189dea1ae",
+    "Tests/test_line_handoff.py": "74f26ed98add4b9c2b20b72035dce008d692659b620ca869356f8f33e3848870",
+    "Tests/test_monitor7_restore.py": "92ebd01e0388cca8db740df9294a8223768ee6033f93eedb74e813c25dea43c0",
+    "Tests/test_speed16t.py": "d3397d9e7e04f981b9d65febd074c67f9d4f732e09892694643b2071a4fc72e7",
+    "Tests/analyze_turn_042252.py": "fcf46abdf3a521ed2bad7adae390778cb6d8b2082b39caf6a2fbdd881b83b118",
+    "Docs/turn_042252_analysis.json": "f7f95c48ea7df37c757af0f51ab303d7bbf32ac7369070467722708329a24520",
+    "README.md": "528c7bb683789ae063cab0a2e6d9bc842323c13398a1a446fa4a1c4c083044f4",
+    "AGENTS.md": "39f50ce4aa8435eeac6aa98187684891a73ba2d017921bf0a5291f1d704463f0",
+    "Docs/修改规范与回归清单.md": "7e1debf2ffc31a93a63cf7843a568862c8a9030bc9b202b7cac61498f1bc4948",
+    "Tests/validate_monitor12.py": "d026935888342c54925d0cc5aafc838aced9f700d7bd0608dbc0af3717c477dc",
+    "LINE_HANDOFF_CHANGESET.patch": "9592247d9ba34be72c756738a34cb201b05d5e24fb309073154733950c777903",
+    "build_monitor12.log": "bdaf014a1d94475ee4c51651dfd5c000b1409a78dc931998d1274442f1c23055",
+    "Tests/results_line_handoff.json": "a3192c6558dc61e249629d5e115db901be150d5a043b433d60b3b0ff5cf3029a",
+    "Tests/results_general_turns.json": "7d79fcfb9e60fc315caba884def58cc834db082aacb6be3218aa7bb5227b7697",
+    "Tests/results_monitor_suite.json": "5ad02636a4beaf06b24a52ab70a05da97aec63ebf069e3c35b5439bdc3ffe4da",
+    "Tests/results_yaw_reference.json": "893711e73417dfde109c2b22f51f1709b6bc9eaf43db815441673e10fba34cda",
+    "Tests/results_turn_resume.json": "181863c44d3c15e9f05d8f9747d0f94a701e4e339089ec92c8ee447fe24d467b",
+    "Tests/results_monitor7_restore.json": "87d393937f28ffb7e18155bb3d447976dc58bc3d1e2355097913669c431ed8c1",
+    "Tests/results_route_identity.json": "b9dd8935a9c5d38a1c29660d17e852dc7749dcbf031892608405c1c51809aee2",
+    "Tests/results_exit_stall.json": "0f7f01905b2116264a474e0d4bb9c5c08109aa6455fda75cc07992318f4d5dfa",
+    "Tests/results_road_probe.json": "17ef44ee3f78b124937d3a69ae0b19e2cbc9cd21c109a3dd15bd20a765b6f1bd",
+    "Tests/results_left800.json": "78be9d0abe7fb5131eb9f629895b6b159ba246620c3dcd924b623cad3c01c041"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "Only4 logged angle samples; they mix entry skew, inertia and active trim. No fixed95/81degree cutoff was inferred.",
+    "Normal turns no longer pulse-align to2degrees; actual missing-line/hide recovery remains separate.",
+    "Wide rear gray is excluded from steering cues, but raw node evidence and actual black-presence timing are retained.",
+    "Physical yaw drift, lateral displacement, node identity, traction and final line reacquisition need vehicle tests."
+  ]
+}

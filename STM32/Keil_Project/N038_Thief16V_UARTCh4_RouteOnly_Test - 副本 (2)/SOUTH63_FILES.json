@@ -1,0 +1,33 @@
+{
+  "firmware": "UARTCH4_16V_SOUTH63_N006_SL1",
+  "modified": [
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+    "User/App_ThiefStrategy.c",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "added": [
+    "Tests/test_south63.py"
+  ],
+  "hashes": {
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "8e701b90c3332675e9c24ff2fa4737ba66fbe9c723c362e119bfc9efffa23e62",
+    "User/App_ThiefStrategy.c": "b670363f943adde48bff06abbe3592f85f5df20bc6bc9d294305de5646fca2d8",
+    "README.md": "89acad8a80ffdeb86ca96bc41f3e52899a20ea856b62c9f52bc156f4e1f0d810",
+    "AGENTS.md": "4b3e3dd25a20eadcff8f0a28c3b81cdb39eb05f2f34c809d443ecbb1ef634991",
+    "Docs/修改规范与回归清单.md": "6ece58a4d201afe5d5977c8b22efeed1c756cc9fe0c4120bac556cd2ccd1850d",
+    "Tests/test_south63.py": "901dec39a30e3c8d75fac98e48bd0015b379d366614403ccacd9d3a7f4e5c1ca"
+  },
+  "backup_files": 303,
+  "axf_sha256": "5bb394d84f1ef41a2cfbb3384d176c0939128454c7d7ba31cb601f88a52a2b74",
+  "hex_sha256": "19f6fbf263dad53b475ad1a3da84006821cd0a5af62c356efb58c88754f229ba",
+  "preserved_350_sha256": "d72df63fa9af4afe96a14a6e5c93378b26a8adcfb124855836f3be29408d86ef",
+  "reports": {
+    "results_south63.json": "18059652a6936618b260aec719e40a2854bd2ee092837676638f459e8b9f5b4f",
+    "results_hide_routes_stable4.json": "df2a959e4146dc92f1a28d88de29c74d9849203357b09f4fbcf1e5cb7e535f82",
+    "results_quick350.json": "e7a1db434f3d1ac9285fdd620f303bf0afde56ca9a54375adfb9e6060b0b921b"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "motors_run": false
+}

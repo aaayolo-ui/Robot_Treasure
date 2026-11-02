@@ -1,0 +1,127 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -1181,7 +1181,7 @@
+   Thief_LocalYaw(&yaw);
+   delta=Route_TurnAngleDeltaX100(yaw.yaw_x100,park_start_yaw);
+   progress=(int32_t)delta*thief_localization.yaw_cw_sign*park_turn_quarter;
+-  if(park_turn_pending==2U && progress<7000L) {
++  if(park_turn_pending==2U && progress<(thief_current_node==38U?6000L:7000L)) {
+     if((uint32_t)(now-hide_log_tick)>=100U) {
+       hide_log_tick=now;UartDebug_Printf("PARK_MAIN N=%u DEG_X100=%ld AGE=%lu\r\n",
+           (unsigned)thief_current_node,(long)progress,(unsigned long)(now-yaw.stamp_ms));
+@@ -1901,7 +1901,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_SOUTH63_N006_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_N038_MAIN60_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1927,7 +1927,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_SOUTH63_N006_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N038_MAIN60_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1976,7 +1976,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_SOUTH63_N006_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_N038_MAIN60_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,15 @@
++# N038_MAIN60_SL1：N038主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N038_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
++
++依用户确认：N038停车转向的主旋转切换点由70°改60°，随后沿用低速YAW接近出口与前后灰度对齐。最终仍为竖向停车，目标为相对90°；灰度只在80°至100°出口窗口接管，避免60°时误认原入路线。N063及其他停车转向切换点仍70°，Control/RoadHeadingControl.c中用户350原样保留。路线、普通巡线、速度、激光与停稳确认均未改。
++
++修改前备份Reference/SOUTH63_before_n038_main60。ARMCC5全量编译0错误0警告；N038主旋转边界75项、快速灰度停车33项、完整藏点任务151项检查通过，共259项。均使用当前AXF和合成传感器的ARM离线模拟，不代表实车效果。证据MAIN60_FILES.json、MAIN60_CHANGESET.patch、build_main60.log、Tests/results_n038_main60.json及本轮两份回归报告。历史回归报告中的firmware字段为旧测试标签，以当前AXF散列和本段FW为准。
++
++仅编译通过，尚未完成硬件验证。未烧录、未运行实物电机、未占串口。下方70°统一切换描述仅为历史。
++
++---
++
+ # SOUTH63_N006_SL1：N063南侧来车经N006去N011（本段优先）
+ 
+ 当前工程为用户指定桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)，FW=UARTCH4_16V_SOUTH63_N006_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/QUICK350_before_south63。原350微调与快速结束控制保持。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,15 @@
++# N038_MAIN60_SL1：N038主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N038_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
++
++依用户确认：N038停车转向的主旋转切换点由70°改60°，随后沿用低速YAW接近出口与前后灰度对齐。最终仍为竖向停车，目标为相对90°；灰度只在80°至100°出口窗口接管，避免60°时误认原入路线。N063及其他停车转向切换点仍70°，Control/RoadHeadingControl.c中用户350原样保留。路线、普通巡线、速度、激光与停稳确认均未改。
++
++修改前备份Reference/SOUTH63_before_n038_main60。ARMCC5全量编译0错误0警告；N038主旋转边界75项、快速灰度停车33项、完整藏点任务151项检查通过，共259项。均使用当前AXF和合成传感器的ARM离线模拟，不代表实车效果。证据MAIN60_FILES.json、MAIN60_CHANGESET.patch、build_main60.log、Tests/results_n038_main60.json及本轮两份回归报告。历史回归报告中的firmware字段为旧测试标签，以当前AXF散列和本段FW为准。
++
++仅编译通过，尚未完成硬件验证。未烧录、未运行实物电机、未占串口。下方70°统一切换描述仅为历史。
++
++---
++
+ # SOUTH63_N006_SL1：N063南侧来车经N006去N011（本段优先）
+ 
+ 当前工程为用户指定桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)，FW=UARTCH4_16V_SOUTH63_N006_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/QUICK350_before_south63。原350微调与快速结束控制保持。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,15 @@
++# N038_MAIN60_SL1：N038主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N038_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
++
++依用户确认：N038停车转向的主旋转切换点由70°改60°，随后沿用低速YAW接近出口与前后灰度对齐。最终仍为竖向停车，目标为相对90°；灰度只在80°至100°出口窗口接管，避免60°时误认原入路线。N063及其他停车转向切换点仍70°，Control/RoadHeadingControl.c中用户350原样保留。路线、普通巡线、速度、激光与停稳确认均未改。
++
++修改前备份Reference/SOUTH63_before_n038_main60。ARMCC5全量编译0错误0警告；N038主旋转边界75项、快速灰度停车33项、完整藏点任务151项检查通过，共259项。均使用当前AXF和合成传感器的ARM离线模拟，不代表实车效果。证据MAIN60_FILES.json、MAIN60_CHANGESET.patch、build_main60.log、Tests/results_n038_main60.json及本轮两份回归报告。历史回归报告中的firmware字段为旧测试标签，以当前AXF散列和本段FW为准。
++
++仅编译通过，尚未完成硬件验证。未烧录、未运行实物电机、未占串口。下方70°统一切换描述仅为历史。
++
++---
++
+ # SOUTH63_N006_SL1：N063南侧来车经N006去N011（本段优先）
+ 
+ 当前工程为用户指定桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)，FW=UARTCH4_16V_SOUTH63_N006_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/QUICK350_before_south63。原350微调与快速结束控制保持。
+--- /dev/null
++++ after/Tests/test_n038_main60.py
+@@ -0,0 +1,32 @@
++from pathlib import Path
++import json,hashlib
++ROOT=Path(__file__).absolute().parents[1]
++setup=(ROOT/'Tests/test_quick350.py').read_text(encoding='utf-8').split('try:')[0]
++exec(compile(setup,str(ROOT/'Tests/test_quick350.py'),'exec'))
++try:
++ for node,threshold in [(38,6000),(63,7000),(11,7000)]:
++  for quarter in [-1,1]:
++   for sign in [-1,1]:
++    for progress in [threshold-100,threshold]:
++     fresh(node,0);member('thief_localization','yaw_cw_sign',sign)
++     var('park_start_yaw',0);var('park_turn_quarter',quarter)
++     var('park_turn_pending',2);var('park_target_heading',1)
++     front_raw=back_raw=0x60;physical_rpm=0;cache(0);commands.clear()
++     yaw=progress*quarter*sign;clock+=20
++     call('Route_RunParkingTurn',clock,20)
++     check(var('park_turn_pending')==(2 if progress<threshold else 3),f'node {node} threshold {threshold} progress {progress} quarter {quarter} sign {sign}')
++     check(var('park_turn_pending')!=0,'incoming stripe cannot prematurely finish at main cutoff')
++ fresh(38,0);member('thief_localization','yaw_cw_sign',1)
++ var('park_start_yaw',0);var('park_turn_quarter',1);var('park_turn_pending',2);var('park_target_heading',1)
++ front_raw=back_raw=0x60;physical_rpm=0;cache(0);commands.clear();yaw=6000;clock+=20
++ call('Route_RunParkingTurn',clock,20)
++ check(var('park_turn_pending')==3,'N038 enters fine phase at 60 degrees')
++ yaw=8200
++ for _ in range(18):
++  clock+=20;call('Route_RunParkingTurn',clock,20)
++  if not var('park_turn_pending'):break
++ check(not var('park_turn_pending'),'real aligned stripes finish N038 after reaching exit window')
++except Exception as e:failures.append(str(e))
++out=dict(checks=checks,failures=failures,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False)
++(ROOT/'Tests/results_n038_main60.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(out,indent=2));assert not failures,failures

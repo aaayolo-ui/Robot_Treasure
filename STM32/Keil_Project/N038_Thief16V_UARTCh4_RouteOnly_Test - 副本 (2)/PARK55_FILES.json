@@ -1,0 +1,20 @@
+{
+  "firmware": "UARTCH4_16V_PARK55_SL1",
+  "modified": [
+    "User/App_ThiefStrategy.c",
+    "Tests/test_n038_main60.py",
+    "Tests/test_hide_routes_stable4.py",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "reports": [
+    "Tests/results_n038_main60.json",
+    "Tests/results_hide_routes_stable4.json"
+  ],
+  "axf_sha256": "087ef158a516e0e117d9a25f286cfdd64279b1840e39442c498baabb82d2d20a",
+  "checks": 250,
+  "other_production_unchanged": true,
+  "hardware_tested": false,
+  "backup": "C:\\Users\\Administrator\\Desktop\\N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)\\Reference\\N011_MAIN60_before_three_main55"
+}

@@ -1,0 +1,30 @@
+{
+  "expected_policy_differences": [
+    {
+      "travel": 0,
+      "issue": "old side threat reverses"
+    },
+    {
+      "travel": 1,
+      "issue": "old side threat reverses"
+    },
+    {
+      "travel": 2,
+      "issue": "old side threat reverses"
+    },
+    {
+      "travel": 3,
+      "issue": "old side threat reverses"
+    },
+    {
+      "node": 38,
+      "issue": "old parking axis differs"
+    },
+    {
+      "node": 78,
+      "issue": "old parking axis differs"
+    }
+  ],
+  "baseline_axf_sha256": "a95ddd8809950e67116bee212128abc2ab81c75eed32bc3589062efe8bb00ded",
+  "hardware_tested": false
+}

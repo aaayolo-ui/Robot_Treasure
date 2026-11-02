@@ -1,0 +1,43 @@
+{
+  "log": "C:\\Users\\ROG\\Desktop\\调试工程\\Documents7.txt",
+  "sha256": "003a16886711bfd448a938ff9e167e726fe23be1f72f6b89f8d07949ffa4d5b3",
+  "firmware": "UARTCH4_16Q_RUN1",
+  "observed_trigger": "REAR",
+  "records": {
+    "22993": {
+      "line": 1112,
+      "encoder_abcd": [
+        -54080,
+        48074,
+        -53534,
+        47114
+      ],
+      "drive_mode": 1
+    },
+    "23107": {
+      "line": 1118,
+      "encoder_abcd": [
+        -54080,
+        48090,
+        -53534,
+        47114
+      ],
+      "drive_mode": 0
+    },
+    "23462": {
+      "line": 1144,
+      "encoder_abcd": [
+        -55857,
+        49875,
+        -55270,
+        48764
+      ],
+      "drive_mode": 0
+    }
+  },
+  "departure_to_reversal_forward_mm": 0.5236,
+  "integer_reverse_progress_mm": 0,
+  "conclusion": "Integer progress is zero when travel mode changes; the next junction is logged again as N039. Physical node misidentification is consistent with the trace but has not been video-verified.",
+  "baseline_repro_command": "python Tests/test_app_runtime.py --baseline-16q --documents7",
+  "regression_command": "python Tests/test_app_runtime.py --documents7"
+}

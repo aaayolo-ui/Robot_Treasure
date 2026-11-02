@@ -1,0 +1,2117 @@
+密室夺宝机器人系统技术文档
+STM32 四轮差速底盘与小偷自主逃跑系统
+内容扩展草稿  版本 D1  2026年10月31日
+对象工程  Thief16V_UARTCh4_RouteOnly_Test
+固件证据基线  UARTCH4_16V_TOP7_SPEED_SL1
+编写用途  为后续学校模板、竞赛技术报告、答辩材料和代码交接准备可复用内容。当前没有固定版式要求，因此优先保留技术细节、实现边界、参数出处与验证证据。
+核心结论  系统采用双灰度循线、四轮编码器速度闭环、陀螺仪转弯辅助、拓扑地图执行、有限状态风险搜索和实际路径逆序回退。当前控制器不依赖摄像头、YOLO、ROS或运行在车上的Python。
+证据说明  本文以本地代码快照为主，GitHub项目与官方资料为补充。代码存在、编译通过、离线模拟通过和真实车辆通过分别表述；没有实车证据的性能指标不写成实测结论。仅编译通过，尚未完成硬件验证。
+
+阅读导航
+正文按硬件、底层控制、地图和策略、通信监控、验证与资料来源组织。附录提供代码实际宏定义、88个地图节点、106条道路、源码入口和离线测试目录。可先阅读第1至4章理解整体，再按模块查阅。
+
+目录采用Word标题样式生成；后续套模板时可整体更新。
+1 系统目标与任务边界
+1.1 项目背景
+本项目面向密室夺宝类对抗场景：车辆沿固定黑线道路取宝，进入规定藏点，在传感器确认附近存在威胁后选择离开路径，并在途中前方受阻时回退。比赛具体判分、复位规则、运行时长和安全要求仍应以正式规则为准，本稿不把聊天中讨论的经验当成官方条款。
+系统关注的是道路约束下的可执行策略。纯粹的几何直线距离不能代替沿道路行驶的距离；纯粹的最短路也可能把车辆送向敌车。策略层必须同时考虑朝向、倒车、路口停车和转弯耗时，执行层则必须以真实灰度维持车轮运动。
+1.2 设计目标
+主要目标包括稳定识别黑线和路口、保留经过验证的普通动作、快速响应前方拦截、减少无意义的左右改路、在有限主控存储内完成搜索，以及通过同一条遥测链同时展示原始串口、激光和地图轨迹。
+本项目没有已验证的全局绝对定位系统。节点位置是从已知起点和路口序列推断的地图位置；激光提供距离回波，不能独立识别人、墙或另一辆小车。报告应描述“疑似威胁”“障碍回波”，而不是把条件标签当成目标识别真值。
+1.3 文档范围
+本文覆盖当前小偷工程以及关联的Windows监控助手。其他16U、16B、Gray12和历史试验版本可作为对照，但不自动继承其功能。BRANCH1支路漏读修复与LR1移动重定位不在当前被确认的控制链内，不应作为现行功能宣传。
+2 当前版本与工程证据
+2.1 基线识别
+当前已保存验证报告的固件标识为 UARTCH4_16V_TOP7_SPEED_SL1。工程应通过对应uvprojx构建。HEX是烧录映像，AXF同时包含可执行代码和调试信息；只有二者与源码、报告匹配时，验证结论才可复核。
+最新参数仍可能被人工调整。例如用户可修改LineFollowPID.h中的巡线基速或ThiefStrategyConfig.h中的测距上限。本文生成时重新读取实际文件，并与最近验证报告逐项比较，不把历史数值默认为当前值。
+2.2 源码一致性
+本次静态核对与VALIDATION_SPEED.json中生产输入散列相比，不一致文件数为 1。存在修改，报告只证明历史映像；差异文件为：Algorithm/ThiefStrategy/ThiefStrategyConfig.h
+记录最终AXF SHA256为 95bb2965990470b53a3bdebfc75dac1857de1f28a113996e984e148635e656c6。散列能证明文件身份，不能证明车轮实物映射、地面附着、接线电压或避障成功率。
+2.3 证据优先级
+本地源码与构建产物回答“当前程序做什么”；离线测试回答“在给定模拟输入下控制分支是否成立”；串口实录回答“设备当时报告了什么”；录像和实物位置回答“车实际上在哪里”。四类证据要相互印证。
+例如停车后输出的TW记录是历史缓存导出，其中非零PWM或旧时间戳不能直接解释为停车后仍实时驱动。又如网页显示N006而实物在N007，首先要检查节点推进、原始灰度和编码器锚点，而不是把图像当成独立定位传感器。
+
+3 硬件平台与系统连接
+3.1 主控与底盘
+工程以STM32F103RCT6兼容目标配置，项目规则说明实物使用兼容的APM32F103RCT6。资源预算按48KB RAM、256KB Flash核算，不能把其他F103封装型号的容量直接代入。
+公开项目README记录R5四轮底盘、四个MC520P30_12V有刷编码器电机、约65mm轮胎与四路TB6612FNG类驱动板。型号和购买信息属于项目资料，电池状态、安装尺寸及最终实车BOM仍需实物复核。[W1]
+3.2 传感器分工
+前后各一块NCHD12十二路灰度板承担道路观测。两块板是前后分布，不是横向连续二十四路；转向误差来自两个独立观测，不能简单把位图拼接后统一求中心。
+编码器用于轮速反馈、相对里程和运动约束；JY61P提供YAW变化；四个AI-1811方向通道提供距离回波。不同传感器的失效模式不同，组合的关键是明确各自负责什么，而不是声称进行了完整概率融合。
+3.3 电源与串口
+动力和逻辑供电需按实际板卡规格确认，所有相关信号共地。公开资料给出3S电池、动力支路及DC-DC控制支路的方案，但文档不能取代电压、极性和逻辑电平实测。
+当前四路激光经UART-CH4链路进入主控，主串口配置115200。电脑端经USB转TTL与蓝牙串口链路接收。串口已连接只代表操作系统端口打开，不代表有新传感器字节；应同时看接收字节数、帧计数、帧年龄及解析错误。
+3.4 提示与独立通道
+PA3保留给上电持续声光提示，当前实现是一次GPIO初始化后维持输出，并不依赖逃跑状态。不能把该脚重新启用为USART2_RX而不评估冲突。
+四电机必须保持独立驱动通道和独立编码器反馈。底层FWD/REV电平、驱动板A/B/C/D插口与逻辑前后左右是不同概念：现有映射记录FL对应B、FR对应A、RL对应D、RR对应C；改线后必须逐轮验证，不能仅凭同侧目标相同而把通道并联。
+4 软件结构与执行时序
+4.1 分层组织
+Core负责启动和CubeMX生成初始化；Hardware负责电机、编码器、灰度、陀螺仪和测距接收；Algorithm包含灰度位置、地图、搜索和威胁模型；Control承担轮速、循线、行进坐标变换和恢复；User组织任务与遥测；System提供时间和调试基础设施。
+这种分层使策略变更可以尽量限制在规划器，而不反复修改普通巡线。历史问题表明，把某个路口的误停通过大范围更换转弯流程来修补，容易破坏已稳定的基础动作，因此每次修改都应记录差异和基线。
+4.2 周期与非阻塞
+常规循线控制周期为20ms，快速灰度路口观察约5ms。快速观察用于避免窄路口在两个控制采样之间漏读；它不意味着PID和四轮目标也以5ms重复计算。
+激光接收、按键、日志缓存和任务状态都要在主循环中有界执行。主控不适合在高速循线循环中无限扫描文本、同步输出大段日志或临时分配大型数据结构。串口输出应限制频率并保留原始诊断计数。
+4.3 状态机的意义
+状态机负责把“行驶”“入中心”“制动”“旋转”“接线”“停车”等机械过程拆成可审计阶段。状态切换需要物理证据，例如轮速反馈停稳和新鲜陀螺仪帧，而不能只等待固定延时后假设动作完成。
+路线规划给出目标节点和动作，状态机执行动作；灰度是执行阶段的道路证据。规划器输出正确并不能保证车轮转向正确，必须分别检查行进帧、YAW符号、轮速目标以及接线阶段是否提前退出。
+5 灰度采集与黑线特征
+5.1 位图和坐标
+每块NCHD12输出十二路黑白状态，经Extract12整理为低十二位。P1至P12的物理顺序、安装朝向和TravelFrame转换共同决定“左”和“右”。LED亮灭与软件黑线位的关系要按实际模块验证，不能凭肉眼灯亮就断言软件是1。
+GrayPosition对有效黑色位求位置，GrayCoordinate把板上位置映射为车辆误差。中心参考、偏差缩放和边缘分类用于控制与路口判断；这些误差值不是毫米，也不是实际车身角度。
+5.2 特征分类
+现行代码区分普通有效线、左侧黑、右侧黑、全黑、宽黑、无线、I2C错误及后板不可用。不同类别的物理含义不同：无线可能来自间隙或真正出线；全黑可能是路口或文字；I2C错误则是通信失败。
+路口通常依据外侧位组合识别，并配合武装、锁存和地图上下文。单次外侧黑位不能无限重复计数；离开路口后需重新看到稳定线，再武装下一个路口。原严格支路确认例如左侧P11/P12同时黑可能漏掉不对称回波，这也是保留原始位图的原因。
+5.3 前后板误差
+当前位置纠偏以行进前端误差为主；双板有效时再加入前后误差差值作为航向项。程序没有单独的前后灰度板安装间距毫米参数，所以该航向项是经验比例纠偏，不是根据几何基线计算的真实角度。
+如果后续测出板间距并希望估计车身角度，需要同时标定单板位移尺度、安装偏心和符号，才能使用几何模型。不能只新增一个间距数字，就把原误差差值解释为准确YAW。
+
+6 巡线外环 PID 与平滑
+6.1 外环控制律
+LineFollowPID计算位置P、I、D修正，双板模式另外叠加航向P。当前实现采用整数缩放，参数名称带X1000，速度目标使用RPM×10；读数变化、参数和单位必须一起理解。
+微分项对误差增量作一阶IIR滤波，旧值占3/4，新增量占1/4，再按实际周期换算微分输出并限幅。积分采用条件积分，在同方向饱和时不继续累积，避免退出偏差后长时间反向拉扯。
+6.2 双轮目标与饱和
+控制输出映射为左基速加修正、右基速减修正；再经FollowSmoothing限制基速或转向变化，最后由TravelFrame映射到四个物理车轮。控制器的基速是目标，不是编码器已经测到的真实速度。
+侧边线和中心边缘会使用不同的纠偏增益比例。调参应先核对方向，再调比例，最后考虑积分和微分；不能用增大PID去掩盖车身尚未转到出口、轮子制动锁死或灰度物理映射错误。
+6.3 平滑与速度
+FollowSmoothing用于减少目标突变，避免起步和大误差时左右轮瞬间反向。轮速PI解决电机速度，循线PID解决道路误差，平滑解决指令变化率，三者不应混成一个“速度参数”。
+当前用户要求硬币瞬间遮挡时保持进入遮挡前的平滑基速，辅助代码因此读取follow_smoothing.base_rpm_x10，而不写死50RPM。正常巡线默认基速应看本稿附录提取的实际宏定义，历史注释可能滞后。
+
+
+7 四轮编码器与轮速 PI
+7.1 速度估计
+Encoder.h当前定义每圈1560计数。采用增量计数和实际采样间隔换算RPM×10，并根据定时器计数模式处理正负及回绕。该计数必须与实车编码器及减速比配置对应，不能机械套用别的电机参数。
+四轮编码器分别采样。车轮逻辑速度与底层电机电气方向并不相同，因此速度反馈在进入闭环之前必须进行经过确认的符号映射。某个轮子实际旋转却始终测零，会使该通道PI持续增加输出。
+7.2 内环与执行
+WheelSpeedPi按目标与实测速度误差更新控制输出，并限幅到允许PWM范围。闭环控制先解决同一目标下电机差异，再由外环决定左右目标差；同时改外环和内环增益会让问题难以归因。
+制动、使能、PI状态复位和方向互换需要明确顺序。若两个轮子被短刹车锁定而另两个轮子尝试小幅转动，声音可能很大但车身几乎不动；应查每轮PWM、方向和反馈，而不是笼统归为定位计算慢。
+7.3 里程与误差
+MapRoutePosition把轮程转换成毫米，用于地图段进度和辅助判断。轮胎标称直径不等于负载后的有效滚动周长；轮滑、倒车、转弯和刹车滑移会改变里程，因此程序不应单凭累计里程强认一个灰度路口。
+半路折返时，必须保留折返前进度与制动滑移，建立反向部分路段。旧入口锚点、前后运动的符号和新路段清零时刻若混用，就会出现“仅退了几十毫米却认为已走满一段”的位置错乱。
+
+
+8 行进坐标与倒车循线
+8.1 TravelFrame
+TravelFrame把物理车头与当前行进前端分开。倒车时后板成为行进前端，相应的位序、误差和车轮目标只允许统一映射一次，不能应用层取反、底层再取反。
+地图北东南西是绝对方向枚举，前左右后是相对于车身的传感器方向，前进或倒车是运动模式。三者不能混用。例如车头朝南倒车向北，行进方向左转对应地图向西，转后车头可能朝东仍以倒车向西。
+8.2 换向条件
+切换行进端前先制动，再读取四轮速度，连续确认停稳后切换。固定延时只说明等待过，不说明惯性已经消失。新方向起步不能因某一帧前端无线而立即永久锁死，也不能在双白时按地图盲冲。
+已发生的倒车不流畅问题，常与过早从倒车切回前进、缓存速度未更新、旧路口再次计数或转弯未完成时采用后板旧线有关。现有恢复通过前后线形一致性、停稳握手和重新武装来限制这些误切换。
+9 陀螺仪与普通转弯
+9.1 YAW的使用
+JY61P的YAW用于相对旋转角、方向符号和新鲜度判断。角差需跨越±180°时折返到最短有符号角，避免从179°到−179°被算作358°。旋转前要求取得制动后的新角度帧，减少使用惯性制动前旧值的误差。
+YAW原点和地图朝向不是天然相同。程序通过启动参考与学习的顺时针符号建立关系；长时间漂移与安装偏角仍可能存在。灰度纠偏与YAW检查是互补关系，不能把每个普通路口都强制停到地图轴±2°作为常规动作。
+9.2 主旋转与接线
+当前普通转弯采用约45°主旋转，再进入既有接线和巡线阶段。这不是只转45°就认为已经完成90°道路转向；其余机械转动通过连续接线与PID收敛完成。
+入路口动作通常为100RPM持续180ms，保证灰度板识别路口后，车身中心继续靠近转弯中心。随后实测停稳、开始固定PWM主旋转。停车到藏点90°是另一套过程，不应与普通转弯的主旋转参数混淆。
+9.3 找线边界
+RestartLineSearch只在明确恢复上下文使用。普通巡线、地图直通过程和转弯后接线具有不同线索：转弯未完成时后板可能仍压着旧路，不应因此向前或后退到错误道路。
+持续双白两秒停车、真实陀螺仪过期、I2C异常、堵转和按键停止继续存在。当前工程仍可能因严格支路判断而停车；本文没有把另一个未在当前目录中的修复当成已上线功能。
+10 拓扑地图与节点执行
+10.1 图模型
+地图包含88个节点和106条道路。节点存储编号、半格坐标、类型和度数；坐标以150mm为半格单位，道路记录起终点、长度及地图方向。地图坐标y向下增加，北在上，不能直接套用数学坐标y向上而不改符号。
+N005是宝藏内部标记，不是普通灰度路口。规划器BuildRoute会把同方向、经过内部节点的段合并，例如N006→N005→N004形成N006→N004动作段，同时保留两条实际道路的长度。
+10.2 路线合法性
+MapRouteNavigator在开始时校验节点连接、段长度、段数、动作和前后模式是否一致。相邻段航向差决定左转、右转、直行或运动反向；反向会切换drive_mode，不等价于让车身旋转180°。
+地图估计不能单独证明车辆真实位置。灰度读到文字或误识别路口时，序列推进仍可能错位；执行器需要保留原始位图、进度和所选动作，才能对照实物复盘。
+10.3 路口提交
+到达路口不应立即等同于已经走上下一段。直行、旋转和反向应分别完成其动作和接线后再提交，避免一次路口被重复消耗。返回历史也应在实际动作确认后记入，而不是保存未来规划节点。
+编码器用于筛除明显过早的残留线索或显示进度，其可靠性低于真实路口特征。观察器的LOC_DISTANCE、OBS_OK等诊断与应用执行器有不同语义，不能把网页VALID=0直接理解为车辆没有道路信息。
+
+图1 当前拓扑地图与首次取宝路径  坐标及连边直接取自MapRoutePlan.c
+11 风险搜索与藏点评分
+11.1 状态扩展搜索
+ThiefRiskSearch将节点、地图朝向和运动模式合并为状态，单节点有四方向乘两模式，因此88节点对应最多704个状态。搜索使用固定长度数组保存代价、到达时间、父状态、访问位和安全余量，避免在主控运行时动态分配。
+其结构接近带风险和朝向代价的有界Dijkstra式标签搜索。代码明确说明每个状态只保留一个标签，是内存受限启发式，并非完整SIPP、安全区间最优搜索或严格极小极大追逃求解器。报告应使用符合实现的名称。
+11.2 边代价与时间
+普通道路时间按长度除以正向/反向模型速度计算，再加转弯和换向额外耗时。模型速度属于规划假设，修改实际RPM之后，若不重新标定模型，预测到达时间与真实用时可能不一致。
+转弯风险不能仅计算静止到达时刻，因为车身要经历入中心、制动、旋转和清出路口。代码对路段与清出阶段按不大于75mm间隔采样安全余量；这是一种离散近似，不是连续时间碰撞必然安全证明。
+11.3 目标比较
+候选藏点先满足允许出口、地图连通和停车轴向。可行候选优先安全层级，再比较与记忆目标的沿图分离、是否刚暴露或刚用过、累计风险代价和出口条件。没有安全路径时可给出DEGRADED，说明取舍降级，而不是保证不被抓。
+分离距离有离散格桶，冷却和前次藏点影响偏好，出口数量和直线逃离距离影响反应余量。距离远的藏点并非总是最好：若转弯过多、要穿过敌车方向或进入封闭袋形区域，评分应降低。
+11.4 规则与搜索结合
+最新首次路线和N011部分方向采用明确规则覆盖，其他情形再由风险搜索选择。规则覆盖适合用户已确认的地图通道，搜索适合多种可行路线的比较；两者优先级应在代码和文档中一致。
+固定通道不是数学全局最优证明，也不表示敌车变化时仍永远最佳。它的收益在于减少易受重复观测干扰的改路与犹豫，同时用原前方拦截例外处理真正堵在当前行进前方的障碍。
+
+
+12 四路激光接收与有效性
+12.1 数据链路
+四路激光距离从UART扩展链路进入解析器，再按物理CH1前、CH2左、CH3右、CH4后分发。每路距离、置信度、帧年龄和解析状态应独立维护；不能因右侧坏了就让前侧的软件读数一起失效。
+硬件输出频率、主控接收频率、主控日志上报频率、电脑界面刷新频率是四个量。网页每秒刷新五十次，不等于传感器每秒产生五十个有效新测量；重复的157mm也可能是持续收到相同数据，而不是网页卡死。
+12.2 阈值与投影
+软件有效范围和逃跑触发阈值以ThiefStrategyConfig.h为准。最近确认版本前后原始上限1000mm、左右900mm；对应车身中心投影还使用前后150mm、侧面100mm偏移。原始探头距离与地图中心距离不是同一个量。
+这些偏移是工程模型，并不等于已完成精密几何标定。实际安装位置、光轴高度、离地反射、目标材质和斜面都会影响测距。阈值增加之后，隔着另一条路甚至场外墙体也可能进入有效回波，需要继续结合地图方向过滤。
+12.3 稳定确认
+单帧近距离不立即等于敌车。FrontLaserGate和历史回退触发各有新鲜度、置信度与连续帧条件；原三帧确认的具体代码位置和距离跨度应区分，不能在报告中把所有门控统一写成同一组数字。
+原始帧数量能判断通信是否活着，有效帧数量才能判断策略有无可信输入。线缆交换后问题跟随探头或跟随通道，可帮助区分探头、供电、扩展板和软件映射，但不能仅凭一次互换就永久宣告硬件正常。
+13 场外过滤与威胁模型
+13.1 方向转换
+激光通道首先相对物理车身定义，再结合当前车身地图朝向转成北东南西。倒车模式改变行进前方，却不改变物理前激光的位置，因此“前方受阻”应按实际行进端选择CH1或CH4。
+地图边缘过滤应依据当前姿态、探头方向和回波落点是否在场内，而不是简单禁用某个边缘节点所有激光。在边缘朝图内的探头仍可能看到真实敌车，不能一概忽略。
+13.2 落点与道路
+回波按探头偏移投影到地图平面，再评估是否影响当前或下一道路。侧面某条路有回波，不应仅因“同为西侧”就封堵另一条相隔较远的道路。道路连接距离与空间落点都需要参与判断。
+位置或姿态错误会使过滤判断一起错，这是一种关联误差。当前观察器没有提供独立绝对定位，所以遇到墙被当敌车时，应同时查坐标、BODY、MODE、YAW和回波，不能只调小量程。
+13.3 风险解释
+ThiefThreatModel保存有限历史观测，并估计敌车可能沿道路接近的余量。模型只能根据已有回波作保守或启发式预测，并不知道对手真实控制策略。
+本项目默认实景为一辆小偷与一辆追车，不能凭多个方向回波就新增多辆敌车的真实结论。多方向回波也可能是同一个目标在转向后的新投影，或场内其他静态物体。
+14 首次取宝与当前藏点规则
+14.1 首次完整路线
+当前首次路径为N054→N053→N044→N036→N035→N026→N017→N007→N006→N005→N004→N003→N002→N011。用户确认先前写的N077是上方N007笔误，程序没有绕到地图下方N077。
+N035到N007之间实际经过N026和N017，不能构造35到7的虚拟边。通过宝藏段时实际是N005驶向N004；到N004后沿顶部经N003、N002，在N002转弯向南进入N011。
+14.2 首次停车姿态
+从N002进入N011时车身朝南，用户要求保持N011横停，因此车辆先完成原180ms居中与真实停稳，再执行单独授权的停车90°转向，目标朝西。它只针对首次1600路线的N011竖向到达，不会自动推广到所有普通转弯。
+N011和N035为横向藏点，N026、N038、N063为竖向藏点；N078是规则指定的临时等待点，不是通用第六藏点。实际最终轴向还要以当前规划final_body_heading与停车动作核对。
+14.3 N011方向规则
+在N011，第一次完成确认的地图北侧来车与西侧来车都走11→12→23→31→32→48→49→61→62→63，到N063居中后按原停车动作竖停。地图东侧来车仍先走10→20→37→38→39→40；南侧来车经12→13→3→4→5→6→7再接搜索到东侧藏点。
+首次方向完成确认后锁存，不被后续侧后方回波反复替换；到目标藏点后解除旧锁并等待新证据。当前行进前方真正被连续确认拦截时仍保留实际路径回退例外，因此“锁定”并非无视前方所有碰撞。
+14.4 其他藏点
+N038竖停时，地图东西侧威胁优先经N021往北部通道，北侧威胁经N039、N040向东，南侧沿原向东分流。N063北侧威胁优先南下经N078、N077、N076、N075，再择N011或N038；仅西侧威胁可先去N078临时等待。
+N078的新北侧威胁走N077、N076、N075后再藏；新西侧威胁走N063、N052去上部。该点没有N078→N087直接道路。首次到N026或N035等非固定情形仍由原风险搜索和可行出口约束决定，不能把初始规则误套到后续所有藏点。
+
+15 实际路径记录与遇阻回退
+15.1 保存已经走过的边
+ThiefRouteTrail保存实际确认的道路边、运动模式、灰度、YAW与轮程，不只保存规划路线。走到路口先暂存，完成直行或转弯接线后再提交，避免把尚未真正到过的节点写入返回历史。
+固定容量避免不可控内存增长。历史最多保存的边数、结构体字节数及可用回程空间应以当前头文件和测试报告核对；项目历史记录为47条已执行边加1条待确认记录，约876字节工作结构。
+15.2 半路拦截
+行进前方三帧稳定近回波确认后，先制动并确认四轮停稳，再构造当前部分路段的反向和已执行历史逆序。倒车时前方可能是物理后探头，测试必须按TravelFrame选择通道，不能把旧路线的CH4写死成永远的行进前方。
+当前部分边要考虑折返前已经走过的里程及制动滑移。灰度仍决定真正返回路口的时刻，轮程只排除明显残留，不把里程上界直接变成永久锁死。路线连接不成立时不能编造“原路返回成功”。
+15.3 返回执行
+返回中直行路口继续通过，最近转弯点完成相应转向后沿旧路回到起始藏点。回程侧后方回波不反复改计划；若回程行进前方又被新障碍确认阻挡，则退出该次历史回放并进入原回撤重规划。
+回到原藏点要恢复其原始停车姿态。实际历史没有独立绝对定位能力：如果出程误认路口，返回记录仍会错，因此必须保留传感器证据，并在重复纹理区谨慎解释“记录了实际路”。
+16 取宝反光与短时失线处理
+16.1 干扰模型
+用户描述铁块约硬币大小，前板反光时后板仍在线上。该条件支持短时采用真实后板线索，但不支持前后灰度全部关闭后长距离盲开。当前实现针对无线分类，不把所有反光形式都当成同一故障。
+若反光使前板读成全黑、边缘多簇、I2C错误或产生相反的误差，现有无线分支未必启用。实测时应先看原始RAW12，再决定是否需要另一类处理。不要仅凭“铁块会反光”就将整片地图的灰度证据屏蔽。
+16.2 原速后板辅助
+Route_TreasureRearBridge仅在初始1600路线N006→N004、正向FOLLOW、尚未确认到点时工作。每次都要求前板为无线、后板为真实紧凑有效线。基速读取FollowSmoothing当前平滑值，后板P修正最多±20RPM，左右平均目标仍等于入口基速。
+辅助从首次无线处记录里程，最多50mm；前板恢复交还原巡线，后板也失线或超范围进入原恢复。5ms快速检测与20ms控制共用判定，防止快速入口提前截走；轮速更新仍按20ms。没有给前板伪造一条黑线，也没有因此提交N004。
+16.3 限制与复测
+后板单独的横向位置无法完整确定车身倾角，高速下长距离依靠后板可能放大姿态误差。因此50mm只是一项明确的短遮挡范围，不是更强的定位能力。用户要求原速通过已经落实为目标基速保持，实物是否平稳仍需测试。
+应分别记录无铁块、铁块不同位置、灯光角度、前板离地高度和不同电池状态下的数据，核对前板无线持续时间、实际经过距离及恢复后的车身方向。硬币大小不等于测量光学盲区正好等于硬币直径。
+17 停车 故障与恢复的边界
+17.1 受控停车
+KEY停止、持续双板全白两秒、真实I2C或陀螺仪异常、制动未停稳和电机堵转属于不同原因。串口应输出具体reason和前一状态，不能统一叫“保护代码”。当前工程中的MAP_REQUIRED_BRANCH_NOT_SEEN仍可能因为严格支路条件触发，本文不宣称所有误停已消除。
+制动后更新反馈是必要条件。如果只发刹车但软件缓存仍保存高速值，会一直判定没停稳；反之直接把缓存写零，则可能在车辆仍滑动时就开始转向。离线测试应保留真实判定函数并只模拟物理轮速响应。
+17.2 无线与通信错误
+无线是一个有效的传感器结果，通信错误是没有获得可靠结果。两者不能共用同一“延时忽略”来掩盖。短无线可根据后板、道路上下文和历史误差纠偏；通信失败则要先确认总线和数据新鲜度。
+两秒双白用于比赛中持续失去道路线索的情况，但不是取代所有停机原因。主控任务时间、局部动作超时、传感器帧超时也各有用途，不能简单把所有超时都理解为从出发到比赛结束。
+17.3 定位不确定时
+当前定位观察器仍是诊断，未实现经过实车验证的多候选移动重定位。曾讨论的LR1保留候选、连续路口消歧属于独立试验，不在当前运行版本。若要重新采用，应单独验证地图游标冻结、物理出口选择和重新接回策略的条件。
+继续循线比原地长期停止更符合逃跑目标，但需要真实线索授权运动，尤其在T形路尽头和文字干扰区。不能把“尽量不要停”落实为双白也按地图猜测直冲。
+18 串口遥测与日志设计
+18.1 遥测类型
+主控输出BOOT与固件身份、LASER四方向测距、LOC节点位置与姿态、MAP_NODE动作、路线锁存、TRACE历史提交和回退，以及MT3等紧凑事件。文本字段能直接用于串口助手查看，结构化事件则支持网页轨迹和计时。
+测距状态RAW、STALE、BAD_DATA、TOO_FAR、POSE_OFF等反映数据资格或姿态条件，不都是传感器断线。网页展示有效距离和策略真正允许触发是两层逻辑，应在报告和界面中分开说明。
+18.2 时间与追溯
+日志至少存在主控毫秒时基、电脑接收时间和显示刷新时间。主控T=99068表示该时基99.068秒，若缺少KEY2启动事件，不能直接说本轮出发用了99.068秒。缓存导出还可能将较早采样在停车后集中打印。
+解析器应该容忍一行被分成多个串口块、多个事件合在一块，以及历史文本混杂。不能认为每次串口read就是一整帧。原始字节保存是修复网页解析的重要依据。
+18.3 控制与日志隔离
+实时控制应优先，日志缓存和上报需要有界。日志过量会增加UART队列压力、丢字和主循环迟到，从而让“更多调试输出”反过来改变车辆行为。
+本项目保留TW等轮速快照以便在停车后导出，并记录丢帧、队列或最大控制延迟等诊断。验证时既看打印内容，也看输出是否打断20ms控制，不能只用一段漂亮串口证明实时性。
+19 Windows一体助手与网页监控
+19.1 统一数据源
+DesktopSerialMonitor使用Windows桌面程序与WebView2，嵌入串口调试和本地监控。后台只打开一次COM端口，同一份接收数据供文本显示、激光卡片和地图轨迹使用，避免网页与串口助手争抢端口。
+手动开启后台不等于连接串口；连接COM不等于收到数据；公网同步进程运行不等于远端已经更新。这些状态需要独立显示，并保留手动连接、断开、停止同步等明确按钮。
+19.2 本地与公网
+本地监控依赖电脑上后台和页面资源。127.0.0.1只代表当前电脑，不是其他网络都能访问的公网地址。公网页面还依赖上传服务、鉴权、网络和托管平台，不能只把本地URL发给另一台设备。
+一体助手README记录公网访问曾遇网络拦截，程序状态不能替代实际网络验证。浏览器或WebView的显示副本与主控控制代码应解耦，刷新页面不能被误当成重新启动实物车辆。
+19.3 显示与计时
+用户要求同屏串口、四路距离与车辆轨迹，地图节点编号常显，接收框可拖动高度，地图可滚轮缩放，并从出发到停车计时。现有资源可支持这些交互，但EXE可能捆绑旧资源，文档应同时检查源码、构建与实际运行入口。
+暂停显示应只暂停渲染，不停止串口接收与原始日志。轨迹属于主控上报位置及网页插值，不是独立视觉定位。显示旧坐标时应淡化并提示数据年龄，不能继续把动画当成实时位置。
+20 资源预算与实时约束
+20.1 固定内存
+主控RAM限制使算法必须采用固定上界。704状态工作区、有限威胁记录、路线缓冲和实际路径栈占据主要算法存储；还要保留串口缓存、库函数、全局变量和栈空间，不能只统计搜索数组。
+最近映像RAM44896字节、剩余4256字节，已包含预留栈。剩余空间不算宽裕，增加每节点多个候选、全历史轨迹或大文本缓存时应重新查看map文件。避免把PC上的Python矩阵和对象图直接搬上主控。
+20.2 栈和CPU
+链接器已知最大栈920字节低于预留3072字节，但静态调用图存在中断、未知函数和库边界，不能代替实测栈水位。CPU时间也应通过周期迟到和算法计算时间记录，而不是通过PC运行几毫秒推算STM32性能。
+风险搜索只在车体停稳的规划时机运行，普通行驶保持轻量控制。若未来搜索规模增大，可以分阶段预算或提前预计算拓扑，但应先测当前瓶颈，避免无收益地重构基础巡线。
+21 离线 ARM 验证方法
+21.1 测试技术
+测试使用pyelftools读取AXF中的ELF符号和DWARF类型，再由Unicorn执行实际ARM Thumb代码。通过明确的硬件钩子替换灰度读取、编码器增量、YAW帧、按键和电机物理响应，检查真正编译后的控制逻辑。
+这比只重写一个Python策略模型更接近固件执行，但仍不是电机、I2C时序和地面摩擦的数字孪生。若钩子直接把“停稳”“找到线”“到达节点”强制设成功，会掩盖真实bug，因此关键测试保留真实灰度分类与停稳判定。
+21.2 当前覆盖
+当前16组套件覆盖藏点出口策略、N011首次方向锁、初始路线和停车姿态、转弯续接、激光边界、监控协议、实际路径回退、短回撤、后板接线与硬币短遮挡。每份报告记录映像SHA256，输入清单记录源码和夹具散列。
+硬币专项用120、220、260RPM三种入口目标与多种后板偏差检查平均速度保持、正向输出、50mm边界和双白停车。它证明软件目标计算，不保证实物在上述每个速度都能稳定通过金属反光。
+21.3 回归纪律
+改策略要更新与用户新路线相关的预期，但不能直接删除失败断言；因路线改变而改变“前方”的测试，应按实际行进端重新选择探头。夹具自身错误需要与生产缺陷区分，并保留初次失败、修正内容和重跑结果。
+当前代码修改后应重新编译再跑测试；一份旧报告即使文件名相同，也不能证明新固件。源码、AXF、HEX、日志和验证JSON应作为同一批证据归档。
+
+22 实车标定与性能试验计划
+22.1 基础标定
+优先逐轮检查正负方向与编码器，再测直线有效轮周长，记录不同电池电压和负载下速度跟踪。随后单独测试前后灰度位序、离地高度、黑线宽度、中心误差和边缘形态。
+四路激光应分别做已知距离对照，至少记录目标材质、角度、原始值、有效率、均值和波动。频率统计应数新鲜完整帧，不按网页刷新的次数。标定结果应注明测量工具和误差，而不是只说“八成准确”。
+22.2 动作试验
+普通转弯、停车90°、短回撤、路口直通、宝藏文字和硬币反光应分组，先固定一项条件再改变速度。对每次试验记录固件ID、源散列、电池状态、起点姿态、期望节点、实际终点、故障时刻和视频。
+可统计每类成功次数、失败类型和用时分布；无实测前不填成功率99%、定位误差几毫米或最短逃离时间。车身中心是否在路口、前后板是否压线，应由照片或明确现场记录支持。
+22.3 竞赛综合试验
+在各藏点分别从地图四方向放置追车，验证首次触发、边缘外物体过滤与途中拦截。重复运行应改变敌车到达时机，尤其在入中心、制动和转弯结束附近放置障碍。
+最终报告应区分软件逻辑通过率和对抗成功率。两车速度、起始距离、对手策略与地图条件不同，不能只根据一次逃离成功就声称算法优于所有其他方法。
+23 GitHub项目与开源技术来源
+23.1 用户自己的仓库
+已通过关联GitHub身份确认账号为aaayolo-ui，并公开核对到Robot_Treasure仓库。它是本项目的公开来源入口，仓库页面描述为2026江苏省大学生机器人大赛密室夺宝项目。[W1]
+公开README仍包含单激光阶段的历史描述，与本地四路和多次策略修改不同。本稿不声称本地TOP7_SPEED已经推送到GitHub，也不把公开仓库的旧阶段说明覆盖当前代码。未看到明确仓库许可时，“公开可浏览”不能直接写成“任意复制商用的开源授权”。
+23.2 实际使用的基础软件
+STM32CubeF1/HAL及CMSIS构成固件底层基础。上游STM32CubeF1许可清单区分HAL和CMSIS等组件，不能把整个软件包统称为同一种许可证；实际分发应保留对应版本文件头与LICENSE。[W2][W3]
+Unicorn和pyelftools用于电脑侧离线测试，不在主控上运行；它们的职责分别是执行ARM指令和解析ELF/DWARF。若公开测试工具或打包依赖，应按各仓库实际许可证保存通知，不能把测试工具许可等同于整车应用许可。[W4][W5]
+23.3 可研究但未移植的资料
+PythonRobotics提供机器人算法示例，可用于理解搜索和控制的对照实验；zhm-real/PathPlanning提供路径规划动画与示例。它们主要是PC上的算法学习资源，没有证明其硬件、实时性和内存与本车吻合，当前工程未直接移植这些仓库。[W6][W7]
+Red Blob Games的路径搜索教程可作为BFS、Dijkstra、A星概念的解释来源。[W8] 参考资料有助于阐释算法，但不能把本地无启发式优先队列的有界搜索包装成已经实现完整A星、SIPP、SLAM或MPC。
+[W1] 用户公开项目仓库。项目来源与历史硬件说明  与本地版本分别记录。核对日期2026年10月30日。https://github.com/aaayolo-ui/Robot_Treasure
+[W2] STM32CubeF1 上游。HAL CMSIS等组件包  实际采用基础。核对日期2026年10月30日。https://github.com/STMicroelectronics/STM32CubeF1
+[W3] CMSIS 5 上游。Cortex M基础接口  实际工程基础。核对日期2026年10月30日。https://github.com/ARM-software/CMSIS_5
+[W4] Unicorn 上游。PC侧ARM离线执行  非车载运行。核对日期2026年10月30日。https://github.com/unicorn-engine/unicorn
+[W5] pyelftools 上游。PC侧ELF DWARF解析。核对日期2026年10月30日。https://github.com/eliben/pyelftools
+[W6] PythonRobotics。可参考 未直接采用。核对日期2026年10月30日。https://github.com/AtsushiSakai/PythonRobotics
+[W7] PathPlanning。可参考 未直接采用。核对日期2026年10月30日。https://github.com/zhm-real/PathPlanning
+[W8] A星及图搜索教程。理论说明 未作为固件库直接导入。核对日期2026年10月30日。https://www.redblobgames.com/pathfinding/a-star/introduction.html
+[W9] STM32CubeF1许可清单。逐组件许可核对入口。核对日期2026年10月30日。https://github.com/STMicroelectronics/STM32CubeF1/blob/master/LICENSE.md
+24 可扩展方向与未采用方案
+24.1 定位和策略改进
+若要解决真实节点错位，可以先围绕最近可靠节点、实际出口和下一路口特征保留少量候选，而不是立即引入大规模概率滤波。任何候选算法都要避免将重复采样当成经过多个路口，并在资源内核对最坏工作量。
+风险搜索未来可在PC离线比较BFS、Dijkstra或A星作基线，但对本车的收益需要实测：更短路径未必更少转弯、更低风险或更快逃离。不能为了“用高级算法”而扩大控制层改动。
+24.2 可观测性和工程化
+优先补充灰度板和激光几何尺寸、轮周长、转弯耗时分布、串口周期迟到以及电池变化数据。把关键参数抽成有单位的集中配置，能减少注释与真实宏值不一致。
+监控端可加入固件ID与日志绑定、当前COM占用状态、遥测年龄、地图估计有效性和事件定位跳转。所有显示优化都应保留原始串口，不把页面状态控制误当成车辆控制。
+24.3 正式技术报告的补充
+待有学校或竞赛模板，可把本稿的硬件、算法、策略与实验章节映射为摘要、总体设计、硬件设计、软件设计、实验结果、创新点和参考文献。当前未验证的目标值保持“待测”，不得为凑版面虚构曲线。
+建议补充整车照片、最终接线图、机械图、队员分工、版本日期、原理图、功耗和BOM价格。只有获得权利和明确许可后，才把第三方图纸、资料图片和代码大量复制到公开版报告。
+附录A 当前关键参数原文
+重要差异：本次实际读取THIEF_LASER_TRIGGER_MM为900U，THIEF_LASER_MAX_MM仍为1000U。FrontLaserGate_Observe主要使用THIEF_LASER_CHANNEL_MAX_MM(direction)，本次检查的门控调用并未直接使用TRIGGER宏。因此单独把TRIGGER改900不能作为前后实际900mm触发已经生效的证据；最近验证报告仍属于改动前映像。本文仅记录并解释该差异，没有修改工程或重新编译。
+以下由当前本地文件直接提取。宏名中的X10/X100/X1000是缩放单位；复杂表达式、历史注释或未启用宏不等于当前运行一定使用。实际分支仍应查调用链。修改参数后需重新构建和验证。
+Control/LineFollowPID.h
+
+Algorithm/ThiefStrategy/ThiefStrategyConfig.h
+
+Hardware/Encoder.h
+
+Algorithm/ThiefStrategy/ThiefRouteTrail.h
+
+User/App_ThiefStrategy.c
+
+Control/FollowSmoothing.c
+
+附录B 地图节点坐标
+坐标由x_half和y_half乘150mm得到；节点类型数字沿用代码，不在此擅自重命名。N005为内部标记，类型0；道路数量以源表为准。
+
+附录C 地图道路与方向
+方向0北、1东、2南、3西；表中方向为起点到终点，反向行驶方向需加2再模4。没有列出的边不能凭地图图形接近就当成直接连通。
+
+附录D 源码模块与入口索引
+User
+
+Control
+
+Algorithm
+
+Hardware
+
+System
+
+附录E 关键实现摘录
+状态编码
+static uint16_t State(uint16_t node,uint8_t heading,uint8_t mode)
+{ return (uint16_t)((node-1U)*8U+heading*2U+mode); }
+static uint16_t StateNode(uint16_t state) {return state/8U+1U;}
+static uint8_t StateHeading(uint16_t state) {return (uint8_t)((state%8U)/2U);}
+
+void ThiefRiskSearch_Init(void)
+{
+  uint16_t n;
+  emergency=0U;departure_mask=15U;
+
+出处 Algorithm/ThiefStrategy/ThiefRiskSearch.c
+原速短遮挡
+static uint8_t Route_TreasureRearBridge(RouteGraySample_t *sample,uint32_t dt)
+{
+  const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+  int32_t progress,turn,base;
+  if(front_state!=ROUTE_GRAY_NO_LINE || departure_turn || map_nav.arrived ||
+      !step || map_nav.route->id!=1600U || step->from_node!=6U ||
+      step->to_node!=4U || step->heading!=3U || TravelFrame_IsReverse())return 0U;
+  rear_state=Route_ReadRear(sample);
+  if(rear_state!=ROUTE_GRAY_VALID || !ThiefRouteTrail_TrackLine(sample->rear_raw12))return 0U;
+  progress=Route_LegProgress();
+  if(!treasure_rear_bridge) {
+    treasure_rear_bridge=1U;treasure_rear_start_mm=progress;
+    UartDebug_Printf("TREASURE_REAR_BRIDGE MM=%ld RAW=%03X,%03X\r\n",
+        (long)progress,(unsigned)sample->front_raw12,(unsigned)sample->rear_raw12);
+  }
+  if(progress-treasure_rear_start_mm>=50L || progress<treasure_rear_start_mm)return 0U;
+  if(dt<LINE_FOLLOW_PID_CONTROL_PERIOD_MS)return 1U;
+  turn=sample->rear_error_x100;
+  if(turn>200L)turn=200L;else if(turn< -200L)turn=-200L;
+  base=follow_smoothing.base_rpm_x10;
+  TravelFrame_SetWheelTargets(base+turn,base-turn,base+turn,base-turn);
+  ChassisSpeedControl_Update(dt);
+  if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
+  return 1U;
+}
+
+static void Route_DriveStraight(uint32_t elapsed_ms)
+{
+  int32_t step = (int32_t)(((int64_t)ROUTE_LEAVE_RAMP_STEP_RPM_X10 *
+                            (int64_t)elapsed_ms) /
+                           LINE_FOLLOW_PID_CONTROL_PERIOD_MS);
+
+  if (step < 1L) step = 1L;
+  if (leave_target_rpm_x10 < ROUTE_LEAVE_START_RPM_X10)
+  {
+    leave_target_rpm_x10 += step;
+
+出处 User/App_ThiefStrategy.c
+首次路线
+static const uint16_t initial_treasure_path[] = {
+  54U, 53U, 44U, 36U, 35U, 26U, 17U, 7U, 6U, 5U, 4U
+};
+
+uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan)
+{
+  uint16_t i,count;
+  static const uint16_t first_hide_path[]={3U,2U,11U};
+  const uint16_t 
+prefix_count=(uint16_t)(sizeof(initial_treasure_path)/sizeof(initial_treasure_path[0]));
+  if(plan==NULL) return 0U;
+  plan->valid=0U;
+  /* Keep the treasure approach, then take the first refuge at N011. */
+  memset(&decision,0,sizeof(decision));
+  decision.goal_node=11U;decision.parking_heading=3U;
+  count=0U;
+  for(i=0U;i<prefix_count;i++) combined[count++]=initial_treasure_path[i];
+  for(i=0U;i<sizeof(first_hide_path)/sizeof(first_hide_path[0]);i++)
+    combined[count++]=first_hide_path[i];
+  if(!BuildRoute(combined,count,0U,INITIAL_ID,plan)) return 0U;
+  /* Arrival from N002 is southbound; park west after measured standstill. */
+  plan->final_body_heading=3U;
+  /* Initial telemetry reports the entire fixed-prefix + hide route, not only
+   * the N004-to-hide suffix used by the hide selector. */
+  decision.travel_ms=THIEF_STARTUP_MS;
+  for(i=0U;i<plan->route.count;i++) {
+    uint8_t turn=0U,change=0U;
+    if(i>0U) {
+      turn=(plan->steps[i-1U].action==MAP_ACTION_LEFT ||
+            plan->steps[i-1U].action==MAP_ACTION_RIGHT)?1U:0U;
+      change=(plan->steps[i-1U].action==MAP_ACTION_REVERSE)?1U:0U;
+
+出处 Algorithm/ThiefStrategy/ThiefMapPlanner.c
+附录F 构建与复现实验清单
+构建入口：MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx。当前验证入口Tests/run_speed.py与Tests/validate_speed.py。旧run_route6、run_top7等脚本保留历史，不可把其旧身份断言作为当前总验收。
+
+当前验证清单仅证明已记录的编译与离线案例，未自动执行实物烧录。正式报告的实验结果表应在人工实测后填写。
+附录G 需要补齐的数据
+
+文档结束。后续可按正式模板删减或重排，所有未实测指标继续保留待测状态。
+项目
+本稿记录
+本地工程
+E:\Downloads\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16V_UARTCh4_RouteOnly_Test
+公开仓库
+https://github.com/aaayolo-ui/Robot_Treasure
+作者信息
+项目所有者 aaayolo-ui  技术整理草稿
+最终用途
+待补充比赛正式规则 学校模板 队员分工和实测结果
+更新原则
+以最新源文件和映像散列优先 历史README仅作沿革
+资源项目
+最近验证记录
+ROM
+68548 bytes
+RAM
+44896 bytes
+剩余RAM
+4256 bytes
+预留栈
+3072 bytes
+链接器已知最大栈
+920 bytes
+离线套件数
+16
+硬件验证状态
+False
+触发位置与方向
+已确认的通道
+终点或约束
+首次取宝
+35→26→17→7→6→5→4→3→2→11
+N011朝西横停
+N011 北或西
+12→23→31→32→48→49→61→62→63
+N063竖停
+N011 东
+10→20→37→38→39→40
+再去东侧藏点
+N011 南
+12→13→3→4→5→6→7
+再搜索东侧藏点
+N038 东或西
+21及上部通道
+随后由风险搜索选择
+N038 北
+39→40
+东向逃离
+N063 北
+78→77→76→75
+选择N011或N038
+N063 仅西
+78
+等待新证据
+套件
+退出码
+本稿用途
+test_turn_resume.py
+0
+以当前映像绑定报告为准
+test_left800.py
+0
+以当前映像绑定报告为准
+test_live_monitor.py
+0
+以当前映像绑定报告为准
+test_west63.py
+0
+以当前映像绑定报告为准
+test_trace_front_probe.py
+0
+以当前映像绑定报告为准
+test_strategy_stable2.py
+0
+以当前映像绑定报告为准
+test_temp78_stable3.py
+0
+以当前映像绑定报告为准
+test_trace_recovery.py
+0
+以当前映像绑定报告为准
+test_n068_recovery.py
+0
+以当前映像绑定报告为准
+test_rear_retrace.py
+0
+以当前映像绑定报告为准
+test_top7_coin.py
+0
+以当前映像绑定报告为准
+test_hide_routes_stable4.py
+0
+以当前映像绑定报告为准
+test_trace_return.py
+0
+以当前映像绑定报告为准
+test_n011_first_plan_stable10.py
+0
+以当前映像绑定报告为准
+test_short_return.py
+0
+以当前映像绑定报告为准
+test_escape_completion.py
+0
+以当前映像绑定报告为准
+宏定义
+当前值或表达式
+行
+LINE_FOLLOW_PID_CONTROL_PERIOD_MS
+20U
+10
+LINE_FOLLOW_PID_BASE_RPM_X10
+2600L
+12
+LINE_FOLLOW_PID_PARAMETER_SCALE
+1000L
+13
+LINE_FOLLOW_PID_DEFAULT_KP_X1000
+65L
+15
+LINE_FOLLOW_PID_DEFAULT_KI_X1000
+8L
+16
+LINE_FOLLOW_PID_DEFAULT_KD_X1000
+9L
+17
+LINE_FOLLOW_PID_DEFAULT_KH_X1000
+5L
+18
+LINE_FOLLOW_PID_KP_STEP_X1000
+1L
+19
+LINE_FOLLOW_PID_KI_STEP_X1000
+1L
+20
+LINE_FOLLOW_PID_KD_STEP_X1000
+1L
+21
+LINE_FOLLOW_PID_KH_STEP_X1000
+1L
+22
+LINE_FOLLOW_PID_KP_MIN_X1000
+0L
+23
+LINE_FOLLOW_PID_KP_MAX_X1000
+1000L
+24
+LINE_FOLLOW_PID_KI_MIN_X1000
+0L
+25
+LINE_FOLLOW_PID_KI_MAX_X1000
+50L
+26
+LINE_FOLLOW_PID_KD_MIN_X1000
+0L
+27
+LINE_FOLLOW_PID_KD_MAX_X1000
+50L
+28
+LINE_FOLLOW_PID_KH_MIN_X1000
+0L
+29
+LINE_FOLLOW_PID_KH_MAX_X1000
+50L
+30
+LINE_FOLLOW_PID_INTEGRAL_LIMIT
+10000L
+31
+LINE_FOLLOW_PID_D_LIMIT_RPM_X10
+40L
+32
+LINE_FOLLOW_PID_MAX_CORRECTION_RPM_X10
+500L
+33
+宏定义
+当前值或表达式
+行
+THIEF_STRATEGY_VERSION_16E
+1
+3
+THIEF_STRATEGY_VERSION_16G
+1
+4
+THIEF_STRATEGY_VERSION_16H
+1
+5
+THIEF_STRATEGY_VERSION_16I
+1
+6
+THIEF_STRATEGY_VERSION_16J
+1
+7
+THIEF_STRATEGY_VERSION_16M
+1
+8
+THIEF_LASER_CHANNEL_MASK
+0x0FU
+10
+THIEF_LASER_MAX_MM
+1000U
+11
+THIEF_LASER_TRIGGER_MM
+900U
+12
+THIEF_LASER_LEFT_MAX_MM
+900U
+13
+THIEF_LASER_RIGHT_MAX_MM
+900U
+14
+THIEF_LASER_SIDE_OFFSET_MM
+100U
+16
+THIEF_LASER_REAR_OFFSET_MM
+150U
+17
+THIEF_INTERCEPT_COOLDOWN_MS
+350UL
+19
+THIEF_LASER_MOVING_FRAME_MAX_MS
+25UL
+20
+THIEF_LASER_MOVING_YAW_TOL_X100
+500L
+21
+THIEF_ROLLOUT_ENABLED
+0
+23
+THIEF_ROLLOUT_RISK_TIERS
+1
+26
+THIEF_ROLLOUT_TIME_BUCKET_MS
+120U
+29
+THIEF_ROLLOUT_HOLD_MS
+340UL
+37
+THIEF_ROLLOUT_MAX_MS
+20000UL
+38
+THIEF_ROLLOUT_POLICE_TURN_MS
+768UL
+39
+THIEF_ENTRY_EVIDENCE
+1
+41
+THIEF_ROLLOUT_PRUNE
+1
+44
+THIEF_ROLLOUT_MODELS
+6U
+47
+THIEF_TURN_CLEAR_MM
+275UL
+53
+THIEF_HIDE_REACTION_MS
+340UL
+54
+THIEF_TURN_SAFETY
+1
+56
+THIEF_HIDE_RUNWAY_WEIGHT
+8L
+59
+THIEF_AWAY_TURN_PENALTY
+20000UL
+62
+THIEF_APPROACH_AXIS_PENALTY
+12000L
+65
+THIEF_HIDE_EXIT_WEIGHT
+1800L
+71
+THIEF_HIDE_AXIS_WEIGHT
+2L
+74
+THIEF_HIDE_FORWARD_WEIGHT
+1L
+77
+THIEF_HIDE_ALIGNED_PENALTY_MS
+0L
+80
+THIEF_FORWARD_MM_S
+674UL
+85
+THIEF_REVERSE_MM_S
+679UL
+86
+THIEF_POLICE_MAX_MM_S
+815UL
+87
+THIEF_TURN_EXTRA_MS
+768UL
+88
+THIEF_SWITCH_TO_REV_MS
+282UL
+89
+THIEF_SWITCH_TO_FWD_MS
+274UL
+90
+THIEF_STARTUP_MS
+80UL
+91
+THIEF_CONTACT_MM
+275UL
+93
+THIEF_TIMING_GUARD_MS
+120UL
+95
+THIEF_PLAN_BUDGET_MS
+100UL
+96
+THIEF_THREAT_MEMORY_MS
+4000UL
+97
+THIEF_RISK_HORIZON_MS
+6000UL
+99
+THIEF_HIDE_COOLDOWN_MS
+30000UL
+101
+THIEF_MIN_RELOCATE_MM
+600UL
+102
+THIEF_STATE_COUNT
+(MAP_ROUTE_NODE_COUNT * 8U)
+103
+THIEF_COST_INF
+0x3FFFFFFFUL
+104
+THIEF_EMERGENCY_ESCAPE
+1
+109
+THIEF_REACTION_HIDE_SCORE
+0
+112
+THIEF_FAST_NEAR_CONFIRM
+1
+115
+THIEF_NEAR_CONFIRM_MM
+THIEF_LASER_TRIGGER_MM
+117
+THIEF_NEAR_CONFIDENCE
+20U
+118
+THIEF_CONFIRM_FRAME_MS
+20UL
+119
+THIEF_HIDE_REACTION_WEIGHT
+40L
+121
+THIEF_TURN_REACH_MODEL
+0
+124
+THIEF_POLICE_MIN_TURN_MS
+500UL
+129
+THIEF_POLICE_MIN_SWITCH_MS
+120UL
+131
+THIEF_INITIAL_HIDE_NODE
+38U
+133
+THIEF_BRANCH_JUNCTION_HIDES
+0
+136
+宏定义
+当前值或表达式
+行
+MOTOR_ENCODER_COUNTS_PER_REV
+1560L
+6
+宏定义
+当前值或表达式
+行
+THIEF_TRAIL_CAPACITY
+(THIEF_ROUTE_MAX_STEPS-1U)
+6
+宏定义
+当前值或表达式
+行
+ROUTE_LEAVE_START_RPM_X10
+2000L
+37
+ROUTE_LEAVE_INITIAL_RPM_X10
+2000L
+38
+ROUTE_LEAVE_RAMP_STEP_RPM_X10
+10L
+39
+ROUTE_AFTER_TURN_START_RPM_X10
+2000L
+40
+ROUTE_TURN_EQUAL_PWM
+550L
+41
+ROUTE_TURN_APPROACH_RPM_X10
+1000L
+42
+ROUTE_TURN_APPROACH_DELAY_MS
+180U
+43
+ROUTE_TURN_STOP_MS
+80U
+44
+ROUTE_TURN_STOP_MAX_MS
+800U
+45
+ROUTE_TURN_STOP_SPEED_RPM_X10
+20L
+46
+ROUTE_TURN_STOP_STABLE_SAMPLES
+2U
+47
+ROUTE_TURN_GYRO_WAIT_MS
+500U
+48
+ROUTE_TURN_TIMEOUT_MS
+4000U
+49
+ROUTE_TURN_TARGET_ANGLE_X100
+4500L
+50
+ROUTE_JY61P_STALE_MS
+150U
+51
+ROUTE_JUNCTION_WATCH_PERIOD_MS
+5U
+52
+MAP_ROUTE_PASS_TIMEOUT_MS
+1800U
+53
+MAP_ROUTE_ALIGN_TIMEOUT_MS
+2500U
+54
+ROUTE_RESTART_BLIND_MM
+180L
+55
+ROUTE_FRONT_RECOVERY_MS
+200U
+56
+ROUTE_FRONT_RECOVERY_VALID_SAMPLES
+2U
+57
+ROUTE_MAP_GRAY_YAW_TOL_X100
+1000L
+58
+ROUTE_GYRO_RECOVERY_MS
+600U
+59
+ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS
+1200U
+60
+ROUTE_MAX_RUN_MS
+1200000U
+61
+ROUTE_REAR_VALID_REQUIRED
+3U
+62
+ROUTE_REARM_VALID_REQUIRED
+3U
+63
+ROUTE_LEAVE_TIMEOUT_MS
+4000U
+64
+ROUTE_LEFT_FOUR_MASK
+0x0F00U
+65
+ROUTE_RIGHT_FOUR_MASK
+0x000FU
+66
+ROUTE_LEFT_P11_MASK
+0x0400U
+67
+ROUTE_LEFT_P12_MASK
+0x0800U
+68
+ROUTE_RIGHT_OUTER_TWO_MASK
+0x0003U
+69
+ROUTE_TURN_EXIT_P1_P12_MASK
+0x0801U
+70
+ROUTE_CENTER_EDGE_MASK
+0x0090U
+71
+ROUTE_PID_CENTER_EDGE_GAIN_PCT
+400L
+73
+ROUTE_PID_CENTER_GAIN_PCT
+300L
+74
+ROUTE_PID_SIDE_GAIN_PCT
+400L
+75
+宏定义
+当前值或表达式
+行
+SMOOTH_ENABLE_BASE_RAMP
+1U
+7
+SMOOTH_ENABLE_CURVE_SLOWDOWN
+1U
+8
+SMOOTH_ENABLE_STEER_SLEW
+1U
+9
+SMOOTH_BASE_STEP_RPM_X10
+120L
+10
+SMOOTH_STEER_STEP_RPM_X10
+250L
+11
+SMOOTH_CURVE_START_ERROR
+100L
+12
+SMOOTH_CURVE_FULL_ERROR
+300L
+13
+SMOOTH_CURVE_MIN_BASE_X10
+1200L
+14
+节点
+X mm
+Y mm
+类型
+度数
+N001
+0
+0
+1
+2
+N002
+600
+0
+2
+3
+N003
+1200
+0
+2
+3
+N004
+1500
+0
+2
+3
+N005
+1650
+0
+0
+2
+N006
+1800
+0
+2
+3
+N007
+2400
+0
+1
+2
+N008
+2700
+0
+1
+2
+N009
+3300
+0
+1
+2
+N010
+0
+300
+2
+3
+N011
+600
+300
+3
+4
+N012
+900
+300
+2
+3
+N013
+1200
+300
+2
+3
+N014
+1500
+300
+2
+3
+N015
+1800
+300
+2
+3
+N016
+2100
+300
+4
+1
+N017
+2400
+300
+2
+3
+N018
+3000
+300
+1
+2
+N019
+3300
+300
+1
+2
+N020
+0
+600
+2
+3
+N021
+300
+600
+2
+3
+N022
+600
+600
+2
+3
+N023
+900
+600
+2
+3
+N024
+1200
+600
+1
+2
+N025
+1800
+600
+2
+3
+N026
+2400
+600
+3
+4
+N027
+2700
+600
+2
+3
+N028
+3000
+600
+1
+2
+N029
+3300
+600
+4
+1
+N030
+600
+900
+4
+1
+N031
+900
+900
+1
+2
+N032
+1500
+900
+2
+3
+N033
+1800
+900
+2
+3
+N034
+2100
+900
+2
+3
+N035
+2400
+900
+2
+3
+N036
+3000
+900
+1
+2
+N037
+0
+1200
+2
+3
+N038
+300
+1200
+3
+4
+N039
+600
+1200
+2
+3
+N040
+900
+1200
+1
+2
+N041
+1200
+1200
+4
+1
+N042
+2400
+1200
+1
+2
+N043
+2700
+1200
+4
+1
+N044
+3000
+1200
+2
+3
+N045
+3300
+1200
+1
+2
+N046
+900
+1500
+2
+3
+N047
+1200
+1500
+1
+2
+N048
+1500
+1500
+1
+2
+N049
+1800
+1500
+2
+3
+N050
+2100
+1500
+4
+1
+N051
+2400
+1500
+1
+2
+N052
+2700
+1500
+2
+3
+N053
+3000
+1500
+2
+3
+N054
+3300
+1500
+4
+1
+N055
+0
+1800
+1
+2
+N056
+300
+1800
+2
+3
+N057
+600
+1800
+1
+2
+N058
+900
+1800
+2
+3
+N059
+1200
+1800
+2
+3
+N060
+1500
+1800
+1
+2
+N061
+1800
+1800
+2
+3
+N062
+2100
+1800
+2
+3
+N063
+2700
+1800
+2
+3
+N064
+3000
+1800
+1
+2
+N065
+3300
+1800
+4
+1
+N066
+0
+2100
+1
+2
+N067
+300
+2100
+2
+3
+N068
+900
+2100
+2
+3
+N069
+1500
+2100
+1
+2
+N070
+1800
+2100
+2
+3
+N071
+2100
+2100
+1
+2
+N072
+2400
+2100
+1
+2
+N073
+3300
+2100
+4
+1
+N074
+600
+2400
+4
+1
+N075
+1200
+2400
+1
+2
+N076
+1800
+2400
+3
+4
+N077
+2400
+2400
+2
+3
+N078
+2700
+2400
+2
+3
+N079
+3000
+2400
+2
+3
+N080
+3300
+2400
+2
+3
+N081
+0
+2700
+4
+1
+N082
+300
+2700
+1
+2
+N083
+600
+2700
+1
+2
+N084
+900
+2700
+1
+2
+N085
+1800
+2700
+2
+3
+N086
+2400
+2700
+4
+1
+N087
+2700
+2700
+4
+1
+N088
+3300
+2700
+1
+2
+道路
+起点
+终点
+长度 mm
+方向
+S001
+N001
+N002
+600
+东
+S002
+N001
+N010
+300
+南
+S003
+N002
+N003
+600
+东
+S004
+N002
+N011
+300
+南
+S005
+N003
+N004
+300
+东
+S006
+N003
+N013
+300
+南
+S007
+N004
+N005
+150
+东
+S008
+N004
+N014
+300
+南
+S009
+N005
+N006
+150
+东
+S010
+N006
+N007
+600
+东
+S011
+N006
+N015
+300
+南
+S012
+N007
+N017
+300
+南
+S013
+N008
+N009
+600
+东
+S014
+N008
+N027
+600
+南
+S015
+N009
+N019
+300
+南
+S016
+N010
+N011
+600
+东
+S017
+N010
+N020
+300
+南
+S018
+N011
+N012
+300
+东
+S019
+N011
+N022
+300
+南
+S020
+N012
+N013
+300
+东
+S021
+N012
+N023
+300
+南
+S022
+N013
+N024
+300
+南
+S023
+N014
+N015
+300
+东
+S024
+N014
+N032
+600
+南
+S025
+N015
+N025
+300
+南
+S026
+N016
+N017
+300
+东
+S027
+N017
+N026
+300
+南
+S028
+N018
+N019
+300
+东
+S029
+N018
+N028
+300
+南
+S030
+N020
+N021
+300
+东
+S031
+N020
+N037
+600
+南
+S032
+N021
+N022
+300
+东
+S033
+N021
+N038
+600
+南
+S034
+N022
+N030
+300
+南
+S035
+N023
+N024
+300
+东
+S036
+N023
+N031
+300
+南
+S037
+N025
+N026
+600
+东
+S038
+N025
+N033
+300
+南
+S039
+N026
+N027
+300
+东
+S040
+N026
+N035
+300
+南
+S041
+N027
+N028
+300
+东
+S042
+N029
+N045
+600
+南
+S043
+N031
+N032
+600
+东
+S044
+N032
+N048
+600
+南
+S045
+N033
+N034
+300
+东
+S046
+N033
+N049
+600
+南
+S047
+N034
+N035
+300
+东
+S048
+N034
+N050
+600
+南
+S049
+N035
+N036
+600
+东
+S050
+N036
+N044
+300
+南
+S051
+N037
+N038
+300
+东
+S052
+N037
+N055
+600
+南
+S053
+N038
+N039
+300
+东
+S054
+N038
+N056
+600
+南
+S055
+N039
+N040
+300
+东
+S056
+N039
+N057
+600
+南
+S057
+N040
+N046
+300
+南
+S058
+N041
+N047
+300
+南
+S059
+N042
+N043
+300
+东
+S060
+N042
+N051
+300
+南
+S061
+N044
+N045
+300
+东
+S062
+N044
+N053
+300
+南
+S063
+N046
+N047
+300
+东
+S064
+N046
+N058
+300
+南
+S065
+N048
+N049
+300
+东
+S066
+N049
+N061
+300
+南
+S067
+N051
+N052
+300
+东
+S068
+N052
+N053
+300
+东
+S069
+N052
+N063
+300
+南
+S070
+N053
+N054
+300
+东
+S071
+N055
+N056
+300
+东
+S072
+N056
+N057
+300
+东
+S073
+N058
+N059
+300
+东
+S074
+N058
+N068
+300
+南
+S075
+N059
+N060
+300
+东
+S076
+N059
+N075
+600
+南
+S077
+N060
+N069
+300
+南
+S078
+N061
+N062
+300
+东
+S079
+N061
+N070
+300
+南
+S080
+N062
+N063
+600
+东
+S081
+N062
+N071
+300
+南
+S082
+N063
+N078
+600
+南
+S083
+N064
+N065
+300
+东
+S084
+N064
+N079
+600
+南
+S085
+N066
+N067
+300
+东
+S086
+N066
+N081
+600
+南
+S087
+N067
+N068
+600
+东
+S088
+N067
+N082
+600
+南
+S089
+N068
+N084
+600
+南
+S090
+N069
+N070
+300
+东
+S091
+N070
+N076
+300
+南
+S092
+N071
+N072
+300
+东
+S093
+N072
+N077
+300
+南
+S094
+N073
+N080
+300
+南
+S095
+N074
+N083
+300
+南
+S096
+N075
+N076
+600
+东
+S097
+N076
+N077
+600
+东
+S098
+N076
+N085
+300
+南
+S099
+N077
+N078
+300
+东
+S100
+N078
+N079
+300
+东
+S101
+N079
+N080
+300
+东
+S102
+N080
+N088
+300
+南
+S103
+N082
+N083
+300
+东
+S104
+N084
+N085
+900
+东
+S105
+N085
+N086
+600
+东
+S106
+N087
+N088
+600
+东
+文件
+职责
+函数示例
+User/App_GroundStraightTest.c
+工程辅助模块  以实际调用链确认
+App_SplitRpmX10, App_PrintRpmValue, App_PrintChannel
+User/App_ThiefStrategy.c
+小偷任务与行驶状态机
+Route_LegProgress, Route_StopFault, Route_IsJunctionCandidate
+User/LineFollowLog.c
+工程辅助模块  以实际调用链确认
+LineFollowLog_Reset, LineFollowLog_Append, LineFollowLog_GetCount
+User/MapRoutePosition.c
+轮程与毫米进度
+MapRoutePosition_ForwardCounts, MapRoutePosition_DistanceMm, MapRoutePosition_RemainingApproachMs
+User/MapTimingLog.c
+工程辅助模块  以实际调用链确认
+MapTimingLog_SetRoute, MapTimingLog_Crc16, MapTimingLog_Init
+User/StartupWheelLog.c
+工程辅助模块  以实际调用链确认
+StartupWheelLog_Begin, StartupWheelLog_Task
+User/TftPidPage.c
+工程辅助模块  以实际调用链确认
+TftPidPage_StatusChanged, TftPidPage_SaveStatus, TftPidPage_FormatValue
+User/TftRoutePage.c
+工程辅助模块  以实际调用链确认
+TftRoutePage_StateChanged, TftRoutePage_SaveState, TftRoutePage_DrawLine
+User/ThiefTftPage.c
+工程辅助模块  以实际调用链确认
+DrawLine, ThiefTftPage_Init, ThiefTftPage_Task
+User/TreasureWheelLog.c
+受控轮速快照与停车后导出
+Capture, TreasureWheelLog_Init, TreasureWheelLog_GrayContext
+文件
+职责
+函数示例
+Control/Chassis.c
+工程辅助模块  以实际调用链确认
+Chassis_ApplySignInt32, Chassis_ApplySignInt16, Chassis_CanStartMotion
+Control/ChassisSpeedControl.c
+工程辅助模块  以实际调用链确认
+ChassisSpeedControl_ResetAll, ChassisSpeedControl_Init, ChassisSpeedControl_Enable
+Control/FollowSmoothing.c
+速度与差速目标平滑
+FollowSmoothing_Approach, FollowSmoothing_Step, FollowSmoothing_Reset
+Control/LineFollowPID.c
+循线外环位置PID与航向P
+LineFollowPID_Clamp, LineFollowPID_CalculateITerm, LineFollowPID_AdjustParameter
+Control/NewFrontDriveMap.c
+工程辅助模块  以实际调用链确认
+
+Control/RestartLineSearch.c
+有界找线与后板回退恢复
+Clamp, LineAligned, BrakeTo
+Control/RoadHeadingControl.c
+停车朝向控制
+Delta, RoadHeading_AxisError, RoadHeading_Correction
+Control/TravelFrame.c
+前后行进端统一映射
+TravelFrame_SetReverse, TravelFrame_IsReverse, TravelFrame_SetWheelTargets
+文件
+职责
+函数示例
+Algorithm/GrayCoordinate/gray_coordinate.c
+工程辅助模块  以实际调用链确认
+GrayCoordinate_ToVehicleError
+Algorithm/GrayPosition/gray_position.c
+工程辅助模块  以实际调用链确认
+GrayPosition_Calculate
+Algorithm/LaserMux/AI1811Mux.c
+工程辅助模块  以实际调用链确认
+AI1811Mux_ResetStream, AI1811Mux_Init, FrameByte
+Algorithm/MapLocalization/MapLaserMask.c
+地图方向与场外过滤
+MapLaserMask_DetectionMask, MapLaserMask_FrameAllowed
+Algorithm/MapLocalization/ThiefLocalization.c
+地图节点观察诊断
+Delta, Abs, Fail
+Algorithm/MapLocalization/TreasureLaserStart.c
+工程辅助模块  以实际调用链确认
+TreasureLaserStart_Crossed
+Algorithm/MapRoute/MapRouteNavigator.c
+道路合法性和路口推进
+WalkRuntime, Validate, MapRouteNavigator_Start
+Algorithm/MapRoute/MapRoutePlan.c
+工程辅助模块  以实际调用链确认
+
+Algorithm/MapRoute/TreasureGrayMask.c
+工程辅助模块  以实际调用链确认
+TreasureGrayMask_Apply
+Algorithm/SpeedPI/WheelSpeedPi.c
+轮速内环调节
+WheelSpeedPi_Init, WheelSpeedPi_SetGains, WheelSpeedPi_Reset
+Algorithm/ThiefStrategy/FrontLaserGate.c
+距离资格和触发门控
+FrontLaserGate_CenterDistanceMm, FrontLaserGate_Init, FrontLaserGate_ResetEvidence
+Algorithm/ThiefStrategy/ThiefInterceptPolicy.c
+藏点轴向与出口规则
+ThiefIntercept_HideAxis, ThiefIntercept_ShouldReverse, ThiefIntercept_Reset
+Algorithm/ThiefStrategy/ThiefMapPlanner.c
+路线规则与动作段构造
+ThiefMapPlanner_Init, ThiefMapPlanner_ObserveThreat, ThiefMapPlanner_WorkBytes
+Algorithm/ThiefStrategy/ThiefRiskSearch.c
+有限状态风险搜索和藏点评分
+ThiefRiskSearch_SetDepartureMask, ThiefRiskSearch_SetEmergency, State
+Algorithm/ThiefStrategy/ThiefRollout.c
+工程辅助模块  以实际调用链确认
+Abs, S, MoveMs
+Algorithm/ThiefStrategy/ThiefRouteTrail.c
+实际执行历史与逆序返回
+ThiefRouteTrail_TrackLine, ThiefRouteTrail_Begin, ThiefRouteTrail_Stage
+Algorithm/ThiefStrategy/ThiefThreatModel.c
+回波威胁记忆与到达余量
+ReachState, DirectionDelay, ReachAlong
+文件
+职责
+函数示例
+Hardware/DriveOutputSnapshot.c
+工程辅助模块  以实际调用链确认
+DriveOutputSnapshot_Read
+Hardware/Encoder.c
+编码器计数和轮速换算
+Encoder_SoftwareB_ReadState, Encoder_SoftwareB_Reset, Encoder_SoftwareB_GetDelta
+Hardware/JY61P.c
+陀螺仪数据接口
+JY61P_ReadS16, JY61P_RawAngleToX100, JY61P_ResetParser
+Hardware/Key.c
+工程辅助模块  以实际调用链确认
+Key_Init, Key_IsPressed
+Hardware/LaserRx.c
+四路激光链路入口
+ProofReset, ProofFrame, ProofByte
+Hardware/MotorDriver.c
+工程辅助模块  以实际调用链确认
+Motor_IsValid, Motor_LimitPwm, Motor_SetCompare
+Hardware/NCHD12/nchd12.c
+工程辅助模块  以实际调用链确认
+NCHD12_SetStatus, NCHD12_Init, NCHD12_GetDeviceCount
+Hardware/NCHD12/nchd12_rear.c
+工程辅助模块  以实际调用链确认
+NCHD12Rear_Init
+Hardware/PowerSoundLight.c
+PA3持续声光
+PowerSoundLight_Init
+Hardware/SoftI2C.c
+工程辅助模块  以实际调用链确认
+SoftI2C_BusIsValid, SoftI2C_EnablePortClock, SoftI2C_Delay
+Hardware/TFT.c
+工程辅助模块  以实际调用链确认
+TFT_PinHigh, TFT_PinLow, TFT_WriteByte
+Hardware/TreasureMotorSnapshot.c
+工程辅助模块  以实际调用链确认
+TreasureMotorSnapshot_ReadDIn2PinMap, TreasureMotorSnapshot_Init, AwayFromEdge
+Hardware/UartCh4.c
+工程辅助模块  以实际调用链确认
+BootService, BootWait, Flush
+Hardware/UartRxDispatcher.c
+工程辅助模块  以实际调用链确认
+HAL_UART_RxCpltCallback, HAL_UART_ErrorCallback
+文件
+职责
+函数示例
+System/ResetReason.c
+工程辅助模块  以实际调用链确认
+
+System/SystemTime.c
+工程辅助模块  以实际调用链确认
+SystemTime_GetMs
+System/UartDebug.c
+工程辅助模块  以实际调用链确认
+UartDebug_QueueByte, UartDebug_TrySendString, UartDebug_SendString
+步骤
+应记录的证据
+备份
+只针对指定E盘工程 建立源文件和旧映像散列
+全量构建
+ARMCC5日志 错误数 警告数 map和htm
+输入绑定
+source_hashes test_source_hashes AXF SHA256
+离线回归
+每组退出码 实际病例与失败内容
+主控烧录
+人工确认工程 HEX和BOOT身份
+基础实测
+逐轮方向 灰度位序 YAW符号及帧年龄
+路线实测
+N035到N007 经过宝藏 N002入N011 横停
+对抗实测
+各藏点四方向触发 途中前方拦截 旧证据清除
+归档
+日志 视频 电池状态 修改原因与是否允许回退
+待补数据
+用途或原因
+前后灰度中心间距和安装偏移
+几何航向模型与居中距离标定
+各探头中心偏移和光轴高度
+回波落点与场外过滤
+有效轮周长和编码器每圈实测
+毫米进度与速度一致性
+不同电压下实际转弯耗时
+风险模型时间标定
+各方向测距误差和有效帧率
+阈值与新鲜度选择
+黑线宽度与金属反光RAW序列
+分类器和短遮挡范围评估
+完整规则与复位条件
+确认策略适用边界
+重复试验次数与失败率
+支撑性能评价
+用户GitHub当前提交号与LICENSE
+对齐公开版本及许可
+硬件最终BOM与图纸
+把历史选型变成可复现硬件

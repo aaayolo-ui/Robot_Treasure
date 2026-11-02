@@ -1,0 +1,209 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR13",
+  "firmware_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+  "hex_sha256": "deae65b14a9ddbbb620f755b3ae97ad8dfeeafe419c8b28f9155a758fce6bd94",
+  "target": {
+    "device": "STM32F103RC",
+    "flash_capacity_bytes": 262144,
+    "ram_capacity_bytes": 49152,
+    "flash_used_bytes": 79316,
+    "ram_used_bytes": 44896,
+    "ram_free_bytes": 4256,
+    "stack_bytes": 3072,
+    "known_callgraph_stack_bytes": 1928,
+    "candidate_bytes": 38,
+    "caveat": "Unknown library/interrupt depth, actual stack high-water and worst-case CPU time not measured on hardware"
+  },
+  "new_checks": 1987,
+  "new_cases": {
+    "seed_incoming_edges": 210,
+    "actual_map_sequences": {
+      "paths": 208,
+      "resolved_observations": 838
+    },
+    "application_reanchor": [
+      35
+    ],
+    "local_turn_frames": 4,
+    "n011_body_masks": 64
+  },
+  "turn_checks": 6333,
+  "turn_cases": {
+    "relative_threshold": 72,
+    "whole_map_handoff": {
+      "combinations": 1016,
+      "nodes": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        42,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        51,
+        52,
+        53,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        82,
+        83,
+        84,
+        85,
+        88
+      ]
+    },
+    "root_gray_branches": 8,
+    "white_at_coarse_handoff": 4
+  },
+  "pure_algorithm_checks": 366161,
+  "pure_algorithm_cases": 378,
+  "suite": [
+    {
+      "name": "test_police_handoff13",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "7e8166a2c6f9126bf4d632ce8eacde1de57f0a04480f031641bf682f3cc1e472",
+      "log_sha256": "d36430b64486881f83b5bb2eef29470eaa744edef2e462f1f82494f2fccb7da9"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "b60d5a7f84d91a31c42d2c8fe8402ee78cd33dbff119f1c1a0f48a57997808b9",
+      "log_sha256": "2ffdc20aa684079b414ecd9bd235d02f1685b5f9c000b7424b02149119e82b1d"
+    },
+    {
+      "name": "test_turn_resume",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "6f1424e97f96592e3c441502659b03fb3cff77552fe50df650b04dc90fb78acc",
+      "log_sha256": "4211c9b8257f8acc4fe4243283602092f63d6e678bbd92ec1c3a1a7a5096fdd5"
+    },
+    {
+      "name": "test_left800",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "09ff1e4bb49313145f3858517e6ad4d45d471715c65eba175ba36fb5b6d25f0b",
+      "log_sha256": "007229fe0a6bbb5031d56c3c8a73e0a0b45ae87daa4f57d50ca793004d2dcaf0"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "c63d0f6d93e38ac2222a7e500dacbf993a920bf6b8d463e4fea535097566b5ef",
+      "log_sha256": "262e945d997ca2b6e620449d23e5bbec08a5dd2e4b81869254861fb45ca3476f"
+    },
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "cfc09e11ae5470d30ac2bee04196e6f6e044ff2afba28a150c791c3d2135c63c",
+      "log_sha256": "050c586833d317a69fa7d0e9108c272d30265317ff70029d74034c9ae24616a7"
+    },
+    {
+      "name": "test_route_identity",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "d276080f7cb7ec8e2674fb6f57b48473aa860847d7521141b880d00fb1a82318",
+      "log_sha256": "7e534ad83b6f701b46a4573b7855fb46a1236729be31e41c4c7dac96902ae6ed"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+      "log_sha256": "f0ca1d67228cd756b4477af54af2bd93e3951d20c485e3c83cb4fd76f23dc4d0"
+    },
+    {
+      "name": "test_topology_linefirst",
+      "exit_code": 0,
+      "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895",
+      "test_sha256": "659482342c0b70fb13972d7dd1b87d716227fbbaaa26112748e35fa58bda0405",
+      "log_sha256": "d2f92f8ba57a34c0799f0131af43f1cbf144635b6a6fc88224723173aab7803d"
+    }
+  ],
+  "baseline_axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "baseline_control_source": "Untouched COMPARE1 copy of MONITOR12 Control files",
+  "source_sha256": {
+    "User/App_ThiefStrategy.c": "258731ab80e8b17ce5d144672699ac3b68ea547516dbdea7413e6328d699ae60",
+    "Algorithm/MapLocalization/ThiefLocalization.c": "782589f03401a5f259f43dc1e5eb95f6560de4fe8bdfa9a3c6bdd3a6f2c5af17",
+    "Algorithm/MapLocalization/ThiefLocalization.h": "e7a9717b80fede27936d66353bfac9b475e73db2dc7e0420b6386312661cab67",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "bac0e8771b6df82f5ed2cd2bd864cea180215722f88f1170f5dda223463ffaa4",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c": "73ae1723a6eb8a335e2e13bd273a862937f9323d8498e73d3fb3c34828de1c73",
+    "Control/RestartLineSearch.c": "69bf0bdb086454f1a886e3308bb1a438353f4c5273135f961ac6178fa31cc2a6",
+    "Control/RestartLineSearch.h": "06c671efce2d830682ca3efe798c347b7e8d95bb2fe0c45a48323b8e042c367a",
+    "MDK-ARM/startup_stm32f103xe.s": "1f0cf6af6c3ab4de321faaf250fa671375db0b8abdb9d5b8e7ff035c05166516",
+    "Docs/修改规范与回归清单.md": "97d3f071a60934495702522a41d83dfcf58b9aaca8c240e5076a559c8057027f",
+    "README.md": "4c5219d7e13ebe39545d3a844038cb9618a36ad10b7ba90c6ae094d3d929d04f",
+    "AGENTS.md": "ab7368946e2e1edb45ea8c446a16ed47d7d55343a4fdbf611032c62e4a36d8c8"
+  },
+  "build_log_sha256": "10550d1c98de60592d389148d3902948e79d81a4d3984146037676b1b51115e2",
+  "differences_sha256": "dd11a8d14e4584d019de43e39b090353cbb05f6add15abbf3a82f63d8a05a8db",
+  "hardware_tested": false,
+  "flashed": false,
+  "motors_run": false,
+  "serial_opened": false,
+  "historical_tests": "Old mandatory map-axis fine trim and blind-probe assertions remain historical, not claimed passing MONITOR13",
+  "limitations": [
+    "At most8 hypotheses and3-junction local seed; repeated topology can remain ambiguous",
+    "Sensor-only line following cannot guarantee recovery from arbitrary physical displacement",
+    "Two-side vs four-side treasure text masking has not been compared on the real car"
+  ]
+}

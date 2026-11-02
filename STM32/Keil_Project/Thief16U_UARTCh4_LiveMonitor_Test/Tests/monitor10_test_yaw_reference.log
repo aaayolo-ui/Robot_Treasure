@@ -1,0 +1,11 @@
+{
+  "cases": {
+    "straight_reference": 70,
+    "treasure_turn_handoff": 8,
+    "reference_wrap_reverse": 4
+  },
+  "failures": [],
+  "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe",
+  "test_sha256": "c1398149ebcce35c0be6c5a4866a571b8d14324d585841483f3d65a244246443",
+  "hardware_tested": false
+}

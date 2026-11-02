@@ -1,0 +1,1407 @@
+{
+  "firmware": "UARTCH4_16V_STABLE3",
+  "build_errors": 0,
+  "build_warnings": 0,
+  "axf_sha256": "0854d9293d9b0f6a8c80d188f3fca5da88b30a1840682586c875bf4f1db1b688",
+  "hex_sha256": "59fbdfef375bc24041929181d912341288239a7dd091548d79bcdb2800c19abe",
+  "memory": {
+    "rom_bytes": 63928,
+    "ram_bytes": 44008,
+    "ram_free_bytes": 5144,
+    "reserved_stack_bytes": 3072,
+    "linker_known_stack_bytes": 896,
+    "stack_limit": "Linker lists unknown calls; no physical stack high-water measurement"
+  },
+  "baseline_sources_verified": true,
+  "modified_baseline_sources": [
+    "User/App_ThiefStrategy.c",
+    "Algorithm/MapRoute/MapRouteNavigator.c",
+    "Algorithm/ThiefStrategy/FrontLaserGate.c",
+    "Algorithm/ThiefStrategy/ThiefInterceptPolicy.c",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+    "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+    "Hardware/LaserRx.c",
+    "Hardware/LaserRx.h"
+  ],
+  "added_production_sources": [],
+  "project_configuration_changes": [
+    "MDK-ARM/startup_stm32f103xe.s: stack 3KB",
+    "MDK-ARM/Thief16V_UARTCh4_StableBase_Test.uvprojx: independent target/output"
+  ],
+  "source_sha256": {
+    "User/App_GroundStraightTest.c": "fef89bb1624b760a34a5dabb5aedbc0ce71cb6fcfd98da80caa58428a3c80ebe",
+    "User/App_GroundStraightTest.h": "d401c391e550aad5abafa5d8e208ec1bf0a8d6705d4d5080d36b0a80768e537d",
+    "User/App_ThiefStrategy.c": "6851ab61a1c405d07adec8f0204020e2b28c386d30694255434848884fc9c0df",
+    "User/App_ThiefStrategy.h": "6f3e20ea67433ad4be1413673e65bb7d91f31e80ca7b0278900f08cd512a5d86",
+    "User/LineFollowLog.c": "f4bff34485cbf6f0f7df35bdc2acefd27b07dec71dcadf2216d70c78661ed77b",
+    "User/LineFollowLog.h": "e6b1ad5b0822ed937728fe1c4587e317f6b0ddc4f66e02af12894122662ca7fc",
+    "User/MapRoutePosition.c": "7d965c4bd51fa3f87aa233b7974cf1bb188c51f318e3c1002fb2413590cd48d4",
+    "User/MapRoutePosition.h": "71fbe5db2a659f83d4ebc1960e124247435bf1faf3cfc5adc3fde68bb579921d",
+    "User/MapTimingLog.c": "932b6ba9af09e98538b1a65e4dbfc35e900e533569904a70bc2533b318f2dec2",
+    "User/MapTimingLog.h": "2db1cf4794ac28c154b5be6e3d664e3f7c8ca907661435c7a5a271f3aee27bca",
+    "User/StartupWheelLog.c": "96f9c769586ed832e914283839ed6002ef363a4781a9c1809e37b325788c3b5a",
+    "User/StartupWheelLog.h": "69167c5fc98c32b98d03e5ad30333e7852ac9f714991944568c6990361e74ba2",
+    "User/TftPidPage.c": "4d8aa9feaa62f61caa4070f7a22a1e3346da754eca476868a332ec5267d84b4f",
+    "User/TftPidPage.h": "feefbc33391da24ed198feeccd769e3e8196d496870ce7b26ab31e19a281b433",
+    "User/TftRoutePage.c": "9914cba86e32bdb348f0e9fb781524ba76974fad37c32d7bac4a681e928ae766",
+    "User/TftRoutePage.h": "0bdeb1f3d8697b6e2fb4eca561a53bf75f12ba577ac73de633a930e339a26d28",
+    "User/ThiefTftPage.c": "7c63728d924b86f9c1888c7d8032edc6b359b29beef71ef140f3287fb155d849",
+    "User/ThiefTftPage.h": "76ae6a9a35a420f21fb2a5a50310c2a88f17ee566da38b9a83522a598c6f74e3",
+    "User/TreasureWheelLog.c": "26e98a85be0c26459a54589e76b80807994304842e06d2afeee8c8dbe1b0b5e2",
+    "User/TreasureWheelLog.h": "4158c4dfdee8081825f86183d936ffca9703d69f1d089da2dffca1a0a899994a",
+    "Control/Chassis.c": "1296a30415814b89688447c6fc032a503b9b2089c024835f1c5646c2b11c325e",
+    "Control/Chassis.h": "6ba79d133ad065aea12b72b18813c7b2779e1088e20da6568017ef54e37f51bc",
+    "Control/ChassisSpeedControl.c": "eccecae4a5aa3dcc4c58f1517c82c8af77c9cd2e77bd281b38c5e9974310ef3f",
+    "Control/ChassisSpeedControl.h": "e63aded6392de01374821379d2e7781a00676ec25494596bc6c39d2855fd1036",
+    "Control/FollowSmoothing.c": "123784785ab7948b8ece3c32d4398f0c454cbc1be288ea2f7cd00a11c55c7c85",
+    "Control/FollowSmoothing.h": "19c032689e88a29dd86df260dac1172d6de89d7fc9711f69c687165bef137dfb",
+    "Control/LineFollowPID.c": "5bc173bc749efb5dbd7da7346f455c0fc77ba08385780c5d9abc355f4e825c51",
+    "Control/LineFollowPID.h": "fc9e5f9e9bc2ffc44905223615c4f47e88566c88592d3bb66e9317e6b676869f",
+    "Control/NewFrontDriveMap.c": "c081d090f43a10cde3966a4b5d0e04640a02f01f515c6cb8a14dfa96a26efba2",
+    "Control/NewFrontDriveMap.h": "49ad5666be476bc76adeb5ec88800c18aaa6cd610ef4a97f0cfb9c018dedbfa6",
+    "Control/RestartLineSearch.c": "ac18de6a1de9b4360423d029cd66404a35c7ee0f4f4d088f5de30af1b1beffb9",
+    "Control/RestartLineSearch.h": "cebd53d7cd54387851ce977ca583f9248481e7df07b7bb297e53c85200dd03c6",
+    "Control/RoadHeadingControl.c": "a6a1bf59373833aa0d1b9d8a53842c2963820d3cbc92171b38c41d71012b77bd",
+    "Control/RoadHeadingControl.h": "e95d7b082c5c61fa00467dc93b297cd494a0ad08afbf7c5cdbb2069e222cbc6b",
+    "Control/TravelFrame.c": "badccd9df262cd8178bc5d85933a8616dbcfa7924a78c653b376b6044b29b263",
+    "Control/TravelFrame.h": "28045fcaf34c4819be22cbaf9346b90e363676bd82f241a694f85693dbaf25e3",
+    "Algorithm/GrayCoordinate/gray_coordinate.c": "30362773539993b30b13554b9e2c51821796357c2a8723f15bc71999c50cc68a",
+    "Algorithm/GrayCoordinate/gray_coordinate.h": "8693ed6ce8767ddc7458baf698858594411da941a1259a2451e1c323f37a9a68",
+    "Algorithm/GrayPosition/gray_position.c": "92373c03f101e3e43ce0a68e53f2415860a3e778c56d9d927f7b80fb63857a2d",
+    "Algorithm/GrayPosition/gray_position.h": "e8e806a6a9e102dd5ecc9d66cace8dbe93609887240b20d00aa21c2eeea51a29",
+    "Algorithm/LaserMux/AI1811Mux.c": "add00192a144847f090f2a7af2f6f31e6401643fd7d471ee78500dab8a0b2a00",
+    "Algorithm/LaserMux/AI1811Mux.h": "33375405b75d51088a18bf11c229608095ad1014ce22b145073740fce737f6dc",
+    "Algorithm/MapLocalization/MapLaserMask.c": "ed832f14e3e588648825eee64a6cdb1c0e92c7cde9f43d0c18c9a831c58d2af7",
+    "Algorithm/MapLocalization/MapLaserMask.h": "9b01f3e75930010f6dd5bef720a6a286ee9fab786cefd3d0423549c54afbfa91",
+    "Algorithm/MapLocalization/ThiefLocalization.c": "3608630447c4be98c23335d7245c57414e129c2a1248edbadc18050fbc457150",
+    "Algorithm/MapLocalization/ThiefLocalization.h": "95dad093f9cb99b4da1ec7127dd05c7cd1b41790654ae075d7343a0fdc3a3231",
+    "Algorithm/MapLocalization/TreasureLaserStart.c": "7d5384b216af74a19b32c271396123556c45f6b56ebda89c4639f962069639ef",
+    "Algorithm/MapLocalization/TreasureLaserStart.h": "291f88d69a8e67faaff43d255d637e7abc6304208147fdec37f2b8f32cd3bd32",
+    "Algorithm/MapRoute/MapRouteNavigator.c": "c437a05d84d58e90863dd93882d34a1dfe7048347971292e849af82199a1cee2",
+    "Algorithm/MapRoute/MapRouteNavigator.h": "aedd342583708393888bb7160d50777210a159f558fe30e0139313c1c78b012c",
+    "Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+    "Algorithm/MapRoute/MapRoutePlan.h": "8a3b82a23eb05f3621e30520ea375b09bf0037a96b63441a80588c1b0363d6de",
+    "Algorithm/MapRoute/TreasureGrayMask.c": "f8a2ee94e37932facdff438c003b79c2dfd7e2966e8ff377d2311c0aba7dc49a",
+    "Algorithm/MapRoute/TreasureGrayMask.h": "92cb737ffa62c05a4c7e9e7ecc5a16beedf158365067270968da636e7154260b",
+    "Algorithm/SpeedPI/WheelSpeedPi.c": "f1b50234c4be60581dae2ae50884412f84b72a6e6f9178024a586e6a1a6cd669",
+    "Algorithm/SpeedPI/WheelSpeedPi.h": "44d207e3089df655a4184e58ad42eb6c783cededefaf527a7d2df7dcfa47b484",
+    "Algorithm/ThiefStrategy/FrontLaserGate.c": "9cfdc5389898625b3530fb642c3229a0408205ddb6347b14a2bcb114115cbada",
+    "Algorithm/ThiefStrategy/FrontLaserGate.h": "42705016588909a8bb963d433b2a8f751ea51c0f4bfe086d485e334718f52396",
+    "Algorithm/ThiefStrategy/ThiefInterceptPolicy.c": "7f8f8c131520f028952dbc71b4f46711a6122733be2e35f7d473e8787b9eb737",
+    "Algorithm/ThiefStrategy/ThiefInterceptPolicy.h": "d4bd87e240f2846705c794d19362d704b7767c553c86e17512f120a65feed4fd",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "e140cf63644bc7a7fd2e3d7bd5fdba21da6feb5c4a22e4fbc3f15649c8fa05bd",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.h": "58e9920f401d0af6eb48448297eb0bbc95be8f69c62cf271fda4648b3321af8a",
+    "Algorithm/ThiefStrategy/ThiefMapTopology.h": "6f5346fbbd9bfd106bb4dbb0323e4c8bacb79d8e37a7a25f8533511dd9ed98de",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c": "8614ad8653a6a2f7be603277c89658ce1a72657737980b1ca78f4e8ad99287cf",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.h": "010c234fc9121f61b7eda9a299af7f5e237b57e413943f9e51646cd23f8cd34e",
+    "Algorithm/ThiefStrategy/ThiefRollout.c": "eb5b7cff6c24eabeb25b3d980532a93350ba2e34165eca6f550300be75cbeb64",
+    "Algorithm/ThiefStrategy/ThiefRollout.h": "2b79d3c16e26471c317a1883dde485e526006f7eee60c327179d8a39f319678c",
+    "Algorithm/ThiefStrategy/ThiefRolloutData.h": "6318c01c3ba7520029ed65095f364fcdf443b588aa3239e8e9212e81f3c8458d",
+    "Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "3de825f2e03658417e77d613599cb6ee5fb5cf505bcf7d85a804b8fbe3ff1f19",
+    "Algorithm/ThiefStrategy/ThiefThreatModel.c": "930bfeb4998c2d1c0092a0a14b0f919f40c17a194d3e100f1b57fb855dc37c26",
+    "Algorithm/ThiefStrategy/ThiefThreatModel.h": "bebe1cf88e912e8207ed75db517b95ef3b38aa1765e913b22b7ee5750e8e3d1e",
+    "Hardware/DriveOutputSnapshot.c": "8ceb20eae636cca75b257687dbe755bb6119bc1392298a003d88c8233f22650a",
+    "Hardware/DriveOutputSnapshot.h": "a03505ed2e963b738bdacb4276e87043c2f449d174355fbf046b18abe792bc9d",
+    "Hardware/Encoder.c": "a6dd7ec2a9bee51a8a84e15567b9618d1c9922b27250eff9085cb6ea8b5700ab",
+    "Hardware/Encoder.h": "39684de7a713eb592e5e0f0d54f79145829c284bdb0c456b17d5b0a83e9f3d35",
+    "Hardware/JY61P.c": "b689100a7db1e581c5bfddc0643f37c02a28009c6628d6c086afa4e584c4cba9",
+    "Hardware/JY61P.h": "fe57bd59ceeface69a8dc82feb05e48ea0b2377da09329e9c7eaa2438be24fe5",
+    "Hardware/Key.c": "af79da43be9f6e923113d5ebc227f071fbaf7dd7ccc3e8a6f4d1e8cef3bce777",
+    "Hardware/Key.h": "99c3c4e697e70a3d337b9fa633952a5e65ce58bde6e54bc4cd981435b85b371a",
+    "Hardware/LaserRx.c": "ab2fc31e1837d7f0460e699d27985c3ebc963f8f8e19a8846b14c176c032c68f",
+    "Hardware/LaserRx.h": "8b2c62fe78a85f20d672ba3b45b4d346ba8919c3a868acc3b0d55450e7ceced5",
+    "Hardware/MotorDriver.c": "be7b1d88e71146792ccd2f0637c25e76c1d1eea85ab2596729605678cce403f2",
+    "Hardware/MotorDriver.h": "48fb741cbcc0eca87b21fded8b73274a8b2af7c4c77dda2bfacc33f924d6c2cb",
+    "Hardware/SoftI2C.c": "dd815f7db74605d89d4cb26fb62259454dfd84a1446401cb2ed51042c02e42cc",
+    "Hardware/SoftI2C.h": "6fc1aca9fbb2d7e39dfdeb5ac726ca5295d37ef2efa8497cfb6afccfa2aeacd1",
+    "Hardware/TFT.c": "fc0dee6ca089485eb0682511a0d096aace8dc3777796f8c7073d814f501de3e3",
+    "Hardware/TFT.h": "06a2653bd5203f2af13b32891a8a0cf7ffea9d63ba350137333a75b739cf3169",
+    "Hardware/TreasureMotorSnapshot.c": "9aa303fa27e819363ed839d7121006cba9f78fd602cb327634fb6478bb23cef1",
+    "Hardware/TreasureMotorSnapshot.h": "ed16227b8ff0573e4ba76c49f7eff794f36aec6f0d2e65b581575de77af547c4",
+    "Hardware/UartCh4.c": "f9645614cf20387eeec3a951af7ebfe38ace042aaa985b0ffa447bff93ec37a1",
+    "Hardware/UartCh4.h": "f49db431620c9467f51715252a8811322330fd839748033963a22a36990f75e6",
+    "Hardware/UartRxDispatcher.c": "520aba6c28a81a97a33fa9e5f070fceaf5e41497fbf9811cbf5b4c02906fdb19",
+    "Hardware/NCHD12/nchd12.c": "759f0f3cbba7584cf2d1439720ab8ea1697f8f26c1bf02f11155eeee9240fb5f",
+    "Hardware/NCHD12/nchd12.h": "f71922ac126db5e017ae2f4d1d02c9d9df7993654b3ee4acbe7a08ab2195eed5",
+    "Hardware/NCHD12/nchd12_rear.c": "f82e772bf9cd97e9e2fa4a64df659c04a5c012854cdc959234dc94c902246e07",
+    "Hardware/NCHD12/nchd12_rear.h": "c8253aff786034350dbbb3d5790e0c2d7a1eae15c0d4674c229c10a953066fd0",
+    "System/ResetReason.c": "d137fc9b302db6c681d05abddbc1062a03f770f409378f805fbd34b8a38ae770",
+    "System/ResetReason.h": "e30a92c9a5aed9a5e262db121106e31490ea32f2e3e582d8fe298572df1bf7f3",
+    "System/SystemTime.c": "f2d97173a933d446d75a94d141e09e5561b949c993931524354f1cbabfb67f55",
+    "System/SystemTime.h": "72753cc224412929eaf4e60f6394a97e8bfe992cea3fce73823a42ce6af92eb7",
+    "System/UartDebug.c": "99dd671fe2c518a2b19eb89acad036c3a5a9ecc7950cf940d0e142b7ed86bf62",
+    "System/UartDebug.h": "66630319a51877ad176e67d59105258401feb79182f62e174a9ef9ea2446e3cd",
+    "Core/Inc/main.h": "70bffcefcf706c886074be9b528a01f9973787544521a9d7c79390ee8a21a669",
+    "Core/Inc/stm32f1xx_hal_conf.h": "4ff6ea3bec6f37b51cbae041bb70ce034daa7b78babf79bf76f5e17c7e39a415",
+    "Core/Inc/stm32f1xx_it.h": "83986db2170c8b35a2e96bc3f2f85f32a89433367e83227f05b8479e2745f6ab",
+    "Core/Src/main.c": "aaf1a457f3cf49082e21a6b049da068475a17d43d4ef248e8d5659f5f76ed71c",
+    "Core/Src/stm32f1xx_hal_msp.c": "4b9b753aa72b7ef2ebd86fea9759f85c3448478c2acf278862cf2b320237173d",
+    "Core/Src/stm32f1xx_it.c": "91c5fc9e084bac09f52a2669ec9939a17f0618b9477426fb8eef67a67b8de06c",
+    "Core/Src/system_stm32f1xx.c": "6f13b57054f33b4dcb8f3f23fa05b2942d9dca8abd9a2a08ecde6f99693505a5"
+  },
+  "tests": {
+    "stable1": {
+      "firmware": "UARTCH4_16V_STABLE3",
+      "checks": 375,
+      "cases": {
+        "unchanged_control_files": 16,
+        "motion_functions": 13,
+        "shadow_no_actuation": 1,
+        "no_hidden_map_veto": 1,
+        "shadow_route_execution": 1,
+        "single_gray_recovery": 2,
+        "both_white_deadline": 1,
+        "gyro_sign_root_turns": 8,
+        "n011_body_masks": 64
+      },
+      "failures": [],
+      "axf_sha256": "0854d9293d9b0f6a8c80d188f3fca5da88b30a1840682586c875bf4f1db1b688",
+      "hardware_tested": false
+    },
+    "escape_completion": {
+      "checks": 22999,
+      "failures": 0,
+      "log_regression": {
+        "frames": 45,
+        "node": 77,
+        "body": 3,
+        "fixes": [],
+        "states": [
+          2,
+          5,
+          7,
+          9
+        ],
+        "intercepted": false
+      },
+      "escapes": [
+        {
+          "start": 11,
+          "start_body": 1,
+          "laser": "FRONT",
+          "goal": 38,
+          "frames": 247,
+          "node": 38,
+          "body": 3,
+          "fixes": [
+            10
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 11,
+          "start_body": 1,
+          "laser": "LEFT",
+          "goal": 38,
+          "frames": 247,
+          "node": 38,
+          "body": 3,
+          "fixes": [
+            10
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 11,
+          "start_body": 1,
+          "laser": "RIGHT",
+          "goal": 26,
+          "frames": 370,
+          "node": 26,
+          "body": 2,
+          "fixes": [
+            12,
+            13
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 11,
+          "start_body": 1,
+          "laser": "REAR",
+          "goal": 26,
+          "frames": 370,
+          "node": 26,
+          "body": 2,
+          "fixes": [
+            12,
+            13
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 11,
+          "start_body": 3,
+          "laser": "FRONT",
+          "goal": 26,
+          "frames": 370,
+          "node": 26,
+          "body": 0,
+          "fixes": [
+            12,
+            13
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 11,
+          "start_body": 3,
+          "laser": "LEFT",
+          "goal": 26,
+          "frames": 370,
+          "node": 26,
+          "body": 0,
+          "fixes": [
+            12,
+            13
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 11,
+          "start_body": 3,
+          "laser": "RIGHT",
+          "goal": 38,
+          "frames": 247,
+          "node": 38,
+          "body": 1,
+          "fixes": [
+            10
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 11,
+          "start_body": 3,
+          "laser": "REAR",
+          "goal": 38,
+          "frames": 247,
+          "node": 38,
+          "body": 1,
+          "fixes": [
+            10
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 38,
+          "start_body": 1,
+          "laser": "FRONT",
+          "goal": 63,
+          "frames": 928,
+          "node": 63,
+          "body": 0,
+          "fixes": [],
+          "states": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 38,
+          "start_body": 1,
+          "laser": "LEFT",
+          "goal": 63,
+          "frames": 631,
+          "node": 63,
+          "body": 0,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 38,
+          "start_body": 1,
+          "laser": "RIGHT",
+          "goal": 63,
+          "frames": 631,
+          "node": 63,
+          "body": 0,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 38,
+          "start_body": 1,
+          "laser": "REAR",
+          "goal": 63,
+          "frames": 631,
+          "node": 63,
+          "body": 0,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 38,
+          "start_body": 3,
+          "laser": "FRONT",
+          "goal": 63,
+          "frames": 631,
+          "node": 63,
+          "body": 2,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 38,
+          "start_body": 3,
+          "laser": "LEFT",
+          "goal": 63,
+          "frames": 631,
+          "node": 63,
+          "body": 2,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 38,
+          "start_body": 3,
+          "laser": "RIGHT",
+          "goal": 63,
+          "frames": 631,
+          "node": 63,
+          "body": 2,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 38,
+          "start_body": 3,
+          "laser": "REAR",
+          "goal": 63,
+          "frames": 928,
+          "node": 63,
+          "body": 0,
+          "fixes": [],
+          "states": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 26,
+          "start_body": 0,
+          "laser": "FRONT",
+          "goal": 38,
+          "frames": 943,
+          "node": 38,
+          "body": 1,
+          "fixes": [
+            35
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 26,
+          "start_body": 0,
+          "laser": "LEFT",
+          "goal": 38,
+          "frames": 559,
+          "node": 38,
+          "body": 1,
+          "fixes": [
+            17,
+            7
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 26,
+          "start_body": 0,
+          "laser": "RIGHT",
+          "goal": 38,
+          "frames": 559,
+          "node": 38,
+          "body": 1,
+          "fixes": [
+            17,
+            7
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 26,
+          "start_body": 0,
+          "laser": "REAR",
+          "goal": 11,
+          "frames": 493,
+          "node": 11,
+          "body": 1,
+          "fixes": [
+            17,
+            7
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 26,
+          "start_body": 2,
+          "laser": "FRONT",
+          "goal": 11,
+          "frames": 493,
+          "node": 11,
+          "body": 3,
+          "fixes": [
+            17,
+            7
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 26,
+          "start_body": 2,
+          "laser": "LEFT",
+          "goal": 38,
+          "frames": 559,
+          "node": 38,
+          "body": 3,
+          "fixes": [
+            17,
+            7
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 26,
+          "start_body": 2,
+          "laser": "RIGHT",
+          "goal": 38,
+          "frames": 559,
+          "node": 38,
+          "body": 3,
+          "fixes": [
+            17,
+            7
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 26,
+          "start_body": 2,
+          "laser": "REAR",
+          "goal": 63,
+          "frames": 325,
+          "node": 63,
+          "body": 2,
+          "fixes": [
+            35
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 35,
+          "start_body": 1,
+          "laser": "FRONT",
+          "goal": 38,
+          "frames": 679,
+          "node": 38,
+          "body": 1,
+          "fixes": [
+            34,
+            33
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 35,
+          "start_body": 1,
+          "laser": "LEFT",
+          "goal": 63,
+          "frames": 271,
+          "node": 63,
+          "body": 2,
+          "fixes": [
+            36
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 35,
+          "start_body": 1,
+          "laser": "RIGHT",
+          "goal": 11,
+          "frames": 427,
+          "node": 11,
+          "body": 1,
+          "fixes": [
+            34,
+            33
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 35,
+          "start_body": 1,
+          "laser": "REAR",
+          "goal": 63,
+          "frames": 271,
+          "node": 63,
+          "body": 2,
+          "fixes": [
+            36
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 35,
+          "start_body": 3,
+          "laser": "FRONT",
+          "goal": 63,
+          "frames": 271,
+          "node": 63,
+          "body": 0,
+          "fixes": [
+            36
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 35,
+          "start_body": 3,
+          "laser": "LEFT",
+          "goal": 11,
+          "frames": 418,
+          "node": 11,
+          "body": 3,
+          "fixes": [],
+          "states": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 35,
+          "start_body": 3,
+          "laser": "RIGHT",
+          "goal": 38,
+          "frames": 679,
+          "node": 38,
+          "body": 3,
+          "fixes": [
+            34,
+            33
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 35,
+          "start_body": 3,
+          "laser": "REAR",
+          "goal": 38,
+          "frames": 679,
+          "node": 38,
+          "body": 3,
+          "fixes": [
+            34,
+            33
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 63,
+          "start_body": 0,
+          "laser": "FRONT",
+          "goal": 11,
+          "frames": 865,
+          "node": 11,
+          "body": 3,
+          "fixes": [
+            78
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 63,
+          "start_body": 0,
+          "laser": "LEFT",
+          "goal": 78,
+          "frames": 76,
+          "node": 78,
+          "body": 0,
+          "fixes": [
+            78
+          ],
+          "states": [
+            1,
+            2,
+            9,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 63,
+          "start_body": 0,
+          "laser": "RIGHT",
+          "goal": 11,
+          "frames": 568,
+          "node": 11,
+          "body": 3,
+          "fixes": [],
+          "states": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 63,
+          "start_body": 0,
+          "laser": "REAR",
+          "goal": 35,
+          "frames": 271,
+          "node": 35,
+          "body": 3,
+          "fixes": [
+            52
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 63,
+          "start_body": 2,
+          "laser": "FRONT",
+          "goal": 35,
+          "frames": 271,
+          "node": 35,
+          "body": 1,
+          "fixes": [
+            52
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 63,
+          "start_body": 2,
+          "laser": "LEFT",
+          "goal": 11,
+          "frames": 568,
+          "node": 11,
+          "body": 3,
+          "fixes": [],
+          "states": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 63,
+          "start_body": 2,
+          "laser": "RIGHT",
+          "goal": 78,
+          "frames": 76,
+          "node": 78,
+          "body": 2,
+          "fixes": [
+            78
+          ],
+          "states": [
+            1,
+            2,
+            9,
+            13
+          ],
+          "intercepted": false
+        },
+        {
+          "start": 63,
+          "start_body": 2,
+          "laser": "REAR",
+          "goal": 11,
+          "frames": 865,
+          "node": 11,
+          "body": 1,
+          "fixes": [
+            78
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": false
+        }
+      ],
+      "ignored": [],
+      "interceptions": [
+        {
+          "laser": "FRONT",
+          "frames": 970,
+          "node": 63,
+          "body": 0,
+          "fixes": [
+            38
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            12,
+            13
+          ],
+          "intercepted": true
+        },
+        {
+          "laser": "REAR",
+          "frames": 631,
+          "node": 63,
+          "body": 0,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": true
+        },
+        {
+          "laser": "LEFT",
+          "trigger": "departure before translation",
+          "frames": 631,
+          "node": 63,
+          "body": 0,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": true
+        },
+        {
+          "laser": "RIGHT",
+          "trigger": "departure before translation",
+          "frames": 631,
+          "node": 63,
+          "body": 0,
+          "fixes": [
+            39,
+            40
+          ],
+          "states": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            9,
+            11,
+            13
+          ],
+          "intercepted": true
+        }
+      ],
+      "scope": "Linked ARM firmware task + real planner, synthetic gray/yaw/encoder; no physical motion proof",
+      "firmware_sha256": "0854d9293d9b0f6a8c80d188f3fca5da88b30a1840682586c875bf4f1db1b688",
+      "app_source_sha256": "6851ab61a1c405d07adec8f0204020e2b28c386d30694255434848884fc9c0df",
+      "test_script_sha256": "59406b9188fff8be4a28e3efb1f5f525f036f10eb7300d9f9429e1094c97556b"
+    },
+    "turn_resume": {
+      "cases": {
+        "resume_after_brake": 2,
+        "continuous_loop_kept": 1
+      },
+      "failures": [],
+      "axf_sha256": "0854d9293d9b0f6a8c80d188f3fca5da88b30a1840682586c875bf4f1db1b688",
+      "test_sha256": "6f1424e97f96592e3c441502659b03fb3cff77552fe50df650b04dc90fb78acc",
+      "hardware_tested": false
+    },
+    "left800": {
+      "checks": 442,
+      "failure": null,
+      "expected_before_failure": false,
+      "axf_sha256": "0854d9293d9b0f6a8c80d188f3fca5da88b30a1840682586c875bf4f1db1b688",
+      "test_sha256": "09ff1e4bb49313145f3858517e6ad4d45d471715c65eba175ba36fb5b6d25f0b",
+      "hardware_tested": false
+    },
+    "live_monitor": {
+      "checks": 21,
+      "failures": 0,
+      "axf": "E:\\Downloads\\Robot_Treasure-main\\Robot_Treasure-main\\STM32\\Keil_Project\\Thief16V_UARTCh4_StableBase_Test\\MDK-ARM\\Thief16V_UARTCh4_StableBase_Test\\Thief16V_UARTCh4_StableBase_Test.axf",
+      "axf_sha256": "0854d9293d9b0f6a8c80d188f3fca5da88b30a1840682586c875bf4f1db1b688",
+      "hardware_tested": false
+    },
+    "strategy_stable2": {
+      "firmware": "UARTCH4_16V_STABLE3",
+      "checks": 233,
+      "failures": [],
+      "expected_before_failure": false,
+      "axf_sha256": "0854d9293d9b0f6a8c80d188f3fca5da88b30a1840682586c875bf4f1db1b688",
+      "test_sha256": "267710033b861dcbdf4c54791da9470eb29ff97f622573021501499993d31342",
+      "hardware_tested": false
+    },
+    "temp78_stable3": {
+      "firmware": "UARTCH4_16V_STABLE3",
+      "checks": 62,
+      "failures": [],
+      "lifecycles": [
+        {
+          "threat_heading": 0,
+          "wait": {
+            "frames": 76,
+            "node": 78,
+            "body": 0,
+            "fixes": [
+              78
+            ],
+            "states": [
+              1,
+              2,
+              9,
+              13
+            ],
+            "intercepted": false
+          },
+          "escape": {
+            "frames": 733,
+            "node": 11,
+            "body": 1,
+            "fixes": [],
+            "states": [
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        },
+        {
+          "threat_heading": 3,
+          "wait": {
+            "frames": 76,
+            "node": 78,
+            "body": 0,
+            "fixes": [
+              78
+            ],
+            "states": [
+              1,
+              2,
+              9,
+              13
+            ],
+            "intercepted": false
+          },
+          "escape": {
+            "frames": 748,
+            "node": 11,
+            "body": 3,
+            "fixes": [
+              63,
+              52
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        }
+      ],
+      "expected_before_failure": false,
+      "axf_sha256": "0854d9293d9b0f6a8c80d188f3fca5da88b30a1840682586c875bf4f1db1b688",
+      "test_sha256": "4cecca09d429573425962e74ececccac0f90a6d2e82bc2c24f608a5a2ed49dac",
+      "hardware_tested": false
+    }
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "limitations": [
+    "Synthetic gray/yaw/encoder inputs do not prove physical stability or sensor timing",
+    "Coordinates are route estimates, not absolute relocalization after a missed junction",
+    "Real sensor faults, stall, user stop and continuous 2s both-board no-line can still stop the car"
+  ],
+  "changed_this_round": [
+    "User/App_ThiefStrategy.c",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "Algorithm/ThiefStrategy/ThiefInterceptPolicy.c"
+  ],
+  "before_regression": {
+    "checks": 39,
+    "failed_expectations": 15,
+    "axf_sha256": "0eec5ed8352253cdf0ed188f3f24b56abb6c2efcab905e9a155bf4fed344979c"
+  },
+  "log_inputs": {
+    "小车串口_20261028_212223.txt": "3f40d3ccb2ccb0e1c2fda050e5e367f24b4e66bbe01377748c3e5287122edd3c"
+  }
+}

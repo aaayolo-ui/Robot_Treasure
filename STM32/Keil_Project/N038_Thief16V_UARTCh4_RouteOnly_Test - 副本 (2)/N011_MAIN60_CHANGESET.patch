@@ -1,0 +1,103 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -1182,7 +1182,7 @@
+   Thief_LocalYaw(&yaw);
+   delta=Route_TurnAngleDeltaX100(yaw.yaw_x100,park_start_yaw);
+   progress=(int32_t)delta*thief_localization.yaw_cw_sign*park_turn_quarter;
+-  if(park_turn_pending==2U && progress<((thief_current_node==38U || thief_current_node==63U)?6000L:7000L)) {
++  if(park_turn_pending==2U && progress<((thief_current_node==11U || thief_current_node==38U || thief_current_node==63U)?6000L:7000L)) {
+     if((uint32_t)(now-hide_log_tick)>=100U) {
+       hide_log_tick=now;UartDebug_Printf("PARK_MAIN N=%u DEG_X100=%ld AGE=%lu\r\n",
+           (unsigned)thief_current_node,(long)progress,(unsigned long)(now-yaw.stamp_ms));
+@@ -1919,7 +1919,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_N002_BRANCH_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_N011_MAIN60_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1945,7 +1945,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N002_BRANCH_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N011_MAIN60_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1994,7 +1994,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_N002_BRANCH_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_N011_MAIN60_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- before/Tests/test_n038_main60.py
++++ after/Tests/test_n038_main60.py
+@@ -4,7 +4,7 @@
+ setup=(ROOT/'Tests/test_quick350.py').read_text(encoding='utf-8').split('try:')[0]
+ exec(compile(setup,str(ROOT/'Tests/test_quick350.py'),'exec'))
+ try:
+- for node,threshold in [(38,6000),(63,6000),(11,7000)]:
++ for node,threshold in [(38,6000),(63,6000),(11,6000),(35,7000)]:
+   for quarter in [-1,1]:
+    for sign in [-1,1]:
+     for progress in [threshold-100,threshold]:
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,15 @@
++# N011_MAIN60_SL1：N011停车主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N011_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_BRANCH_before_n011_main60。
++
++依用户确认，将N011停车转向的主旋转切换点从70°改60°；之后沿用低速YAW及灰度对齐，最终目标仍为90°横停。N038/N063已为60°并保持，其他停车仍70°，用户350不变。普通行驶转弯、路线、PID、速度、激光及N011至N002支路修复均未改。生产仅修改User/App_ThiefStrategy.c中的N011条件和三处版本标识。
++
++ARMCC5全量编译0错误0警告；停车角度边界99项和快速灰度对齐33项ARM离线检查通过，共132项，报告绑定当前AXF。角度覆盖N011/N038/N063的60°、N035的70°，两旋转方向及两种陀螺仪符号。传感器和轮速为仿真，不证明实物过冲已解决。证据N011_MAIN60_FILES.json、N011_MAIN60_CHANGESET.patch、build_n011_main60.log及本轮测试结果。
++
++仅编译通过，尚未完成硬件验证。未自动烧录、未占串口、未运行实物电机、未提交推送。下方N011仍70°的历史说明不代表当前代码。
++
++---
++
+ # N002_BRANCH_SL1：仅N011至N002右转前继续巡线（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N002_BRANCH_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N063_MAIN60_before_n002_branch。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,15 @@
++# N011_MAIN60_SL1：N011停车主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N011_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_BRANCH_before_n011_main60。
++
++依用户确认，将N011停车转向的主旋转切换点从70°改60°；之后沿用低速YAW及灰度对齐，最终目标仍为90°横停。N038/N063已为60°并保持，其他停车仍70°，用户350不变。普通行驶转弯、路线、PID、速度、激光及N011至N002支路修复均未改。生产仅修改User/App_ThiefStrategy.c中的N011条件和三处版本标识。
++
++ARMCC5全量编译0错误0警告；停车角度边界99项和快速灰度对齐33项ARM离线检查通过，共132项，报告绑定当前AXF。角度覆盖N011/N038/N063的60°、N035的70°，两旋转方向及两种陀螺仪符号。传感器和轮速为仿真，不证明实物过冲已解决。证据N011_MAIN60_FILES.json、N011_MAIN60_CHANGESET.patch、build_n011_main60.log及本轮测试结果。
++
++仅编译通过，尚未完成硬件验证。未自动烧录、未占串口、未运行实物电机、未提交推送。下方N011仍70°的历史说明不代表当前代码。
++
++---
++
+ # N002_BRANCH_SL1：仅N011至N002右转前继续巡线（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N002_BRANCH_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N063_MAIN60_before_n002_branch。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,15 @@
++# N011_MAIN60_SL1：N011停车主旋转60°（本段优先）
++
++当前FW=UARTCH4_16V_N011_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_BRANCH_before_n011_main60。
++
++依用户确认，将N011停车转向的主旋转切换点从70°改60°；之后沿用低速YAW及灰度对齐，最终目标仍为90°横停。N038/N063已为60°并保持，其他停车仍70°，用户350不变。普通行驶转弯、路线、PID、速度、激光及N011至N002支路修复均未改。生产仅修改User/App_ThiefStrategy.c中的N011条件和三处版本标识。
++
++ARMCC5全量编译0错误0警告；停车角度边界99项和快速灰度对齐33项ARM离线检查通过，共132项，报告绑定当前AXF。角度覆盖N011/N038/N063的60°、N035的70°，两旋转方向及两种陀螺仪符号。传感器和轮速为仿真，不证明实物过冲已解决。证据N011_MAIN60_FILES.json、N011_MAIN60_CHANGESET.patch、build_n011_main60.log及本轮测试结果。
++
++仅编译通过，尚未完成硬件验证。未自动烧录、未占串口、未运行实物电机、未提交推送。下方N011仍70°的历史说明不代表当前代码。
++
++---
++
+ # N002_BRANCH_SL1：仅N011至N002右转前继续巡线（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N002_BRANCH_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N063_MAIN60_before_n002_branch。

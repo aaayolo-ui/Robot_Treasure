@@ -1,0 +1,867 @@
+--- 16U_RUN6/User/App_ThiefStrategy.c
++++ 16U_RUN7/User/App_ThiefStrategy.c
+@@ -18,6 +18,7 @@
+ #include "TreasureGrayMask.h"
+ #include "TravelFrame.h"
+ #include "RestartLineSearch.h"
++#include "RoadHeadingControl.h"
+ #include "LaserRx.h"
+ #include "FrontLaserGate.h"
+ #include "ThiefMapPlanner.h"
+@@ -131,6 +132,15 @@
+ static FollowSmoothing_t follow_smoothing;
+ static uint8_t route_active;
+ static uint8_t map_gray_active,map_gray_braked;
++static uint8_t hide_alignment_pending,hide_drive_enabled;
++static int32_t hide_approach_counts,hide_approach_mm;
++static uint32_t hide_align_tick,hide_log_tick;
++static RoadHeadingControl_t hide_heading;
++static uint8_t turn_exit_active,turn_exit_line_phase,turn_exit_drive_enabled;
++static uint32_t turn_exit_tick,turn_exit_log_tick;
++static int32_t turn_exit_line_counts;
++static RoadHeadingControl_t turn_exit_heading;
++static RestartLineSearch turn_exit_line;
+ static int32_t map_gray_start_mm;
+ static uint32_t map_gray_tick,map_gray_log_tick;
+ static RestartLineSearch map_gray_search;
+@@ -228,6 +238,11 @@
+ static void Route_MapGrayRecover(uint32_t now,uint32_t elapsed_ms,
+                                  RouteGraySample_t *sample);
+ static uint8_t Route_IsJunctionCandidate(RouteGrayState_t state);
++static uint8_t Route_RunFollow(RouteGraySample_t *sample,uint32_t elapsed_ms);
++static uint8_t Route_TurnExitContext(int16_t *error,ThiefLocYaw_t *yaw);
++static void Route_TurnExitRecover(uint32_t now,uint32_t elapsed_ms,RouteGraySample_t *sample);
++static void Route_HideAlign(uint32_t now,uint32_t elapsed_ms);
++static void Route_DriveHideApproach(uint32_t elapsed_ms);
+ static void Route_HandleJunction(uint32_t now,uint32_t elapsed_ms,
+                                  RouteGrayState_t branch,uint16_t raw12);
+ 
+@@ -261,7 +276,7 @@
+     }
+   }
+   thief_pose=thief_localization.pose;
+-  if(route_state==ROUTE_STATE_HIDE_APPROACH) thief_pose.valid=0U;
++  if(route_state==ROUTE_STATE_HIDE_APPROACH || hide_alignment_pending) thief_pose.valid=0U;
+   if(thief_strategy_state==THIEF_STRATEGY_FAULT) thief_pose.valid=0U;
+ }
+ 
+@@ -572,7 +587,7 @@
+    * disable STBY and coast, so a missed junction classification could slide
+    * out of the track and then appear to "quit". */
+   Route_BrakeControl();
+-  route_active = 0U;map_gray_active=0U;
++  route_active = 0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;
+   route_state = ROUTE_STATE_FAULT;
+   thief_strategy_state = THIEF_STRATEGY_FAULT;
+   thief_localization.pose.valid=0U;
+@@ -991,6 +1006,123 @@
+                    (unsigned)junction_count);
+ }
+ 
++static void Route_DriveHideApproach(uint32_t elapsed_ms)
++{
++  ThiefLocYaw_t yaw;
++  int16_t error,turn;
++  Thief_LocalYaw(&yaw);
++  error=RoadHeading_AxisError(thief_localization.origin_yaw_x100,thief_localization.origin_heading,
++      thief_localization.body_heading,thief_localization.yaw_cw_sign,yaw.yaw_x100);
++  turn=RoadHeading_Correction((int16_t)(error*thief_localization.yaw_cw_sign),300);
++  TravelFrame_SetWheelTargets(ROUTE_TURN_APPROACH_RPM_X10+turn,ROUTE_TURN_APPROACH_RPM_X10-turn,
++      ROUTE_TURN_APPROACH_RPM_X10+turn,ROUTE_TURN_APPROACH_RPM_X10-turn);
++  ChassisSpeedControl_Update(elapsed_ms);
++  if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
++}
++
++static void Route_HideAlign(uint32_t now,uint32_t elapsed_ms)
++{
++  RoadHeadingInput_t in;RoadHeadingOutput_t out;ThiefLocYaw_t yaw;int16_t error;
++  if((uint32_t)(now-hide_align_tick)>=MAP_ROUTE_ALIGN_TIMEOUT_MS) {
++    Route_StopFault("HIDE_HEADING_NOT_ALIGNED");return;
++  }
++  Thief_LocalYaw(&yaw);Chassis_UpdateFeedback(elapsed_ms);
++  error=RoadHeading_AxisError(thief_localization.origin_yaw_x100,thief_localization.origin_heading,
++      thief_localization.body_heading,thief_localization.yaw_cw_sign,yaw.yaw_x100);
++  in.cw_error_x100=(int16_t)(error*thief_localization.yaw_cw_sign);
++  /* At a zero learned sign, only an already-aligned pose can be accepted. */
++  if(!thief_localization.yaw_cw_sign) in.cw_error_x100=error;
++  in.yaw_tick=yaw.stamp_ms;in.stopped=Route_AllWheelsStopped();
++  in.direction_known=(uint8_t)(thief_localization.yaw_cw_sign!=0);
++  RoadHeading_Update(&hide_heading,&in,now,200,&out);
++  if((uint32_t)(now-hide_log_tick)>=100U) {
++    char line[150];hide_log_tick=now;
++    (void)snprintf(line,sizeof(line),"HIDE_ALIGN N=%u YAW_ERR=%d APPROACH_MM=%ld TURN=%d BRAKE=%u\r\n",
++        (unsigned)thief_current_node,(int)error,
++        (long)hide_approach_mm,(int)out.turn_x10,(unsigned)out.brake);
++    (void)UartDebug_TrySendString(line);
++  }
++  if(out.failed) {Route_StopFault("HIDE_YAW_DIRECTION_UNKNOWN");return;}
++  if(out.brake) {Route_BrakeControl();hide_drive_enabled=0U;}
++  else {
++    if(!hide_drive_enabled) {Route_ResetControl(1U);hide_drive_enabled=1U;}
++    TravelFrame_SetWheelTargets(out.turn_x10,-out.turn_x10,out.turn_x10,-out.turn_x10);
++    ChassisSpeedControl_Update(elapsed_ms);
++    if(ChassisSpeedControl_HasStall()) {Route_StopFault("STALL");return;}
++  }
++  if(out.ready) {
++    hide_alignment_pending=0U;node_centered=1U;
++    turn_stop_stable_count=ROUTE_TURN_STOP_STABLE_SAMPLES;
++    UartDebug_Printf("HIDE_READY N=%u APPROACH_DONE=1 YAW_ERR=%d APPROACH_MM=%ld\r\n",
++        (unsigned)thief_current_node,(int)error,(long)hide_approach_mm);
++  }
++}
++
++static uint8_t Route_TurnExitContext(int16_t *error,ThiefLocYaw_t *yaw)
++{
++  const MapRouteStep_t *step=departure_turn?&thief_localization.step:MapRouteNavigator_Current(&map_nav);
++  Thief_LocalYaw(yaw);
++  if(!route_active || !step || thief_localization.phase!=THIEF_LOC_AT_JUNCTION ||
++      !(map_nav.arrived || departure_turn) ||
++      (step->action!=MAP_ACTION_LEFT && step->action!=MAP_ACTION_RIGHT) ||
++      !yaw->valid)return 0U;
++  return RoadHeading_TurnError(turn_start_angle_x100,TravelFrame_Yaw(yaw->yaw_x100),
++      (int8_t)(step->action==MAP_ACTION_RIGHT?1:-1),thief_localization.yaw_cw_sign,error);
++}
++
++static void Route_TurnExitRecover(uint32_t now,uint32_t elapsed_ms,RouteGraySample_t *sample)
++{
++  RoadHeadingInput_t in;RoadHeadingOutput_t heading;
++  RestartLineInput line;RestartLineOutput motion;
++  ThiefLocYaw_t yaw;int16_t error;
++  if(!Route_TurnExitContext(&error,&yaw) || front_state==ROUTE_GRAY_I2C_ERROR ||
++      (uint32_t)(now-turn_exit_tick)>=MAP_ROUTE_ALIGN_TIMEOUT_MS) {
++    turn_exit_active=0U;Route_StopFault("TURN_EXIT_LINE_NOT_CONFIRMED");return;
++  }
++  Chassis_UpdateFeedback(elapsed_ms);
++  if((uint32_t)(now-turn_exit_log_tick)>=100U) {
++    char text[160];turn_exit_log_tick=now;
++    (void)snprintf(text,sizeof(text),"TURN_EXIT_RECOVER N=%u PH=%u ERROR=%d RAW=%03X MODE=%u\r\n",
++        (unsigned)thief_localization.confirmed_node,(unsigned)turn_exit_line_phase,
++        (int)error,(unsigned)sample->front_raw12,(unsigned)TravelFrame_IsReverse());
++    (void)UartDebug_TrySendString(text);
++  }
++  if(!turn_exit_line_phase) {
++    in.cw_error_x100=error;in.yaw_tick=yaw.stamp_ms;
++    in.stopped=Route_AllWheelsStopped();in.direction_known=1U;
++    RoadHeading_Update(&turn_exit_heading,&in,now,ROUTE_MAP_GRAY_YAW_TOL_X100,&heading);
++    if(heading.brake) {Route_BrakeControl();turn_exit_drive_enabled=0U;}
++    else {
++      if(!turn_exit_drive_enabled) {Route_ResetControl(1U);turn_exit_drive_enabled=1U;}
++      TravelFrame_SetWheelTargets(heading.turn_x10,-heading.turn_x10,heading.turn_x10,-heading.turn_x10);
++      ChassisSpeedControl_Update(elapsed_ms);
++      if(ChassisSpeedControl_HasStall()) {Route_StopFault("STALL");return;}
++    }
++    if(!heading.ready)return;
++    turn_exit_line_phase=1U;turn_exit_line_counts=MapRoutePosition_ForwardCounts();
++    RestartLineSearch_Reset(&turn_exit_line,last_leading_error);
++  }
++  if(MapRoutePosition_DistanceMm(turn_exit_line_counts)>=80L) {
++    turn_exit_active=0U;Route_StopFault("TURN_EXIT_SEARCH_DISTANCE");return;
++  }
++  rear_state=Route_ReadRear(sample);
++  line.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID);
++  line.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
++  line.leading_error=sample->front_error_x100;line.trailing_error=sample->rear_error_x100;
++  line.yaw_known=1U;line.yaw_cw_x100=error;line.stopped=Route_AllWheelsStopped();
++  RestartLineSearch_Update(&turn_exit_line,&line,&motion);
++  if(motion.failed) {turn_exit_active=0U;Route_StopFault("TURN_EXIT_SCAN_NO_LINE");return;}
++  if(motion.brake) {Route_BrakeControl();turn_exit_drive_enabled=0U;return;}
++  if(!turn_exit_drive_enabled) {Route_ResetControl(1U);turn_exit_drive_enabled=1U;}
++  TravelFrame_SetWheelTargets(motion.left_x10,motion.right_x10,motion.left_x10,motion.right_x10);
++  ChassisSpeedControl_Update(elapsed_ms);
++  if(ChassisSpeedControl_HasStall()) {Route_StopFault("STALL");return;}
++  if(motion.ready) {
++    turn_exit_active=0U;Route_EnterFollow(now,1U,ROUTE_AFTER_TURN_START_RPM_X10,1U);
++    (void)Route_RunFollow(sample,elapsed_ms);
++  }
++}
++
+ static uint8_t Route_MapGrayContext(void)
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+@@ -1014,8 +1146,16 @@
+   front_resume_tick = route_state_tick;
+   front_resume_base_rpm_x10 = follow_smoothing.base_rpm_x10;
+   front_recovery_valid_count = 0U;
+-  map_gray_active=0U;
+-  if(cause==ROUTE_GRAY_NO_LINE && route_state==ROUTE_STATE_FOLLOW && Route_MapGrayContext()) {
++  map_gray_active=0U;turn_exit_active=0U;
++  if(cause==ROUTE_GRAY_NO_LINE && route_state==ROUTE_STATE_FOLLOW) {
++    int16_t error;ThiefLocYaw_t yaw;
++    if(Route_TurnExitContext(&error,&yaw)) {
++      turn_exit_active=1U;turn_exit_line_phase=0U;turn_exit_drive_enabled=0U;
++      turn_exit_tick=now;turn_exit_log_tick=now-100U;
++      RoadHeading_Reset(&turn_exit_heading,now);
++    }
++  }
++  if(!turn_exit_active && cause==ROUTE_GRAY_NO_LINE && route_state==ROUTE_STATE_FOLLOW && Route_MapGrayContext()) {
+     RouteGraySample_t rear;
+     Route_ResetSample(&rear);rear_state=Route_ReadRear(&rear);
+     /* A confirmed road exit can be reacquired in place; further down the
+@@ -1034,7 +1174,11 @@
+   route_state_tick = now;
+   MapTimingLog_Event(MAP_TIMING_FRONT_WAIT, junction_count, now,
+                       (int32_t)cause);
+-  if(map_gray_active) {
++  if(turn_exit_active) {
++    RouteGraySample_t sample;
++    Route_ResetSample(&sample);front_state=Route_ReadFront(&sample);
++    Route_TurnExitRecover(now,LINE_FOLLOW_PID_CONTROL_PERIOD_MS,&sample);
++  } else if(map_gray_active) {
+     RouteGraySample_t sample;
+     Route_ResetSample(&sample);front_state=Route_ReadFront(&sample);
+     Route_MapGrayRecover(now,LINE_FOLLOW_PID_CONTROL_PERIOD_MS,&sample);
+@@ -1224,10 +1368,16 @@
+ 
+ static void Route_FinishNodeStop(uint32_t now,uint16_t node,uint8_t body,uint8_t centered)
+ {
++  hide_alignment_pending=(uint8_t)(route_state==ROUTE_STATE_HIDE_APPROACH && centered);
++  if(hide_alignment_pending) {
++    hide_approach_mm=MapRoutePosition_DistanceMm(hide_approach_counts);
++    hide_align_tick=now;hide_log_tick=now-100U;hide_drive_enabled=0U;
++    RoadHeading_Reset(&hide_heading,now);
++  }
+   Route_BrakeControl();
+   route_active=0U;
+   route_state=ROUTE_STATE_DONE;
+-  node_centered=centered;
++  node_centered=hide_alignment_pending?0U:centered;
+   node_stop_counts=MapRoutePosition_ForwardCounts();node_stop_counts_valid=1U;
+   node_approach_ms=ROUTE_TURN_APPROACH_DELAY_MS;
+   thief_previous_hide_node=thief_current_node;
+@@ -1300,8 +1450,9 @@
+       /* Same speed, time and travel frame as the pre-turn approach. */
+       route_state=ROUTE_STATE_HIDE_APPROACH;route_state_tick=now;
+       last_control_tick=now;
++      hide_approach_counts=MapRoutePosition_ForwardCounts();
+       ChassisSpeedControl_ResetPiState();
+-      Route_DriveTurnApproach(elapsed_ms);
++      Route_DriveHideApproach(elapsed_ms);
+     } else
+ #endif
+       Route_FinishArrivalStop(now,0U);
+@@ -1330,7 +1481,7 @@
+   uint32_t now;
+   uint8_t turn_delta=0U;
+ 
+-  restart_search_active=0U;map_gray_active=0U;
++  restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+       thief_localization.phase==THIEF_LOC_AT_NODE &&
+       thief_localization.confirmed_node==thief_plan.route.start_node);
+@@ -1615,7 +1766,7 @@
+ 
+ void App_ThiefStrategy_Init(void)
+ {
+-  map_gray_active=0U;
++  map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;
+   TravelFrame_SetReverse(0U);
+   reverse_pending = 0U;
+   map_progress_offset_mm=0L;departure_turn=0U;replan_after_leg=0U;
+@@ -1666,7 +1817,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN6 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN7 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1689,7 +1840,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN6 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN7 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1738,7 +1889,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_RUN6 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_RUN7 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -1843,13 +1994,20 @@
+     } else if((uint32_t)(now-last_control_tick)>=LINE_FOLLOW_PID_CONTROL_PERIOD_MS) {
+       uint32_t dt=(uint32_t)(now-last_control_tick);
+       last_control_tick=now;
+-      Route_DriveTurnApproach(dt);
++      Route_DriveHideApproach(dt);
+     }
+ #endif
+     goto task_end;
+   }
+   if(route_active && route_state==ROUTE_STATE_INTERCEPT_STOP) {
+     Thief_InterceptStopped(now);
++    goto task_end;
++  }
++  if(thief_strategy_state==THIEF_STRATEGY_SETTLING && hide_alignment_pending) {
++    if((uint32_t)(now-last_control_tick)>=LINE_FOLLOW_PID_CONTROL_PERIOD_MS) {
++      uint32_t dt=(uint32_t)(now-last_control_tick);last_control_tick=now;
++      Route_HideAlign(now,dt);
++    }
+     goto task_end;
+   }
+   if (thief_strategy_state == THIEF_STRATEGY_SETTLING) {
+@@ -2413,6 +2571,10 @@
+       break;
+ 
+     case ROUTE_STATE_FRONT_RECOVERY:
++      if(turn_exit_active) {
++        Route_ResetSample(&sample);front_state=Route_ReadLeadingOnce(&sample,&leading_cache);
++        Route_TurnExitRecover(now,elapsed_ms,&sample);break;
++      }
+       if(map_gray_active) {
+         Route_ResetSample(&sample);front_state=Route_ReadLeadingOnce(&sample,&leading_cache);
+         Route_MapGrayRecover(now,elapsed_ms,&sample);break;
+--- 16U_RUN6/Control/RoadHeadingControl.c
++++ 16U_RUN7/Control/RoadHeadingControl.c
+@@ -0,0 +1,63 @@
++#include "RoadHeadingControl.h"
++static int16_t Delta(int32_t value)
++{
++  while(value>18000L)value-=36000L;
++  while(value< -18000L)value+=36000L;
++  return (int16_t)value;
++}
++int16_t RoadHeading_AxisError(int16_t origin,uint8_t origin_heading,
++    uint8_t body,int8_t sign,int16_t current)
++{
++  int32_t expected=(int32_t)origin+((int32_t)body-origin_heading)*9000L*(sign?sign:1);
++  return Delta((int32_t)current-expected);
++}
++int16_t RoadHeading_Correction(int16_t error,int16_t bound)
++{
++  int32_t turn=-(int32_t)error/2L;
++  return (int16_t)(turn>bound?bound:turn< -bound?-bound:turn);
++}
++uint8_t RoadHeading_TurnError(int16_t start,int16_t current,int8_t quarter,
++    int8_t sign,int16_t *error)
++{
++  int16_t delta=Delta((int32_t)current-start);
++  int32_t magnitude=delta<0?-(int32_t)delta:delta;
++  if((quarter!=1 && quarter!=-1) || magnitude>11000L) return 0U;
++  if(!sign) {
++    if(magnitude<1000L)return 0U;
++    sign=(int8_t)((int32_t)delta*quarter>0L?1:-1);
++  }
++  if((int32_t)delta*quarter*sign<0L)return 0U;
++  *error=(int16_t)((int32_t)delta*sign-(int32_t)quarter*9000L);
++  return 1U;
++}
++void RoadHeading_Reset(RoadHeadingControl_t *s,uint32_t now)
++{
++  s->brake_tick=now;s->last_yaw_tick=now;
++  s->last_turn=0;s->spinning=0U;s->stopped_count=0U;s->stable_count=0U;
++}
++void RoadHeading_Update(RoadHeadingControl_t *s,const RoadHeadingInput_t *in,
++    uint32_t now,int16_t tolerance,RoadHeadingOutput_t *out)
++{
++  int32_t magnitude=in->cw_error_x100<0?-(int32_t)in->cw_error_x100:in->cw_error_x100;
++  int16_t turn=RoadHeading_Correction(in->cw_error_x100,300);
++  out->turn_x10=0;out->brake=1U;out->ready=0U;out->failed=0U;
++  if(s->spinning && (magnitude<=tolerance || (int32_t)turn*s->last_turn<=0L)) {
++    RoadHeading_Reset(s,now);return;
++  }
++  if(!s->spinning) {
++    if(in->stopped) {if(s->stopped_count<2U)s->stopped_count++;}
++    else {s->stopped_count=0U;s->stable_count=0U;}
++    if(s->stopped_count<2U || (uint32_t)(now-s->brake_tick)<80U)return;
++    if(magnitude<=tolerance) {
++      if((int32_t)(in->yaw_tick-s->last_yaw_tick)>0L) {
++        s->last_yaw_tick=in->yaw_tick;
++        if(s->stable_count<3U)s->stable_count++;
++      }
++      if(s->stable_count>=3U)out->ready=1U;
++      return;
++    }
++    if(!in->direction_known) {out->failed=1U;return;}
++    s->spinning=1U;s->stable_count=0U;
++  }
++  s->last_turn=turn;out->turn_x10=turn;out->brake=0U;
++}
+--- 16U_RUN6/Control/RoadHeadingControl.h
++++ 16U_RUN7/Control/RoadHeadingControl.h
+@@ -0,0 +1,25 @@
++#ifndef ROAD_HEADING_CONTROL_H
++#define ROAD_HEADING_CONTROL_H
++#include <stdint.h>
++typedef struct {
++  uint32_t brake_tick,last_yaw_tick;
++  int16_t last_turn;
++  uint8_t spinning,stopped_count,stable_count;
++} RoadHeadingControl_t;
++typedef struct {
++  int16_t cw_error_x100;
++  uint32_t yaw_tick;
++  uint8_t stopped,direction_known;
++} RoadHeadingInput_t;
++typedef struct {int16_t turn_x10;uint8_t brake,ready,failed;} RoadHeadingOutput_t;
++int16_t RoadHeading_AxisError(int16_t origin,uint8_t origin_heading,
++    uint8_t body,int8_t sign,int16_t current);
++int16_t RoadHeading_Correction(int16_t cw_error_x100,int16_t bound);
++/* quarter=+1 right/-1 left; zero known_sign is inferred only from an
++ * already-observed planned turn, never from a stationary gyro sample. */
++uint8_t RoadHeading_TurnError(int16_t start,int16_t current,int8_t quarter,
++    int8_t known_sign,int16_t *cw_error);
++void RoadHeading_Reset(RoadHeadingControl_t *s,uint32_t now);
++void RoadHeading_Update(RoadHeadingControl_t *s,const RoadHeadingInput_t *in,
++    uint32_t now,int16_t tolerance,RoadHeadingOutput_t *out);
++#endif
+--- 16U_RUN6/MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test.uvprojx
++++ 16U_RUN7/MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test.uvprojx
+@@ -656,6 +656,11 @@
+           <GroupName>Control</GroupName>
+           <Files>
+             <File>
++              <FileName>RoadHeadingControl.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>..\Control\RoadHeadingControl.c</FilePath>
++            </File>
++            <File>
+               <FileName>RestartLineSearch.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>..\Control\RestartLineSearch.c</FilePath>
+--- 16U_RUN6/Tests/test_documents15.py
++++ 16U_RUN7/Tests/test_documents15.py
+@@ -0,0 +1,173 @@
++"""Actual linked firmware regressions for parking posture and pending turns.
++Synthetic hardware inputs: no physical motor or center-position validation.
++"""
++from pathlib import Path
++import sys,json
++runtime=Path(__file__).with_name('test_app_runtime.py').read_text(encoding='utf-8').split('def documents8_cases():')[0]
++if '--before' in sys.argv:
++    runtime=runtime.replace("axf=ROOT/'MDK-ARM'/ROOT.name/(ROOT.name+'.axf')", "axf=ROOT/'Tests/before_documents15/original.axf'")
++exec(compile(runtime,str(Path(__file__).with_name('test_app_runtime.py')),'exec'))
++fixture=Path(__file__).with_name('test_escape_completion.py').read_text(encoding='utf-8-sig').split('# Log regression:')[0]
++exec(compile(fixture[fixture.index('for n in ['):],str(Path(__file__).with_name('test_escape_completion.py')),'exec'))
++fixture=Path(__file__).with_name('test_documents13.py').read_text(encoding='utf-8').split('failures=[];passed=[]')[0]
++exec(compile(fixture[fixture.index('rear_valid=1;rear_error=0;targets=[]'):],str(Path(__file__).with_name('test_documents13.py')),'exec'))
++
++def wrap(a):return (a+18000)%36000-18000
++def signed16(a):return a-65536 if a>=32768 else a
++def road(node,h):
++    check(call('ThiefMapPlanner_HasRoad',node,h,0x2000c400,0x2000c402)==1,'test uses actual map road')
++    return get(0x2000c400,2),get(0x2000c402,2)
++
++def park(node,body,mode,sign,error):
++    global yaw,odom,clock,gray_raw,gray_state
++    travel=(body+2*mode)%4;source,length=road(node,(travel+2)%4)
++    fresh(source,body);member('thief_localization','yaw_cw_sign',sign)
++    setstep(source,node,travel,mode,length);call('Route_Start')
++    yaw=error;odom=length;clock+=400;targets.clear()
++    raw=0x60
++    for h,mask in [((travel+3)%4,0xc00),((travel+1)%4,3)]:
++        if call('ThiefMapPlanner_HasRoad',node,h,0,0):raw|=mask
++    call('Route_HandleJunction',clock,20,3,raw)
++    check(var('route_state')==13,'fixed refuge enters original180ms approach')
++    check(targets and sum(targets[-1][:2])==2000,'approach mean remains100RPM')
++    if error:
++        correction=targets[-1][0]-targets[-1][1]
++        check(correction*error*sign<0,'approach steers against observed heading error')
++    tick(179);check(var('route_state')==13,'do not shorten user180ms approach')
++    tick(1)
++    check(var('node_centered')==0 and var('thief_strategy_state')==5,
++          'timed approach alone cannot certify aligned parking')
++    check(member('thief_pose','valid')==0,'no laser projection from an unsettled parking pose')
++    ret('Route_AllWheelsStopped',0);targets.clear()
++    for _ in range(2):tick()
++    check(not targets,'must measure stopped wheels before parking rotation')
++    ret('Route_AllWheelsStopped',1)
++    for _ in range(4):tick()
++    if error:
++        check(targets and sum(targets[-1][:2])==0,'parking trim rotates in place without nominal translation')
++        check(var('thief_strategy_state')==5,'skewed vehicle is not yet hiding')
++    # These are synthetic observed gyro corrections, not invented node fixes.
++    yaw=100 if error>=0 else -100
++    call('Thief_UpdatePose')
++    for _ in range(10):tick()
++    check(var('thief_strategy_state')==2 and var('node_centered')==1,'fresh aligned yaw + standstill allow hiding')
++    check(member('thief_localization','confirmed_node')==node,'parking never changes the fixed node')
++    check(abs(signed16(member('thief_localization','heading_error_x100')))<=200,'parking acceptance within2degrees')
++
++def parking_cases():
++    park(38,1,0,-1,1392)
++    count=1
++    for node,axes in [(11,[1,3]),(38,[1,3]),(26,[0,2]),(35,[1,3]),(63,[0,2])]:
++      for body in axes:
++       for mode in [0,1]:
++        for sign in [-1,1]:
++            park(node,body,mode,sign,800 if mode else -800);count+=1
++    return count
++
++def pending_root(body,mode,sign,quarter):
++    global yaw,odom,clock,gray_raw,gray_state,rear_valid
++    physical_sign=sign or -1
++    fresh(11,body);member('thief_localization','yaw_cw_sign',sign)
++    heading=(body+quarter+2*mode)%4;target,length=road(11,heading)
++    setstep(11,target,heading,mode,length);call('Route_Start')
++    tick(20);tick(60)
++    yaw=wrap(physical_sign*quarter*5166);tick(340)
++    check(var('route_state')==7,'original45degree spin handoff preserved')
++    tick(20);gray_raw=0;gray_state=2;rear_valid=1
++    for _ in range(15):tick()
++    check('turn_exit_active' in symbols and var('turn_exit_active'),
++          'pending quarter-turn bypasses old200ms no-line lock')
++    # Respond to actual commanded in-place rotation. No map/pose state is set.
++    for _ in range(110):
++        if var('turn_exit_active') and member('turn_exit_heading','spinning'):
++            turn=signed16(member('turn_exit_heading','last_turn'))
++            yaw=wrap(yaw+physical_sign*round(turn/5))
++        if var('turn_exit_active') and var('turn_exit_line_phase'):
++            gray_raw=0x60;gray_state=1
++        tick()
++        if member('thief_localization','phase')==1:break
++    check(member('thief_localization','phase')==1 and not var('departure_turn'),'actual exit line confirms the first leg')
++    check(member('thief_localization','body_heading')==(body+quarter)%4,'confirmed outgoing body orientation')
++    check(call('TravelFrame_IsReverse')==mode,'outgoing reverse frame retained')
++
++def reverse_n078():
++    global yaw,odom,clock,gray_raw,gray_state,rear_valid
++    fresh(63,0);member('thief_localization','yaw_cw_sign',-1)
++    setstep(63,78,2,1,600,action=1);setstep(78,77,3,1,300,index=1)
++    record(route,'MapRoute_t',dict(count=2));call('Route_Start')
++    odom=600;clock+=600;call('Route_HandleJunction',clock,20,5,0x83f)
++    tick(180);tick(20);tick(80)
++    yaw=-5166;tick(340);tick(20)
++    gray_raw=0;gray_state=2;rear_valid=1
++    for _ in range(15):tick()
++    check('turn_exit_active' in symbols and var('turn_exit_active'),'Documents15 N078 reverse uses outgoing turn recovery')
++    for _ in range(110):
++        if var('turn_exit_active') and member('turn_exit_heading','spinning'):
++            yaw=wrap(yaw-round(signed16(member('turn_exit_heading','last_turn'))/5))
++        if var('turn_exit_active') and var('turn_exit_line_phase'):
++            gray_raw=0x60;gray_state=1
++        tick()
++        if member('map_nav','step')==1:break
++    check(member('map_nav','step')==1 and member('thief_localization','phase')==1,'N078 commits actual N078->N077 exit')
++    check(member('thief_localization','confirmed_node')==78,'do not claim arrival at N077 during recovery')
++
++def turns():
++    reverse_n078();count=1
++    for body in range(4):
++      for mode in [0,1]:
++       for sign in [-1,1]:
++        for quarter in [-1,1]:pending_root(body,mode,sign,quarter);count+=1
++    pending_root(1,0,0,1);count+=1
++    return count
++
++def control_boundaries():
++    s=allocate('RoadHeadingControl_t',0x2000c800)
++    i=allocate('RoadHeadingInput_t',0x2000c840);o=allocate('RoadHeadingOutput_t',0x2000c870)
++    def update(now,error,stamp,stopped=1):
++        record(i,'RoadHeadingInput_t',dict(cw_error_x100=error,yaw_tick=stamp,stopped=stopped,direction_known=1))
++        call('RoadHeading_Update',s,i,now,200,o)
++        return {k:at(o,'RoadHeadingOutput_t',k) for k in ['turn_x10','brake','ready']}
++    call('RoadHeading_Reset',s,1000)
++    for now in [1020,1080,1100,1120]:
++        check(not update(now,100,900)['ready'],'pre-brake gyro sample cannot certify fresh alignment')
++    check(at(s,'RoadHeadingControl_t','stable_count')==0,'old timestamps do not accumulate')
++    call('RoadHeading_Reset',s,1000)
++    check(update(1020,1392,1020)['brake'],'brake before trim')
++    check(not update(1080,1392,1080)['brake'],'measured standstill releases trim')
++    check(update(1100,-400,1100,0)['brake'],'stop before correction polarity reversal')
++    for now in [1120,1140,1160]:check(update(now,-400,now)['brake'],'reversal waits full brake interval')
++    check(not update(1180,-400,1180)['brake'],'reversal allowed after standstill')
++    check(update(1200,100,1200,0)['brake'],'within tolerance stops first')
++    for now in [1220,1240,1260,1280,1300]:
++        check(not update(now,100,1200)['ready'],'re-reading one gyro frame never certifies stable parking')
++    for n,now in enumerate([1320,1340,1360]):
++        check(bool(update(now,100,now)['ready'])==(n==2),'three distinct gyro stamps needed')
++    for origin in [-17000,17000]:
++      for origin_heading in range(4):
++       for body in range(4):
++        for sign in [-1,1]:
++            current=wrap(origin+(body-origin_heading)*9000*sign+1392)
++            result=call('RoadHeading_AxisError',origin & 0xffffffff,origin_heading,body,sign & 0xffffffff,current & 0xffffffff)
++            check(signed16(result & 65535)==1392,'fresh axis error matches origin, body, sign and angle wrap')
++    for sign in [-1,0,1]:
++      for quarter in [-1,1]:
++        actual_sign=sign or -1;start_yaw=17000
++        current=wrap(start_yaw+actual_sign*quarter*5166)
++        check(call('RoadHeading_TurnError',start_yaw & 0xffffffff,current & 0xffffffff,quarter & 0xffffffff,sign & 0xffffffff,0x2000c880)==1,
++              'turn error supports wrap, learned sign and first-turn sign inference')
++        check(signed16(get(0x2000c880,2))==quarter*(5166-9000),'relative outgoing yaw error correct')
++
++failures=[];passed=[];counts={}
++tests=[parking_cases,turns] if '--before' in sys.argv else [parking_cases,turns,control_boundaries]
++for fn in tests:
++    try:counts[fn.__name__]=fn();passed.append(fn.__name__);print(fn.__name__+': PASS',flush=True)
++    except AssertionError as e:failures.append(dict(case=fn.__name__,error=str(e)));print(fn.__name__+': FAIL '+str(e),flush=True)
++result=dict(checks=checks,failures=failures,passed=passed,cases=counts,hardware_tested=False,
++ firmware_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),
++ app_source_sha256=hashlib.sha256((ROOT/('Tests/before_documents15/User/App_ThiefStrategy.c' if '--before' in sys.argv else 'User/App_ThiefStrategy.c')).read_bytes()).hexdigest(),
++ test_script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
++ helper_sha256={n:hashlib.sha256((ROOT/'Tests'/n).read_bytes()).hexdigest() for n in
++    ['test_app_runtime.py','test_escape_completion.py','test_documents13.py']})
++out=ROOT/'Tests'/('before_documents15/regression_before.json' if '--before' in sys.argv else 'results_documents15.json')
++out.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8');print(json.dumps(result,indent=2))
++sys.exit(bool(failures))
+--- 16U_RUN6/Tests/test_app_runtime.py
++++ 16U_RUN7/Tests/test_app_runtime.py
+@@ -603,10 +603,11 @@
+             check(var('route_active')==1 and var('route_state')==13,'hide does not brake before 180ms')
+             clock+=1;call('App_ThiefStrategy_Task')
+             check(var('route_active')==0 and var('thief_strategy_state')==5,'hide brakes at 180ms')
+-            check(var('node_centered')==1 and var('thief_current_node')==node,'centered arrival recorded')
++            check(var('node_centered')==0 and var('thief_current_node')==node,'approach alone does not certify parking alignment')
+             clock+=20;call('App_ThiefStrategy_Task')
+             clock+=60;call('App_ThiefStrategy_Task')
+-            check(var('thief_strategy_state')==2,'centered hide settles normally')
++            for _ in range(3):clock+=20;call('App_ThiefStrategy_Task')
++            check(var('thief_strategy_state')==2 and var('node_centered')==1,'hide settles after fresh yaw and standstill confirmation')
+             # A later side exit must not repeat the same 180ms translation.
+             out=(body+1)%4
+             if not road(node,out):out=(body+3)%4
+--- 16U_RUN6/Tests/test_escape_completion.py
++++ 16U_RUN7/Tests/test_escape_completion.py
+@@ -68,6 +68,12 @@
+                         fixes=fixes,states=sorted(states),intercepted=injected)
+         gray_raw=0x60;gray_state=1
+         step=current();phase=member('thief_localization','phase')
++        # Integrate the actual new parking rotation command. The old toy model
++        # only changed yaw during route turns and could not respond at a hide.
++        if 'hide_alignment_pending' in symbols and var('hide_alignment_pending') and member('hide_heading','spinning'):
++            turn=member('hide_heading','last_turn');turn=turn-65536 if turn>=32768 else turn
++            sign=member('thief_localization','yaw_cw_sign');sign=sign-256 if sign>=128 else sign
++            yaw=(yaw+sign*round(turn/5)+18000)%36000-18000
+         if phase==2 and state in [5,6,7,2]:
+             nxt=step if var('departure_turn') else step+size(types['MapRouteStep_t'])
+             targetbody=(at(nxt,'MapRouteStep_t','heading')+2*at(nxt,'MapRouteStep_t','drive_mode'))%4
+--- 16U_RUN6/Tests/verify_snapshot.py
++++ 16U_RUN7/Tests/verify_snapshot.py
+@@ -18,7 +18,7 @@
+             diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+                 p.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/'+rel,tofile='16U/'+rel))
+ expected_run3=['Algorithm/MapRoute/MapRouteNavigator.c', 'Algorithm/MapRoute/MapRouteNavigator.h', 'Algorithm/ThiefStrategy/FrontLaserGate.c', 'Algorithm/ThiefStrategy/FrontLaserGate.h', 'Control/FollowSmoothing.c', 'Control/FollowSmoothing.h', 'User/App_ThiefStrategy.c', 'User/MapRoutePosition.c', 'User/MapRoutePosition.h']
+-assert set(changed)==set(expected_run3+['Algorithm/ThiefStrategy/ThiefInterceptPolicy.c','Algorithm/ThiefStrategy/ThiefStrategyConfig.h']) and not added
++assert set(changed)==set(expected_run3+['Algorithm/ThiefStrategy/ThiefInterceptPolicy.c','Algorithm/ThiefStrategy/ThiefStrategyConfig.h']) and set(added)=={'Control/RoadHeadingControl.c','Control/RoadHeadingControl.h'}
+ for directory in ['Core','Drivers','Hardware','System']:
+     assert not any(p.startswith(directory+'/') for p in changed+added),directory+' unexpectedly changed'
+ project=ROOT/'MDK-ARM'/(ROOT.name+'.uvprojx')
+@@ -59,11 +59,11 @@
+ assert escape_result['test_script_sha256']==sha(ROOT/'Tests/test_escape_completion.py')
+ assert len(escape_result['escapes'])==36 and len(escape_result['ignored'])==4
+ assert len(escape_result['interceptions'])==4
+-assert 'UARTCH4_16U_RUN6' in app
+-before=ROOT/'Tests/before_documents14'
++assert 'UARTCH4_16U_RUN7' in app
++before=ROOT/'Tests/before_documents15'
+ before_hashes=json.loads((before/'source_sha256.json').read_text())
+ fix_sources=[rel for rel,value in before_hashes.items() if sha(ROOT/rel)!=value]
+-assert fix_sources==['User/App_ThiefStrategy.c'],fix_sources
++assert set(fix_sources)=={'User/App_ThiefStrategy.c','MDK-ARM/'+ROOT.name+'.uvprojx'},fix_sources
+ speed=json.loads((ROOT/'Tests/results_speed16t.json').read_text())
+ reference_speed=json.loads((ROOT/'Tests/results_speed16t_reference.json').read_text())
+ assert speed['failures']==0 and reference_speed['failures']==0
+@@ -84,12 +84,31 @@
+ assert 'ROUTE_MAP_GRAY_YAW_TOL_X100       1000L' in app
+ assert 'recovery_limit' in regression14['passed']
+ for name,value in regression14['helper_sha256'].items():assert sha(ROOT/'Tests'/name)==value
+-before14=json.loads((before/'regression_before.json').read_text())
++before14dir=ROOT/'Tests/before_documents14'
++before14=json.loads((before14dir/'regression_before.json').read_text())
+ assert {x['case'] for x in before14['failures']}=={'log_replay','heading_sweep'}
+-assert before14['test_script_sha256']==sha(before/'test_documents14_before.py')
+-log14=(before/'Documents14.txt').read_text(encoding='utf-8',errors='replace')
++assert before14['test_script_sha256']==sha(before14dir/'test_documents14_before.py')
++log14=(before14dir/'Documents14.txt').read_text(encoding='utf-8',errors='replace')
+ assert 'RAW=010,E00 YAW_ERR=-466' in log14 and 'YAW_ERR=-651' in log14
+ assert 'MAP_GRAY_END CAUSE=' in app
++regression15=json.loads((ROOT/'Tests/results_documents15.json').read_text())
++assert not regression15['failures']
++assert regression15['cases']['parking_cases']==41 and regression15['cases']['turns']==34
++assert regression15['firmware_sha256']==sha(axf)
++assert regression15['app_source_sha256']==sha(ROOT/'User/App_ThiefStrategy.c')
++assert regression15['test_script_sha256']==sha(ROOT/'Tests/test_documents15.py')
++for name,value in regression15['helper_sha256'].items():assert sha(ROOT/'Tests'/name)==value
++before15=json.loads((before/'regression_before.json').read_text())
++assert {x['case'] for x in before15['failures']}=={'parking_cases','turns'}
++assert before15['test_script_sha256']==sha(before/'test_documents15_before.py')
++assert before15['firmware_sha256']==sha(before/'original.axf')
++assert sum('RoadHeadingControl.c' in x for x in paths)==1
++assert any(g.findtext('GroupName')=='Control' and any('RoadHeadingControl.c' in (x.text or '') for x in g.findall('.//FilePath')) for g in tree.findall('.//Group'))
++assert all(x in app for x in ['HIDE_READY','HIDE_ALIGN','TURN_EXIT_RECOVER','RoadHeading_AxisError'])
++rules=ROOT/'Docs/修改规范与回归清单.md'
++assert '包括同一轮中的后续修改' in rules.read_text(encoding='utf-8')
++assert '包括同一轮中的后续修改' in (ROOT/'AGENTS.md').read_text(encoding='utf-8')
++
+ 
+ regression=json.loads((ROOT/'Tests/results_documents13.json').read_text())
+ assert not regression['failures'] and regression['firmware_sha256']==sha(axf)
+@@ -104,18 +123,18 @@
+ assert '#define THIEF_LASER_TRIGGER_MM 1000U' in (ROOT/'Algorithm/ThiefStrategy/ThiefStrategyConfig.h').read_text()
+ for name,value in prior_regression['helper_sha256'].items():assert sha(ROOT/'Tests'/name)==value
+ fix_diff=[]
+-fix_files=['User/App_ThiefStrategy.c','Tests/test_documents14.py','Tests/verify_snapshot.py','README.md']
++fix_files=['User/App_ThiefStrategy.c','Control/RoadHeadingControl.c','Control/RoadHeadingControl.h','MDK-ARM/'+ROOT.name+'.uvprojx','Tests/test_documents15.py','Tests/test_app_runtime.py','Tests/test_escape_completion.py','Tests/verify_snapshot.py','README.md','AGENTS.md','Docs/修改规范与回归清单.md']
+ for rel in fix_files:
+     old=before/rel;current=ROOT/rel
+     fix_diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+-        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN5/'+rel,tofile='16U_RUN6/'+rel))
+-(ROOT/'DOCUMENTS14_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
++        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN6/'+rel,tofile='16U_RUN7/'+rel))
++(ROOT/'DOCUMENTS15_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
+ old_project=OLD/'MDK-ARM'/(OLD.name+'.uvprojx')
+ assert (ROOT/(ROOT.name+'.ioc')).read_text(encoding='utf-8')==\
+     (OLD/(OLD.name+'.ioc')).read_text(encoding='utf-8').replace(OLD.name,ROOT.name), 'CubeMX settings changed'
+ diff.extend(difflib.unified_diff(old_project.read_text(encoding='utf-8').splitlines(True),
+     project.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/project.uvprojx',tofile='16U/project.uvprojx'))
+-for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py','Tests/test_documents12.py','Tests/test_documents13.py','Tests/test_speed16t.py','Tests/test_documents14.py']:
++for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py','Tests/test_documents12.py','Tests/test_documents13.py','Tests/test_speed16t.py','Tests/test_documents14.py','Tests/test_documents15.py','AGENTS.md','Docs/修改规范与回归清单.md']:
+     p=ROOT/rel;old=OLD/rel
+     diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+         p.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/'+rel,tofile='16U/'+rel))
+@@ -130,19 +149,22 @@
+  unchanged_source_count=len(equal),unchanged_hardware_core=True,project_file_count=len(paths),
+  duplicate_sources=0,compile_errors=0,compile_warnings=0,hex_sha256=sha(hexfile),
+  algorithm_checks=result['test_checks'],application_checks=app_result['checks'],
+- hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN6',
+- documents14_source_files=fix_sources,documents14_fix_files=fix_files,
++ hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN7',
++ documents15_source_files=fix_sources,documents15_fix_files=fix_files,
++ documents15_checks=regression15['checks'],documents15_cases=regression15['cases'],
++ documents15_backup=str(before),documents15_log_sha256=sha(before/'Documents15.txt'),
++ rules_sha256=sha(rules),agents_sha256=sha(ROOT/'AGENTS.md'),axf_sha256=sha(axf),
+  documents14_checks=regression14['checks'],heading_sweep_cases=regression14['heading_sweep_cases'],gray_recovery_yaw_tolerance_x100=1000,
+- documents14_log_sha256=sha(before/'Documents14.txt'),
++ documents14_log_sha256=sha(before14dir/'Documents14.txt'),
+  speed_restore_checks=speed['checks'],reference_speed_checks=reference_speed['checks'],speed_curves_match_16t=True,
+  documents13_checks=regression['checks'],documents12_checks=prior_regression['checks'],
+  brake_credit_matrix_cases=prior_regression['brake_credit_matrix_cases'],trigger_center_mm=1000,
+- documents14_backup=str(before),speed_restore_backup=str(ROOT/'Tests/before_speed16t'),escape_completion_checks=escape_result['checks'],
++ documents14_backup=str(before14dir),speed_restore_backup=str(ROOT/'Tests/before_speed16t'),escape_completion_checks=escape_result['checks'],
+  escape_completion_cases=len(escape_result['escapes']),ignored_no_road_cases=len(escape_result['ignored']),
+  interception_completion_cases=len(escape_result['interceptions']),
+  generated_evidence=['build_16U.log','Tests/results_16m.json','Tests/results_app_runtime.json',
+  'Tests/Documents10_evidence.json','Tests/results_escape_completion.json',
+- 'Tests/before_documents13/regression_before.json','Tests/results_documents12.json','Tests/results_documents13.json','DOCUMENTS13_CHANGESET.patch','Tests/results_speed16t.json','Tests/results_speed16t_reference.json','SPEED16T_CHANGESET.patch','DOCUMENTS14_CHANGESET.patch','Tests/results_documents14.json','Tests/before_documents14/regression_before.json','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
+- notes='16U RUN6 uses user-selected10deg gray-recovery tolerance;16T speeds and1000mm trigger retained in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_documents14. No hardware execution.')
++ 'Tests/before_documents13/regression_before.json','Tests/results_documents12.json','Tests/results_documents13.json','DOCUMENTS13_CHANGESET.patch','Tests/results_speed16t.json','Tests/results_speed16t_reference.json','SPEED16T_CHANGESET.patch','DOCUMENTS14_CHANGESET.patch','Tests/results_documents14.json','Tests/before_documents14/regression_before.json','DOCUMENTS15_CHANGESET.patch','Tests/results_documents15.json','Tests/before_documents15/regression_before.json','Docs/修改规范与回归清单.md','AGENTS.md','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
++ notes='16U RUN7 adds measured parking heading confirmation and pending-turn line recovery;16T speeds,10deg recovery and1000mm trigger retained in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_documents15. No hardware execution.')
+ (ROOT/'VALIDATION_16U.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+ print(json.dumps({k:v for k,v in report.items() if k!='baseline_sha256_at_verification'},indent=2,ensure_ascii=False))
+--- 16U_RUN6/README.md
++++ 16U_RUN7/README.md
+@@ -1,3 +1,36 @@
++# 16U RUN7：藏点停车纠偏、转弯出口灰度恢复
++
++当前固件 **UARTCH4_16U_RUN7**，直接修改本桌面16U工程。正常起步/转弯出口200 RPM与16T相同；1000 mm中心触发、灰度恢复±10°、五藏点与轴向保持原要求。
++
++## Documents15定位与修复
++
++N038停车日志显示 `CENTERED=1`，但YAW误差持续约13.9°。原来以入中心延时结束作为居中完成，未确认最终车身方向。本次保留与转弯前相同的平均 **100 RPM、180 ms** 入中心动作，在藏点入中心阶段加入YAW差速保持；制动后用原地纠偏将车身对齐道路。只有实际轮速停稳，且连续三个更新的YAW帧确认偏差在±2°内，才标记停车准备完成并开放藏点激光判断。±2°是停车姿态目标，灰度恢复仍是用户要求的±10°。
++
++末尾N078反向右转约51.66°就进入FOLLOW，前板无线时由于定位仍在路口阶段PHASE=2，未进入原ON_LEG地图恢复，约211 ms后报FRONT_NO_LINE。本次对已确认路口的待完成转弯增加出口恢复：先按计划转向纠正至出口航向，再用真实前后灰度寻找出口；前板连续确认后恢复正常循迹，节点/路段切换仍须原有定位检查。覆盖正反行驶、两种YAW符号和首次转弯符号尚未学习的情形。
++
++新增控制逻辑在 `Control/RoadHeadingControl.c/.h`，应用负责状态调度。纠偏前、旋转换向前均先制动并确认停稳；恢复使用既有2500 ms对齐时限，出口找线位移不超过80 mm。未删除真实I2C、定位、堵转故障处理。
++
++可观察日志：`HIDE_ALIGN`、`HIDE_READY`含航向误差和编码器入中心距离；`TURN_EXIT_RECOVER`含节点、恢复阶段、真实灰度和行驶模式。延时和里程不能独立证明物理车中心精确重合路口中心，实际安装与滑行仍需实车校准。
++
++## 验证及工程规则
++
++- 原RUN6实际AXF复现停车姿态和转弯出口两项失败；原应用、AXF、串口日志、散列和失败记录保存在 `Tests/before_documents15/`。
++- 新增Documents15回归4297项通过：41种停车场景、34种转弯恢复场景，以及控制器制动/新鲜帧/航向环绕边界。
++- 既有应用、五藏点完整逃跑路线、Documents12/13/14及16T速度对比重新运行；最终数量与固件散列以 `VALIDATION_16U.json` 为准。
++- ARMCC5全量编译 **0 Error(s), 0 Warning(s)**。Code56460、RO9672、RW544、ZI41416字节。
++
++**仅编译通过，尚未完成硬件验证。** 离线回归执行实际ARM固件，传感器和轮速来自模型，不能替代实车对齐效果、打滑及传感器覆盖验证。未自动烧录、占用串口或驱动电机。
++
++用户要求的修改规范位于 `Docs/修改规范与回归清单.md`，工程 `AGENTS.md` 已要求每次修改源码、参数或工程配置之前重新读取，包括同一轮中的后续修改。新故障必须保留修复前复现和受影响旧回归，报告须绑定本次固件。
++
++本轮修改应用、Keil工程引用、应用/路线测试与审计脚本，新增控制模块、Documents15测试、AGENTS和修改规范；详细清单见 `DOCUMENTS15_CHANGESET.patch` 与最终报告。保留所有此前增量差异。
++
++打开 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test.uvprojx`；HEX/AXF仍在其同名子目录。文件名保留原样，启动标识应为 **UARTCH4_16U_RUN7**，实际触发为1000 mm。
++
++复核顺序：全量编译，运行Tests中的test_app_runtime、test_escape_completion、test_documents12/13/14/15、test_speed16t，最后运行 `E:/Python/python.exe Tests/verify_snapshot.py`。纯算法报告365818项沿用源码散列相符的结果；新增控制模块由Documents15实际ARM用例覆盖。
++
++以下为历史版本说明，当前行为以上述RUN7为准。
++
+ # 16U RUN6：修复Documents14在线误停车
+ 
+ 本次直接修改用户指定桌面16U，固件标识 **UARTCH4_16U_RUN6**。保留16T正常速度、1000 mm中心触发和原有地图辅助灰度恢复。
+--- 16U_RUN6/AGENTS.md
++++ 16U_RUN7/AGENTS.md
+@@ -0,0 +1,15 @@
++# 本工程修改前必读
++
++本文件适用于当前 `Thief16U_UARTCh4_ImmediateRetreat700_Test` 目录及其子目录。继承上级 `AGENTS.md`，用户当次明确要求优先。
++
++每次修改源码、控制参数或Keil工程配置前，包括同一轮中的后续修改，都必须先重新读取 `Docs/修改规范与回归清单.md` 和当前 `README.md`，核对实际源码、固件标识和最近串口日志。禁止把历史版本说明当作当前实现。
++
++必须遵守：
++
++- 未获用户要求，不改变16T已确认满意的正常速度与转弯参数，不用全面降速替代灰度问题修复。
++- 1000 mm中心触发、灰度恢复±10°、五藏点与轴向、100 RPM/180 ms入中心动作按规范执行；任何改变必须说明依据，不能悄悄改参数。
++- 新故障先增加针对性用例，保留修改前失败证据，再修代码。不得删旧断言或放宽阈值来掩盖问题；用户明确改变要求时，说明测试预期随之改变的理由。
++- 变更可能影响的旧回归必须通过，测试输出绑定本次AXF与源码散列。新的源码不能配旧的通过结果。
++- 灰度恢复和停车测试必须覆盖实际出现的偏航、无线、反向行驶、停稳与新鲜YAW帧；禁止只测试居中、零角度、传感器恒定有效。
++- 硬件接口被模拟的测试只能证明软件状态/目标输出。未进行实车验证时必须写：`仅编译通过，尚未完成硬件验证`。
++- 修改后更新约束清单中的当前版本/验收状态、README、增量差异和验证报告；列出所有改动文件和未验证事项。保留当前基线，禁止自动烧录、驱动电机、占用串口、提交或推送。
+--- 16U_RUN6/Docs/修改规范与回归清单.md
++++ 16U_RUN7/Docs/修改规范与回归清单.md
+@@ -0,0 +1,60 @@
++# 修改规范与回归清单
++
++用户要求：每次改代码不能重蹈覆辙。此文件是当前工程持续维护的工作约束，配合本目录 `AGENTS.md` 执行。用户后续明确调整某项要求时，以最新要求为准，并同步修改此文件及测试预期。
++
++## 固定要求与参考依据
++
++| 项目 | 要求 | 验证依据 |
++|---|---|---|
++| 正常速度 | 对齐16T，不通过全面降速修灰度误停 | `Tests/test_speed16t.py`，与实际16T AXF比较正向/反向/转弯出口目标曲线 |
++| 正常起步与转弯后种子 | 200 RPM；保留原巡航与灰度增益 | 16T源参数及速度比较 |
++| 激光触发 | 1000 mm中心距离；原始有效上限1000 mm及安装换算分别记录 | `Tests/test_16m.c` 边界与独立几何判定 |
++| 灰度恢复航向范围 | 用户指定±10°，不是任意收窄的5° | Documents14回放、±10°边界测试 |
++| 藏点 | N011/N038/N035横向；N026/N063纵向 | 全藏点、两种停车朝向、正反到达测试 |
++| 入中心动作 | 与转弯前相同的平均100 RPM、180 ms；刹车位移补偿单独核对 | 原参数、编码器增量和动作时序 |
++| 真正停车姿态 | 延时结束不等于方向已正确；停稳、真实新鲜YAW连续确认后才标记停车准备完成 | Documents15新增回归 |
++| 硬件/构建 | 原引脚、时钟、CubeMX、ARMCC5、ST-Link配置 | 工程引用检查、全量编译0错误0警告 |
++
++200 RPM是起步种子而非所有时刻的恒定巡航目标。1000 mm中心距离与原始距离不同；前×0.9、侧+100 mm、后+150 mm的既有换算不可混淆。既有异常找线控制器的50 RPM只用于数据异常阶段，不能扩展为正常行驶限速。
++
++## 已发生故障必须保留的回归
++
++| 故障 | 必须验证的实际条件 | 用例/证据 |
++|---|---|---|
++| 一次NO_LINE导致起步锁死 | 已确认节点、前板一次无线、后续读数恢复 | 既有应用重启/找线回归 |
++| 回撤后原点/方向错误 | 零位移取消和部分路段回撤分开；保留真实到达帧 | Documents7/9、原应用回归 |
++| 重规划丢支路或只看到另一侧 | 节点已确认，所选出口存在，灰度只看到另一侧 | Documents5/11，支路缓存和根节点转弯回归 |
++| 藏点单帧激光误触发 | 380/C60夹在C0无效帧之间，静止确认必须中断 | Documents12回归 |
++| 起步反复拦截同一个侧/后方目标 | MM=0、多次同方向回波、新前方目标仍抢占 | Documents12回归 |
++| 刚转完又误判下一路口 | N022→N011仅43 mm，未达有效到达窗口 | Documents12回归 |
++| 直行经过每个路口都重复减速 | 连续两段直线路径比较目标速度 | Documents13回归 |
++| 停车时已重新读到线却因偏航锁死 | RAW010/E00，4.66°→6.51°；涵盖正反与YAW符号 | Documents14回放与44组合 |
++| 藏点车身偏13.9°仍宣布已居中 | 同一100 RPM/180 ms动作；带偏航入中心、实际停稳、角度纠正、新鲜帧确认 | Documents15停车回归 |
++| 转弯未确认就走200 ms无线停车分支 | N078反向行驶、右转约51.66°后NO_LINE、定位PHASE=2 | Documents15转弯出口回归 |
++
++Documents15对应RUN7实现已完成，4297项针对性离线检查通过，包含41种停车与34种转弯恢复场景；ARMCC5编译0错误0警告。完整旧回归与散列绑定见VALIDATION_16U.json。仅编译通过，尚未完成硬件验证，不能把离线结果写成实车通过。
++
++每次修改工程文件前必须重新读取本规范，包括同一轮中的后续修改，不能只在对话开始时读一次。
++
++## 每次修改的执行顺序
++
++1. 确认准确工程路径、读取本规范与README、检查Git状态（无Git元数据就如实记录）、核对当前FW标识和源码。备份将修改的文件、原AXF、原日志及源文件散列。
++2. 从日志确定触发状态、时刻、原始灰度、YAW、里程及最后故障。区分缓冲回放与当前动作，不能把故障后输出的旧TW记录当作仍在驱动。
++3. 为新问题先写最小复现用例，验证原版确实在该断言失败。保存失败记录与复现脚本，不能把无效路线、错误长度或测试装置错误算成原固件缺陷。
++4. 只修相关状态机/控制模块。控制算法放Control/Algorithm，应用只调度，main.c和底层硬件不扩散业务。不得用删除全部故障处理、伪造灰度、伪造节点位置来使测试通过。
++5. ARMCC5全量编译，并运行新用例及受影响旧回归。模拟车辆模型必须对新增旋转/制动命令作出相应输入反馈；模型也不能直接把目标姿态强行写成已确认状态。
++6. 核对每份结果的AXF、源码、测试脚本及依赖脚本SHA-256；改变固件后旧的应用结果必须重跑。纯算法未改动时可保留源码散列相符的独立算法结果。
++7. 更新README、增量差异、验证报告和本清单状态。明确区分编译、离线、实车验证；由用户决定烧录与实车运行。
++
++## 验证集合与证据范围
++
++- `Tests/test_app_runtime.py`：原应用状态机、508种转弯、停车、回撤、重规划。
++- `Tests/test_escape_completion.py`：五藏点40组合、完整路线、再次拦截；无道路方向按原规则忽略，不伪造为触发成功。
++- `Tests/test_documents12.py`：噪声触发、重复起步、距离窗口与240种刹车补偿。
++- `Tests/test_documents13.py`：速度连续、地图辅助找线、双板无线、激光抢占。
++- `Tests/test_documents14.py`：实际6.51°故障场景、±10°恢复边界与原定位检查。
++- `Tests/test_speed16t.py`：正常速度与16T目标曲线比较；未改16T时参考AXF无需重复构建。
++- `Tests/test_documents15.py`：停车纠偏、停稳确认、新鲜帧、转弯出口丢读恢复；实际结果列入当前验证报告。
++- `Tests/verify_snapshot.py`：最终文件改动、Keil引用、源文件、结果与固件一致性。
++
++离线通过不保证物理车中心已经对准路口中心。180 ms对应的实际中心位置依赖安装距离、轮径、速度和刹车滑行，应通过实车校准；未完成前不能写“精确居中已验证”。

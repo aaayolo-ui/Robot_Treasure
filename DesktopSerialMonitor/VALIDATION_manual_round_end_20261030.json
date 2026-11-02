@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-30",
+  "sha256": "c0802095c417459d8115ea0d64ea69a136410f93a2cd9108aff6634ea36e3dc9",
+  "desktop_matches": true,
+  "archive_matches": true,
+  "python_tests": 29,
+  "frontend": "pause end, resume does not restart, frozen seconds, old backend hint, no serial writes",
+  "native_exe_verification": {
+    "ok": true,
+    "checks": [
+      "start",
+      "default_disconnected",
+      "console_api",
+      "ports",
+      "disconnect",
+      "stop"
+    ]
+  },
+  "physical_key2_test": false,
+  "serial_opened_by_update": false,
+  "commands_sent_to_vehicle": 0,
+  "round_timer_version": 3,
+  "rule": "view-reset or display-pause ends and preserves time; next accepted KEY2 starts from zero",
+  "native_button_end_verified": false,
+  "native_resume_keeps_round_ended": false,
+  "backend_left_running": false,
+  "serial_left_connected": false
+}

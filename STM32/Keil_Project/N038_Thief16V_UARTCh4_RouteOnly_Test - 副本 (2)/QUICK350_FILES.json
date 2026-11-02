@@ -1,0 +1,31 @@
+{
+  "firmware": "UARTCH4_16V_GRAY_QUICK350_SL1",
+  "modified": [
+    "User/App_ThiefStrategy.c",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "added": [
+    "Tests/test_quick350.py"
+  ],
+  "hashes": {
+    "User/App_ThiefStrategy.c": "94ede450605424d6dcd5471a8c426fe372a8ec443f4d531aa3dbe82ce6f54477",
+    "README.md": "abc02e4714a3a58f73fbcb0cf85d5889ca3db56f76c1e33437f4344de344358e",
+    "AGENTS.md": "feb331790fd871d373c31969907ae260de86317f7b3372f4e8d88bd91803255a",
+    "Docs/修改规范与回归清单.md": "475b718db327f6ab4e8661b91a9fbed450e011b1490fdc8bad8f895b2cb42ba7",
+    "Tests/test_quick350.py": "398e1bd94ffc4d81aa07807dbb980e438589a612bf0a5e7a4821f2657bda9fa5"
+  },
+  "preserved_350_file_sha256": "d72df63fa9af4afe96a14a6e5c93378b26a8adcfb124855836f3be29408d86ef",
+  "axf_sha256": "00d5c375534a53cc3c924d809cdac15ed3e2cdf19b0e4207f1ef2c1571edad28",
+  "hex_sha256": "1e9eb465630ebec70dc0525f849dedec537dbc4c28b6e3bc807f1c605b6adba6",
+  "backup_files": 302,
+  "ram_bytes": 44896,
+  "tests": [
+    "results_quick350.json",
+    "results_hide_routes_stable4.json"
+  ],
+  "hardware_tested": false,
+  "flashed": false,
+  "motors_run": false
+}

@@ -1,0 +1,139 @@
+{
+  "checks": 1604,
+  "failures": [],
+  "cases": [
+    {
+      "case": "rear_only",
+      "mode": 0,
+      "rear": 16
+    },
+    {
+      "case": "rear_only",
+      "mode": 0,
+      "rear": 48
+    },
+    {
+      "case": "rear_only",
+      "mode": 0,
+      "rear": 128
+    },
+    {
+      "case": "rear_only",
+      "mode": 0,
+      "rear": 192
+    },
+    {
+      "case": "rear_only",
+      "mode": 1,
+      "rear": 16
+    },
+    {
+      "case": "rear_only",
+      "mode": 1,
+      "rear": 48
+    },
+    {
+      "case": "rear_only",
+      "mode": 1,
+      "rear": 128
+    },
+    {
+      "case": "rear_only",
+      "mode": 1,
+      "rear": 192
+    },
+    {
+      "case": "freeze_fault_pose"
+    },
+    {
+      "case": "both_white"
+    },
+    {
+      "case": "pending_pass",
+      "mode": 0
+    },
+    {
+      "case": "pending_pass",
+      "mode": 1
+    },
+    {
+      "case": "measured_brake"
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 0,
+      "raw": 7
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 0,
+      "raw": 3584
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 0,
+      "raw": 4095
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 1,
+      "raw": 7
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 1,
+      "raw": 3584
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 1,
+      "raw": 4095
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 160,
+      "side": -1,
+      "frames": 20
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 160,
+      "side": 1,
+      "frames": 20
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 220,
+      "side": -1,
+      "frames": 22
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 220,
+      "side": 1,
+      "frames": 22
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 280,
+      "side": -1,
+      "frames": 23
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 280,
+      "side": 1,
+      "frames": 23
+    },
+    {
+      "case": "unfinished_turn",
+      "mode": 0
+    },
+    {
+      "case": "unfinished_turn",
+      "mode": 1
+    }
+  ],
+  "axf_sha256": "84d1eb0745bc4d7730745c61f8e39e3ed237f773cef11375dca29fb4d6bf4d53",
+  "hardware_tested": false
+}

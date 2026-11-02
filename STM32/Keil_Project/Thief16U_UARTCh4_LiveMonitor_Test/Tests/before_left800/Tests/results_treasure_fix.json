@@ -1,0 +1,123 @@
+{
+  "checks": 2950,
+  "failures": [],
+  "cases": {
+    "text_mask_matrix": 192,
+    "side_fragments_are_not_nodes": 24,
+    "eighteen_ms_restart": 1,
+    "n007_turn_phase": 4,
+    "n038_north_runway": [
+      {
+        "frames": 616,
+        "node": 35,
+        "body": 1,
+        "fixes": [
+          39,
+          40,
+          46,
+          58,
+          59,
+          60,
+          69,
+          70,
+          61,
+          49,
+          33,
+          34,
+          35
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 616,
+        "node": 35,
+        "body": 3,
+        "fixes": [
+          39,
+          40,
+          46,
+          58,
+          59,
+          60,
+          69,
+          70,
+          61,
+          49,
+          33,
+          34,
+          35
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    ],
+    "fragment_retry_then_complete": {
+      "frames": 1408,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        7,
+        17,
+        26,
+        35,
+        36,
+        44,
+        53,
+        52,
+        63,
+        78,
+        77,
+        76,
+        75,
+        59,
+        58,
+        46,
+        40,
+        39,
+        38,
+        37,
+        20,
+        10,
+        11
+      ],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    }
+  },
+  "axf_sha256": "51aef090e1b578d7490351b21ed670ae519b5bfaa02c0e3bf39ae25f18f3a489",
+  "test_sha256": "7cad2b65cde25636e1f21601f13752a4760282a464a7240c8056afaa11f4619b",
+  "hardware_tested": false
+}

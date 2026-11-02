@@ -1,0 +1,475 @@
+--- RUN8/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ ROUTE1/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -3,6 +3,7 @@
+ #include "ThiefThreatModel.h"
+ #include "ThiefStrategyConfig.h"
+ #include "ThiefInterceptPolicy.h"
++#include <string.h>
+ 
+ #define ESCAPE_ID 1601U
+ #define INITIAL_ID 1600U
+@@ -190,23 +191,47 @@
+     uint8_t body_heading,uint8_t threat_mask,uint16_t previous_hide_node,
+     uint32_t now,ThiefRoutePlan_t *plan)
+ {
+-  uint16_t count;
+-  uint8_t mode;
+-  if(plan==NULL) return 0U;
+-  plan->valid=0U;
+-  ThiefRiskSearch_SetEmergency(0U);
+-  if(!ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
+-      0U,previous_hide_node,now,departure,&count,&mode,&decision)) {
+-    /* All exits threatened: use explicit least-bad motion rather than wait
+-     * for a clear route. Physical faults and KEY stop remain authoritative. */
+-    ThiefRiskSearch_SetEmergency(1U);
+-    if(!ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
+-        0U,previous_hide_node,now,departure,&count,&mode,&decision)) {
+-      ThiefRiskSearch_SetEmergency(0U);return 0U;
+-    }
+-    ThiefRiskSearch_SetEmergency(0U);
+-  }
+-  return BuildRoute(departure,count,mode,ESCAPE_ID,plan);
++  uint16_t count;uint8_t mode,pass,found=0U,allowed,preferred;
++  if(!plan || body_heading>3U)return 0U;
++  plan->valid=0U;allowed=current_node==11U?10U:15U;
++  if(current_node==63U && !(threat_mask&1U) && (threat_mask&8U)) {
++    static const uint16_t temporary_path[]={63U,78U};
++    /* Already north-facing: reverse-follow south without a chassis U-turn. */
++    mode=(uint8_t)(body_heading==0U);
++    if(!BuildRoute(temporary_path,2U,mode,ESCAPE_ID,plan))return 0U;
++    memset(&decision,0,sizeof(decision));
++    decision.goal_node=78U;decision.parking_heading=plan->final_body_heading;
++    decision.travel_ms=THIEF_STARTUP_MS+ThiefRiskSearch_LegTime(600U,mode,
++        (uint8_t)(body_heading%2U),0U);
++    decision.escape_exits=3U;decision.planner_kind=4U;
++    return 1U;
++  }
++  preferred=allowed;
++  if(current_node==11U) {
++    if(threat_mask&3U) {allowed=8U;preferred=allowed;}
++    else if(threat_mask&12U) {allowed=2U;preferred=allowed;}
++  } else if(current_node==38U && threat_mask) {
++    /* Vertically parked N038: either map side -> upper hide through N021;
++     * north -> east N039-N040. South retains the east escape. */
++    allowed=(uint8_t)((threat_mask&10U)?1U:2U);
++    preferred=allowed;
++  } else if(current_node==63U && (threat_mask&1U)) {
++    /* North pursuer: commit the whole south/west transfer in one plan.
++     * N078 is a turn, not the temporary-wait destination in this case. */
++    allowed=4U;preferred=allowed;
++  } else if(current_node==78U) {
++    if(threat_mask&1U)allowed=8U;       /* north -> N077-N076-N075 */
++    else if(threat_mask&8U)allowed=1U;  /* west -> N063-N052 -> upper hide */
++    preferred=allowed;
++  }
++  for(pass=0U;pass<3U && !found;pass++) {
++    ThiefRiskSearch_SetEmergency((uint8_t)(pass==2U));
++    ThiefRiskSearch_SetDepartureMask(pass==0U?preferred:allowed);
++    found=ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
++        0U,previous_hide_node,now,departure,&count,&mode,&decision);
++  }
++  ThiefRiskSearch_SetEmergency(0U);ThiefRiskSearch_SetDepartureMask(15U);
++  return found?BuildRoute(departure,count,mode,ESCAPE_ID,plan):0U;
+ }
+ 
+ void ThiefMapPlanner_PoseAtNode(uint16_t node_id, uint8_t body_heading,
+--- RUN8/Algorithm/ThiefStrategy/ThiefRiskSearch.c
++++ ROUTE1/Algorithm/ThiefStrategy/ThiefRiskSearch.c
+@@ -18,6 +18,8 @@
+ static uint32_t exposed_at[MAP_ROUTE_NODE_COUNT];
+ static uint8_t exposed[MAP_ROUTE_NODE_COUNT];
+ static uint8_t emergency;
++static uint8_t departure_mask=15U;
++void ThiefRiskSearch_SetDepartureMask(uint8_t mask){departure_mask=(uint8_t)(mask&15U);}
+ void ThiefRiskSearch_SetEmergency(uint8_t enabled) {emergency=enabled;}
+ 
+ static uint16_t State(uint16_t node,uint8_t heading,uint8_t mode)
+@@ -28,7 +30,7 @@
+ void ThiefRiskSearch_Init(void)
+ {
+   uint16_t n;
+-  emergency=0U;
++  emergency=0U;departure_mask=15U;
+   for(n=0U;n<MAP_ROUTE_NODE_COUNT;n++) {exposed[n]=0U;exposed_at[n]=0UL;}
+ }
+ void ThiefRiskSearch_MarkExposed(uint16_t node,uint32_t now)
+@@ -39,7 +41,8 @@
+ uint8_t ThiefRiskSearch_HideSafe(uint16_t node)
+ {
+   if(!node || node>MAP_ROUTE_NODE_COUNT) return 0U;
+-  return ThiefIntercept_HideAxis(node)!=0U;
++  /* N078 is an explicit temporary wait, not a sixth generic refuge. */
++  return node!=78U && ThiefIntercept_HideAxis(node)!=0U;
+ }
+ 
+ uint32_t ThiefRiskSearch_LegTime(uint16_t length,uint8_t mode,
+@@ -158,12 +161,49 @@
+       if(e->start==from) {to=e->end;out=e->heading;}
+       else if(e->end==from) {to=e->start;out=(uint8_t)((e->heading+2U)%4U);}
+       if(!to || to==blocked || to==start) continue;
++      /* N055-N056-N057 is a closed lower loop returning to the same
++       * N037-N038-N039 road. Do not enter it to evade a pursuer who can
++       * cut across the upper road. A car already inside may still exit. */
++      if(axis_only && ((from==37U && to==55U) ||
++          (from==38U && to==56U) || (from==39U && to==57U))) continue;
+       /* A committed hide transfer must not bounce immediately over its last
+        * edge. Starting in reverse remains allowed at the root. */
+       if(parent[pick]!=NO_STATE && to==StateNode(parent[pick])) continue;
+       delta=(uint8_t)((out+4U-StateHeading(pick))%4U);
+       if(map_route_nodes[from-1U].kind==0U && delta!=0U) continue;
+       if(!emergency && ThiefIntercept_EdgeBlocked(from,to,now)) continue;
++      if(pick==root && !(departure_mask&(1U<<out)))continue;
++      if(start==11U && parent[pick]==root && from==12U && out!=1U)continue;
++      /* N011 north/east pursuer: west, south past N037, then east via N040.
++       * Preserve every real junction; select an eastern hide after that. */
++      if(start==11U && (threat_mask&3U) &&
++          ((from==10U && to!=20U) || (from==20U && to!=37U) ||
++           (from==37U && to!=38U) || (from==38U && to!=39U) ||
++           (from==39U && to!=40U)))continue;
++      /* South/west pursuer: N011-N012-N013-N003, then the upper east road. */
++      if(start==11U && !(threat_mask&3U) && (threat_mask&12U) &&
++          ((from==12U && to!=13U) || (from==13U && to!=3U) ||
++           (from==3U && to!=4U) || (from==4U && to!=5U) ||
++           (from==5U && to!=6U) || (from==6U && to!=7U)))continue;
++      if(start==38U && parent[pick]==root && from==39U && out!=1U)continue;
++      /* N038 side pursuer: keep the requested upper/right corridor complete.
++       * N011 is a waypoint, not the destination of this transfer. */
++      if(start==38U && (threat_mask&10U) &&
++          ((from==21U && to!=22U) || (from==22U && to!=11U) ||
++           (from==11U && to!=2U) || (from==2U && to!=3U) ||
++           (from==3U && to!=4U) || (from==4U && to!=5U) ||
++           (from==5U && to!=6U) || (from==6U && to!=7U)))continue;
++      /* Depart the temporary wait on the requested corridor. North enemy:
++       * cross N077-N076-N075 before choosing the remaining route. West
++       * enemy: pass N063 northward, rather than stop/turn back there. */
++      if(start==78U && (threat_mask&1U) &&
++          (from==77U || from==76U) && out!=3U)continue;
++      /* N063 north threat: N063-N078-N077-N076-N075 without waiting.
++       * Remaining route and western hide are selected by the same search. */
++      if(start==63U && (threat_mask&1U) &&
++          (from==78U || from==77U || from==76U) && out!=3U)continue;
++      if(start==78U && !(threat_mask&1U) && (threat_mask&8U) &&
++          from==63U && out!=0U)continue;
+       if(pick==root && !emergency && (threat_mask&(1U<<out))) continue;
+       next_mode=(uint8_t)((pick&1U)^((delta==2U)?1U:0U));
+       turn=(delta==1U || delta==3U)?1U:0U;
+@@ -217,6 +257,13 @@
+     if(cost[i]==THIEF_COST_INF || node==start ||
+        !ThiefRiskSearch_HideSafe(node) || !(ThiefIntercept_HideAxis(node)&(1U<<h)) ||
+        !HasHeading(node,h)) continue;
++    if(start==63U && (threat_mask&1U) && node!=11U && node!=38U)continue;
++    if(start==78U && !(threat_mask&1U) && (threat_mask&8U) &&
++        map_route_nodes[node-1U].y_half>=map_route_nodes[62U].y_half)continue;
++    if(start==38U && (threat_mask&10U) &&
++        node!=26U && node!=35U && node!=63U)continue;
++    if(start==11U && threat_mask &&
++        node!=26U && node!=35U && node!=63U)continue;
+     if(!axis_only && THIEF_INITIAL_HIDE_NODE && node!=THIEF_INITIAL_HIDE_NODE) continue;
+     cooling=(uint8_t)(node==previous || (exposed[node-1U] &&
+         (uint32_t)(now-exposed_at[node-1U])<THIEF_HIDE_COOLDOWN_MS));
+--- RUN8/Algorithm/ThiefStrategy/ThiefRiskSearch.h
++++ ROUTE1/Algorithm/ThiefStrategy/ThiefRiskSearch.h
+@@ -24,6 +24,7 @@
+   uint16_t risk_band_ms,recovery_runway_ms;
+ } ThiefDecision_t;
+ void ThiefRiskSearch_Init(void);
++void ThiefRiskSearch_SetDepartureMask(uint8_t mask);
+ void ThiefRiskSearch_SetEmergency(uint8_t enabled);
+ void ThiefRiskSearch_MarkExposed(uint16_t node,uint32_t now);
+ uint8_t ThiefRiskSearch_Select(uint16_t start,uint8_t heading,uint8_t mode,
+--- RUN8/Algorithm/ThiefStrategy/ThiefInterceptPolicy.c
++++ ROUTE1/Algorithm/ThiefStrategy/ThiefInterceptPolicy.c
+@@ -7,22 +7,18 @@
+ static uint8_t write_index;
+ uint8_t ThiefIntercept_HideAxis(uint16_t node)
+ {
+-  if(node==11U || node==38U || node==35U) return 0x0AU;
+-  if(node==26U || node==63U) return 0x05U;
++  if(node==11U || node==35U) return 0x0AU;
++  if(node==26U || node==38U || node==63U || node==78U) return 0x05U;
+   return 0U;
+ }
+ uint8_t ThiefIntercept_ShouldReverse(uint8_t travel,uint8_t mask,
+     const uint16_t clearance[4],uint8_t cooldown)
+ {
+-  uint8_t back;
+-  (void)clearance;
+-  if(travel>3U || !mask || cooldown) return 0U;
+-  back=(uint8_t)((travel+2U)%4U);
+-  /* Rear-only detection means continue away, not reverse into the pursuer.
+-   * Any front or side threat reverses immediately; route selection happens
+-   * only after the car has returned to a confirmed node. */
+-  if(!(mask & (uint8_t)~(1U<<back))) return 0U;
+-  return 1U;
++  (void)clearance;(void)cooldown;
++  /* A single pursuer on a parallel/side road is not blocking this leg.
++   * Reverse only for a hit ahead of TRAVEL, including when driving backwards.
++   * A cooldown must not authorize driving into a newly blocked forward road. */
++  return (uint8_t)(travel<4U && (mask&(1U<<travel))!=0U);
+ }
+ void ThiefIntercept_Reset(void) {memset(blocks,0,sizeof(blocks));write_index=0U;}
+ void ThiefIntercept_BlockLeg(uint16_t from,uint16_t to,uint32_t now)
+--- RUN8/User/App_ThiefStrategy.c
++++ ROUTE1/User/App_ThiefStrategy.c
+@@ -133,6 +133,7 @@
+ static uint8_t route_active;
+ static uint8_t map_gray_active,map_gray_braked;
+ static uint8_t hide_alignment_pending,hide_drive_enabled,hide_escape_mask;
++static uint8_t n011_first_mask,n011_escape_locked;
+ static int32_t hide_approach_counts,hide_approach_mm;
+ static uint32_t hide_align_tick,hide_log_tick;
+ static RoadHeadingControl_t hide_heading;
+@@ -189,7 +190,6 @@
+ static uint8_t node_stop_counts_valid;
+ static uint32_t node_approach_ms=ROUTE_TURN_APPROACH_DELAY_MS;
+ static uint32_t departure_approach_ms;
+-static uint16_t departure_known_clearance[4];
+ static uint8_t departure_branch_headings;
+ static uint8_t departure_reacquire;
+ static uint8_t restart_search_active;
+@@ -201,8 +201,6 @@
+ static uint8_t replan_after_leg;
+ static uint8_t retreat_active;
+ static uint8_t intercept_pending;
+-static uint8_t intercept_has_reversed;
+-static uint32_t intercept_reverse_tick;
+ static uint32_t intercept_reversals,intercept_continues;
+ static int32_t Route_LegProgress(void)
+ {
+@@ -345,6 +343,7 @@
+   uint8_t i=(uint8_t)direction;
+   uint8_t allow;
+   if(i>=LASER_COUNT) return;
++  if(n011_escape_locked) return;
+   /* Outward rays cannot provide positive threats OR negative clear-road
+    * evidence. Drop them before any model/gate processing. */
+   if(!MapLaserMask_FrameAllowed(thief_laser_active_mask,i,tick,
+@@ -388,6 +387,13 @@
+       if(!FrontLaserGate_HideConfirmed(&thief_laser[i])) {
+         thief_laser[i].status=FRONT_LASER_UNSTABLE;return;
+       }
++      if(thief_current_node==11U) {
++        if(n011_first_mask)return;
++        n011_first_mask=(uint8_t)(1U<<sensor_pose.body_heading);
++        thief_trigger_direction=i;ThiefThreatModel_Init();
++        UartDebug_Printf("N011_FIRST MASK=%u DIR=%s D=%u\r\n",
++            (unsigned)n011_first_mask,laser_name[i],(unsigned)distance);
++      }
+       ThiefMapPlanner_ObserveThreat(thief_pose.node_id,sensor_pose.body_heading,
+           thief_laser[i].hit_x_mm,thief_laser[i].hit_y_mm,tick);
+       thief_escape_requested=1U;
+@@ -404,6 +410,7 @@
+ {
+   uint8_t i,mask=0U;
+   uint16_t nearest=0xFFFFU;
++  if(thief_current_node==11U && n011_first_mask)return n011_first_mask;
+   for(i=0U;i<LASER_COUNT;i++) {
+     if(!(thief_laser_active_mask&(1U<<i))) continue;
+     if(!thief_laser_seen[i] || (uint32_t)(now-thief_last_laser_tick[i])>250U) {
+@@ -431,6 +438,7 @@
+   status=FrontLaserGate_StatusText(thief_laser[i].status);
+   usable=(uint8_t)((thief_laser_active_mask&(1U<<i))!=0U);
+   if(!LaserRx_IsEnabled()) status=thief_treasure_passed ? "RX_OFF" : "WAIT_TREASURE";
++  else if(n011_escape_locked) status="PLAN_LOCK";
+   else if(!usable) status=thief_pose.valid ? "EDGE_OFF" : "POSE_OFF";
+   else if(!thief_laser_seen[i] || (uint32_t)(now-thief_last_laser_tick[i])>250U) status="NO_DATA";
+   LaserRx_Counters((LaserDirection_t)i,&bad,&dropped,&errors);
+@@ -588,6 +596,7 @@
+   uint32_t now;
+   uint32_t last_yaw_tick;
+ 
++  n011_first_mask=0U;n011_escape_locked=0U;
+   TreasureWheelLog_Event(TREASURE_WHEEL_BEFORE_FAULT,SystemTime_GetMs(),(uint8_t)fault_from);
+   /* Every abnormal running exit actively brakes. FOLLOW/LEAVE faults used to
+    * disable STBY and coast, so a missed junction classification could slide
+@@ -1393,6 +1402,11 @@
+ 
+ static void Route_FinishNodeStop(uint32_t now,uint16_t node,uint8_t body,uint8_t centered)
+ {
++  n011_first_mask=0U;
++  if(n011_escape_locked && node==thief_plan.goal_node) {
++    n011_escape_locked=0U;ThiefThreatModel_Init();
++    UartDebug_Printf("N011_PLAN_UNLOCK AT=N%03u\r\n",(unsigned)node);
++  }
+   hide_alignment_pending=(uint8_t)(route_state==ROUTE_STATE_HIDE_APPROACH && centered);
+   if(hide_alignment_pending) {
+     hide_approach_mm=MapRoutePosition_DistanceMm(hide_approach_counts);
+@@ -1411,6 +1425,11 @@
+   thief_strategy_state=THIEF_STRATEGY_SETTLING;
+   route_state_tick=now;last_control_tick=now;turn_stop_stable_count=0U;
+   thief_escape_requested=0U;hide_escape_mask=0U;
++  if(node==78U && thief_plan.goal_node==78U) {
++    replan_after_leg=0U;intercept_pending=0U;
++    ThiefThreatModel_Init();
++    UartDebug_SendString("TEMP_HIDE N=78 AXIS=NS WAIT=FRESH_THREAT\r\n");
++  }
+   thief_laser_pose_since=now;
+   Thief_ResetLaserEvidence();
+   ThiefMapPlanner_PoseAtNode(thief_current_node,thief_body_heading,&thief_pose);
+@@ -1661,49 +1680,52 @@
+  * before braking. Return to a real gray-confirmed junction before replanning. */
+ static void Thief_InterceptReact(uint32_t now)
+ {
+-  uint8_t mask,i;
+-  uint16_t clearance[4]={0U,0U,0U,0U};
++  uint8_t mask;
+   const MapRouteStep_t *s=MapRouteNavigator_Current(&map_nav);
+   if(!intercept_pending || !route_active || !thief_pose.valid || !s ||
+       departure_turn || map_nav.arrived || thief_localization.phase!=THIEF_LOC_ON_LEG ||
+       route_state==ROUTE_STATE_INTERCEPT_STOP) return;
+   /* Do not override a gray/IMU recovery brake with an obstacle maneuver. */
+   if(route_state!=ROUTE_STATE_FOLLOW && route_state!=ROUTE_STATE_LEAVE_START &&
+-      !(route_state==ROUTE_STATE_FRONT_RECOVERY && map_gray_active)) return;
++      route_state!=ROUTE_STATE_FRONT_RECOVERY) return;
+   mask=Thief_ThreatMask(now);
+   intercept_pending=0U;
+   if(!mask) return;
+-  for(i=0U;i<LASER_COUNT;i++) if(thief_laser[i].status==FRONT_LASER_OPPONENT &&
+-      thief_laser_seen[i] && (uint32_t)(now-thief_last_laser_tick[i])<=250UL)
+-    clearance[(thief_pose.body_heading+laser_heading_offset[i])%4U]=
+-        FrontLaserGate_CenterDistanceMm(thief_laser[i].distance_mm,i);
+-  /* The planner already chose an exit around these side/rear hits. Do not
+-   * cancel that same departure at zero displacement. A new direction or a
+-   * substantially closer hit remains an immediate interception. */
+-  if(map_nav.step==0U && !retreat_active && Route_LegProgress()<100L &&
+-      (uint32_t)(now-run_start_tick)<500U) {
+-    for(i=0U;i<4U;i++) if(i!=s->heading && departure_known_clearance[i] &&
+-        (int32_t)clearance[i]+100L>=departure_known_clearance[i]) mask&=(uint8_t)~(1U<<i);
+-  }
+-  /* A target only behind the travel direction is being left behind. Keep the
+-   * chosen refuge route rather than braking again at every junction. */
+-  if(!mask || !(mask&(uint8_t)~(1U<<((s->heading+2U)%4U)))) return;
+-  replan_after_leg=1U;
+-  if(ThiefIntercept_ShouldReverse(s->heading,mask,clearance,
+-      (uint8_t)(intercept_has_reversed &&
+-       (uint32_t)(now-intercept_reverse_tick)<THIEF_INTERCEPT_COOLDOWN_MS))) {
++  if(ThiefIntercept_ShouldReverse(s->heading,mask,0,0U)) {
++    replan_after_leg=1U;
+     Route_BrakeControl();map_gray_active=0U;
+     intercept_reversals++;
+     ThiefIntercept_BlockLeg(s->from_node,s->to_node,now);
+     route_state=ROUTE_STATE_INTERCEPT_STOP;route_state_tick=now;
+     turn_stop_stable_count=0U;last_control_tick=now;
+-  } else {
+-    intercept_continues++;
+-    /* A new front/side hit during reversal cooldown is handled at the next
+-     * confirmed node; rear-only pursuit returned above without truncation. */
+-    thief_plan.steps[map_nav.step].action=MAP_ACTION_STOP;
+-    thief_plan.route.count=(uint16_t)(map_nav.step+1U);
+-    thief_localization.step.action=MAP_ACTION_STOP;
++  } else if(!retreat_active && !replan_after_leg &&
++      map_nav.step+1U<map_nav.route->count) {
++    const MapRouteStep_t *next=&map_nav.steps[map_nav.step+1U];
++    const MapRouteNode_t *a=ThiefMapPlanner_Node(next->from_node);
++    const MapRouteNode_t *b=ThiefMapPlanner_Node(next->to_node);
++    uint8_t i;
++    /* Compare the hit POINT with the next real road, not only compass bits.
++     * Parallel roads 600mm apart must not cancel one another's safe turns. */
++    for(i=0U;i<LASER_COUNT;i++) if(thief_laser_seen[i] &&
++        thief_laser[i].status==FRONT_LASER_OPPONENT &&
++        (uint32_t)(now-thief_last_laser_tick[i])<=250U) {
++      int32_t x=thief_laser[i].hit_x_mm,y=thief_laser[i].hit_y_mm;
++      int32_t ax=a->x_half*150L,ay=a->y_half*150L;
++      int32_t bx=b->x_half*150L,by=b->y_half*150L;
++      int32_t px=x,py=y,dx,dy;
++      if(px<(ax<bx?ax:bx))px=ax<bx?ax:bx;
++      if(px>(ax>bx?ax:bx))px=ax>bx?ax:bx;
++      if(py<(ay<by?ay:by))py=ay<by?ay:by;
++      if(py>(ay>by?ay:by))py=ay>by?ay:by;
++      dx=x-px;dy=y-py;
++      if(dx*dx+dy*dy>(int32_t)(THIEF_CONTACT_MM*THIEF_CONTACT_MM))continue;
++      replan_after_leg=1U;
++      intercept_continues++;
++      thief_plan.steps[map_nav.step].action=MAP_ACTION_STOP;
++      thief_plan.route.count=(uint16_t)(map_nav.step+1U);
++      thief_localization.step.action=MAP_ACTION_STOP;
++      break;
++    }
+   }
+ }
+ 
+@@ -1769,8 +1791,7 @@
+   map_progress_offset_mm=(int32_t)back.length_mm-progress;
+   thief_body_heading=thief_localization.body_heading;
+   thief_laser_pose_since=now;Thief_ResetLaserEvidence();
+-  intercept_pending=0U;retreat_active=1U;intercept_has_reversed=1U;
+-  intercept_reverse_tick=now;
++  intercept_pending=0U;retreat_active=1U;
+   junction_armed=0U;junction_latched=0U;front_was_valid=0U;rearm_valid_count=0U;
+   rear_valid_count=0U;follow_mode=ROUTE_FOLLOW_FRONT_ONLY;
+   route_state_tick=now;last_front_watch_tick=now;
+@@ -1796,12 +1817,10 @@
+   TravelFrame_SetReverse(0U);
+   reverse_pending = 0U;
+   map_progress_offset_mm=0L;departure_turn=0U;replan_after_leg=0U;
+-  retreat_active=0U;intercept_pending=0U;intercept_has_reversed=0U;
++  retreat_active=0U;intercept_pending=0U;
+   node_centered=0U;departure_centered=0U;branch_node=0U;branch_headings=0U;
+   departure_branch_headings=0U;node_stop_counts_valid=0U;
+   node_approach_ms=ROUTE_TURN_APPROACH_DELAY_MS;
+-  departure_known_clearance[0]=0U;departure_known_clearance[1]=0U;
+-  departure_known_clearance[2]=0U;departure_known_clearance[3]=0U;
+   MapTimingLog_Init();
+   TreasureWheelLog_Init();
+   TreasureMotorSnapshot_Init();
+@@ -1843,7 +1862,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN8 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_ROUTE1_RUN8 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1856,6 +1875,7 @@
+   thief_current_node = THIEF_START_NODE;
+   thief_previous_hide_node = 0U;
+   thief_body_heading = THIEF_START_BODY_HEADING;
++  n011_first_mask=0U;n011_escape_locked=0U;
+   thief_escape_requested = 0U;
+   thief_strategy_state = THIEF_STRATEGY_READY;
+   ThiefMapPlanner_PoseAtNode(thief_current_node, thief_body_heading,
+@@ -1866,7 +1886,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN8 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_ROUTE1_RUN8 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1915,7 +1935,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_RUN8 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_ROUTE1_RUN8 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2065,6 +2085,7 @@
+     uint16_t old_hide = thief_current_node;
+     uint32_t planning_started = SystemTime_GetMs();
+     uint8_t threat_mask = (uint8_t)(Thief_ThreatMask(now)|hide_escape_mask);
++    if(thief_current_node==11U && n011_first_mask)threat_mask=n011_first_mask;
+     UartDebug_Printf("INTERCEPT_REPLAN NODE=N%03u RETREAT=%u REVERSALS=%lu CONTINUES=%lu\r\n",
+         (unsigned)thief_current_node,(unsigned)replan_after_leg,
+         (unsigned long)intercept_reversals,(unsigned long)intercept_continues);
+@@ -2080,13 +2101,10 @@
+           (unsigned)thief_current_node, (unsigned)thief_body_heading);
+       goto task_end;
+     }
+-    {
+-      uint8_t i;
+-      for(i=0U;i<4U;i++) departure_known_clearance[i]=0U;
+-      for(i=0U;i<LASER_COUNT;i++) if(thief_laser[i].status==FRONT_LASER_OPPONENT &&
+-          thief_laser_seen[i] && (uint32_t)(now-thief_last_laser_tick[i])<=250U)
+-        departure_known_clearance[(thief_body_heading+laser_heading_offset[i])%4U]=
+-            FrontLaserGate_CenterDistanceMm(thief_laser[i].distance_mm,i);
++    if(old_hide==11U && n011_first_mask) {
++      n011_escape_locked=1U;
++      UartDebug_Printf("N011_PLAN_LOCK MASK=%u GOAL=N%03u\r\n",
++          (unsigned)n011_first_mask,(unsigned)thief_plan.goal_node);
+     }
+     thief_previous_hide_node = old_hide;
+     if ((uint32_t)(SystemTime_GetMs()-planning_started)>THIEF_PLAN_BUDGET_MS) {

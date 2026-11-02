@@ -1,0 +1,76 @@
+{
+  "firmware": "UARTCH4_16U_POLICE_COMPARE1",
+  "base": "MONITOR12",
+  "base_axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "axf_sha256": "fca4b748756b903c7bf04355cc84055f5278b2ae3681ee459ffc8a547c736c2d",
+  "hex_sha256": "c51093344076d0a7f9384b53dc9c4daa7cade8dcac0789ec7be74a5f2e88eaa7",
+  "build_errors": 0,
+  "build_warnings": 0,
+  "main_source_and_axf_unchanged": true,
+  "changed_production_files": [
+    "User/App_ThiefStrategy.c"
+  ],
+  "project_file_references": 107,
+  "tests": [
+    {
+      "test": "police_compare",
+      "checks": 6374,
+      "report_sha256": "4c0f65038054e930e36db64cdac939c03e2ba3229acddeb1f7a770b10e186e8f"
+    },
+    {
+      "test": "live_monitor",
+      "checks": 21,
+      "report_sha256": "25b55b3c2e87326d4b88e4471d7d9c4622c2718faf306d225a0a59691ffb29ad"
+    },
+    {
+      "test": "turn_resume",
+      "checks": null,
+      "report_sha256": "9fbc500800e157a21c59abf1de3a547451a35646a7852390792716fd7627abca"
+    },
+    {
+      "test": "escape_completion",
+      "checks": 28768,
+      "report_sha256": "126672558fd402ba224c2d396c08634abf40e68a06b749c224eb348e4f3dd76c"
+    },
+    {
+      "test": "treasure_fix",
+      "checks": 2950,
+      "report_sha256": "66fff29575f2b8e7242823dc712c737e604c627af9b62fdbb727c48d4c930d2e"
+    },
+    {
+      "test": "left800",
+      "checks": 442,
+      "report_sha256": "c1e792c41acb2f4534ab28959d9c3734207d333bed6e6be5bcc6740b31d67ea6"
+    },
+    {
+      "test": "speed_compare",
+      "checks": 47,
+      "report_sha256": "14fe26f9269b5ebab031709739cb903849fdcc20be814d3bad4d07aedb9403e6"
+    }
+  ],
+  "pure_algorithm_checks": 366155,
+  "pure_algorithm_cases": 378,
+  "baseline_expected_differences": 3,
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "files": {
+    "User/App_ThiefStrategy.c": "e85ceba0162ef1cd4f1b7294ede79da673e9f3b8e5126bed1d2ef503efb6f7ec",
+    "README.md": "419fa15569ec23d4ac00c828cd8c3856558bcb277fd74a38e78a294067e592b8",
+    "AGENTS.md": "12e1d53e0cc3cefc6b53e955b900a2e7bef584637f981e21b79425edb4202292",
+    "Docs/修改规范与回归清单.md": "da762514af1dd0b8495caa0b5994332894b3aecbab2dfc7d22085ab2abc8cedb",
+    "MDK-ARM/Thief16U_PoliceTurnCompare_Test.uvprojx": "bc45f4cd3179840b34085d98e54e16336991c692b5a04a31a70098e031859382",
+    "MDK-ARM/Thief16U_PoliceTurnCompare_Test.uvoptx": "d408435a5f5453fb11d9961a53220f17122d1f7b4785a8d03155a7fe44d233db",
+    "Tests/test_police_compare.py": "0c999d7f2c45a2b84ae541716cdae98ef91471ec5edcd5b9acb57dc87e8e419f",
+    "Tests/test_speed_compare.py": "b489874bb8418c4d40f6bc569da801343d9bcfeb1df6b4cf5a70613fbed89f5b",
+    "Tests/validate_compare.py": "032ec1d5126d5d97fa6fe182acf8b8b7de606cf348873a657d970a469685d99e",
+    "POLICE_COMPARE_CHANGESET.patch": "5e3c13c601e85e5f39b38763b4434a0ea969c1e30a73cb6bf4095a0ca9d7b449",
+    "build_compare1.log": "d36c1574cd1b973fc8d9dd016bab2e9c11dcca65faea93e872ea62c7c1d19023"
+  },
+  "inherited_reports_are_not_current": true,
+  "limitations": [
+    "Synthetic sensor inputs do not prove physical alignment, line acquisition or localization.",
+    "Treasure gray mask remains MONITOR12; police narrower mask is not transplanted.",
+    "Old map-axis handoff assertions describe MONITOR12, not the chosen comparison behavior."
+  ]
+}

@@ -1,0 +1,1021 @@
+--- MONITOR12/User/App_ThiefStrategy.c
++++ MONITOR13/User/App_ThiefStrategy.c
+@@ -1,4 +1,5 @@
+ #include "App_ThiefStrategy.h"
++#include <string.h>
+ #include "Chassis.h"
+ #include "ChassisSpeedControl.h"
+ #include "gray_coordinate.h"
+@@ -47,7 +48,7 @@
+ #define ROUTE_TURN_STOP_STABLE_SAMPLES        2U
+ #define ROUTE_TURN_GYRO_WAIT_MS             500U
+ #define ROUTE_TURN_TIMEOUT_MS              4000U
+-#define ROUTE_TURN_TARGET_ANGLE_X100       7500L /* Unknown gyro sign:75deg coarse turn, then measured brake/gray. */
++#define ROUTE_TURN_TARGET_ANGLE_X100       4500L /* Police flow: coarse rotation, then real line acquisition. */
+ #define ROUTE_JY61P_STALE_MS                150U /* No fresh angle during turn: stop safely. */
+ #define ROUTE_JUNCTION_WATCH_PERIOD_MS        5U /* PID period is in LineFollowPID.h. */
+ #define MAP_ROUTE_PASS_TIMEOUT_MS         1800U
+@@ -139,8 +140,7 @@
+ static uint32_t hide_align_tick,hide_log_tick;
+ static RoadHeadingControl_t hide_heading;
+ static uint8_t turn_exit_active,turn_exit_line_phase,turn_exit_drive_enabled,turn_exit_trim_started;
+-static uint8_t turn_exit_boost,turn_exit_return_used,turn_exit_return_driving;
+-static int8_t turn_exit_return_sign;
++static uint8_t turn_exit_boost;
+ static uint32_t turn_exit_tick,turn_exit_log_tick;
+ static int16_t turn_exit_best_error;
+ static int32_t turn_exit_line_counts;
+@@ -151,6 +151,14 @@
+ static uint8_t map_gray_missing_active;
+ static RestartLineSearch map_gray_search;
+ static ThiefLocCandidates route_identity;
++static ThiefTopoBelief local_belief;
++static uint8_t local_phase,local_heading,local_ports,local_turn,local_frames,local_armed;
++static uint16_t local_branch_raw,local_fix;
++static uint32_t local_tick,local_center_ms,local_log_tick,local_branch_tick;
++static int32_t local_counts,local_branch_counts;
++static int16_t local_turn_yaw;
++static uint8_t local_event,local_avoid,local_exit_frames,local_dead;
++static uint8_t local_reverse_pending,local_reseed;
+ static uint8_t route_identity_phase;
+ static uint16_t route_identity_node;
+ static int32_t route_identity_counts;
+@@ -213,8 +221,6 @@
+ static int16_t last_leading_error;
+ static uint8_t last_leading_mode;
+ static uint32_t restart_log_tick;
+-static uint8_t turn_axis_active;
+-static RoadHeadingControl_t turn_axis_heading;
+ static uint32_t yaw_reference_since,yaw_reference_last,yaw_reference_apply;
+ static int32_t yaw_reference_mm;
+ static int16_t yaw_reference_sample;
+@@ -264,6 +270,8 @@
+                                  RouteGraySample_t *sample);
+ static uint8_t Route_IsJunctionCandidate(RouteGrayState_t state);
+ static uint8_t Route_RunFollow(RouteGraySample_t *sample,uint32_t elapsed_ms);
++static uint8_t Route_BeginLocal(uint32_t now,uint16_t raw,uint8_t no_straight);
++static void Route_LocalTask(uint32_t now,uint32_t dt);
+ static void Route_UpdateJunctionArm(RouteGrayState_t state);
+ static uint8_t Route_TurnExitContext(int16_t *error,ThiefLocYaw_t *yaw);
+ static void Route_TurnExitRecover(uint32_t now,uint32_t elapsed_ms,RouteGraySample_t *sample);
+@@ -292,6 +300,7 @@
+ 
+ static void Thief_UpdatePose(void)
+ {
++  if(local_phase) {thief_pose.valid=0U;return;}
+   if (thief_localization.initialized && thief_strategy_state!=THIEF_STRATEGY_FAULT) {
+     ThiefLocYaw_t yaw;
+     Thief_LocalYaw(&yaw);
+@@ -385,6 +394,34 @@
+   uint8_t i=(uint8_t)direction;
+   uint8_t allow;
+   if(i>=LASER_COUNT || !(THIEF_LASER_CHANNEL_MASK&(1U<<i)))return;
++  if(local_phase) {
++    uint8_t c,h,inside=0U;int32_t x=0L,y=0L,moved;
++    uint16_t center=FrontLaserGate_CenterDistanceMm(distance,i);
++    if(!thief_treasure_passed || local_phase!=1U || (int32_t)(tick-local_tick)<0L ||
++        (uint32_t)(SystemTime_GetMs()-tick)>THIEF_LASER_MOVING_FRAME_MAX_MS)return;
++    h=(uint8_t)((local_heading+2U*TravelFrame_IsReverse()+laser_heading_offset[i])%4U);
++    moved=MapRoutePosition_DistanceMm(local_counts);
++    /* Ignore a wall only when every retained hypothesis projects it outside.
++     * No guessed pose is published as a confirmed map position. */
++    for(c=0U;c<local_belief.count;c++) {
++      const MapRouteNode_t *n=ThiefMapPlanner_Node(local_belief.item[c].node);
++      x=n->x_half*150L+(local_heading==1U?moved:local_heading==3U?-moved:0L)+
++          (h==1U?center:h==3U?-(int32_t)center:0L);
++      y=n->y_half*150L+(local_heading==2U?moved:local_heading==0U?-moved:0L)+
++          (h==2U?center:h==0U?-(int32_t)center:0L);
++      if(x>=-150L && x<=3450L && y>=-150L && y<=2850L){inside=1U;break;}
++    }
++    memset(&sensor_pose,0,sizeof(sensor_pose));sensor_pose.valid=inside;
++    sensor_pose.body_heading=h;
++    sensor_pose.x_mm=(int16_t)(x-(h==1U?center:h==3U?-(int32_t)center:0L));
++    sensor_pose.y_mm=(int16_t)(y-(h==2U?center:h==0U?-(int32_t)center:0L));
++    thief_last_laser_tick[i]=tick;thief_laser_seen[i]=1U;
++    if(FrontLaserGate_Observe(&thief_laser[i],&sensor_pose,1U,distance,confidence,firmware,i)) {
++      local_avoid|=(uint8_t)(1U<<h);
++      if(h==local_heading)local_reverse_pending=1U;
++    }
++    return;
++  }
+   /* Outward rays cannot provide positive threats OR negative clear-road
+    * evidence. Drop them before any model/gate processing. */
+   if(!MapLaserMask_FrameAllowed(thief_laser_active_mask,i,tick,
+@@ -526,7 +563,7 @@
+   Route_MapContext();
+   map_leg_start_counts = MapRoutePosition_ForwardCounts();
+   map_progress_offset_mm = 0L;map_distance_warned=0U;retreat_far_pending=0U;
+-  map_leg_started_tick=now;
++  map_leg_started_tick=now;local_branch_raw=0U;
+   node_centered=0U;node_stop_counts_valid=0U;
+   junction_armed=0U;junction_latched=0U;front_was_valid=0U;rearm_valid_count=0U;
+   branch_node=0U;branch_headings=0U;
+@@ -642,7 +679,7 @@
+    * disable STBY and coast, so a missed junction classification could slide
+    * out of the track and then appear to "quit". */
+   Route_BrakeControl();
+-  route_active = 0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;route_identity_phase=0U;Thief_ClearLatchedThreat();
++  local_phase=0U;local_branch_raw=0U;route_active = 0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;route_identity_phase=0U;Thief_ClearLatchedThreat();
+   route_state = ROUTE_STATE_FAULT;
+   thief_strategy_state = THIEF_STRATEGY_FAULT;
+   thief_localization.pose.valid=0U;
+@@ -687,6 +724,14 @@
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+   if(!route_active || !step)return raw12;
++  if(local_phase) {
++    uint8_t i;uint16_t retained=0U;
++    if(!local_belief.count)return raw12;
++    /* Only suppress text-side bits if every retained location agrees. */
++    for(i=0U;i<local_belief.count;i++)retained|=TreasureGrayMask_AtNode(
++        local_belief.item[i].node,local_heading,leading,raw12);
++    return retained;
++  }
+   if(map_nav.arrived || departure_turn) {
+     uint16_t node=departure_turn?step->from_node:step->to_node;
+     ThiefLocYaw_t yaw;int32_t best=18001L;uint8_t body,heading=0U;
+@@ -718,6 +763,15 @@
+     return ROUTE_GRAY_I2C_ERROR;
+   }
+   sample->front_raw12 = Route_FilterTreasureGray(NCHD12_Extract12(raw16),1U);
++  /* Preserve real branch evidence BEFORE the leading board reaches white.
++   * Do not learn from the board sweeping across lines during a rotation. */
++  if(!local_phase && route_active && !map_nav.arrived && !departure_turn &&
++      (route_state==ROUTE_STATE_FOLLOW || route_state==ROUTE_STATE_MAP_PASS) &&
++      (sample->front_raw12&0x00F0U) &&
++      ((sample->front_raw12&0x0C00U)==0x0C00U || (sample->front_raw12&3U)==3U)) {
++    local_branch_raw=sample->front_raw12;local_branch_tick=SystemTime_GetMs();
++    local_branch_counts=MapRoutePosition_ForwardCounts();
++  }
+   GrayPosition_Calculate(sample->front_raw12, &sample->front_position);
+   state = Route_ClassifyPosition(&sample->front_position, 1U);
+   if ((state == ROUTE_GRAY_NO_LINE) || (state == ROUTE_GRAY_ALL_BLACK) ||
+@@ -1010,14 +1064,8 @@
+ 
+ static uint8_t Route_HasReachedTurnAngle(int16_t current_angle_x100)
+ {
+-  ThiefLocYaw_t yaw;int16_t error;
+   int32_t delta = (int32_t)Route_TurnAngleDeltaX100(current_angle_x100,
+                                                     turn_start_angle_x100);
+-
+-  /* Fast rotation for the large angle, then brake and pulse-trim the final
+-   *15degrees. The map axis includes skew already present before this turn. */
+-  if(thief_localization.yaw_cw_sign &&
+-      Route_TurnExitContext(&error,&yaw))return (uint8_t)(error>=-1500 && error<=1500);
+ 
+   if (delta < 0L)
+   {
+@@ -1088,6 +1136,7 @@
+                                         const char *finish_reason,
+                                         int16_t current_angle_x100)
+ {
++  RouteGraySample_t sample;
+   int16_t delta = Route_TurnAngleDeltaX100(current_angle_x100,
+                                             turn_start_angle_x100);
+ 
+@@ -1104,20 +1153,12 @@
+   UartDebug_Printf("TURN_DONE=%s START=%d CURRENT=%d DELTA=%d\r\n",
+                    finish_reason, (int)turn_start_angle_x100,
+                    (int)current_angle_x100, (int)delta);
+-  {
+-    const MapRouteStep_t *step=departure_turn?&thief_localization.step:MapRouteNavigator_Current(&map_nav);
+-    uint16_t node=step?(departure_turn?step->from_node:step->to_node):0U;
+-    turn_axis_active=(uint8_t)(step &&
+-        (step->action==MAP_ACTION_LEFT || step->action==MAP_ACTION_RIGHT));
+-    if(turn_axis_active) {
+-      /* The legacy45degree spin is coarse acquisition only here. No forward
+-       * burst or gray PID until the outgoing map axis is physically aligned. */
+-      Route_BrakeControl();RoadHeading_Reset(&turn_axis_heading,now);
+-      UartDebug_Printf("TURN_AXIS_BEGIN N=%u COARSE_DELTA=%d\r\n",(unsigned)node,(int)delta);
+-      return;
+-    }
+-  }
+-  Route_DriveStraight(elapsed_ms);
++  /* Keep police coarse-turn/acquisition flow, but the user's LINE_FIRST
++   * rule forbids its unconditional one-cycle launch over actual white. */
++  Route_ResetSample(&sample);front_state=Route_ReadFront(&sample);
++  if(front_state==ROUTE_GRAY_NO_LINE || front_state==ROUTE_GRAY_I2C_ERROR)
++    Route_BrakeControl();
++  else Route_DriveStraight(elapsed_ms);
+ }
+ 
+ static void Route_EnterTurnStop(uint32_t now);
+@@ -1283,33 +1324,7 @@
+ }
+ 
+ /* Filtered side pixels are a steering cue, never an observed road exit/node. */
+-static void Route_AlignTurnAxis(uint32_t now,uint32_t elapsed_ms)
+-{
+-  ThiefLocYaw_t yaw;int16_t error;
+-  Chassis_UpdateFeedback(elapsed_ms);
+-  if(!Route_TurnExitContext(&error,&yaw)) {
+-    /* Wait under the existing gyro freshness deadline, without accepting gray
+-     * as a substitute for the remaining physical turn. */
+-    Route_BrakeControl();
+-    if((uint32_t)(now-JY61P_GetLastUpdateMs())>ROUTE_GYRO_RECOVERY_MS)
+-      Route_StopFault("JY61P_STALE");
+-    return;
+-  }
+-  /* One brake absorbs remaining wheel rotation. Small angle residuals belong
+-   * to real gray PID, not a mandatory +/-2degree stationary pulse sequence. */
+-  Route_BrakeControl();
+-  if(Route_AllWheelsStopped()) {
+-    if(turn_axis_heading.stopped_count<2U)turn_axis_heading.stopped_count++;
+-  } else turn_axis_heading.stopped_count=0U;
+-  if(turn_axis_heading.stopped_count>=2U &&
+-      (int32_t)(yaw.stamp_ms-turn_axis_heading.brake_tick)>0L) {
+-    turn_axis_active=0U;route_state_tick=now;
+-    UartDebug_Printf("TURN_HANDOFF N=%u YAW_ERR_CW=%d RAW_YAW=%d WAIT_MS=%lu STOP=1\r\n",
+-        (unsigned)thief_localization.confirmed_node,(int)error,(int)yaw.yaw_x100,
+-        (unsigned long)(now-turn_axis_heading.brake_tick));
+-    /* The next actual board read still decides whether to follow or search. */
+-  }
+-}
++
+ 
+ static uint8_t Route_SideLineHint(uint16_t raw)
+ {
+@@ -1448,41 +1463,6 @@
+         (unsigned)TravelFrame_IsReverse());
+     return;
+   }
+-  if(turn_exit_line_phase==2U && !turn_exit_return_used &&
+-      front_state==ROUTE_GRAY_NO_LINE && rear_state==ROUTE_GRAY_NO_LINE &&
+-      magnitude<=ROUTE_MAP_GRAY_YAW_TOL_X100 && (uint32_t)(now-turn_exit_tick)>=200U) {
+-    int32_t mm=MapRoutePosition_DistanceMm(turn_exit_line_counts);
+-    if(mm>10L || mm< -10L) {
+-      turn_exit_line_phase=3U;turn_exit_return_used=1U;turn_exit_return_driving=0U;
+-      turn_exit_return_sign=mm>0L?-1:1;turn_exit_tick=now;
+-      Route_BrakeControl();turn_exit_drive_enabled=0U;
+-      UartDebug_Printf("TURN_EXIT_RETURN N=%u MM=%ld RAW=%03X,%03X\r\n",
+-          (unsigned)thief_localization.confirmed_node,(long)mm,
+-          (unsigned)sample->front_raw12,(unsigned)sample->rear_raw12);return;
+-    }
+-  }
+-  if(turn_exit_line_phase==3U) {
+-    int32_t mm=MapRoutePosition_DistanceMm(turn_exit_line_counts);
+-    uint8_t found=(uint8_t)(front_state==ROUTE_GRAY_VALID || rear_state==ROUTE_GRAY_VALID ||
+-        Route_SideLineHint(sample->front_raw12));
+-    if(found || (turn_exit_return_sign<0?mm<=10L:mm>=-10L) || magnitude>ROUTE_MAP_GRAY_YAW_TOL_X100) {
+-      Route_BrakeControl();turn_exit_drive_enabled=0U;turn_exit_line_phase=2U;turn_exit_tick=now;
+-      RestartLineSearch_BeginScan(&turn_exit_line,last_leading_error);return;
+-    }
+-    if(!turn_exit_return_driving) {
+-      Route_BrakeControl();
+-      if(!Route_AllWheelsStopped() || (int32_t)(yaw.stamp_ms-turn_exit_tick)<=0L)return;
+-      Route_ResetControl(1U);turn_exit_return_driving=1U;turn_exit_drive_enabled=1U;
+-    }
+-    {
+-      int16_t turn=RoadHeading_Correction(error,200);
+-      int16_t base=(int16_t)(500*turn_exit_return_sign);
+-      TravelFrame_SetWheelTargets(base+turn,base-turn,base+turn,base-turn);
+-      ChassisSpeedControl_Update(elapsed_ms);
+-      if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
+-    }
+-    return;
+-  }
+   line.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID || Route_SideLineHint(sample->front_raw12));
+   line.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID && Route_IsTrackLine(sample->rear_raw12));
+   line.leading_error=sample->front_error_x100;line.trailing_error=sample->rear_error_x100;
+@@ -1531,6 +1511,10 @@
+ 
+ static void Route_EnterFrontRecovery(uint32_t now, RouteGrayState_t cause)
+ {
++  if((cause==ROUTE_GRAY_NO_LINE || cause==ROUTE_GRAY_WIDE_BLACK) && !map_nav.arrived && !departure_turn &&
++      thief_localization.yaw_cw_sign && local_branch_raw &&
++      (uint32_t)(now-local_branch_tick)<=600U &&
++      Route_BeginLocal(now,local_branch_raw,(uint8_t)(cause==ROUTE_GRAY_NO_LINE)))return;
+   /* A single failed I2C read or momentary loss of line must not permanently
+    * end a race. Hold the short brake while the front board is retried. */
+   front_resume_state = route_state;
+@@ -1539,7 +1523,7 @@
+   front_recovery_valid_count = 0U;
+   map_gray_active=0U;turn_exit_active=0U;
+   map_gray_missing_active=0U;
+-  turn_exit_boost=0U;turn_exit_return_used=0U;turn_exit_return_driving=0U;
++  turn_exit_boost=0U;
+   if(cause==ROUTE_GRAY_NO_LINE &&
+       (route_state==ROUTE_STATE_FOLLOW || route_state==ROUTE_STATE_MAP_PASS ||
+        route_state==ROUTE_STATE_LEAVE_START || route_state==ROUTE_STATE_AFTER_TURN_FORWARD) &&
+@@ -1792,7 +1776,7 @@
+      * the existing measured yaw recovery without renewing BOTH-white time. */
+     map_gray_active=0U;turn_exit_active=1U;turn_exit_line_phase=0U;
+     turn_exit_drive_enabled=0U;turn_exit_trim_started=0U;turn_exit_boost=0U;
+-    turn_exit_return_used=0U;turn_exit_return_driving=0U;
++    
+     turn_exit_tick=now;turn_exit_best_error=32767;turn_exit_log_tick=now-100U;
+     Route_BrakeControl();RoadHeading_Reset(&turn_exit_heading,now);
+     Route_TurnExitRecover(now,elapsed_ms,sample);return;
+@@ -1906,6 +1890,215 @@
+       (uint8_t)((finished->heading+2U*finished->drive_mode)%4U),centered);
+ }
+ 
++static void Route_FollowUncertain(RouteGraySample_t *sample,uint32_t dt)
++{
++  LineFollowPID_Output_t control;int32_t gain=ROUTE_PID_CENTER_GAIN_PCT;
++  if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
++  Route_UpdateFollowMode(sample);
++  LineFollowPID_Calculate(&line_follow_pid,sample->position_error_x100,dt,&control);
++  if(follow_mode==ROUTE_FOLLOW_DUAL)LineFollowPID_ApplyHeadingP(&control,sample->heading_error_x100);
++  if(sample->front_raw12&(ROUTE_LEFT_FOUR_MASK|ROUTE_RIGHT_FOUR_MASK))gain=ROUTE_PID_SIDE_GAIN_PCT;
++  else if(sample->front_raw12&ROUTE_CENTER_EDGE_MASK)gain=ROUTE_PID_CENTER_EDGE_GAIN_PCT;
++  control.final_correction_rpm_x10=control.final_correction_rpm_x10*gain/100L;
++  control.left_target_rpm_x10=control.base_rpm_x10+control.final_correction_rpm_x10;
++  control.right_target_rpm_x10=control.base_rpm_x10-control.final_correction_rpm_x10;
++  FollowSmoothing_Apply(&follow_smoothing,sample->position_error_x100,dt,&control);
++  TravelFrame_SetWheelTargets(control.left_target_rpm_x10,control.right_target_rpm_x10,
++      control.left_target_rpm_x10,control.right_target_rpm_x10);
++  ChassisSpeedControl_Update(dt);
++}
++
++static uint8_t Route_BeginLocal(uint32_t now,uint16_t raw,uint8_t no_straight)
++{
++  ThiefLocYaw_t yaw;RouteGraySample_t rear;uint8_t body,best_body=0U;
++  int32_t best=36001L,error;
++  if(local_phase || !route_active || !thief_localization.yaw_cw_sign)return 0U;
++  Route_ResetSample(&rear);rear_state=Route_ReadRear(&rear);
++  if(rear_state==ROUTE_GRAY_I2C_ERROR ||
++      (no_straight && !(rear.rear_raw12&0x00F0U)))return 0U;
++  Thief_LocalYaw(&yaw);
++  if(!yaw.valid || (uint32_t)(now-yaw.stamp_ms)>THIEF_LOC_GYRO_STALE_MS)return 0U;
++  Route_BrakeControl(); /* Search is bounded, but never compute while coasting. */
++  for(body=0U;body<4U;body++) {
++    error=RoadHeading_AxisError(thief_localization.origin_yaw_x100,
++        thief_localization.origin_heading,body,thief_localization.yaw_cw_sign,yaw.yaw_x100);
++    if(error<0L)error=-error;
++    if(error<best){best=error;best_body=body;}
++  }
++  if(best>THIEF_LOC_HEADING_TOL_X100)return 0U;
++  local_heading=(uint8_t)((best_body+2U*TravelFrame_IsReverse())%4U);
++  local_ports=(uint8_t)(((raw&0x0C00U)==0x0C00U?1U:0U)|((raw&3U)==3U?2U:0U));
++  if(!local_ports)return 0U;
++  local_avoid=Thief_ThreatMask(now);
++  if(!ThiefTopo_Seed(&local_belief,thief_localization.step.from_node,local_heading,
++      Route_LegProgress(),local_ports,-1))return 0U;
++  local_phase=1U;local_event=1U;local_armed=0U;local_frames=0U;local_fix=0U;
++  local_exit_frames=0U;local_dead=0U;
++  local_reverse_pending=0U;local_reseed=0U;
++  if(!no_straight)local_branch_counts=MapRoutePosition_ForwardCounts();
++  local_counts=local_branch_counts;local_tick=now;local_log_tick=now-500U;
++  map_gray_active=0U;turn_exit_active=0U;route_identity_phase=0U;
++  thief_pose.valid=0U;
++  Route_BrakeControl();
++  UartDebug_Printf("LOC_UNCERTAIN LAST=N%03u MODE=LINE_FIRST CAND=%u HEADING=%u RAW=%03X\r\n",
++      (unsigned)thief_localization.confirmed_node,(unsigned)local_belief.count,
++      (unsigned)local_heading,(unsigned)raw);
++  return 1U;
++}
++
++static void Route_LocalTask(uint32_t now,uint32_t dt)
++{
++  RouteGraySample_t sample;ThiefLocYaw_t yaw;int32_t moved,angle;
++  uint8_t ports,narrow;
++  Route_ResetSample(&sample);front_state=Route_ReadFront(&sample);rear_state=Route_ReadRear(&sample);
++  Thief_LocalYaw(&yaw);Chassis_UpdateFeedback(dt);
++  if(front_state==ROUTE_GRAY_I2C_ERROR || rear_state==ROUTE_GRAY_I2C_ERROR) {
++    Route_StopFault("LOCAL_GRAY_IO");return;
++  }
++  if(!yaw.valid || (uint32_t)(now-yaw.stamp_ms)>THIEF_LOC_GYRO_STALE_MS) {
++    Route_BrakeControl();return;
++  }
++  if(!sample.front_raw12 && !sample.rear_raw12) {
++    if(!map_gray_missing_active){map_gray_missing_active=1U;map_gray_missing_tick=now;}
++    if((uint32_t)(now-map_gray_missing_tick)>=2000U){Route_StopFault("GRAY_BOTH_NO_LINE");return;}
++  } else map_gray_missing_active=0U;
++  moved=MapRoutePosition_DistanceMm(local_branch_counts);
++  narrow=(uint8_t)(front_state==ROUTE_GRAY_VALID && Route_IsTrackLine(sample.front_raw12) &&
++      (sample.front_raw12&0x00F0U));
++  ports=(uint8_t)(((sample.front_raw12&0x0C00U)==0x0C00U?1U:0U)|
++      ((sample.front_raw12&3U)==3U?2U:0U));
++  if(local_phase==7U) {
++    Route_BrakeControl();
++    if(!Route_AllWheelsStopped() || (int32_t)(yaw.stamp_ms-local_tick)<=0L)return;
++    TravelFrame_SetReverse((uint8_t)(TravelFrame_IsReverse()^1U));
++    local_heading=(uint8_t)((local_heading+2U)%4U);local_phase=1U;
++    local_reverse_pending=0U;local_reseed=1U;local_event=0U;local_armed=0U;
++    local_ports=0U;local_frames=0U;local_exit_frames=0U;
++    Route_ResetControl(1U);return;
++  }
++  if(local_phase==1U && local_reverse_pending) {
++    Route_BrakeControl();local_phase=7U;local_tick=now;return;
++  }
++  if((uint32_t)(now-local_log_tick)>=500U) {
++    local_log_tick=now;
++    UartDebug_Printf("LOCAL_LINE PH=%u H=%u CAND=%u BEST=N%03u COST=%u RAW=%03X,%03X MM=%ld\r\n",
++        (unsigned)local_phase,(unsigned)local_heading,(unsigned)local_belief.count,
++        (unsigned)local_belief.item[0].node,(unsigned)local_belief.item[0].cost,
++        (unsigned)sample.front_raw12,(unsigned)sample.rear_raw12,(long)moved);
++  }
++  if(local_phase==4U) {
++    /* Relative turn and actual center line, never a map-only success flag. */
++    angle=(int32_t)Route_TurnAngleDeltaX100(yaw.yaw_x100,local_turn_yaw)*
++        thief_localization.yaw_cw_sign*(local_turn==1U?1L:-1L);
++    if(narrow && angle>=7000L && angle<=11000L) {
++      if(local_frames<2U)local_frames++;
++    } else local_frames=0U;
++    if(local_frames>=2U) {
++      Route_BrakeControl();local_phase=5U;local_tick=now;local_frames=0U;return;
++    }
++    /* No forward launch after reaching the turn limit without a line. */
++    if(angle>=11000L) {Route_BrakeControl();local_phase=6U;local_tick=now;return;}
++    if(local_turn==1U)Route_DriveRightTurn(dt);else Route_DriveLeftTurn(dt);
++    return;
++  }
++  if(local_phase==5U) {
++    Route_BrakeControl();
++    if(!Route_AllWheelsStopped() || (int32_t)(yaw.stamp_ms-local_tick)<=0L)return;
++    local_heading=(uint8_t)((local_heading+local_turn)%4U);
++    local_phase=1U;local_event=0U;local_ports=0U;local_frames=0U;local_armed=0U;
++    Route_ResetControl(1U);return;
++  }
++  if(local_phase==8U) {
++    /* Reaching a sweep endpoint without gray is not a permanent stop.
++     * Reverse the angular sweep only after actual standstill/new yaw. */
++    Route_BrakeControl();
++    if(!Route_AllWheelsStopped() || (int32_t)(yaw.stamp_ms-local_tick)<=0L)return;
++    local_phase=4U;local_frames=0U;Chassis_Enable();return;
++  }
++  if(local_phase==6U) {
++    /* One measured counter-sweep toward the observed exit after overshoot.
++     * Actual gray ends it; no translation on a predicted axis. */
++    if(narrow) {local_phase=5U;local_tick=now;Route_BrakeControl();return;}
++    angle=(int32_t)Route_TurnAngleDeltaX100(yaw.yaw_x100,local_turn_yaw)*
++        thief_localization.yaw_cw_sign*(local_turn==1U?1L:-1L);
++    if(angle<=7000L){Route_BrakeControl();local_phase=8U;local_tick=now;return;}
++    if(local_turn==1U)Route_DriveLeftTurn(dt);else Route_DriveRightTurn(dt);
++    return;
++  }
++  if(local_phase==2U) {
++    if((uint32_t)(now-local_tick)<local_center_ms && (sample.front_raw12 || sample.rear_raw12)) {
++      if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
++      Route_DriveTurnApproach(dt);return;
++    }
++    local_phase=3U;local_tick=now;Route_BrakeControl();return;
++  }
++  if(local_phase==3U) {
++    Route_BrakeControl();
++    if(!Route_AllWheelsStopped() || (int32_t)(yaw.stamp_ms-local_tick)<=0L)return;
++    if(local_fix && ThiefLocalization_Reanchor(&thief_localization,local_fix,local_heading,
++        TravelFrame_IsReverse(),&yaw,now)) {
++      uint16_t node=local_fix;
++      local_phase=0U;local_branch_raw=0U;RouteHistory_Reset();
++      retreat_active=0U;departure_turn=0U;replan_after_leg=1U;intercept_pending=0U;
++      Route_FinishNodeStop(now,node,thief_localization.body_heading,1U);
++      UartDebug_Printf("LOC_RESOLVED NODE=N%03u METHOD=TOPO_SEQUENCE EVENTS=%u COST=%u\r\n",
++          (unsigned)node,(unsigned)local_belief.events,(unsigned)local_belief.item[0].cost);return;
++    }
++    local_fix=0U;
++    if(!local_dead){local_phase=1U;local_armed=1U;Route_ResetControl(1U);return;}
++    local_turn=(local_ports&2U)?1U:3U;
++    if(local_ports==3U && (local_avoid&(1U<<((local_heading+1U)%4U))))local_turn=3U;
++    local_turn_yaw=yaw.yaw_x100;local_phase=4U;local_frames=0U;
++    Chassis_Enable();return;
++  }
++  /* Observe at control cadence, not duplicate5ms cache reads. */
++  if(local_armed && ports && (sample.front_raw12&0x00F0U)) {
++    if(++local_frames>=3U) {
++      local_ports=ports;local_event=2U;local_armed=0U;local_frames=0U;
++      local_branch_counts=MapRoutePosition_ForwardCounts();moved=0L;
++      if(local_reseed || !ThiefTopo_Observe(&local_belief,local_heading,
++          MapRoutePosition_DistanceMm(local_counts),ports,-1)) {
++        /* Rescan locally from the last trusted node, never from a guessed fix. */
++        ThiefTopo_Seed(&local_belief,thief_localization.step.from_node,local_heading,
++            Route_LegProgress(),ports,-1);
++      }
++      local_reseed=0U;
++      local_counts=local_branch_counts;
++    }
++  } else if(!ports) {
++    local_frames=0U;
++    if(narrow && moved>=30L && !local_event)local_armed=1U;
++  }
++  if(local_event && ((narrow && moved>=30L) ||
++      (!sample.front_raw12 && (sample.rear_raw12&0x00F0U)))) {
++    if(++local_exit_frames>=3U) {
++      uint8_t dead=(uint8_t)!sample.front_raw12;
++      ThiefTopo_Refine(&local_belief,local_ports,dead?0:1);
++      local_event=0U;local_exit_frames=0U;local_fix=ThiefTopo_Resolve(&local_belief);
++      local_dead=dead;
++      if(dead || local_fix) {
++        local_center_ms=MapRoutePosition_RemainingApproachMs(ROUTE_TURN_APPROACH_DELAY_MS,
++            moved,ROUTE_TURN_APPROACH_RPM_X10);
++        local_phase=2U;local_tick=now;Route_BrakeControl();return;
++      }
++      local_armed=1U;
++    }
++  } else local_exit_frames=0U;
++  if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
++  if(narrow) {
++    Route_FollowUncertain(&sample,dt);
++  } else if(sample.front_raw12 && local_event) {
++    Route_DriveTurnApproach(dt); /* Actual junction, original centering action. */
++  } else {
++    /* White ahead is never a forward command. Rotate toward the last real
++     * line offset while waiting for branch corroboration; both-white timer runs. */
++    int16_t turn=last_leading_error<0?-200:200;
++    if(local_event) {Route_BrakeControl();return;}
++    TravelFrame_SetWheelTargets(turn,-turn,turn,-turn);ChassisSpeedControl_Update(dt);
++  }
++  if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
++}
++
+ static void Route_ObserveIdentity(uint32_t now,uint32_t elapsed_ms)
+ {
+   RouteGraySample_t sample;ThiefLocYaw_t yaw;int32_t moved;
+@@ -1962,8 +2155,11 @@
+           (unsigned)sample.front_raw12,(unsigned)sample.rear_raw12,(long)moved,
+           (unsigned long)route_identity_center_ms);
+     } else {
+-      if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
+-      TravelFrame_SetWheelTargets(500,500,500,500);ChassisSpeedControl_Update(elapsed_ms);
++      if(front_state==ROUTE_GRAY_VALID && Route_IsTrackLine(sample.front_raw12))
++        Route_FollowUncertain(&sample,elapsed_ms);
++      else if(sample.front_raw12 && route_identity.branch_frames)
++        Route_DriveTurnApproach(elapsed_ms);
++      else Route_BrakeControl();
+       if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
+       return;
+     }
+@@ -1998,6 +2194,15 @@
+   MapRouteAction_t action;
+   const MapRouteStep_t *candidate=MapRouteNavigator_Current(&map_nav);
+   if(route_identity_phase)return;
++  /* A real incompatible junction is information, not permission to drive
++   * straight through it forever. Keep the last trusted node and follow lines. */
++  if(candidate && !map_nav.arrived && !departure_turn &&
++      thief_localization.yaw_cw_sign &&
++      !ThiefLocalization_GrayMatchesStep(candidate,raw12) &&
++      (raw12&0x00F0U) &&
++      ((raw12&0x0C00U)==0x0C00U || (raw12&3U)==3U) &&
++      (uint32_t)(now-map_leg_started_tick)>=120U &&
++      Route_BeginLocal(now,raw12,0U))return;
+   if(retreat_active && retreat_far_pending && !Route_GrayArrivalReady(raw12)) {
+     /* Crossing the unconfirmed far endpoint is not a return to the source.
+      * Preserve the actual frame and the ordinary20ms drive update. */
+@@ -2141,7 +2346,7 @@
+   uint8_t turn_delta=0U;
+ 
+   map_distance_warned=0U;retreat_far_pending=0U;route_identity_phase=0U;
+-  turn_axis_active=0U;yaw_reference_since=0U;yaw_reference_last=0U;
++  local_phase=0U;local_branch_raw=0U;yaw_reference_since=0U;yaw_reference_last=0U;
+   map_leg_started_tick=SystemTime_GetMs();
+   restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+@@ -2518,7 +2723,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR12 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR13 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2541,7 +2746,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR12 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR13 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2591,7 +2796,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR12 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR13 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2862,7 +3067,7 @@
+    * car advances about 1.36 cm in 20 ms, so a narrow P11+P12 or P1+P2 event
+    * can otherwise fall between two control samples. This 5 ms watch only
+    * reads the front board and enters active braking; PID timing is unchanged. */
+-  if ((route_active != 0U) && !departure_turn && !route_identity_phase &&
++  if ((route_active != 0U) && !departure_turn && !route_identity_phase && !local_phase &&
+       (route_state == ROUTE_STATE_FOLLOW) &&
+       ((uint32_t)(now - last_front_watch_tick) >=
+        ROUTE_JUNCTION_WATCH_PERIOD_MS))
+@@ -2909,6 +3114,7 @@
+   elapsed_ms = (uint32_t)(now - last_control_tick);
+   TreasureWheelLog_ControlElapsed(elapsed_ms);
+   last_control_tick = now;
++  if(local_phase) {Route_LocalTask(now,elapsed_ms);goto task_end;}
+   if(route_identity_phase) {Route_ObserveIdentity(now,elapsed_ms);goto task_end;}
+   if ((uint32_t)(now - run_start_tick) >= ROUTE_MAX_RUN_MS)
+   {
+@@ -3277,9 +3483,6 @@
+       break;
+ 
+     case ROUTE_STATE_AFTER_TURN_FORWARD:
+-      if(turn_axis_active) {
+-        Route_AlignTurnAxis(now,elapsed_ms);break;
+-      }
+       if ((uint32_t)(now - route_state_tick) >=
+           ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS)
+       {
+--- MONITOR12/Algorithm/MapLocalization/ThiefLocalization.c
++++ MONITOR13/Algorithm/MapLocalization/ThiefLocalization.c
+@@ -95,6 +95,124 @@
+     if(ThiefMapPlanner_Node(node)->kind!=0U){*next=node;return 1U;}
+   }
+   return 0U;
++}
++
++static uint8_t TopoNext(uint16_t from,uint8_t heading,uint16_t *to,uint16_t *mm)
++{
++  uint16_t hops,length,total=0U,node=from;
++  for(hops=0U;hops<MAP_ROUTE_NODE_COUNT;hops++) {
++    if(!ThiefMapPlanner_HasRoad(node,heading,&node,&length))return 0U;
++    total=(uint16_t)(total+length);
++    if(ThiefMapPlanner_Node(node)->kind) {*to=node;*mm=total;return 1U;}
++  }
++  return 0U;
++}
++static uint16_t TopoCost(uint16_t node,uint8_t heading,uint8_t ports,int8_t straight)
++{
++  uint8_t actual=0U;uint16_t cost=0U;
++  if(ThiefMapPlanner_HasRoad(node,(uint8_t)((heading+3U)%4U),NULL,NULL))actual|=1U;
++  if(ThiefMapPlanner_HasRoad(node,(uint8_t)((heading+1U)%4U),NULL,NULL))actual|=2U;
++  if(ports&~actual)return 65535U; /* A physically seen branch must exist. */
++  if((actual&1U) && !(ports&1U))cost+=2U;
++  if((actual&2U) && !(ports&2U))cost+=2U;
++  if(straight>=0 && !!ThiefMapPlanner_HasRoad(node,heading,NULL,NULL)!=!!straight)cost+=12U;
++  return cost;
++}
++static void TopoInsert(ThiefTopoBelief *b,uint16_t node,uint16_t cost)
++{
++  uint8_t i,j;
++  for(i=0U;i<b->count;i++)if(b->item[i].node==node) {
++    if(b->item[i].cost<=cost)return;
++    for(j=i;j+1U<b->count;j++)b->item[j]=b->item[j+1U];
++    b->count--;break;
++  }
++  if(b->count==THIEF_TOPO_CAPACITY) {
++    if(cost>=b->item[b->count-1U].cost) {
++      if(cost<b->omitted_cost)b->omitted_cost=cost;
++      return;
++    }
++    if(b->item[b->count-1U].cost<b->omitted_cost)b->omitted_cost=b->item[b->count-1U].cost;
++    b->count--;
++  }
++  i=b->count++;
++  while(i && b->item[i-1U].cost>cost){b->item[i]=b->item[i-1U];i--;}
++  b->item[i].node=node;b->item[i].cost=cost;
++}
++uint8_t ThiefTopo_Seed(ThiefTopoBelief *b,uint16_t last,uint8_t heading,
++    int32_t travelled,uint8_t ports,int8_t straight)
++{
++  /* Enumerate <=52 non-backtracking paths, up to three observed junctions
++   * from the last trusted node. Markers are traversed, never treated as fixes. */
++  uint16_t nodes[4],distance[4],length,node,cost;uint8_t dirs[4],incoming[4],depth=0U;
++  if(!b || heading>3U || !ThiefMapPlanner_Node(last))return 0U;
++  memset(b,0,sizeof(*b));b->heading=heading;b->events=1U;b->omitted_cost=65535U;
++  nodes[0]=last;distance[0]=0U;dirs[0]=0U;incoming[0]=255U;
++  if(travelled<0L)travelled=-travelled;
++  while(1) {
++    uint8_t h;
++    if(dirs[depth]>=4U) {if(!depth)break;depth--;continue;}
++    h=dirs[depth]++;
++    if(incoming[depth]<4U && h==(incoming[depth]+2U)%4U)continue;
++    if(!TopoNext(nodes[depth],h,&node,&length))continue;
++    length=(uint16_t)(distance[depth]+length);
++    if(h==heading) {
++      int32_t residual=(int32_t)length-travelled;
++      if(residual<0L)residual=-residual;
++      cost=TopoCost(node,heading,ports,straight);
++      if(cost!=65535U)TopoInsert(b,node,(uint16_t)(cost+(residual>3600L?24U:(uint16_t)(residual/150L))+depth*2U));
++    }
++    if(depth<2U) {depth++;nodes[depth]=node;distance[depth]=length;incoming[depth]=h;dirs[depth]=0U;}
++  }
++  return b->count;
++}
++uint8_t ThiefTopo_Observe(ThiefTopoBelief *b,uint8_t heading,int32_t travelled,
++    uint8_t ports,int8_t straight)
++{
++  ThiefTopoBelief next;uint8_t i;uint16_t node,length,cost;
++  if(!b || heading>3U)return 0U;
++  memset(&next,0,sizeof(next));next.heading=heading;
++  next.events=b->events<255U?(uint8_t)(b->events+1U):255U;
++  next.omitted_cost=b->omitted_cost;
++  if(travelled<0L)travelled=-travelled;
++  for(i=0U;i<b->count;i++)if(TopoNext(b->item[i].node,heading,&node,&length)) {
++    int32_t residual=(int32_t)length-travelled;
++    if(residual<0L)residual=-residual;
++    cost=TopoCost(node,heading,ports,straight);
++    if(cost!=65535U)TopoInsert(&next,node,(uint16_t)(b->item[i].cost+cost+
++        (residual>1800L?12U:(uint16_t)(residual/150L))));
++  }
++  if(next.count)*b=next; /* Contradiction cannot erase history into a false fix. */
++  return next.count;
++}
++uint16_t ThiefTopo_Resolve(const ThiefTopoBelief *b)
++{
++  uint16_t runner;
++  if(!b || !b->count || b->events<2U || b->item[0].cost>40U)return 0U;
++  runner=b->count>1U?b->item[1].cost:65535U;
++  if(b->omitted_cost<runner)runner=b->omitted_cost;
++  return runner>=(uint16_t)(b->item[0].cost+8U)?b->item[0].node:0U;
++}
++void ThiefTopo_Refine(ThiefTopoBelief *b,uint8_t ports,int8_t straight)
++{
++  ThiefTopoBelief next;uint8_t i;uint16_t cost;
++  next=*b;next.count=0U;
++  for(i=0U;i<b->count;i++) {
++    cost=TopoCost(b->item[i].node,b->heading,ports,straight);
++    if(cost!=65535U)TopoInsert(&next,b->item[i].node,(uint16_t)(b->item[i].cost+cost));
++  }
++  if(next.count)*b=next;
++}
++uint8_t ThiefLocalization_Reanchor(ThiefLocalization_t *l,uint16_t node,
++    uint8_t travel,uint8_t mode,const ThiefLocYaw_t *y,uint32_t now)
++{
++  uint8_t body=(uint8_t)((travel+mode*2U)%4U);
++  if(!l || !l->initialized || travel>3U || mode>1U || !ThiefMapPlanner_Node(node) ||
++      !ThiefMapPlanner_Node(node)->kind || !Fresh(l,y,now) ||
++      !HeadingOK(l,body,y,l->yaw_cw_sign))return 0U;
++  l->confirmed_node=node;l->body_heading=body;l->phase=THIEF_LOC_AT_NODE;l->error=THIEF_LOC_OK;
++  l->arrival_yaw_x100=y->yaw_x100;l->confirmations++;
++  ThiefMapPlanner_PoseAtNode(node,body,&l->pose);
++  l->pose.drive_mode=mode;l->pose.travel_heading=travel;return 1U;
+ }
+ 
+ uint8_t ThiefLocalization_CandidatesBegin(ThiefLocCandidates *c,
+--- MONITOR12/Algorithm/MapLocalization/ThiefLocalization.h
++++ MONITOR13/Algorithm/MapLocalization/ThiefLocalization.h
+@@ -64,6 +64,24 @@
+     const MapRouteStep_t *next, const ThiefLocYaw_t *yaw, uint32_t now);
+ const char *ThiefLocalization_ErrorText(uint8_t error);
+ 
++/* Bounded topological sequence matcher. Costs are relative evidence scores,
++ * NOT calibrated probabilities. No heap, floating point, or map-sized RAM. */
++#define THIEF_TOPO_CAPACITY 8U
++typedef struct { uint16_t node,cost; } ThiefTopoCandidate;
++typedef struct {
++  ThiefTopoCandidate item[THIEF_TOPO_CAPACITY];
++  uint16_t omitted_cost;
++  uint8_t count,heading,events;
++} ThiefTopoBelief;
++uint8_t ThiefTopo_Seed(ThiefTopoBelief *b,uint16_t last_node,uint8_t heading,
++    int32_t travelled_mm,uint8_t ports,int8_t straight);
++uint8_t ThiefTopo_Observe(ThiefTopoBelief *b,uint8_t heading,int32_t travelled_mm,
++    uint8_t ports,int8_t straight);
++uint16_t ThiefTopo_Resolve(const ThiefTopoBelief *b);
++void ThiefTopo_Refine(ThiefTopoBelief *b,uint8_t ports,int8_t straight);
++uint8_t ThiefLocalization_Reanchor(ThiefLocalization_t *l,uint16_t node,
++    uint8_t travel,uint8_t mode,const ThiefLocYaw_t *y,uint32_t now);
++
+ /* Local straight-corridor hypotheses. No node is selected by odometry. */
+ typedef struct {
+   uint16_t nodes[4],branch_raw;
+--- MONITOR12/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ MONITOR13/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -193,15 +193,16 @@
+     uint32_t now,ThiefRoutePlan_t *plan)
+ {
+   uint16_t count;
+-  uint8_t mode,back,pass,found=0U,preferred=0U,runway=255U;
++  uint8_t mode,back,pass,found=0U,preferred=0U,runway=255U,allowed;
+   if(plan==NULL || body_heading>3U)return 0U;
+   plan->valid=0U;back=(uint8_t)((body_heading+2U)%4U);
++  allowed=current_node==11U?10U:15U; /* N011: west N010 or east N012-N013 only. */
+   ThiefRiskSearch_SetEmergency(0U);
+   /* Compare all legal first exits in one complete-route search. Starting
+    * with the rear frame represents the actual body; it does not constrain
+    * the departure. Turn wait, capture margin and blocked edges remain costs.
+    * Avoidance of the observed approach corridor is a tier, not a fixed node. */
+-  ThiefRiskSearch_SetDepartureMask(15U);
++  ThiefRiskSearch_SetDepartureMask(allowed);
+   ThiefRiskSearch_SetDepartureRunway(255U);
+   /* N011 has user-selected escape corridors in MAP directions. Prefer the
+    * entire legal corridor, never a blind heading or a route through a block. */
+@@ -217,7 +218,7 @@
+       found=ThiefRiskSearch_Select(current_node,back,1U,1U,threat_mask,
+           0U,previous_hide_node,now,departure,&count,&mode,&decision);
+     }
+-    ThiefRiskSearch_SetDepartureMask(15U);
++    ThiefRiskSearch_SetDepartureMask(allowed);
+     ThiefRiskSearch_SetDepartureRunway(255U);
+   }
+   for(pass=0U;pass<2U && !found;pass++) {
+@@ -230,20 +231,21 @@
+     ThiefRiskSearch_SetEmergency(1U);
+     /* Relax remembered edge blocks before choosing a departure straight into
+      * a currently seen threat (which would immediately cancel the start). */
+-    ThiefRiskSearch_SetDepartureMask((uint8_t)(15U&~threat_mask));
++    ThiefRiskSearch_SetDepartureMask((uint8_t)(allowed&~threat_mask));
+     found=ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
+         0U,previous_hide_node,now,departure,&count,&mode,&decision);
+     /* A clear branch may have no complete refuge route (N078 east).
+      * Before all-direction fallback, keep the physical front threat forbidden;
+      * known side targets can be left behind without immediately cancelling. */
+-    ThiefRiskSearch_SetDepartureMask((uint8_t)(15U&~(threat_mask&(1U<<body_heading))));
++    ThiefRiskSearch_SetDepartureMask((uint8_t)(allowed&~(threat_mask&(1U<<body_heading))));
+     if(!found)found=ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
+         0U,previous_hide_node,now,departure,&count,&mode,&decision);
+-    ThiefRiskSearch_SetDepartureMask(15U);
++    ThiefRiskSearch_SetDepartureMask(allowed);
+     if(!found)found=ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
+         0U,previous_hide_node,now,departure,&count,&mode,&decision);
+     ThiefRiskSearch_SetEmergency(0U);
+   }
++  ThiefRiskSearch_SetDepartureMask(15U);
+   if(!found)return 0U;
+   return BuildRoute(departure,count,mode,ESCAPE_ID,plan);
+ }
+--- MONITOR12/Algorithm/ThiefStrategy/ThiefRiskSearch.c
++++ MONITOR13/Algorithm/ThiefStrategy/ThiefRiskSearch.c
+@@ -194,6 +194,9 @@
+       if(map_route_nodes[from-1U].kind==0U && delta!=0U) continue;
+       if(!emergency && ThiefIntercept_EdgeBlocked(from,to,now)) continue;
+       if(pick==root && !(departure_mask&(1U<<out)))continue;
++      /* East escape from N011 must reach N013, not turn down at N012.
++       * Applied only under the N011 E/W departure constraint. */
++      if(start==11U && parent[pick]==root && from==12U && out!=1U)continue;
+       if(departure_runway<4U && parent[pick]==root && out!=departure_runway)continue;
+       if(pick==root && !emergency && (threat_mask&(1U<<out))) continue;
+       next_mode=(uint8_t)((pick&1U)^((delta==2U)?1U:0U));
+--- MONITOR12/Control/RestartLineSearch.c
++++ MONITOR13/Control/RestartLineSearch.c
+@@ -1,7 +1,7 @@
+ #include "RestartLineSearch.h"
+ 
+-/* Trial gains: 50 RPM translation, <=20 RPM differential; a stationary scan
+- * targets +/-4 degrees from the mapped road heading. No elapsed-time turns. */
++/* Leading-line tracking uses50RPM and <=20RPM differential. Without the
++ * leading line, brake/scan; rear black never authorizes forward translation. */
+ #define TRACK 0U
+ #define BRAKE 1U
+ #define SWEEP 2U
+@@ -30,7 +30,8 @@
+     const RestartLineInput *in, RestartLineOutput *out)
+ {
+   int16_t turn,desired;
+-  uint8_t visible=(uint8_t)(in->leading_valid || in->trailing_valid);
++  /* Rear-only black is evidence to retain, not proof of a road ahead. */
++  uint8_t visible=in->leading_valid;
+   out->left_x10=0;out->right_x10=0;out->brake=0U;out->ready=0U;out->failed=0U;
+   if(!in->yaw_known) {out->brake=1U;out->failed=1U;return;}
+   if(s->phase==BRAKE) {
+@@ -60,35 +61,17 @@
+     s->line_count=0U;s->sweep_count=0U;s->target_yaw=(int16_t)(s->bias*400);
+     BrakeTo(s,SWEEP);out->brake=1U;return;
+   }
+-  if(in->leading_valid) {
+-    if(s->line_count<3U) s->line_count++;
+-    if(in->leading_error) s->bias=in->leading_error<0?-1:1;
+-    turn=Clamp((int32_t)in->leading_error-in->yaw_cw_x100/2,200);
+-    if(s->line_count>=3U) out->ready=1U;
+-  } else {
+-    s->line_count=0U;
+-    if(in->trailing_error) s->bias=in->trailing_error<0?-1:1;
+-    /* Rear-only P is non-minimum-phase. Convert its offset to a small desired
+-     * heading and close that loop with yaw instead of copying the front PID. */
+-    desired=Clamp((int32_t)in->trailing_error*2,400);
+-    turn=Clamp(((int32_t)desired-in->yaw_cw_x100)/2,200);
+-  }
++  if(s->line_count<3U) s->line_count++;
++  if(in->leading_error) s->bias=in->leading_error<0?-1:1;
++  turn=Clamp((int32_t)in->leading_error-in->yaw_cw_x100/2,200);
++  if(s->line_count>=3U) out->ready=1U;
+   out->left_x10=(int16_t)(500+turn);out->right_x10=(int16_t)(500-turn);
+ }
+ 
+ void RestartLineSearch_Probe(RestartLineSearch *s,
+     const RestartLineInput *in,uint8_t allow_translate,RestartLineOutput *out)
+ {
+-  if(in->yaw_known && !in->leading_valid && !in->trailing_valid &&
+-      allow_translate && s->phase==TRACK &&
+-      in->yaw_cw_x100>=-1000 && in->yaw_cw_x100<=1000) {
+-    /* With neither board visible, the mapped axis is the evidence we have;
+-     * do not invent a4degree bend from an old/default side bias. */
+-    int16_t turn=Clamp(-(int32_t)in->yaw_cw_x100/2,200);
+-    s->line_count=0U;
+-    out->left_x10=(int16_t)(500+turn);out->right_x10=(int16_t)(500-turn);
+-    out->brake=0U;out->ready=0U;out->failed=0U;return;
+-  }
++  (void)allow_translate; /* LINE_FIRST: no blind translation on a map axis. */
+   RestartLineSearch_Update(s,in,out);
+   /* Recovery sweeps must overcome breakaway load at small angular errors.
+    * Stop/visibility and the original +/-4degree sweep targets still apply. */
+--- MONITOR12/Control/RestartLineSearch.h
++++ MONITOR13/Control/RestartLineSearch.h
+@@ -23,8 +23,8 @@
+ void RestartLineSearch_BeginScan(RestartLineSearch *s,int16_t last_error);
+ void RestartLineSearch_Update(RestartLineSearch *s,
+     const RestartLineInput *in, RestartLineOutput *out);
+-/* Caller bounds blind travel by measured distance and continuous loss time.
+- * Ordinary startup retains the original controller above. */
++/* Compatibility entry: allow_translate no longer authorizes blind motion.
++ * Leading loss permits brake/scan, never rear-only or map-only translation. */
+ void RestartLineSearch_Probe(RestartLineSearch *s,
+     const RestartLineInput *in,uint8_t allow_translate,RestartLineOutput *out);
+ #endif
+--- MONITOR12/MDK-ARM/startup_stm32f103xe.s
++++ MONITOR13/MDK-ARM/startup_stm32f103xe.s
+@@ -29,7 +29,9 @@
+ ;   <o> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
+ ; </h>
+ 
+-Stack_Size		EQU     0x400
++; MONITOR13 linker call graph:1928B known depth, plus IRQ/library margin.
++; Entire image including this3KB stack must fit the48KB target RAM.
++Stack_Size		EQU     0xC00
+ 
+                 AREA    STACK, NOINIT, READWRITE, ALIGN=3
+ Stack_Mem       SPACE   Stack_Size
+--- MONITOR12/Docs/修改规范与回归清单.md
++++ MONITOR13/Docs/修改规范与回归清单.md
+@@ -1,21 +1,56 @@
+ # 修改规范与回归清单
+ 
+ ## 每次改代码前必读：防遗漏核对表
++
++**小车巡线优先。取消主动冲出黑线、沿预测地图轴盲目前进来找定位的做法。定位与规划服从实际灰度道路；前板失线结合后板和近期支路证据接线/转弯，不能只因预计仍有直路就继续直冲。位置不确定时沿真实线收集路口序列再定位，不能凭预测坐标确认节点。连续双板无线2秒停车条件保留。本条覆盖历史“允许出线”和盲探前进方案。**
+ 
+ 每次修改源码、控制参数、传感器配置或状态机（包括同一轮后续修改）前，重新读取本节、当前版本章节、README和最新有关日志；按改动影响逐项记录“已覆盖/不适用/尚未验证”，不得只修出现问题的一个节点。
+ 
+ 1. **先列完整调用路径。** 区分正常到口转弯、藏点/路口重新出发、半路拦截折返、出口找线、道路失线恢复。检查所有调用者和状态入口，尤其departure_turn使用的虚拟起步动作与路线第一步终点动作不同，不能用错step。
+ 2. **转弯必须查全地图。** 共用转弯逻辑，不写只覆盖N004/N006而遗漏N078的节点名单。依据实际MapRoutePlan拓扑枚举合法左右转弯、正反行驶、两种陀螺仪符号；单独验证根节点重新出发与首次未知符号。没有道路的方向不得因“反方向逃跑”而直冲（例如N078到N087没有直接道路）。
+-3. **区分角度、转动停止和在线位置。** 原始YAW不等于地图误差，日志角度单位x100，YAW误差为0也不证明车在线中央。目标用出口地图轴，不能把入弯偏斜的统计均值直接当固定旋转角。按MONITOR12用户选择，普通转弯只做一次实测消余转制动和新鲜YAW交接，不逐次驻车修到±2度或等3帧角度；随后实际灰度决定巡线/找线，小偏差交PID。检查正负180度、过冲、未知符号首次粗转与累计转角边界。
++3. **区分角度、转动停止和在线位置。** 原始YAW不等于地图误差，日志角度单位x100，YAW误差为0也不证明车在线中央。按MONITOR13最新要求，普通转弯采用警察粗转→实际灰度接线→巡线流程，45度只是粗转门槛，不是已转好90度；正常转弯不驻车精调地图轴到±2度。粗转结束当次也要读取真实前板，无线/I2C不能无条件向前发一周期目标。局部未知路口转弯则由真实支路、实际70—110度转角及中心线共同完成；转弯遇敌不允许提前当成直路冲出。检查正反帧、正负180度、转动停稳和原始YAW，不能拿含入弯偏斜的统计均值当固定转角。
+ 4. **检查控制链真的接上。** 制动会关闭轮速PI；进入FOLLOW只在IsEnabled实际为真时允许保留，否则重新启用。验证全四轮目标、控制器使能、PI到PWM输出，不能只看STATE=FOLLOW或目标非零；测试不得把这些控制层全部模拟掉后宣称能走。5ms灰度观察不得重复支付20ms轮速积分。
+ 5. **地图方向不等于固定探头。** 上/右/下/左是世界N/E/S/W；前/左/右/后探头固定在车身，按body_heading换算。倒车时TravelFrame、领先/跟随灰度板、转向符号和物理车头分开核对。边界射线过滤、传感器偏置和800/1000mm有效距离规则不能被路线修改覆盖。
+-6. **规划和执行都要覆盖避障。** N011下方来车优先N012-N013，上方来车优先N010；优先出口/第二段已有堵路或该出口也有即时威胁时回退普通合法路线。约束用完必须复位，不能泄漏到N038等其他节点。行驶中实际激光拦截仍优先回撤/重算，不能为履行旧路线继续硬闯。
++6. **规划和执行都要覆盖避障。** 全场只有本车和一辆敌车，不新增“两头被敌车堵住”专用分支。N011正常出发只允许西N010或东N012-N013；下方来车优先东，上方来车优先西，首选不可用时仍在这两个出口中搜索，紧急层也不能走N002/N022。约束用完复位，不能泄漏其他节点。行驶中实际激光拦截仍优先回撤/重算；局部定位未知时保留传感器检测及实测停稳后的帧交换，转弯中不能因为逃跑直接冲向无路方向。
+ 7. **道路身份与航向门槛分开。** 超±10度不能直接等于道路上下文消失；可在已提交道路上继续航向恢复，不能放宽真正出口/节点确认条件。检查连续双板无线2秒在阶段切换中不被重置，有真实线时不累计分散的无线间隔；不能又增加固定纠偏总时限直接停车。
+ 8. **定位证据不能混用。** 编码器仅辅助，不凭里程直接认节点；半路折返保留已走位移的有符号账本。迟到相似路口需候选与真实后续观测，不把上一轮残留灰度、单帧全黑或显示预测当确认。入中心动作仍用原100RPM/180ms及已走位移抵扣；不为掩盖问题降低用户认可的正常速度。
+ 9. **回归入口必须真实。** 更新状态机后，旧用例应先实际完成新增前置阶段再复现后续扰动；禁止强设成功标志、虚构传感器、删除失线/停稳/新YAW断言来让测试通过。用户明确改变规则时，保留旧脚本并说明新预期；覆盖范围、实际执行的源码/AXF散列和未测试硬件必须写清。
+ 10. **交付之前核对一致性。** 保留修改前工程/AXF/日志及失败复现；更新当前版本、README、AGENTS、差异与验证报告。只在新改动或失败有理由时重跑相应检查。不得自动烧录、驱动实物、占用串口、提交或推送。编译/仿真不能冒充实车证明。
+ 
+-## 后续修改要求：警察基线完整流程对照（待日志核对，尚未实施）
++## 当前MONITOR13：巡线优先、固定8候选的拓扑序列恢复
++
++普通转弯对照Thief16U_PoliceTurnCompare_Test/COMPARE1（其保存的警察来源为H:/Police17A_UARTCh4_LinePursuit_Test）：保留相对45度粗转门槛、550PWM、原AFTER_TURN_FORWARD/灰度巡线接线链，移除MONITOR12逐次地图轴制动交接；按用户最新“冲出线取消”要求，补上粗转结束当次真实前灰度读取，无线或I2C就制动，取消无条件单周期前进。正常巡线PID/平滑/速度参数与100RPM、180ms入中心保持，不能声称45度已经完成90度。真实出口仍由后续灰度/YAW确认。
++
++ThiefTopoBelief固定8候选，共38字节，整数相对代价，不伪称校准概率。种子从上一可信道路起点扩展最多3个可观测路口（最多52条不立即折返路径，跳过N005标记）；结合实际朝向、支路、直路/无直路及有误差余量的编码器行程。后续按真实转弯和路口序列更新；至少2次路口事件，最佳代价≤40、领先第二名及被截断候选下界≥8才允许候选申请重锚，实际入中心、轮速停稳、新鲜YAW与航向仍需通过。不凭一帧前白认T，不凭里程或“最像”直接改节点。
++
++近期前板中心+支路证据与后板黑线支持下，前板无线/不兼容路口进入LOCAL_LINE。位置未确认时沿真实前线执行原PID，不运行旧地图节点提交；连续前白、后中心黑3帧才作为无直路证据，在原入中心动作后按实际支路转弯接线。找线只能制动/转动，不允许前后均白时沿地图轴盲探，也删除历史100mm盲退回摸；只有后板黑同样不能批准继续向前。角扫描端点实测停稳后再扫，不能因到角度上界就永久卡在制动。连续双板无线2秒条件跨阶段保留。
++
++位置未知时不发布伪定位；激光按保留候选投影，只有全部候选都投到场外才忽略；量程与质量/原FrontLaserGate一致。新鲜行进前方威胁先制动、停稳与新YAW后交换前后帧并重新收集拓扑证据；旋转中不直接改行驶帧。取宝前启用规则保持。此处因候选有歧义，仍可能把某个候选认为场内的墙当潜在障碍，不能宣称已消除所有误报。
++
++工程目标STM32F103RC：256KB Flash、48KB RAM。候选无动态分配/浮点/粒子集；链接调用链已知深度1928字节，原1KB栈不足，已改3KB（包含在总RAM统计内）。中断/库未知调用和实际最坏执行耗时尚未实测，不把CPU仿真耗时当主控耗时。基线Tests/before_topology_recovery/original.axf为真实MONITOR12；其Control原文从未修改的COMPARE1同源副本补存，来源在验收中注明。验收以VALIDATION_MONITOR13.json和Tests/results_monitor13_suite.json为准；历史MONITOR12的地图精调/盲探测试预期不作为本版行为要求。
++
++宝藏区仍保留既有N003—N007文字侧外四路屏蔽，未扩大范围；定位未知时只在所有候选同意时屏蔽相应位。尚未完成外两路/外四路实车对照，不能声称外四路更好。固定8候选和局部3路口搜索不保证所有同形路口或大范围错位都能唯一定位；继续巡线观察不能冒充已定位。
++
++以下为历史要求与版本记录。MONITOR13覆盖与本节冲突的地图逐次精调、允许出线及盲探前进方案。
++
++### MONITOR13本轮验收与防遗漏核对
++
++ARMCC5：0错误、0警告。最终Flash79316字节，RAM44896字节（含3072字节栈），48KB中剩4256字节。9组针对性回归通过；新拓扑/接线1987项、1016种合法地图转弯共6333项、纯算法366161项/378组。完整应用重定位用例在实际模拟路口序列后确认N035，另有40组藏点逃跑、四路拦截及真实PI重启回归。全部为模拟传感器/CPU离线证据，尚未完成硬件验证。
++
++| 核对项 | 状态及证据 |
++| --- | --- |
++| 1 调用路径 | 软件已覆盖正常转弯、根节点、旧候选观察、新局部接线、失线恢复、拦截；新用例实际Route_Start，不强设进入成功阶段。 |
++| 2 全地图/正反帧 | 软件已覆盖1016种合法转弯、两种帧与陀螺仪符号；含N004/N006/N007/N078，未虚构N078-N087道路。 |
++| 3 YAW/停稳/实际线 | 软件已覆盖45度仅粗转、交接当次白底不发前冲、局部70—110度实际中心线、停稳与新YAW、扫描端点再武装；实物余转未验证。 |
++| 4 PI/PWM/节拍 | test_turn_resume执行真实控制链；test_speed16t保留原速度断言，新增接线制动阶段需真实走完；旧候选5ms/20ms节拍回归通过。 |
++| 5 探头/边缘/倒车 | 原激光442项和四路完整逃跑/拦截通过；新局部前方威胁先停稳后交换帧已测。新增“全部候选场外才忽略”投影经静态核对，现场墙体误报仍未验证。 |
++| 6 规划与执行 | N011四车头×16掩码及N012-N013第二段约束通过，其他藏点/四路拦截保持；转弯阶段不直接交换帧。 |
++| 7 道路恢复/2秒 | 取消双板白及后板单独黑时盲前进，删除盲退；旧、新定位阶段连续2秒双板无线回归通过。真实有线时不按纠偏总时长硬停。 |
++| 8 定位与里程 | 210种入路、208条拓扑序列、应用N036接线后观测重锚N035、历史半路折返/同形候选回归通过；无编码器单独确认节点。 |
++| 9 测试入口/预期 | MONITOR12真实AXF保存并复现旧盲前进；旧速度/节拍脚本保存，修改的是授权流程后的实际输入/阶段，原速度与PI断言保留。历史必做地图精调/盲探断言不宣称本版通过。 |
++| 10 交付一致性 | VALIDATION_MONITOR13.json绑定当前源码、HEX/AXF、9组日志/脚本、纯算法源码和资源；差异TOPOLOGY_LINE_FIRST_CHANGESET.patch。未烧录、未运行电机、未占串口。 |
++
++## 历史取舍：警察基线完整流程对照
+ 
+ 普通转弯优先对照警察基线的完整“主旋转→接线→巡线”流程，不能只复制45度参数，也不能默认全面推广地图航向驻车精调。修改前核对实际警察工程、固件标识及对应实测日志；比较旋转结束条件、灰度接线、轮速控制重新启用和节点确认全过程。陀螺仪保留转向正确性及明显欠转检查，不要求每个路口停稳到±2度。
+ 
+--- MONITOR12/README.md
++++ MONITOR13/README.md
+@@ -1,4 +1,19 @@
+-# 16U MONITOR12：取消逐次微调，真实灰度PID接管
++# 16U MONITOR13：巡线优先与轻量拓扑定位恢复
++
++当前固件`UARTCH4_16U_MONITOR13`，工程名不变。保留正常PID、轮速控制、平滑、速度与100RPM/180ms入中心动作；普通转弯采用警察粗转→实际灰度接线→巡线流程，不做逐次±2度驻车微调。粗转45度不是90度完成标志；交接当次前板无线就制动，不能无条件向前冲一周期。
++
++- 巡线优先：真实前线引导行驶；前板失线结合后板和刚经过的支路接线，不再沿预测地图轴盲探/盲退，只有后板黑也不继续直冲。连续双板无线2秒条件保留。
++- 位置不确定：固定8候选、38字节整数评分，结合上一可信位置、实际转角、灰度路口序列和辅助行程。至少2次路口事件、有足够分差并完成实际居中停稳才能重锚；未确认时沿线观察，不把预测当节点。
++- N011只走西N010或东N012-N013；下面来车优先东，上面来车优先西。局部找线中保留激光检测；转弯不能被逃跑指令直接打断，行进前方新威胁先实测停稳再交换前后帧。
++- 工程目标F103RC（256KB Flash/48KB RAM），无新增堆分配/大粒子集。根据1928字节已知调用深度把栈由1KB改3KB，总占用和回归见VALIDATION_MONITOR13.json。原始激光量程仍前后1000、左右800mm。
++
++打开`MDK-ARM/Thief16U_UARTCh4_LiveMonitor_Test.uvprojx`，HEX位于同名输出子目录。基线与日志在Tests/before_topology_recovery；修改前仍必须读Docs/修改规范与回归清单.md。新增LOCAL_LINE和LOC_RESOLVED日志用于区分候选与确认位置。
++
++仅编译/离线验证，尚未完成硬件验证，未自动烧录、运行电机或占用串口。拓扑同形、候选截断和实际灰度未采到的支路仍可能使位置无法唯一确认；48KB容量内可链接不代表实际执行耗时与栈高水位已测得。
++
++以下MONITOR12及更早内容为历史。
++
++# 历史16U MONITOR12：取消逐次微调，真实灰度PID接管
+ 
+ 当前UARTCH4_16U_MONITOR12。按用户明确选择，仍以地图出口方向转弯，取消每次±2度停车脉冲微调及3帧角度确认；粗转后仅一次实测制动，两次轮速停稳和制动后新鲜YAW即可交给下一次实际灰度读取。有线用PID修小偏差，无线走原找线恢复，不能凭YAW就认为车在线中央。常规转弯不再逐次精调；藏点/真正缺线恢复不是本次删除范围。
+ 
+--- MONITOR12/AGENTS.md
++++ MONITOR13/AGENTS.md
+@@ -1,4 +1,6 @@
+ # 本工程修改前必读
++
++当前MONITOR13以Docs/修改规范与回归清单.md最前“巡线优先”和当前MONITOR13章节为准：取消主动出线/地图轴盲探；普通转弯恢复警察粗转→实际灰度接线→巡线，非逐次地图精调。位置未知用固定8候选整数序列匹配，前板失线结合近期支路/后板接线；只有后板黑不能批准直冲。N011只允许N010或N012-N013。原正常速度/PID和100RPM/180ms保持。栈3KB，48KB总RAM须核对；硬件未验证。基线Tests/before_topology_recovery，当前验收VALIDATION_MONITOR13.json。下文版本为历史。
+ 
+ 最新MONITOR12按042252后用户选择：保留地图出口方向，取消每次±2度驻车脉冲/3帧角度等待，只一次实测停稳/新YAW交给实际灰度PID。首次未知符号粗转同步75度，不能遗留45度半转弯。宽黑后灰度不参与姿态偏移，但原始值仍可作节点证据；YAW为0不证明在线。仍必须先读下列防遗漏核对表和当前README。基线Tests/before_line_handoff，验收VALIDATION_MONITOR12.json；历史要求以最新用户选择和最前章节覆盖。
+ 

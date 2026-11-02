@@ -1,0 +1,23 @@
+{
+  "source": "C:\\Users\\ROG\\Desktop\\调试工程\\Documents8.txt",
+  "sha256": "ee27c5711e2645ec2a8a03cf91d17573069a659cb62918f86e3a1fc78a390e83",
+  "firmware": "16R",
+  "failure": "LOC_HEADING_MISMATCH",
+  "failure_time_ms": 51201,
+  "node": "N013",
+  "next_node": "N003",
+  "startup_yaw_x100": -2806,
+  "startup_heading": "W",
+  "yaw_cw_sign": -1,
+  "arrival_time_ms": 50304,
+  "arrival_yaw_x100": 13914,
+  "spin_start_yaw_x100": 13950,
+  "failure_yaw_x100": -14450,
+  "expected_north_yaw_x100": -11806,
+  "heading_error_x100": -2644,
+  "turn_from_arrival_x100": 7636,
+  "diagnosis": "Quarter-turn candidate checked against absolute heading while alignment is still converging; mismatch prematurely latched as fatal.",
+  "reproduction": "Actual ARMCC5 application firmware with hardware hooks; baseline 16R fails and 16S passes.",
+  "synthetic_continuation": "Subsequent yaw -13050 and three gray samples are regression inputs, not observed serial log data.",
+  "hardware_tested": false
+}

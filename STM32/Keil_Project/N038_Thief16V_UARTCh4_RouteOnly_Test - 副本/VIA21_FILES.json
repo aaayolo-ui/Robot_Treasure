@@ -1,0 +1,51 @@
+{
+  "firmware": "UARTCH4_16V_FIRST38_VIA21_SL1",
+  "modified": [
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+    "User/App_ThiefStrategy.c",
+    "Tests/test_hide_routes_stable4.py",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "hashes": {
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "bcc6f839b7416dd18baa18924cceb923cc57e4aa6f119718e49ae0fcf2f416da",
+    "User/App_ThiefStrategy.c": "7c091c93668fd67e0c56fd041c5d131f7909c132173d6f123b440d6a2d52493b",
+    "Tests/test_hide_routes_stable4.py": "943595f464819270ff9f8069ba5e8fda2c82c4ba2a9a87553953eb5183255d63",
+    "README.md": "d2c6acd74a7fa11953d6d17943829c70cfa16dee37b309a1f232cce27ed5dc88",
+    "AGENTS.md": "cbbc58839ae26bf8b4b2c55e78385f2d631b60475a4c929340401969f7c171ea",
+    "Docs/修改规范与回归清单.md": "6db5a56f28da7cac094dcf1892d3f76beff0faba85479302086b02b606f6c4f9"
+  },
+  "backup": "Reference/FIRST38_before_via21/SNAPSHOT_SHA256.json",
+  "backup_files": 301,
+  "axf_sha256": "66c14da80157e3e116361dba90ff542b49b7162524796bae667330e82f15f37b",
+  "hex_sha256": "76e1e4f05b49a6b41c31acb8edc1ca6b5d10e2b892463c3cfb04e64e3941cce8",
+  "report_sha256": "f99e4f8d7aee852873010ec230dcde46202ac22986371b95e8f462fa8af534d4",
+  "checks": 151,
+  "initial_result": {
+    "frames": 775,
+    "node": 38,
+    "body": 2,
+    "fixes": [
+      53
+    ],
+    "states": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      9,
+      11,
+      13
+    ],
+    "intercepted": false
+  },
+  "app_control_unchanged": true,
+  "other_production_unchanged": true,
+  "hardware_tested": false,
+  "flashed": false,
+  "motors_run": false
+}

@@ -1,0 +1,7 @@
+{
+  "expected_old_rule_violation": true,
+  "left_x10": 500,
+  "right_x10": 500,
+  "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "hardware_tested": false
+}

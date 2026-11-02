@@ -1,0 +1,44 @@
+{
+  "checks": 619,
+  "failures": [
+    {
+      "case": "rear_only",
+      "error": "rear-only stripe must backtrack along visible line instead of continuing forward"
+    },
+    {
+      "case": "freeze_fault_pose",
+      "error": "fault display retains current estimated leg instead of old N038 refuge"
+    },
+    {
+      "case": "measured_brake",
+      "error": "moving measured wheels cannot reverse merely because brake was requested"
+    },
+    {
+      "case": "edge_not_node",
+      "error": "edge stripe encountered while backing is not arrival at N040"
+    },
+    {
+      "case": "geometry",
+      "error": "rear-leading kinematic model must reacquire front line"
+    },
+    {
+      "case": "unfinished_turn",
+      "error": "trailing old line cannot drive forward or reverse an unfinished ordinary turn"
+    }
+  ],
+  "cases": [
+    {
+      "case": "both_white"
+    },
+    {
+      "case": "pending_pass",
+      "mode": 0
+    },
+    {
+      "case": "pending_pass",
+      "mode": 1
+    }
+  ],
+  "axf_sha256": "daffa48b1f25a153a407b1d1c0609b3b0b793d4a46187df9f3f27ebc95f83801",
+  "hardware_tested": false
+}

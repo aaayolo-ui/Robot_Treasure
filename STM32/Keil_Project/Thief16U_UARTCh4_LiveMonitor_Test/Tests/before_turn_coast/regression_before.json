@@ -1,0 +1,20 @@
+{
+  "cases": {},
+  "failures": [
+    {
+      "case": "terminal_pwm",
+      "error": "terminal angle reduces actual four-wheel PWM"
+    },
+    {
+      "case": "measured_brake_handoff",
+      "error": "80.58degree sample cannot translate with residual wheel rotation"
+    },
+    {
+      "case": "road_heading_context",
+      "error": "12.17degree yaw cannot become CONTEXT fault after210ms"
+    }
+  ],
+  "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691",
+  "test_sha256": "b4c41f9c11907163861807e2a0adc2ed5826ff3eacbe86d45830efe8923c80e3",
+  "hardware_tested": false
+}

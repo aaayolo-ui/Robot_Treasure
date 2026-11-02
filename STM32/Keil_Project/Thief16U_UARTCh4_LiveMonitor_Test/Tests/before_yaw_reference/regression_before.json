@@ -1,0 +1,20 @@
+{
+  "cases": {},
+  "failures": [
+    {
+      "case": "straight_reference",
+      "error": "straight reference learning exists"
+    },
+    {
+      "case": "treasure_turn_handoff",
+      "error": "N004/N006 46.57deg cannot hand off to PID"
+    },
+    {
+      "case": "reference_wrap_reverse",
+      "error": "reference learner exists"
+    }
+  ],
+  "axf_sha256": "996846f6263cb7c76b81447900d7a17631f860df326971388eb253782adf8a95",
+  "test_sha256": "c1398149ebcce35c0be6c5a4866a571b8d14324d585841483f3d65a244246443",
+  "hardware_tested": false
+}

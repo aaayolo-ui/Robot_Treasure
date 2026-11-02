@@ -26,6 +26,12 @@ HEX_LINE = re.compile(r"HEX=([0-9A-Fa-f ]+)")
 STRATEGY_LASER = re.compile(
     r"LASER DIR=(FRONT|LEFT|RIGHT|REAR) D=(\d+) C=(\d+) STATUS=([A-Z_]+)"
 )
+RANGE_STATS = re.compile(
+    r"^RANGE DIR=(?P<direction>FRONT|LEFT|RIGHT|REAR) N=(?P<n>\d+) "
+    r"MEAN_MM=(?P<mean>\d+) MIN_MM=(?P<min>\d+) MAX_MM=(?P<max>\d+) "
+    r"REJECT=(?P<rejected>\d+) FW=(?P<firmware>\d+) REF_MM=(?P<reference>\d+)"
+    r"(?: FRAMES=(?P<frames>\d+) WINDOW_MS=(?P<window>\d+) HZ_X10=(?P<hz>\d+))?$"
+)
 STRATEGY_STATE = re.compile(r"\bSTATE=([A-Z_]+) FAULT=([A-Z0-9_]+)")
 BOOT_STATE = re.compile(r"^BOOT_STATUS .*\bSTATE=([A-Z_]+).*\bREASON=([A-Z0-9_]+)")
 ROUTE_FAULT = re.compile(r"^ROUTE_FAULT=([A-Z0-9_]+) FROM=([A-Z_]+)")
@@ -65,7 +71,7 @@ def motion_speeds() -> tuple[float, float]:
 
 
 class LaserFeed:
-    def __init__(self, port: str, baud: int) -> None:
+    def __init__(self, port: str, baud: int, *, auto_connect: bool = False) -> None:
         source_map = json.loads(MAP_FILE.read_text(encoding="utf-8"))
         self.map_signature = source_map["map_route_signature"]
         self.nodes = {
@@ -92,10 +98,14 @@ class LaserFeed:
         self.lock = threading.RLock()
         self.serial_generation = 0
         self.serial_changed = threading.Event()
+        self.serial_enabled = auto_connect
+        self.serial_reader = None
+        self.stopping = False
         self.connected = False
         self.error = ""
         self.last_receive_ms = 0
         self.valid_frames = 0
+        self.range_stats = {}
         self.vehicle_state = None
         self.fault_reason = None
         self.status_time_ms = 0
@@ -149,6 +159,7 @@ class LaserFeed:
             self.error = "正在切换串口"
             self.last_receive_ms = 0
             self.valid_frames = 0
+            self.range_stats = {}
             self.vehicle_state = None
             self.fault_reason = None
             self.fault_from = None
@@ -175,6 +186,34 @@ class LaserFeed:
             self.raw_log_path = RAW_LOG_DIR / f"laser_live_{int(time.time() * 1000)}.log"
             self.serial_changed.set()
 
+    def connect_port(self, port: str) -> None:
+        self.select_port(port)
+        with self.lock:
+            self.serial_enabled = True
+            self.error = "正在连接串口"
+            self.serial_changed.set()
+
+    def disconnect(self) -> None:
+        with self.lock:
+            self.serial_enabled = False
+            self.serial_generation += 1
+            self.connected = False
+            self.error = "串口已断开"
+            reader = self.serial_reader
+            self.serial_reader = None
+            self.projection.stop("serial_disconnected")
+        if reader is not None and reader.is_open:
+            try:
+                reader.cancel_read()
+            except (AttributeError, OSError, serial.SerialException):
+                pass
+            reader.close()
+        self.serial_changed.set()
+
+    def stop(self) -> None:
+        self.stopping = True
+        self.disconnect()
+
     def snapshot(self) -> dict:
         with self.lock:
             gyro = self.gyro.copy() if self.gyro else None
@@ -191,9 +230,11 @@ class LaserFeed:
                 "baud": self.baud,
                 "raw_log_path": str(self.raw_log_path),
                 "connected": self.connected,
+                "serial_enabled": self.serial_enabled,
                 "error": self.error,
                 "last_receive_ms": self.last_receive_ms,
                 "valid_frames": self.valid_frames,
+                "range_stats": {ch: value.copy() for ch, value in self.range_stats.items()},
                 "vehicle_state": self.vehicle_state,
                 "fault_reason": self.fault_reason,
                 "status_time_ms": self.status_time_ms,
@@ -388,6 +429,7 @@ class LaserFeed:
                                    int(match.group("run")), None, None)
 
     def parse_line(self, line: str) -> None:
+        line = line.strip()
         loc_diag = LOC_DIAG.search(line)
         if loc_diag:
             with self.lock:
@@ -426,6 +468,31 @@ class LaserFeed:
             return
         if line.startswith("LOC NODE="):
             self._parse_location(line)
+            return
+        if line.startswith("BOOT FW=LASER_RANGE_CAL_"):
+            with self.lock:
+                self.range_stats.clear()
+                for channel in self.channels.values():
+                    channel.update(mm=None, confidence=None, time_ms=0, status=None)
+            return
+        stats = RANGE_STATS.fullmatch(line)
+        if stats:
+            channel = {"FRONT": "1", "LEFT": "2", "RIGHT": "3", "REAR": "4"}[stats["direction"]]
+            count = int(stats["n"])
+            with self.lock:
+                self.range_stats[channel] = {
+                    "n": count,
+                    "mean_mm": int(stats["mean"]) if count else None,
+                    "min_mm": int(stats["min"]) if count else None,
+                    "max_mm": int(stats["max"]) if count else None,
+                    "rejected": int(stats["rejected"]),
+                    "firmware": int(stats["firmware"]),
+                    "reference_mm": int(stats["reference"]) or None,
+                    "frames": int(stats["frames"]) if stats["frames"] else None,
+                    "window_ms": int(stats["window"]) if stats["window"] else None,
+                    "hz": int(stats["hz"]) / 10 if stats["hz"] and int(stats["window"]) > 0 else None,
+                    "time_ms": int(time.time() * 1000),
+                }
             return
         strategy_laser = STRATEGY_LASER.search(line)
         if strategy_laser:
@@ -480,21 +547,29 @@ class LaserFeed:
             del self.frame_bytes[:-9]
 
     def run(self) -> None:
-        while True:
+        while not self.stopping:
             with self.lock:
+                if self.stopping:
+                    return
+                self.serial_changed.clear()
+                enabled = self.serial_enabled
                 active_port = self.port
                 generation = self.serial_generation
-                self.serial_changed.clear()
+            if not enabled:
+                self.serial_changed.wait()
+                continue
             port_reader = serial.Serial(port=None, baudrate=self.baud, timeout=0.25)
             port_reader.port = active_port
             port_reader.dtr = False
             port_reader.rts = False
             try:
-                port_reader.open()
                 with self.lock:
-                    if self.serial_generation == generation:
-                        self.connected = True
-                        self.error = ""
+                    if self.serial_generation != generation or not self.serial_enabled:
+                        continue
+                    port_reader.open()
+                    self.serial_reader = port_reader
+                    self.connected = True
+                    self.error = ""
                 text_buffer = ""
                 with (RAW_LOG_DIR / f"laser_live_{int(time.time() * 1000)}.log").open("ab", buffering=0) as raw_log:
                     with self.lock:
@@ -529,6 +604,8 @@ class LaserFeed:
                 if port_reader.is_open:
                     port_reader.close()
                 with self.lock:
+                    if self.serial_reader is port_reader:
+                        self.serial_reader = None
                     if self.serial_generation == generation:
                         self.connected = False
 
@@ -540,8 +617,9 @@ def main() -> None:
     parser.add_argument("--http-port", type=int, default=8766)
     parser.add_argument("--open-browser", action="store_true",
                         help="Open the local dashboard after its HTTP port is ready")
+    parser.add_argument("--connect", action="store_true", help="Explicitly connect serial on startup")
     args = parser.parse_args()
-    feed = LaserFeed(args.port, args.baud)
+    feed = LaserFeed(args.port, args.baud, auto_connect=args.connect)
     threading.Thread(target=feed.run, daemon=True).start()
 
     class Handler(BaseHTTPRequestHandler):
@@ -596,11 +674,21 @@ def main() -> None:
                 if path == "/api/reset-position":
                     status, data = 200, feed.reset_position_view()
                 else:
-                    port = payload["port"]
-                    if not isinstance(port, str) or not re.fullmatch(r"COM\d{1,3}", port, re.I):
-                        raise ValueError("串口名称无效")
-                    feed.select_port(port)
-                    status, data = 200, {"port": feed.snapshot()["port"]}
+                    action = payload.get("action", "connect")
+                    if action == "disconnect":
+                        feed.disconnect()
+                    elif action in ("connect", "select"):
+                        port = payload["port"]
+                        if not isinstance(port, str) or not re.fullmatch(r"COM\d{1,3}", port, re.I):
+                            raise ValueError("串口名称无效")
+                        if action == "connect":
+                            feed.connect_port(port)
+                        else:
+                            feed.select_port(port)
+                    else:
+                        raise ValueError("串口操作无效")
+                    snap = feed.snapshot()
+                    status, data = 200, {"port": snap["port"], "connected": snap["connected"], "serial_enabled": snap["serial_enabled"]}
             except (ValueError, KeyError, json.JSONDecodeError) as exc:
                 status, data = 400, {"error": str(exc)}
             body = json.dumps(data, ensure_ascii=False).encode("utf-8")
@@ -622,6 +710,7 @@ def main() -> None:
     try:
         server.serve_forever()
     finally:
+        feed.stop()
         server.server_close()
 
 

@@ -1,0 +1,363 @@
+--- VIA2/AGENTS.md
++++ TOP7/AGENTS.md
+@@ -1,3 +1,19 @@
++# FIRST11_TOP7_SL1：首次经N035、N007取宝（本段优先）
++
++当前FW=`UARTCH4_16V_FIRST11_TOP7_SL1`。仅修改E盘本工程，桌面工程未写入。每次修改前必须读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/VIA2_before_top7_coin，294项散列。
++
++用户确认N077是N007笔误。首次完整路线为N054→N053→N044→N036→N035→N026→N017→N007→N006→N005→N004→N003→N002→N011；N005是内部宝藏标记，不作为灰度路口。到N011居中停稳后按已授权动作转90°朝西横停。N011北侧逃跑仍经N012/N023/N031去N063，其他策略保持。
++
++用户确认铁块约硬币大小且后板在线。仅首次1600路线N006→N004、正向FOLLOW、未确认到点、前板无线且后板有真实紧凑线时，后板误差以50RPM基准/最多20RPM差速辅助通过最多50mm。不伪造前板RAW，不提交节点；前板恢复即交回原巡线，后板无线或超50mm进入原恢复。5ms检测和20ms控制共用此判定，目标更新不快于20ms。不是关闭灰度、不是整条宝藏边无线通行，也不能保证解决所有反光读数形态。KEY与连续双白两秒等原保护保持。
++
++普通PID/速度/平滑/入中心与主旋转、激光前后1000/左右900mm、PA3声光及此前N011停车90°动作保持。未加入N059硬停车修复或LR1重定位。
++
++ARMCC5编译0错误0警告，当前16组ARM离线回归通过。ROM68556、RAM44896字节（增加8）、剩4256字节，含3KB栈；已知最大920字节，实物栈水位未测。当前证据VALIDATION_TOP7.json、TOP7_FILES.json、TOP7_CHANGESET.patch、Tests/top7_inputs.json、Tests/top7_suites.json。详见Docs/TOP7_首次取宝与反光短遮挡.md，下方旧报告为历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST11_VIA2_SL1：首次经N002进入N011（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_FIRST11_VIA2_SL1`，仅E盘本工程；桌面工程未写入。每次修改前仍须读README、AGENTS、Docs/修改规范与回归清单。修改前Reference/FIRST11_before_via2，共291项散列。
+--- VIA2/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ TOP7/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -150,10 +150,10 @@
+ }
+ 
+ /* User-selected outbound route. Keep every observable intermediate junction.
+- * W from N054; right at N053, left at N036, right at N033,
+- * left at N006. N005 is crossed without stopping toward N004. */
++ * Reach N035, then north through N026/N017 to N007; west through N006.
++ * N005 is crossed without stopping toward N004. */
+ static const uint16_t initial_treasure_path[] = {
+-  54U, 53U, 44U, 36U, 35U, 34U, 33U, 25U, 15U, 6U, 5U, 4U
++  54U, 53U, 44U, 36U, 35U, 26U, 17U, 7U, 6U, 5U, 4U
+ };
+ 
+ uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan)
+--- VIA2/Docs/TOP7_首次取宝与反光短遮挡.md
++++ TOP7/Docs/TOP7_首次取宝与反光短遮挡.md
+@@ -0,0 +1,30 @@
++# FIRST11_TOP7_SL1
++
++用户明确N077是上方N007的笔误；首次取宝走N035、N007，之后从N002转弯到N011。E盘现有VIA2作为基线，快照Reference/VIA2_before_top7_coin，294项散列。桌面未写入。
++
++## 路线
++
++完整路线：54→53→44→36→35→26→17→7→6→5→4→3→2→11。中间26、17是实际路口，不能用35→7虚构直接边；N005内部标记仍合并在6→4段。宝藏边实际从N005驶向N004，用户说的N004—N005描述的是同一条路段。本版未反转取宝方向。
++
++到N011仍先原100RPM/180ms居中、实测停稳，再复用原停车动作转90°朝西横停。N011北敌车走12→23→31→32→48→49→61→62→63，其他方向和首次锁存/前方回退例外不变。
++
++## 铁块反光
++
++用户确认铁块约硬币大小，前板可能因反光无线，后板在线。Route_TreasureRearBridge仅在首次1600路线6→4、正向、普通FOLLOW、未确认到点时启用。每次都检查后板真实紧凑线，只在前板ROUTE_GRAY_NO_LINE时辅助。
++
++沿用原四轮映射和轮速控制，基准50RPM、P差速最多±20RPM；前板RAW保持真实的0，后板误差不冒充前板测量。不提交节点、不换前后行进端。不因这段辅助清除里程锚点。辅助里程从首次无线时记录，最多50mm；前板恢复立即回正常巡线，后板不再有线或距离超限则回原RestartLineSearch。正常PID、速度与平滑参数不变。
++
++5ms快速失线入口和20msFOLLOW入口使用同一判定，5ms可以继续读取后板，但轮速目标更新仍受20ms周期限制。前后全白不授权前进，连续两秒双白停车、KEY及真实硬件故障保持。
++
++后板单独不能充分估计整车航向，因此只针对用户已确认的小遮挡。此实现不等于关闭前板，也不把ALL_BLACK、宽线、多簇反光等全部当成正常；若实测反光呈现另一类读数，应依据原始日志再判断，不能承诺硬件反光已完全解决。实际取宝成功仍按原标记/里程规则判断，无新增取宝反馈传感器。
++
++## 验证与交接
++
++ARMCC5全量编译0错误0警告。16组当前ARM离线回归，包括原15组与test_top7_coin.py。专项检查完整节点序列、首次N011目标和西向停车、三种后板偏差的正向差速、前板恢复、50mm上限、非首次/其他位置/倒车不启用、连续双白两秒停车；真实灰度读取与停稳判定参与，输入和电机响应仍为模拟。完整初始任务仍到N011横停，北侧逃跑和原停车测试保留。
++
++资源ROM68556、RAM44896，较VIA2增加8字节RAM，48KB剩4256；含预留栈3072，已知最大920字节，实际水位和中断叠加未测。当前AXF绑定各测试报告，见VALIDATION_TOP7.json、TOP7_CHANGESET.patch和TOP7_FILES.json。
++
++修改生产：Algorithm/ThiefStrategy/ThiefMapPlanner.c（仅初始前缀）、User/App_ThiefStrategy.c（短遮挡辅助与三处标识）。修改测试：Tests/test_hide_routes_stable4.py（新前缀预期，保留首次后缀及完整横停断言）。修改规范三文档：README、AGENTS、Docs/修改规范与回归清单。新增本说明、Tests/test_top7_coin.py、Tests/run_top7.py、Tests/validate_top7.py及TOP7验证产物。其他生产文件、Keil、PA3、激光配置逐文件散列保持。不包含N059支路锁死修复或移动重定位。
++
++复核顺序：ARMCC5全量构建，Tests/run_top7.py，Tests/validate_top7.py。旧版证据仅历史。本版仅编译通过，尚未完成硬件验证；未自动烧录、未占串口、未运行实物电机、未提交推送。实测核对BOOT=FIRST11_TOP7_SL1、N035向北/N007向西、TREASURE_REAR_BRIDGE与原始灰度，以及N002入N011和横停。
++
+--- VIA2/Docs/修改规范与回归清单.md
++++ TOP7/Docs/修改规范与回归清单.md
+@@ -1,3 +1,19 @@
++# FIRST11_TOP7_SL1：首次经N035、N007取宝（本段优先）
++
++当前FW=`UARTCH4_16V_FIRST11_TOP7_SL1`。仅修改E盘本工程，桌面工程未写入。每次修改前必须读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/VIA2_before_top7_coin，294项散列。
++
++用户确认N077是N007笔误。首次完整路线为N054→N053→N044→N036→N035→N026→N017→N007→N006→N005→N004→N003→N002→N011；N005是内部宝藏标记，不作为灰度路口。到N011居中停稳后按已授权动作转90°朝西横停。N011北侧逃跑仍经N012/N023/N031去N063，其他策略保持。
++
++用户确认铁块约硬币大小且后板在线。仅首次1600路线N006→N004、正向FOLLOW、未确认到点、前板无线且后板有真实紧凑线时，后板误差以50RPM基准/最多20RPM差速辅助通过最多50mm。不伪造前板RAW，不提交节点；前板恢复即交回原巡线，后板无线或超50mm进入原恢复。5ms检测和20ms控制共用此判定，目标更新不快于20ms。不是关闭灰度、不是整条宝藏边无线通行，也不能保证解决所有反光读数形态。KEY与连续双白两秒等原保护保持。
++
++普通PID/速度/平滑/入中心与主旋转、激光前后1000/左右900mm、PA3声光及此前N011停车90°动作保持。未加入N059硬停车修复或LR1重定位。
++
++ARMCC5编译0错误0警告，当前16组ARM离线回归通过。ROM68556、RAM44896字节（增加8）、剩4256字节，含3KB栈；已知最大920字节，实物栈水位未测。当前证据VALIDATION_TOP7.json、TOP7_FILES.json、TOP7_CHANGESET.patch、Tests/top7_inputs.json、Tests/top7_suites.json。详见Docs/TOP7_首次取宝与反光短遮挡.md，下方旧报告为历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST11_VIA2_SL1：首次经N002进入N011（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_FIRST11_VIA2_SL1`，仅E盘本工程；桌面工程未写入。每次修改前仍须读README、AGENTS、Docs/修改规范与回归清单。修改前Reference/FIRST11_before_via2，共291项散列。
+--- VIA2/README.md
++++ TOP7/README.md
+@@ -1,3 +1,19 @@
++# FIRST11_TOP7_SL1：首次经N035、N007取宝（本段优先）
++
++当前FW=`UARTCH4_16V_FIRST11_TOP7_SL1`。仅修改E盘本工程，桌面工程未写入。每次修改前必须读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/VIA2_before_top7_coin，294项散列。
++
++用户确认N077是N007笔误。首次完整路线为N054→N053→N044→N036→N035→N026→N017→N007→N006→N005→N004→N003→N002→N011；N005是内部宝藏标记，不作为灰度路口。到N011居中停稳后按已授权动作转90°朝西横停。N011北侧逃跑仍经N012/N023/N031去N063，其他策略保持。
++
++用户确认铁块约硬币大小且后板在线。仅首次1600路线N006→N004、正向FOLLOW、未确认到点、前板无线且后板有真实紧凑线时，后板误差以50RPM基准/最多20RPM差速辅助通过最多50mm。不伪造前板RAW，不提交节点；前板恢复即交回原巡线，后板无线或超50mm进入原恢复。5ms检测和20ms控制共用此判定，目标更新不快于20ms。不是关闭灰度、不是整条宝藏边无线通行，也不能保证解决所有反光读数形态。KEY与连续双白两秒等原保护保持。
++
++普通PID/速度/平滑/入中心与主旋转、激光前后1000/左右900mm、PA3声光及此前N011停车90°动作保持。未加入N059硬停车修复或LR1重定位。
++
++ARMCC5编译0错误0警告，当前16组ARM离线回归通过。ROM68556、RAM44896字节（增加8）、剩4256字节，含3KB栈；已知最大920字节，实物栈水位未测。当前证据VALIDATION_TOP7.json、TOP7_FILES.json、TOP7_CHANGESET.patch、Tests/top7_inputs.json、Tests/top7_suites.json。详见Docs/TOP7_首次取宝与反光短遮挡.md，下方旧报告为历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST11_VIA2_SL1：首次经N002进入N011（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_FIRST11_VIA2_SL1`，仅E盘本工程；桌面工程未写入。每次修改前仍须读README、AGENTS、Docs/修改规范与回归清单。修改前Reference/FIRST11_before_via2，共291项散列。
+--- VIA2/Tests/run_top7.py
++++ TOP7/Tests/run_top7.py
+@@ -0,0 +1,23 @@
++"""Actual linked firmware, simulated peripherals only. No serial/flash/motors."""
++from pathlib import Path
++import sys,subprocess,concurrent.futures,json,hashlib
++r=Path(__file__).resolve().parents[1];sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
++image=r/'MDK-ARM'/r.name/(r.name+'.axf')
++inputs={p.relative_to(r).as_posix():sha(p) for folder in ['User','Control','Algorithm','Hardware','Core','System','Drivers','MDK-ARM'] for p in (r/folder).rglob('*') if p.is_file() and p.suffix.lower() in ['.c','.h','.s','.uvprojx']}
++test_inputs={p.relative_to(r).as_posix():sha(p) for p in (r/'Tests').glob('*.py')}
++(r/'Tests/top7_inputs.json').write_text(json.dumps(dict(production=inputs,test_sources=test_inputs,axf_sha256=sha(image)),indent=2),encoding='utf-8')
++tests=['test_strategy_stable2.py','test_temp78_stable3.py','test_n011_first_plan_stable10.py','test_hide_routes_stable4.py','test_escape_completion.py','test_turn_resume.py','test_left800.py','test_live_monitor.py','test_west63.py','test_trace_front_probe.py','test_trace_return.py','test_trace_recovery.py','test_n068_recovery.py','test_rear_retrace.py','test_short_return.py','test_top7_coin.py']
++def run(n):
++    with (r/'Tests'/('top7_'+n+'.log')).open('w',encoding='utf-8') as f:
++        p=subprocess.run([sys.executable,'-X','utf8',str(r/'Tests'/n)],stdout=f,stderr=subprocess.STDOUT)
++    return dict(test=n,exit_code=p.returncode)
++results=[]
++with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
++    for f in concurrent.futures.as_completed([ex.submit(run,n) for n in tests]):
++        result=f.result();results.append(result);print(result,flush=True)
++        if result['exit_code']:print((r/'Tests'/('top7_'+result['test']+'.log')).read_text(encoding='utf-8')[-3000:],flush=True)
++(r/'Tests/top7_suites.json').write_text(json.dumps(results,indent=2),encoding='utf-8')
++assert all(x['exit_code']==0 for x in results),results
++assert all(sha(r/p)==h for p,h in inputs.items()),'production changed during tests'
++assert all(sha(r/p)==h for p,h in test_inputs.items()),'test source changed during tests'
++
+--- VIA2/Tests/test_hide_routes_stable4.py
++++ TOP7/Tests/test_hide_routes_stable4.py
+@@ -50,7 +50,7 @@
+ fresh(54,3);ok=call('ThiefMapPlanner_PlanInitial',plan)
+ expect(ok,'initial treasure route still builds')
+ if ok:
+-    expect(path()[:10]==[53,44,36,35,34,33,25,15,6,4],'initial treasure prefix unchanged')
++    expect(path()[:9]==[53,44,36,35,26,17,7,6,4],'initial treasure route uses N035-N026-N017-N007')
+     expect(path()[-3:]==[3,2,11],'first hide enters N011 by turning at N002')
+     expect(member('thief_plan','goal_node')==11 and member('thief_plan','final_body_heading') in [1,3],
+            'first requested N011 hide is reached horizontally')
+--- VIA2/Tests/test_top7_coin.py
++++ TOP7/Tests/test_top7_coin.py
+@@ -0,0 +1,53 @@
++"""Actual ARM task with synthetic gray, odometry and wheels; no real hardware."""
++from pathlib import Path
++import json,hashlib
++ROOT=Path(__file__).absolute().parents[1]
++setup=(ROOT/'Tests/test_n068_recovery.py').read_text(encoding='utf-8').split('failures=[]')[0]
++exec(compile(setup,str(ROOT/'Tests/test_n068_recovery.py'),'exec'))
++
++def cycle(dt=20):
++    global clock
++    clock+=dt;call('App_ThiefStrategy_Task')
++
++def coin_start(a=6,b=4,h=3,mode=0,rid=1600):
++    global front_raw,back_raw,odom
++    front_raw=back_raw=0x60;fresh(a,(h+2*mode)%4)
++    setstep(a,b,h,mode,600 if a==75 else 300)
++    if (a,b) in [(6,4),(4,6)]:record(steps,'MapRouteStep_t',dict(segment_count=2))
++    record(route,'MapRoute_t',dict(id=rid,count=1,start_node=a,heading=h,drive_mode=mode))
++    call('Route_Start')
++    for _ in range(8):cycle()
++    check(var('route_state')==2,'actual stripe enters FOLLOW')
++    odom=170;commands.clear()
++
++failures=[];cases=[]
++try:
++    fresh(54,3);check(call('ThiefMapPlanner_PlanInitial',plan)==1,'initial route builds')
++    nodes=[at(steps+i*size(types['MapRouteStep_t']),'MapRouteStep_t','to_node') for i in range(at(route,'MapRoute_t','count'))]
++    check(nodes==[53,44,36,35,26,17,7,6,4,3,2,11],'complete requested map route, N005 remains an internal mark')
++    check(member('thief_plan','goal_node')==11 and member('thief_plan','final_body_heading')==3,'first hide remains N011 west parked')
++    cases.append(dict(case='route',nodes=nodes))
++    for raw in [0x60,0x30,0xC0]:
++        coin_start();front_raw=0;back_raw=raw
++        for _ in range(3):
++            cycle();odom+=8
++            check(var('route_state')==2 and not member('map_nav','arrived'),'rear stripe passes short gap without claiming N004')
++        drive=[x for x in commands if x[0]=='drive']
++        check(drive and all(300<=x[1]<=700 and 300<=x[2]<=700 for x in drive),'rear P correction commands forward targets only')
++        front_raw=back_raw=0x60;cycle()
++        check(var('route_state')==2 and not var('treasure_rear_bridge'),'front stripe restores normal follow')
++        cases.append(dict(case='coin',raw=raw,commands=drive))
++    coin_start();front_raw=0;cycle();odom=225;cycle()
++    check(var('route_state')==8,'50mm front gap falls back to existing recovery')
++    for args in [(6,4,3,0,1601),(4,6,1,1,1600),(75,59,0,0,1600)]:
++        coin_start(*args);front_raw=0;cycle()
++        check(var('route_state')==8 and not var('treasure_rear_bridge'),'unrelated route/frame cannot use exception')
++    coin_start();front_raw=back_raw=0;cycle()
++    check(not var('treasure_rear_bridge') and var('route_state')==8,'both-white never authorizes forward bridge')
++    for _ in range(110):cycle()
++    check(var('route_state')==10 and reason()=='GRAY_BOTH_NO_LINE','continuous both-white two seconds stops')
++    cases.append(dict(case='distance_and_white_limits'))
++except Exception as e:failures.append(str(e))
++out=dict(checks=checks,failures=failures,cases=cases,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False)
++(ROOT/'Tests/results_top7_coin.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(out,indent=2));assert not failures,failures
+--- VIA2/Tests/validate_top7.py
++++ TOP7/Tests/validate_top7.py
+@@ -0,0 +1,50 @@
++"""Current image/source/report binding; synthetic tests are not hardware proof."""
++from pathlib import Path
++import json,hashlib,re,difflib,xml.etree.ElementTree as ET
++r=Path(__file__).resolve().parents[1];b=r/'Reference/VIA2_before_top7_coin'
++sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
++read=lambda p:p.read_text(encoding='utf-8')
++load=lambda p:json.loads(read(p))
++image=r/'MDK-ARM'/r.name/(r.name+'.axf');ah=sha(image)
++z=load(r/'Tests/top7_inputs.json');assert z['axf_sha256']==ah
++assert all(sha(r/n)==h for n,h in z['production'].items())
++assert all(sha(r/n)==h for n,h in z['test_sources'].items())
++snapshot=load(b/'SNAPSHOT_SHA256.json');assert len(snapshot)==294 and all(sha(b/n)==h for n,h in snapshot.items())
++delta={n for n in z['production'] if sha(b/n)!=sha(r/n)}
++assert delta=={'User/App_ThiefStrategy.c','Algorithm/ThiefStrategy/ThiefMapPlanner.c'}
++app=read(r/'User/App_ThiefStrategy.c');old=read(b/'User/App_ThiefStrategy.c')
++assert app.count('UARTCH4_16V_FIRST11_TOP7_SL1')==3 and b'UARTCH4_16V_FIRST11_TOP7_SL1' in image.read_bytes()
++def fn(s,name):
++    m=re.search(r'^static [^;\n]+\b'+name+r'\([^;]*?\)\s*\{',s,re.M);assert m,name
++    j=s.index('{',m.start());k=j+1;depth=1
++    while depth:depth+=(s[k]=='{')-(s[k]=='}');k+=1
++    return s[m.start():k]
++frozen=['Route_ReadFront','Route_ReadRear','Route_UpdateErrors','Route_UpdateFollowMode','Route_RunFollow','Route_FinishNodeStop','Route_DriveLeftTurn','Route_DriveRightTurn','Route_EnterTurnApproach','Route_EnterTurnStop','Route_HasReachedTurnAngle']
++assert all(fn(app,n)==fn(old,n) for n in frozen)
++planner='Algorithm/ThiefStrategy/ThiefMapPlanner.c'
++assert read(r/planner).split('uint8_t ThiefMapPlanner_PlanInitial(',1)[1]==read(b/planner).split('uint8_t ThiefMapPlanner_PlanInitial(',1)[1]
++suites=load(r/'Tests/top7_suites.json');assert len(suites)==16 and all(x['exit_code']==0 for x in suites)
++reports={}
++for n in ['results_strategy_stable2.json','results_temp78_stable3.json','results_n011_first_plan_stable10.json','results_hide_routes_stable4.json','results_escape_completion.json','results_turn_resume.json','results_left800.json','results_live_monitor.json','west63_after.json','trace_front_after.json','results_trace_return.json','results_trace_recovery.json','results_n068_recovery.json','results_rear_retrace.json','results_short_return.json','results_top7_coin.json']:
++    p=r/'Tests'/n;q=load(p);assert not q.get('failures') and not q.get('failure'),n
++    assert q.get('axf_sha256',q.get('firmware_sha256'))==ah,n
++    reports[n]=dict(checks=q.get('checks'),sha256=sha(p))
++initial=next(x for x in load(r/'Tests/results_hide_routes_stable4.json')['lifecycles'] if x['kind']=='initial')
++assert initial['result']['node']==11 and initial['result']['body']==3
++nodes=load(r/'Tests/results_top7_coin.json')['cases'][0]['nodes']
++assert nodes==[53,44,36,35,26,17,7,6,4,3,2,11]
++proj=r/'MDK-ARM'/(r.name+'.uvprojx');paths=ET.parse(proj).findall('.//FilePath')
++assert len(paths)==len({n.text.lower() for n in paths}) and all((proj.parent/n.text.replace('\\','/')).exists() for n in paths)
++assert '0 Error(s), 0 Warning(s)' in read(r/'build_top7.log')
++mp=read(image.with_suffix('.map'));htm=read(image.with_suffix('.htm'))
++rom=int(re.search(r'Total ROM Size[^\n]+?\)\s+(\d+)',mp)[1]);ram=int(re.search(r'Total RW\s+Size[^\n]+?\)\s+(\d+)',mp)[1]);stack=int(re.search(r'Maximum Stack Usage =\s*(\d+)',htm)[1])
++assert (rom,ram,stack)==(68556,44896,920)
++changed=[n for n,h in snapshot.items() if n.endswith(('.c','.h','.s','.md','.py','.ioc','.uvprojx','.uvoptx')) and sha(r/n)!=h]
++added=['Tests/run_top7.py','Tests/validate_top7.py','Tests/test_top7_coin.py','Docs/TOP7_\u9996\u6b21\u53d6\u5b9d\u4e0e\u53cd\u5149\u77ed\u906e\u6321.md']
++patch=''.join(''.join(difflib.unified_diff(read(b/n).splitlines(True) if (b/n).exists() else [],read(r/n).splitlines(True),fromfile='VIA2/'+n,tofile='TOP7/'+n)) for n in sorted(changed+added))
++(r/'TOP7_CHANGESET.patch').write_text(patch,encoding='utf-8')
++artifacts=changed+added+['TOP7_CHANGESET.patch','build_top7.log','Tests/top7_inputs.json','Tests/top7_suites.json']+['Tests/'+n for n in reports]+[p.relative_to(r).as_posix() for p in (r/'Tests').glob('top7_*.log')]+[image.with_suffix(s).relative_to(r).as_posix() for s in ('.axf','.hex','.map','.htm')]
++(r/'TOP7_FILES.json').write_text(json.dumps(dict(modified=changed,added=added,hashes={n:sha(r/n) for n in sorted(set(artifacts))},generated_manifests=['TOP7_FILES.json','VALIDATION_TOP7.json']),ensure_ascii=False,indent=2),encoding='utf-8')
++out=dict(firmware='UARTCH4_16V_FIRST11_TOP7_SL1',project=str(r),axf_sha256=ah,hex_sha256=sha(image.with_suffix('.hex')),source_hashes=z['production'],test_source_hashes=z['test_sources'],validator_sha256=sha(Path(__file__)),production_changed=sorted(delta),frozen_functions=frozen,suites=suites,reports=reports,baseline_files_checked=294,rom_bytes=rom,ram_bytes=ram,ram_added_bytes=8,ram_remaining_bytes=48*1024-ram,reserved_stack_bytes=3072,linker_known_stack_bytes=stack,hardware_stack_watermark_measured=False,desktop_written=False,hardware_tested=False,flashed=False,serial_opened=False,motors_run=False)
++(r/'VALIDATION_TOP7.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(dict(firmware=out['firmware'],suites=len(suites),initial_hide=11,ram_bytes=ram,axf_sha256=ah,hardware_tested=False),indent=2))
+--- VIA2/User/App_ThiefStrategy.c
++++ TOP7/User/App_ThiefStrategy.c
+@@ -201,6 +201,8 @@
+ static uint8_t departure_reacquire;
+ static int16_t last_leading_error;
+ static uint8_t last_leading_mode;
++static uint8_t treasure_rear_bridge;
++static int32_t treasure_rear_start_mm;
+ static uint8_t replan_after_leg;
+ static uint8_t intercept_escape_mask;
+ static uint32_t intercept_threat_tick;
+@@ -807,6 +809,33 @@
+   Route_UpdateErrors(sample);
+ }
+ 
++/* First treasure traverse only: real trailing stripe supports a short coin gap.
++ * Keep actual leading RAW unchanged and never commit a node in this helper. */
++static uint8_t Route_TreasureRearBridge(RouteGraySample_t *sample,uint32_t dt)
++{
++  const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++  int32_t progress,turn;
++  if(front_state!=ROUTE_GRAY_NO_LINE || departure_turn || map_nav.arrived ||
++      !step || map_nav.route->id!=1600U || step->from_node!=6U ||
++      step->to_node!=4U || step->heading!=3U || TravelFrame_IsReverse())return 0U;
++  rear_state=Route_ReadRear(sample);
++  if(rear_state!=ROUTE_GRAY_VALID || !ThiefRouteTrail_TrackLine(sample->rear_raw12))return 0U;
++  progress=Route_LegProgress();
++  if(!treasure_rear_bridge) {
++    treasure_rear_bridge=1U;treasure_rear_start_mm=progress;
++    UartDebug_Printf("TREASURE_REAR_BRIDGE MM=%ld RAW=%03X,%03X\r\n",
++        (long)progress,(unsigned)sample->front_raw12,(unsigned)sample->rear_raw12);
++  }
++  if(progress-treasure_rear_start_mm>=50L || progress<treasure_rear_start_mm)return 0U;
++  if(dt<LINE_FOLLOW_PID_CONTROL_PERIOD_MS)return 1U;
++  turn=sample->rear_error_x100;
++  if(turn>200L)turn=200L;else if(turn< -200L)turn=-200L;
++  TravelFrame_SetWheelTargets(500L+turn,500L-turn,500L+turn,500L-turn);
++  ChassisSpeedControl_Update(dt);
++  if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
++  return 1U;
++}
++
+ static void Route_DriveStraight(uint32_t elapsed_ms)
+ {
+   int32_t step = (int32_t)(((int64_t)ROUTE_LEAVE_RAMP_STEP_RPM_X10 *
+@@ -1467,6 +1496,7 @@
+   RouteGraySample_t sample;
+   uint32_t now;
+   uint8_t turn_delta=0U;
++  treasure_rear_bridge=0U;
+   trace_pass_pending=0U;
+   if(!replan_after_leg && thief_strategy_state==THIEF_STRATEGY_HIDING &&
+       thief_current_node==thief_plan.route.start_node && ThiefIntercept_HideAxis(thief_current_node)) {
+@@ -1836,7 +1866,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_FIRST11_VIA2_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_FIRST11_TOP7_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1862,7 +1892,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_FIRST11_VIA2_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_FIRST11_TOP7_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1911,7 +1941,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_FIRST11_VIA2_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_FIRST11_TOP7_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2187,6 +2217,12 @@
+       Route_HandleJunction(SystemTime_GetMs(), elapsed_ms, front_state, sample.front_raw12);
+       goto task_end;
+     }
++    if(front_state==ROUTE_GRAY_NO_LINE &&
++        Route_TreasureRearBridge(&sample,(uint32_t)(now-last_control_tick))) {
++      if((uint32_t)(now-last_control_tick)>=LINE_FOLLOW_PID_CONTROL_PERIOD_MS)
++        last_control_tick=now;
++      goto task_end;
++    }
+     /* Arm after three consecutive fast valid samples (about 15 ms). A
+      * junction/invalid sample between them must restart that count. */
+     Route_UpdateJunctionArm(front_state);
+@@ -2263,6 +2299,8 @@
+     case ROUTE_STATE_FOLLOW:
+       Route_ResetSample(&sample);
+       front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if(front_state!=ROUTE_GRAY_NO_LINE)treasure_rear_bridge=0U;
++      if(Route_TreasureRearBridge(&sample,elapsed_ms))break;
+       if (!departure_turn && (map_nav.arrived == 0U) && (Route_IsJunctionCandidate(front_state) != 0U) &&
+           (junction_armed != 0U) &&
+         MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress()) &&

@@ -1,0 +1,27 @@
+{
+  "checks": 76,
+  "cases": {
+    "n011_exit_policy": {
+      "body_directions": 4,
+      "world_threats": 2,
+      "blocked_cases": 3
+    }
+  },
+  "failures": [
+    {
+      "case": "relative_threshold",
+      "error": "actual task relative45degree threshold including wrap/sign/reverse"
+    },
+    {
+      "case": "whole_map_handoff",
+      "error": "police immediate handoff used at every mapped turn"
+    },
+    {
+      "case": "root_gray_branches",
+      "error": "root turn hands to after-turn state"
+    }
+  ],
+  "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "test_sha256": "0c999d7f2c45a2b84ae541716cdae98ef91471ec5edcd5b9acb57dc87e8e419f",
+  "hardware_tested": false
+}

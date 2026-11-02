@@ -1,0 +1,192 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -174,7 +174,6 @@
+ static uint32_t route_state_tick;
+ static uint32_t last_control_tick;
+ static uint32_t last_front_watch_tick;
+-static uint8_t front_watch_extra_ms; /* Alternate 4/5ms: average 4.5ms. */
+ static uint32_t turn_stop_frame_count;
+ static int16_t turn_start_angle_x100;
+ static RouteState_t front_resume_state;
+@@ -998,7 +997,7 @@
+   junction_armed = 0U;
+   junction_latched = 0U;
+   rearm_valid_count = 0U;
+-  last_front_watch_tick = now;front_watch_extra_ms=0U;
++  last_front_watch_tick = now;
+   UartDebug_Printf("STATE=FOLLOW JUNCTION=%u\r\n",
+                    (unsigned)junction_count);
+ }
+@@ -1690,7 +1689,7 @@
+   turn_start_angle_x100 = 0;
+   turn_stop_frame_count = 0U;
+   last_control_tick = now;
+-  last_front_watch_tick = now;front_watch_extra_ms=0U;
++  last_front_watch_tick = now;
+   Route_ResetControl(1U);
+   route_state = ROUTE_STATE_LEAVE_START;
+   thief_strategy_state = (thief_plan.route.id == 1600U) ?
+@@ -1861,7 +1860,7 @@
+   intercept_pending=0U;retreat_active=1U;
+   junction_armed=0U;junction_latched=0U;front_was_valid=0U;rearm_valid_count=0U;
+   rear_valid_count=0U;follow_mode=ROUTE_FOLLOW_FRONT_ONLY;
+-  route_state_tick=now;last_front_watch_tick=now;front_watch_extra_ms=0U;
++  route_state_tick=now;last_front_watch_tick=now;
+   leave_target_rpm_x10=ROUTE_LEAVE_INITIAL_RPM_X10;
+   route_state=ROUTE_STATE_LEAVE_START;
+   Route_ResetSample(&sample);front_state=Route_ReadFront(&sample);
+@@ -1919,7 +1918,7 @@
+   run_start_tick = SystemTime_GetMs();
+   route_state_tick = run_start_tick;
+   last_control_tick = run_start_tick;
+-  last_front_watch_tick = run_start_tick;front_watch_extra_ms=0U;
++  last_front_watch_tick = run_start_tick;
+   turn_stop_frame_count = 0U;
+   JY61P_Init();
+   ThiefLocalization_Reset(&thief_localization);
+@@ -1930,7 +1929,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_GRAY45_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_GRAY4_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1956,7 +1955,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_GRAY45_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_GRAY4_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2005,7 +2004,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_GRAY45_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_GRAY4_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2254,14 +2253,14 @@
+ 
+   /* Junction detection must not wait for the 20 ms PID period. At 200 RPM the
+    * car advances about 1.36 cm in 20 ms, so a narrow P11+P12 or P1+P2 event
+-   * can otherwise fall between two control samples. This alternating 4/5 ms watch only
++   * can otherwise fall between two control samples. This fixed 4 ms watch only
+    * reads the front board and enters active braking; PID timing is unchanged. */
+   if ((route_active != 0U) && !departure_turn &&
+       (route_state == ROUTE_STATE_FOLLOW) &&
+       ((uint32_t)(now - last_front_watch_tick) >=
+-       (ROUTE_JUNCTION_WATCH_PERIOD_MS+front_watch_extra_ms)))
+-  {
+-    last_front_watch_tick = now;front_watch_extra_ms^=1U;
++       ROUTE_JUNCTION_WATCH_PERIOD_MS))
++  {
++    last_front_watch_tick = now;
+     Route_ResetSample(&sample);
+     front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
+     if(retreat_active && !map_nav.arrived &&
+@@ -2287,7 +2286,7 @@
+         last_control_tick=now;
+       goto task_end;
+     }
+-    /* Arm after three consecutive fast valid samples (about 13-14 ms). A
++    /* Arm after three consecutive fast valid samples (about 12 ms). A
+      * junction/invalid sample between them must restart that count. */
+     Route_UpdateJunctionArm(front_state);
+     if ((front_state == ROUTE_GRAY_NO_LINE) ||
+@@ -2478,7 +2477,7 @@
+                              now, (int32_t)TravelFrame_IsReverse());
+           seed = ROUTE_AFTER_TURN_START_RPM_X10;
+           Route_EnterFollow(now, 0U, seed, 1U);
+-          last_front_watch_tick = now;front_watch_extra_ms=0U;
++          last_front_watch_tick = now;
+           if(front_state==ROUTE_GRAY_VALID || front_state==ROUTE_GRAY_LEFT_BLACK || front_state==ROUTE_GRAY_RIGHT_BLACK)
+             (void)Route_RunFollow(&sample,elapsed_ms);
+           else Route_EnterFrontRecovery(now,front_state);
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,15 @@
++# GRAY4_SL1：前端快速检测固定4U（本段优先）
++
++当前FW=UARTCH4_16V_GRAY4_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/GRAY45_before_fixed4。
++
++依用户明确要求，ROUTE_JUNCTION_WATCH_PERIOD_MS固定4U，目标4ms约250Hz，已删除front_watch_extra_ms变量、相位复位和周期交替。保留现有毫秒调度，不是硬实时保证；仅普通FOLLOW行进领先板快速监测，PID仍20ms。三帧条件保持，对应目标约12ms。其他控制参数、三个藏点50°和微调350、路线和激光保持，未解决此前N059长路段支路故障。
++
++ARMCC5全量编译0错误0警告。固定周期专项79项、短路段129项ARM离线检查通过，共208项；理想调度下快速监测在4/8/12/16/20/24/28/32/36/40ms，PID仅20/40ms更新。无交替变量。证据GRAY4_FILES.json、GRAY4_CHANGESET.patch、build_gray4.log、Tests/results_gray4.json和Tests/results_shortleg5070.json。历史test_gray45.py保留供旧版本参考，不是当前定时测试。
++
++仅编译通过，尚未完成硬件验证。实际频率未测，未烧录、未占串口、未运行实物电机、未提交推送。下方平均4.5ms交替说明为历史。
++
++---
++
+ # GRAY45_SL1：前端快速检测平均4.5ms（本段优先）
+ 
+ 当前FW=UARTCH4_16V_GRAY45_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。修改前磁盘周期已被用户设为3U，原样备份Reference/GRAY3MS_before_gray45，不应将其误记为2U。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,15 @@
++# GRAY4_SL1：前端快速检测固定4U（本段优先）
++
++当前FW=UARTCH4_16V_GRAY4_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/GRAY45_before_fixed4。
++
++依用户明确要求，ROUTE_JUNCTION_WATCH_PERIOD_MS固定4U，目标4ms约250Hz，已删除front_watch_extra_ms变量、相位复位和周期交替。保留现有毫秒调度，不是硬实时保证；仅普通FOLLOW行进领先板快速监测，PID仍20ms。三帧条件保持，对应目标约12ms。其他控制参数、三个藏点50°和微调350、路线和激光保持，未解决此前N059长路段支路故障。
++
++ARMCC5全量编译0错误0警告。固定周期专项79项、短路段129项ARM离线检查通过，共208项；理想调度下快速监测在4/8/12/16/20/24/28/32/36/40ms，PID仅20/40ms更新。无交替变量。证据GRAY4_FILES.json、GRAY4_CHANGESET.patch、build_gray4.log、Tests/results_gray4.json和Tests/results_shortleg5070.json。历史test_gray45.py保留供旧版本参考，不是当前定时测试。
++
++仅编译通过，尚未完成硬件验证。实际频率未测，未烧录、未占串口、未运行实物电机、未提交推送。下方平均4.5ms交替说明为历史。
++
++---
++
+ # GRAY45_SL1：前端快速检测平均4.5ms（本段优先）
+ 
+ 当前FW=UARTCH4_16V_GRAY45_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。修改前磁盘周期已被用户设为3U，原样备份Reference/GRAY3MS_before_gray45，不应将其误记为2U。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,15 @@
++# GRAY4_SL1：前端快速检测固定4U（本段优先）
++
++当前FW=UARTCH4_16V_GRAY4_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/GRAY45_before_fixed4。
++
++依用户明确要求，ROUTE_JUNCTION_WATCH_PERIOD_MS固定4U，目标4ms约250Hz，已删除front_watch_extra_ms变量、相位复位和周期交替。保留现有毫秒调度，不是硬实时保证；仅普通FOLLOW行进领先板快速监测，PID仍20ms。三帧条件保持，对应目标约12ms。其他控制参数、三个藏点50°和微调350、路线和激光保持，未解决此前N059长路段支路故障。
++
++ARMCC5全量编译0错误0警告。固定周期专项79项、短路段129项ARM离线检查通过，共208项；理想调度下快速监测在4/8/12/16/20/24/28/32/36/40ms，PID仅20/40ms更新。无交替变量。证据GRAY4_FILES.json、GRAY4_CHANGESET.patch、build_gray4.log、Tests/results_gray4.json和Tests/results_shortleg5070.json。历史test_gray45.py保留供旧版本参考，不是当前定时测试。
++
++仅编译通过，尚未完成硬件验证。实际频率未测，未烧录、未占串口、未运行实物电机、未提交推送。下方平均4.5ms交替说明为历史。
++
++---
++
+ # GRAY45_SL1：前端快速检测平均4.5ms（本段优先）
+ 
+ 当前FW=UARTCH4_16V_GRAY45_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。修改前磁盘周期已被用户设为3U，原样备份Reference/GRAY3MS_before_gray45，不应将其误记为2U。
+--- /dev/null
++++ after/Tests/test_gray4.py
+@@ -0,0 +1,25 @@
++from pathlib import Path
++import json,hashlib
++ROOT=Path(__file__).absolute().parents[1]
++setup=(ROOT/'Tests/test_arrival_gate.py').read_text(encoding='utf-8').split('try:')[0]
++exec(compile(setup,str(ROOT/'Tests/test_arrival_gate.py'),'exec'))
++failures=[];watch=[]
++try:
++ begin();odom=180;front_raw=back_raw=0x60
++ var('last_front_watch_tick',clock);var('last_control_tick',clock);commands.clear();start=clock;last=clock
++ for _ in range(40):
++  tick(1);nowwatch=var('last_front_watch_tick')
++  if nowwatch!=last:watch.append(clock-start);last=nowwatch
++ check(watch==list(range(4,41,4)),f'ideal scheduler uses fixed 4ms fast watch: {watch}')
++ check(len([x for x in commands if x[0]=='drive'])==2,'20ms PID remains at 20ms and 40ms')
++ begin();odom=180;front_raw=0x60;var('last_front_watch_tick',clock);var('last_control_tick',clock)
++ for _ in range(3):tick(1)
++ check(not member('map_nav','arrived'),'before first watch interval no new arrival')
++ front_raw=0x07F;tick(1)
++ check(member('map_nav','arrived') and var('route_state')==3,'right branch at 4ms accepted before PID update')
++ # No alternation state remains.
++ begin();check('front_watch_extra_ms' not in symbols,'alternating phase state removed')
++except Exception as e:failures.append(str(e))
++out=dict(checks=checks,failures=failures,watch_offsets_ms=watch,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False,ideal_scheduler=True)
++(ROOT/'Tests/results_gray4.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(out,indent=2));assert not failures,failures

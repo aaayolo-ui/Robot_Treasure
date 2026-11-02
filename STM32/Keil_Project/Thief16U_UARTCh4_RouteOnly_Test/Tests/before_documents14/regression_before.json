@@ -1,0 +1,26 @@
+{
+  "checks": 20,
+  "failures": [
+    {
+      "case": "log_replay",
+      "error": "no latched fault at N040: MAP_GRAY_REACQUIRE_FAILED"
+    },
+    {
+      "case": "heading_sweep",
+      "error": "localized road does not impose a second heading tolerance"
+    }
+  ],
+  "passed": [
+    "original_rejections"
+  ],
+  "heading_sweep_cases": 0,
+  "firmware_sha256": "590ce6589e02cf42124d54dd4a331ed0b2cda365cc61496c3ad12cb907738b13",
+  "hardware_tested": false,
+  "app_source_sha256": "1d298c66a8d2d4a0467b7ae1b061150026e29e3382b4ae5b9bf0c1eb5df0fdd8",
+  "test_script_sha256": "5f3756e7f87cc3432e88dc29797437d916e4835ef87e635da4f11e3925328c02",
+  "helper_sha256": {
+    "test_app_runtime.py": "87a3143113f0e49cbe708be0505bf5d31370f7ad25071e6912063d5c53d6f2d7",
+    "test_escape_completion.py": "7cde476ca5743cef510464cb48edfb7a360ca3e65ac1d33f3c62cd1deb7f8711",
+    "test_documents13.py": "1bac297603ebe91518075f530493365ebc5a0389bbf9e5ee7c9de8545d7af994"
+  }
+}

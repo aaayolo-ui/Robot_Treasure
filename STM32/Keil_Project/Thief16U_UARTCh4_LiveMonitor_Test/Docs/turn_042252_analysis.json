@@ -1,0 +1,82 @@
+{
+  "log_sha256": "53d44d9290a45ff469d26b4d129e3a58a86bed82e859492765cddec8da5d93b3",
+  "rows": [
+    {
+      "node": 52,
+      "start": 6129,
+      "coarse": 15079,
+      "delta": 8950,
+      "line": 26,
+      "begin_ms": 64581,
+      "error_cw": -40,
+      "ready_yaw": 15507,
+      "wait_ms": 2100,
+      "derived_target": 15467,
+      "direction": "left",
+      "additional_deg": 3.88,
+      "total_deg": 93.38
+    },
+    {
+      "node": 78,
+      "start": 14653,
+      "coarse": 6880,
+      "delta": -7773,
+      "line": 514,
+      "begin_ms": 74635,
+      "error_cw": 82,
+      "ready_yaw": 6385,
+      "wait_ms": 2000,
+      "derived_target": 6467,
+      "direction": "right",
+      "additional_deg": 4.13,
+      "total_deg": 81.86
+    },
+    {
+      "node": 76,
+      "start": 5545,
+      "coarse": -2746,
+      "delta": -8291,
+      "line": 715,
+      "begin_ms": 78615,
+      "error_cw": 71,
+      "ready_yaw": -2604,
+      "wait_ms": 2420,
+      "derived_target": -2533,
+      "direction": "right",
+      "additional_deg": -2.13,
+      "total_deg": 80.78
+    },
+    {
+      "node": 6,
+      "start": -3192,
+      "coarse": 5119,
+      "delta": 8311,
+      "line": 1079,
+      "begin_ms": 84897,
+      "error_cw": -153,
+      "ready_yaw": 6620,
+      "wait_ms": 1100,
+      "derived_target": 6467,
+      "direction": "left",
+      "additional_deg": 13.48,
+      "total_deg": 96.59
+    }
+  ],
+  "summary": {
+    "left": {
+      "samples": 2,
+      "total_deg_mean": 94.985,
+      "additional_deg_mean": 8.68,
+      "alignment_ms_mean": 1600
+    },
+    "right": {
+      "samples": 2,
+      "total_deg_mean": 81.32,
+      "additional_deg_mean": 1.0,
+      "alignment_ms_mean": 2210
+    }
+  },
+  "mean_alignment_ms": 1905,
+  "limitation": "Only4complete turns. Totals include entry skew; no first-stopped-before-pulse YAW was logged. This does not estimate pure inertia or a reliable fixed left/right motor cutoff.",
+  "selected_policy": "User chose actual map exit direction, no mandatory +/-2degree fine trim, real gray PID handles small residuals."
+}

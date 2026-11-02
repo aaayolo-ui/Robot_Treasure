@@ -83,3 +83,20 @@ JLink Regs CM3.txt
 
 # Vendor driver installers and serial-assistant local preferences
 /硬件资料（部分已有）/UART-CH4串口扩展V3.6模块资料集/【2】软件工具/
+
+# Web and Python generated dependencies/caches
+node_modules/
+.next/
+.wrangler/
+.pytest_cache/
+playwright-report/
+test-results/
+
+# Reinstallable offline-test runtime dependencies
+**/Tests/build/
+
+# Local hosting identity and generated website outputs
+**/.openai/
+**/.sites-runtime/
+/sites/*/dist/
+/sites/*/outputs/

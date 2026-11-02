@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-29",
+  "exe_sha256": "113500e588543fecf7085a9edf816a233c5143147c983cd40c7b2442bbeb9646",
+  "desktop_copy_sha256": "113500e588543fecf7085a9edf816a233c5143147c983cd40c7b2442bbeb9646",
+  "python_checks": 24,
+  "build": "passed",
+  "archive_source_match": true,
+  "serial_opened_by_update": false,
+  "serial_bytes_sent": 0,
+  "motor_or_flash_test": false,
+  "key2_hardware_test": false,
+  "round_rule": "first accepted KEY2 START through next RESET, includes stops and replans; 180 seconds advisory",
+  "live_gray_requires_firmware_stream": true,
+  "baseline_program_unchanged": true,
+  "old_backend_round_not_mislabelled": true,
+  "original_com9_connection_preserved": true
+}

@@ -1,0 +1,10 @@
+{
+  "cases": {
+    "resume_after_brake": 2,
+    "continuous_loop_kept": 1
+  },
+  "failures": [],
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "test_sha256": "6f1424e97f96592e3c441502659b03fb3cff77552fe50df650b04dc90fb78acc",
+  "hardware_tested": false
+}

@@ -1,0 +1,9 @@
+{
+  "firmware": "UARTCH4_16U_ROUTE1_RUN8",
+  "checks": 229,
+  "failures": [],
+  "expected_before_failure": false,
+  "axf_sha256": "8e619f1a5826cfdfa04c84c18c2e8ddce980b416cb499df2b5971e1e2fccee9f",
+  "test_sha256": "72f2b7db92b8047bb5d211a9ace1c21dbab4773cb13631e7cc99805c010f1cd2",
+  "hardware_tested": false
+}

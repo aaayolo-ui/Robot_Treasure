@@ -1,0 +1,33 @@
+{
+  "checks": 33,
+  "failures": [],
+  "cases": [
+    {
+      "front": 96,
+      "rear": 96,
+      "error": 0
+    },
+    {
+      "front": 24,
+      "rear": 384,
+      "error": 0
+    },
+    {
+      "front": 384,
+      "rear": 24,
+      "error": 0
+    },
+    {
+      "front": 24,
+      "rear": 24,
+      "error": 400
+    },
+    {
+      "front": 96,
+      "rear": 12,
+      "error": 300
+    }
+  ],
+  "axf_sha256": "e93e69aa682044b08810e90d40f36c69edbbcbfd96476c76a7b702d42c9c0d92",
+  "hardware_tested": false
+}

@@ -1,0 +1,14 @@
+Failed to find real location of D:\python\python.exe
+DOCUMENTS8_FAULT: LOC_HEADING_MISMATCH
+Traceback (most recent call last):
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16S_UARTCh4_TurnAlignWait_Test\Tests\test_app_runtime.py", line 193, in <module>
+    alignment_checks=documents8_cases()
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16S_UARTCh4_TurnAlignWait_Test\Tests\test_app_runtime.py", line 162, in documents8_cases
+    check(var('route_active')==1 and member('thief_localization','error')==0,
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          'Documents8: a 76-degree turn must wait for alignment, not latch LOC_HEADING_MISMATCH')
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16S_UARTCh4_TurnAlignWait_Test\Tests\test_app_runtime.py", line 114, in check
+    assert x,message
+           ^
+AssertionError: Documents8: a 76-degree turn must wait for alignment, not latch LOC_HEADING_MISMATCH

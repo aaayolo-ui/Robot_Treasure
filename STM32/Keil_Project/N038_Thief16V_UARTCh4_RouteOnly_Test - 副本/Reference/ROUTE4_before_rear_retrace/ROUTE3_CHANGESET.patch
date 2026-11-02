@@ -1,0 +1,511 @@
+--- ROUTE2/User/App_ThiefStrategy.c
++++ ROUTE3/User/App_ThiefStrategy.c
+@@ -22,6 +22,7 @@
+ #include "LaserRx.h"
+ #include "FrontLaserGate.h"
+ #include "ThiefMapPlanner.h"
++#include "ThiefRouteTrail.h"
+ #include "ThiefStrategyConfig.h"
+ #include "ThiefLocalization.h"
+ #include "TreasureLaserStart.h"
+@@ -134,7 +135,11 @@
+ 
+ static uint8_t hide_alignment_pending,hide_drive_enabled,hide_escape_mask;
+ static uint8_t n011_first_mask,n011_escape_locked;
+-/* Only the explicitly requested horizontal arrival -> vertical park at N063.
++static ThiefRouteTrail route_trail;
++static uint8_t park_target_heading;
++static int32_t trace_pass_counts;
++static uint8_t trace_pass_pending;
++/* Original N063 parking turn, also reused to restore a returned home axis.
+  * 1: centered, await standstill; 2: main rotation; 3: continuous gyro finish. */
+ static uint8_t park_turn_pending;
+ static int8_t park_turn_quarter;
+@@ -343,7 +348,9 @@
+   uint8_t i=(uint8_t)direction;
+   uint8_t allow;
+   if(i>=LASER_COUNT) return;
+-  if(n011_escape_locked) return;
++  if((n011_escape_locked || route_trail.returning) && route_active &&
++      (uint8_t)((route_body_heading+laser_heading_offset[i])%4U)!=
++          MapRouteNavigator_Current(&map_nav)->heading)return;
+   /* Outward rays cannot provide positive threats OR negative clear-road
+    * evidence. Drop them before any model/gate processing. */
+   if(!MapLaserMask_FrameAllowed(thief_laser_active_mask,i,tick,
+@@ -404,6 +411,10 @@
+       if(thief_strategy_state==THIEF_STRATEGY_SETTLING)
+         hide_escape_mask|=(uint8_t)(1U<<sensor_pose.body_heading);
+     } else {
++      if(route_trail.enabled && sensor_pose.body_heading==MapRouteNavigator_Current(&map_nav)->heading &&
++          !FrontLaserGate_HideConfirmed(&thief_laser[i])) {
++        thief_laser[i].status=FRONT_LASER_UNSTABLE;return;
++      }
+       ThiefThreatModel_Record(sensor_pose.body_heading,
+           thief_laser[i].hit_x_mm,thief_laser[i].hit_y_mm,tick);
+       intercept_pending=1U;
+@@ -414,7 +425,7 @@
+ {
+   uint8_t i,mask=0U;
+   uint16_t nearest=0xFFFFU;
+-  if(thief_current_node==11U && n011_first_mask)return n011_first_mask;
++  if(!route_active && thief_current_node==11U && n011_first_mask)return n011_first_mask;
+   for(i=0U;i<LASER_COUNT;i++) {
+     if(!(thief_laser_active_mask&(1U<<i))) continue;
+     if(!thief_laser_seen[i] || (uint32_t)(now-thief_last_laser_tick[i])>250U) {
+@@ -488,9 +499,15 @@
+ {
+   ThiefLocYaw_t yaw;const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+   Thief_LocalYaw(&yaw);
++  if(ThiefRouteTrail_Commit(&route_trail))
++    UartDebug_Printf("TRACE_COMMIT N=%u COUNT=%u RETURN_LEFT=%u\r\n",
++        (unsigned)step->from_node,(unsigned)route_trail.count,(unsigned)route_trail.return_left);
+   observer_ok=ThiefLocalization_BeginStep(&thief_localization,step,&yaw,now);
+   route_body_heading=(uint8_t)((step->heading+2U*step->drive_mode)%4U);
+-  Route_MapContext();map_leg_start_counts=MapRoutePosition_ForwardCounts();
++  Route_MapContext();
++  if(route_trail.returning && trace_pass_pending)map_leg_start_counts=trace_pass_counts;
++  else map_leg_start_counts=MapRoutePosition_ForwardCounts();
++  trace_pass_pending=0U;
+   map_progress_offset_mm=0L;node_centered=0U;node_stop_counts_valid=0U;
+   junction_armed=0U;junction_latched=0U;front_was_valid=0U;rearm_valid_count=0U;
+   branch_node=0U;branch_headings=0U;thief_laser_pose_since=now;Thief_ResetLaserEvidence();
+@@ -598,6 +615,7 @@
+   uint32_t last_yaw_tick;
+ 
+   n011_first_mask=0U;n011_escape_locked=0U;
++  route_trail.enabled=0U;route_trail.returning=0U;
+   TreasureWheelLog_Event(TREASURE_WHEEL_BEFORE_FAULT,SystemTime_GetMs(),(uint8_t)fault_from);
+   /* Every abnormal running exit actively brakes. FOLLOW/LEAVE faults used to
+    * disable STBY and coast, so a missed junction classification could slide
+@@ -1141,11 +1159,12 @@
+     if(ChassisSpeedControl_HasStall()){Route_StopFault("STALL");return;}
+   }
+   if(out.ready) {
+-    park_turn_pending=0U;thief_body_heading=0U;route_body_heading=0U;
++    park_turn_pending=0U;thief_body_heading=park_target_heading;route_body_heading=park_target_heading;
+     node_centered=1U;thief_strategy_state=THIEF_STRATEGY_HIDING;
+     thief_laser_pose_since=now;Thief_ResetLaserEvidence();
+-    ThiefMapPlanner_PoseAtNode(thief_current_node,0U,&thief_pose);
+-    UartDebug_Printf("PARK_TURN_END N=63 TARGET=90 DELTA=%d AXIS=NS\r\n",(int)delta);
++    ThiefMapPlanner_PoseAtNode(thief_current_node,park_target_heading,&thief_pose);
++    UartDebug_Printf("PARK_TURN_END N=%u TARGET=90 DELTA=%d BODY=%u\r\n",
++        (unsigned)thief_current_node,(int)delta,(unsigned)park_target_heading);
+   }
+ }
+ 
+@@ -1156,6 +1175,15 @@
+   front_resume_base_rpm_x10=follow_smoothing.base_rpm_x10;
+   front_recovery_valid_count=0U;gray_missing_active=0U;
+   gray_entry_yaw=yaw.yaw_x100;gray_log_tick=now;
++  if(route_trail.returning && front_resume_state==ROUTE_STATE_AFTER_TURN_FORWARD) {
++    int32_t target;
++    int16_t delta=Route_TurnAngleDeltaX100(TravelFrame_Yaw(yaw.yaw_x100),turn_start_angle_x100);
++    target=(int32_t)yaw.yaw_x100-delta+
++        (turn_target_state==ROUTE_STATE_TURN_RIGHT?9000L:-9000L)*thief_localization.yaw_cw_sign;
++    if(target>18000L)target-=36000L;
++    if(target< -18000L)target+=36000L;
++    gray_entry_yaw=(int16_t)target;
++  }
+   RestartLineSearch_Reset(&gray_search,last_leading_mode==TravelFrame_IsReverse()?last_leading_error:(int16_t)-last_leading_error);
+   route_state=ROUTE_STATE_FRONT_RECOVERY;route_state_tick=now;
+   Route_BrakeControl();
+@@ -1192,7 +1220,8 @@
+ {
+   LineFollowPID_Output_t control;
+   int32_t gain_pct = ROUTE_PID_CENTER_GAIN_PCT;
+-  uint8_t map_stable = (front_state == ROUTE_GRAY_VALID) ? 1U : 0U;
++  uint8_t map_stable = (uint8_t)(front_state==ROUTE_GRAY_VALID &&
++      (!route_trail.returning || ThiefRouteTrail_TrackLine(sample->front_raw12)));
+   const MapRouteStep_t *map_step = departure_turn ? &departure_step :
+       MapRouteNavigator_Current(&map_nav);
+ 
+@@ -1243,7 +1272,8 @@
+         &map_nav.steps[map_nav.step+(departure_turn?0U:1U)],
+         map_stable,&yaw,SystemTime_GetMs());
+   }
+-  if (MapTimingLog_FollowSample(SystemTime_GetMs(), junction_count, map_stable) != 0U) {
++  if (MapTimingLog_FollowSample(SystemTime_GetMs(), junction_count, map_stable) != 0U &&
++      (!route_trail.returning || route_state!=ROUTE_STATE_MAP_PASS)) {
+     if(map_nav.arrived || departure_turn) {
+       ThiefLocYaw_t yaw;
+       Thief_LocalYaw(&yaw);
+@@ -1271,13 +1301,25 @@
+ 
+ static void Route_FinishNodeStop(uint32_t now,uint16_t node,uint8_t body,uint8_t centered)
+ {
++  uint8_t returning_home=(uint8_t)(route_trail.returning && node==route_trail.home &&
++      route_trail.return_left==1U && route_trail.return_pending);
++  (void)ThiefRouteTrail_Commit(&route_trail);
++  if(returning_home) {
++    replan_after_leg=0U;intercept_pending=0U;intercept_escape_mask=0U;
++    intercept_threat_tick=0U;ThiefThreatModel_Init();
++    route_trail.returning=0U;route_trail.enabled=0U;
++    UartDebug_Printf("TRACE_HOME N=%u LEFT=%u WAIT=FRESH_THREAT\r\n",
++        (unsigned)node,(unsigned)route_trail.return_left);
++  }
+   n011_first_mask=0U;
+   if(n011_escape_locked && node==thief_plan.goal_node) {
+     n011_escape_locked=0U;ThiefThreatModel_Init();
+     UartDebug_Printf("N011_PLAN_UNLOCK AT=N%03u\r\n",(unsigned)node);
+   }
+-  park_turn_pending=(uint8_t)(node==63U && (body%2U)==1U &&
+-      thief_plan.goal_node==63U && thief_plan.final_body_heading==0U);
++  park_target_heading=returning_home?route_trail.home_body:0U;
++  park_turn_pending=(uint8_t)((returning_home && body%2U!=park_target_heading%2U) ||
++      (node==63U && (body%2U)==1U && thief_plan.goal_node==63U &&
++       thief_plan.final_body_heading==0U));
+   hide_alignment_pending=(uint8_t)(route_state==ROUTE_STATE_HIDE_APPROACH && centered);
+   if(park_turn_pending)hide_alignment_pending=0U;
+   if(hide_alignment_pending) {
+@@ -1324,6 +1366,19 @@
+                                  RouteGrayState_t branch, uint16_t raw12)
+ {
+   MapRouteAction_t action;
++  if(route_trail.returning) {
++    const MapRouteStep_t *expected=MapRouteNavigator_Current(&map_nav);
++    int32_t progress=Route_LegProgress();
++    uint8_t short_return=(uint8_t)(route_trail.first_back &&
++        progress>=(int32_t)expected->length_mm-100L);
++    /* Wheel travel only rejects implausibly early residual junctions. There
++     * is no upper-distance stop; real gray still decides when we arrive. */
++    if(!Route_IsJunctionCandidate(branch) || map_nav.arrived || junction_latched ||
++        (!short_return && (!junction_armed || !front_was_valid ||
++          progress<(int32_t)expected->length_mm*4L/10L-50L)))return;
++    if((expected->action==MAP_ACTION_LEFT && (raw12&0xC00U)!=0xC00U) ||
++       (expected->action==MAP_ACTION_RIGHT && (raw12&3U)!=3U))return;
++  }
+   junction_latched = 1U;
+   junction_armed = 0U;
+   front_was_valid = 0U;
+@@ -1339,7 +1394,16 @@
+   }
+   {
+     ThiefLocYaw_t yaw;
++    uint16_t trailing=0U;
+     Thief_LocalYaw(&yaw);
++    if(route_trail.enabled) {
++      (void)TravelFrame_ReadTrailing(&trailing);
++      if(ThiefRouteTrail_Stage(&route_trail,MapRouteNavigator_Current(&map_nav),raw12,
++          NCHD12_Extract12(trailing),yaw.yaw_x100,Route_LegProgress()))
++        UartDebug_Printf("TRACE_STAGE N=%u RETURN=%u\r\n",
++            (unsigned)MapRouteNavigator_Current(&map_nav)->to_node,(unsigned)route_trail.returning);
++      else UartDebug_SendString("TRACE_STAGE_UNAVAILABLE\r\n");
++    }
+     observer_ok=ThiefLocalization_Arrive(&thief_localization,MapRouteNavigator_Current(&map_nav),
+         raw12,Route_LegProgress(),&yaw,SystemTime_GetMs());
+   }
+@@ -1351,6 +1415,9 @@
+       branch_headings |= (uint8_t)(1U<<((arrived->heading+3U)%4U));
+     if(map_nav.seen_ports & 2U)
+       branch_headings |= (uint8_t)(1U<<((arrived->heading+1U)%4U));
++  }
++  if(route_trail.returning && action==MAP_ACTION_STRAIGHT) {
++    trace_pass_counts=MapRoutePosition_ForwardCounts();trace_pass_pending=1U;
+   }
+   /* A validated N004 arrival also proves passage if a loop crossed the marker
+    * between the preceding update and this gray event. N005 is not a gray fix. */
+@@ -1362,7 +1429,7 @@
+   if (action == MAP_ACTION_STOP) {
+     const MapRouteStep_t *finished = MapRouteNavigator_Current(&map_nav);
+ #if ROUTE_TURN_APPROACH_DELAY_MS > 0U
+-    if(!replan_after_leg && ThiefIntercept_HideAxis(finished->to_node)) {
++    if((!replan_after_leg || route_trail.returning) && ThiefIntercept_HideAxis(finished->to_node)) {
+       /* Same speed, time and travel frame as the pre-turn approach. */
+       route_state=ROUTE_STATE_HIDE_APPROACH;route_state_tick=now;
+       last_control_tick=now;
+@@ -1396,6 +1463,13 @@
+   RouteGraySample_t sample;
+   uint32_t now;
+   uint8_t turn_delta=0U;
++  trace_pass_pending=0U;
++  if(!replan_after_leg && thief_strategy_state==THIEF_STRATEGY_HIDING &&
++      thief_current_node==thief_plan.route.start_node && ThiefIntercept_HideAxis(thief_current_node)) {
++    ThiefRouteTrail_Begin(&route_trail,thief_current_node,thief_body_heading);
++    UartDebug_Printf("TRACE_BEGIN HOME=N%u BODY=%u\r\n",
++        (unsigned)thief_current_node,(unsigned)thief_body_heading);
++  }
+   route_body_heading=thief_body_heading;
+ 
+   hide_alignment_pending=0U;hide_escape_mask=0U;park_turn_pending=0U;
+@@ -1622,6 +1696,33 @@
+   old=*MapRouteNavigator_Current(&map_nav);
+   progress=Route_LegProgress(); /* Includes the measured braking displacement. */
+   Thief_LocalYaw(&yaw);
++  if(route_trail.returning) {
++    /* A genuinely new obstacle ahead of the RETURN direction cancels replay.
++     * The original pursuer behind cannot enter this branch. Resume the base
++     * confirmed-junction retreat/replan, never reuse an invalid return cursor. */
++    route_trail.returning=0U;route_trail.enabled=0U;
++    n011_escape_locked=0U;n011_first_mask=0U;
++    UartDebug_SendString("TRACE_ABORT_FRONT FALLBACK=NODE_REPLAN\r\n");
++  }
++  if(route_trail.enabled && !route_trail.returning && progress==0L &&
++      route_trail.count==0U && old.from_node==route_trail.home &&
++      departure_centered && route_body_heading==route_trail.home_body) {
++    /* No translation since the known parked home: do not invent an edge. */
++    replan_after_leg=0U;n011_escape_locked=0U;n011_first_mask=0U;
++    thief_plan.goal_node=route_trail.home;thief_plan.final_body_heading=thief_body_heading;
++    route_trail.enabled=0U;ThiefThreatModel_Init();
++    TravelFrame_SetReverse(departure_entry_mode);
++    Route_FinishNodeStop(now,old.from_node,route_body_heading,departure_centered);
++    UartDebug_Printf("TRACE_HOME_CANCEL N=%u\r\n",(unsigned)old.from_node);
++    return;
++  }
++  if(route_trail.enabled && !route_trail.returning &&
++      ThiefRouteTrail_BuildReturn(&route_trail,&old,&thief_plan)) {
++    UartDebug_Printf("TRACE_RETURN HOME=N%u FIRST=N%u STEPS=%u PARTIAL_MM=%ld\r\n",
++        (unsigned)route_trail.home,(unsigned)old.from_node,
++        (unsigned)thief_plan.route.count,(long)progress);
++    back=thief_plan.steps[0];trace_pass_pending=0U;
++  } else {
+   if(map_nav.step==0U && !retreat_active && progress==0L &&
+       route_body_heading==thief_body_heading) {
+     /* No departure displacement: retain the existing node fix. Reversing a
+@@ -1643,12 +1744,13 @@
+   back.target_kind=ThiefMapPlanner_Node(back.to_node)->kind;
+   back.expected_ports=ThiefMapPlanner_Node(back.to_node)->degree;
+   back.action=MAP_ACTION_STOP;
+-  observer_ok=ThiefLocalization_ReverseLeg(&thief_localization,&back,progress,&yaw,now);
+   thief_plan.steps[0]=back;thief_plan.route.id=1602U;
+   thief_plan.route.start_node=back.from_node;thief_plan.route.heading=back.heading;
+   thief_plan.route.drive_mode=back.drive_mode;thief_plan.route.count=1U;
+   thief_plan.goal_node=back.to_node;thief_plan.final_body_heading=route_body_heading;
+   thief_plan.valid=1U;
++  }
++  observer_ok=ThiefLocalization_ReverseLeg(&thief_localization,&back,progress,&yaw,now);
+   MapRouteNavigator_StartRuntime(&map_nav,&thief_plan.route,thief_plan.steps);
+   if(map_nav.fault) {Route_StopFault("INTERCEPT_REVERSE_ROUTE");return;}
+   Route_MapContext();
+@@ -1730,7 +1832,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE2_STABLE4 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE3_TRACE STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1744,6 +1846,8 @@
+   thief_previous_hide_node = 0U;
+   thief_body_heading = THIEF_START_BODY_HEADING;route_body_heading=THIEF_START_BODY_HEADING;
+   n011_first_mask=0U;n011_escape_locked=0U;
++  ThiefRouteTrail_Begin(&route_trail,0U,0U);
++  trace_pass_pending=0U;park_target_heading=0U;
+   thief_escape_requested = 0U;
+   thief_strategy_state = THIEF_STRATEGY_READY;
+   ThiefMapPlanner_PoseAtNode(thief_current_node, thief_body_heading,
+@@ -1754,7 +1858,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE2_STABLE4 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE3_TRACE ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1803,7 +1907,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE2_STABLE4 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ROUTE3_TRACE T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -1945,11 +2049,12 @@
+         if(park_turn_pending==1U && !(thief_escape_requested && hide_escape_mask)) {
+           ThiefLocYaw_t yaw;Thief_LocalYaw(&yaw);
+           if(!thief_localization.yaw_cw_sign){Route_StopFault("PARK_GYRO_SIGN");goto task_end;}
+-          park_start_yaw=yaw.yaw_x100;park_turn_quarter=thief_body_heading==1U?-1:1;
++          park_start_yaw=yaw.yaw_x100;
++          park_turn_quarter=((park_target_heading+4U-thief_body_heading)%4U)==1U?1:-1;
+           park_turn_pending=2U;hide_drive_enabled=0U;
+           TravelFrame_SetReverse(0U);Thief_ResetLaserEvidence();thief_laser_pose_since=now;
+-          UartDebug_Printf("PARK_TURN_BEGIN N=63 QUARTER=%d TARGET=90 YAW=%d\r\n",
+-              (int)park_turn_quarter,(int)park_start_yaw);
++          UartDebug_Printf("PARK_TURN_BEGIN N=%u QUARTER=%d TARGET=90 YAW=%d\r\n",
++              (unsigned)thief_current_node,(int)park_turn_quarter,(int)park_start_yaw);
+           if(park_turn_quarter<0)Route_DriveLeftTurn(LINE_FOLLOW_PID_CONTROL_PERIOD_MS);
+           else Route_DriveRightTurn(LINE_FOLLOW_PID_CONTROL_PERIOD_MS);
+           goto task_end;
+@@ -2418,6 +2523,10 @@
+       }
+       Route_ResetSample(&sample);
+       front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++      if(route_trail.returning && (front_state!=ROUTE_GRAY_VALID ||
++          !ThiefRouteTrail_TrackLine(sample.front_raw12))) {
++        Route_EnterFrontRecovery(now,front_state);break;
++      }
+       if (front_state == ROUTE_GRAY_I2C_ERROR)
+       {
+         Route_EnterFrontRecovery(now, front_state);
+@@ -2461,6 +2570,12 @@
+         input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID ||
+             front_state==ROUTE_GRAY_LEFT_BLACK || front_state==ROUTE_GRAY_RIGHT_BLACK);
+         input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
++        if(route_trail.returning) {
++          input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID &&
++              ThiefRouteTrail_TrackLine(sample.front_raw12));
++          input.trailing_valid=(uint8_t)(input.trailing_valid && ThiefRouteTrail_TrackLine(sample.rear_raw12));
++          if(front_resume_state==ROUTE_STATE_AFTER_TURN_FORWARD)input.trailing_valid=0U;
++        }
+         if(input.leading_valid) {
+           if(++front_recovery_valid_count>=ROUTE_FRONT_RECOVERY_VALID_SAMPLES) {
+             Route_EnterFollow(now,1U,front_resume_base_rpm_x10,0U);
+@@ -2503,6 +2618,10 @@
+         Route_EnterFrontRecovery(now,front_state);
+         break;
+       }
++      if(route_trail.returning && (front_state!=ROUTE_GRAY_VALID ||
++          !ThiefRouteTrail_TrackLine(sample.front_raw12))) {
++        map_pass_valid_count=0U;Route_EnterFrontRecovery(now,front_state);break;
++      }
+       if (front_state == ROUTE_GRAY_VALID) {
+         if (map_pass_valid_count < 3U) map_pass_valid_count++;
+       } else map_pass_valid_count = 0U;
+@@ -2522,7 +2641,8 @@
+         Route_EnterFollow(now, 1U, follow_smoothing.base_rpm_x10, 1U);
+         (void)Route_RunFollow(&sample, elapsed_ms);
+       } else {
+-        Route_DriveUnlocatedFollow(elapsed_ms);
++        if(route_trail.returning)(void)Route_RunFollow(&sample,elapsed_ms);
++        else Route_DriveUnlocatedFollow(elapsed_ms);
+         if (ChassisSpeedControl_HasStall() != 0U) Route_StopFault("STALL");
+       }
+       break;
+--- ROUTE2/Algorithm/ThiefStrategy/ThiefRouteTrail.c
++++ ROUTE3/Algorithm/ThiefStrategy/ThiefRouteTrail.c
+@@ -0,0 +1,90 @@
++#include "ThiefRouteTrail.h"
++
++uint8_t ThiefRouteTrail_TrackLine(uint16_t raw)
++{
++  uint8_t width=0U;
++  raw&=0xFFFU;if(!raw)return 0U;
++  while(!(raw&1U))raw>>=1;
++  while(raw&1U){width++;raw>>=1;}
++  return (uint8_t)(raw==0U && width<=4U);
++}
++
++void ThiefRouteTrail_Begin(ThiefRouteTrail *t,uint16_t home,uint8_t body)
++{
++  t->home=home;t->home_body=body;t->count=0U;t->pending_valid=0U;
++  t->returning=0U;t->return_left=0U;t->return_pending=0U;t->first_back=0U;
++  t->expected_return_node=0U;t->enabled=(uint8_t)(home!=0U);
++}
++
++uint8_t ThiefRouteTrail_Stage(ThiefRouteTrail *t,const MapRouteStep_t *s,
++    uint16_t leading,uint16_t trailing,int16_t yaw,int32_t mm)
++{
++  ThiefTrailEntry *e=&t->pending;
++  if(!t->enabled)return 0U;
++  if(t->returning) {
++    if(!t->return_left || s->to_node!=t->expected_return_node)return 0U;
++    t->return_pending=1U;
++    return 1U;
++  }
++  if(t->count>=THIEF_TRAIL_CAPACITY || t->pending_valid ||
++      s->from_node!=(t->count?t->entries[t->count-1U].to:t->home)) {
++    t->enabled=0U;return 0U;
++  }
++  e->from=s->from_node;e->to=s->to_node;e->length_mm=s->length_mm;
++  e->segments=s->segment_count;e->heading=s->heading;e->drive_mode=s->drive_mode;
++  e->leading_raw=leading;e->trailing_raw=trailing;e->yaw_x100=yaw;
++  e->measured_mm=(uint16_t)(mm<0L?0L:(mm>65535L?65535L:mm));
++  t->pending_valid=1U;
++  return 1U;
++}
++
++uint8_t ThiefRouteTrail_Commit(ThiefRouteTrail *t)
++{
++  if(!t->enabled)return 0U;
++  if(t->returning) {
++    if(!t->return_pending)return 0U;
++    t->return_pending=0U;t->return_left--;
++    if(t->first_back)t->first_back=0U;
++    else if(t->count)t->count--;
++    t->expected_return_node=t->count?t->entries[t->count-1U].from:t->home;
++    return 1U;
++  }
++  if(!t->pending_valid)return 0U;
++  t->entries[t->count++]=t->pending;t->pending_valid=0U;
++  return 1U;
++}
++
++static void BackStep(MapRouteStep_t *s,uint16_t from,uint16_t to,
++    uint16_t length,uint16_t segments,uint8_t heading,uint8_t mode)
++{
++  const MapRouteNode_t *node=ThiefMapPlanner_Node(from);
++  s->from_node=to;s->to_node=from;s->length_mm=length;
++  s->segment_offset=0U;s->segment_count=segments;
++  s->heading=(uint8_t)((heading+2U)%4U);s->drive_mode=(uint8_t)(mode^1U);
++  s->expected_ports=node->degree;s->target_kind=node->kind;s->action=MAP_ACTION_STOP;
++}
++
++uint8_t ThiefRouteTrail_BuildReturn(ThiefRouteTrail *t,
++    const MapRouteStep_t *partial,ThiefRoutePlan_t *p)
++{
++  uint8_t i;
++  if(!t->enabled || t->returning || t->pending_valid ||
++      partial->from_node!=(t->count?t->entries[t->count-1U].to:t->home))return 0U;
++  BackStep(&p->steps[0],partial->from_node,partial->to_node,partial->length_mm,
++      partial->segment_count,partial->heading,partial->drive_mode);
++  for(i=0U;i<t->count;i++) {
++    const ThiefTrailEntry *e=&t->entries[t->count-1U-i];
++    BackStep(&p->steps[i+1U],e->from,e->to,e->length_mm,e->segments,e->heading,e->drive_mode);
++  }
++  for(i=0U;i<t->count;i++) {
++    uint8_t d=(uint8_t)((p->steps[i+1U].heading+4U-p->steps[i].heading)%4U);
++    p->steps[i].action=d==3U?MAP_ACTION_LEFT:(d==2U?MAP_ACTION_REVERSE:(int8_t)d);
++  }
++  p->route.id=1603U;p->route.offset=0U;p->route.count=(uint16_t)(t->count+1U);
++  p->route.start_node=partial->to_node;p->route.heading=p->steps[0].heading;
++  p->route.drive_mode=p->steps[0].drive_mode;
++  p->goal_node=t->home;p->final_body_heading=t->home_body;p->valid=1U;
++  t->returning=1U;t->return_left=(uint8_t)p->route.count;t->return_pending=0U;
++  t->first_back=1U;t->expected_return_node=partial->from_node;
++  return 1U;
++}
+--- ROUTE2/Algorithm/ThiefStrategy/ThiefRouteTrail.h
++++ ROUTE3/Algorithm/ThiefStrategy/ThiefRouteTrail.h
+@@ -0,0 +1,28 @@
++#ifndef THIEF_ROUTE_TRAIL_H
++#define THIEF_ROUTE_TRAIL_H
++#include "ThiefMapPlanner.h"
++
++/* Reserve one runtime step for the partially traversed interception leg. */
++#define THIEF_TRAIL_CAPACITY (THIEF_ROUTE_MAX_STEPS-1U)
++typedef struct {
++  uint16_t from, to, length_mm, segments;
++  uint16_t leading_raw, trailing_raw, measured_mm;
++  int16_t yaw_x100;
++  uint8_t heading, drive_mode;
++} ThiefTrailEntry;
++typedef struct {
++  ThiefTrailEntry entries[THIEF_TRAIL_CAPACITY], pending;
++  uint16_t home, expected_return_node;
++  uint8_t home_body, count, enabled, pending_valid;
++  uint8_t returning, return_left, return_pending, first_back;
++} ThiefRouteTrail;
++
++uint8_t ThiefRouteTrail_TrackLine(uint16_t raw);
++void ThiefRouteTrail_Begin(ThiefRouteTrail *trail,uint16_t home,uint8_t body);
++uint8_t ThiefRouteTrail_Stage(ThiefRouteTrail *trail,const MapRouteStep_t *step,
++    uint16_t leading,uint16_t trailing,int16_t yaw,int32_t measured_mm);
++/* Called after actual exit-line acquisition or a confirmed stopped endpoint. */
++uint8_t ThiefRouteTrail_Commit(ThiefRouteTrail *trail);
++uint8_t ThiefRouteTrail_BuildReturn(ThiefRouteTrail *trail,
++    const MapRouteStep_t *partial,ThiefRoutePlan_t *plan);
++#endif
+--- ROUTE2/MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx
++++ ROUTE3/MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx
+@@ -870,7 +870,8 @@
+               <FileType>1</FileType>
+               <FilePath>../Algorithm/ThiefStrategy/ThiefInterceptPolicy.c</FilePath>
+             </File>
+-            <File>
++            <File><FileName>ThiefRouteTrail.c</FileName><FileType>1</FileType><FilePath>../Algorithm/ThiefStrategy/ThiefRouteTrail.c</FilePath></File>
++              <File>
+               <FileName>ThiefRiskSearch.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>../Algorithm/ThiefStrategy/ThiefRiskSearch.c</FilePath>

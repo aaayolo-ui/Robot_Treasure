@@ -1,0 +1,163 @@
+--- RUN21/Hardware/LaserRx.c
++++ MONITOR1/Hardware/LaserRx.c
+@@ -8,6 +8,7 @@
+ #include <string.h>
+ static AI1811Mux mux;
+ static uint8_t enabled;
++static LaserRx_Snapshot snapshots[LASER_COUNT];
+ static LaserRx_Handler application_handler;
+ static uint32_t boot_report_tick;
+ static uint8_t boot_report_sent;
+@@ -58,6 +59,7 @@
+ {
+   uint32_t started,now;uint8_t i,complete;
+   enabled=0U;application_handler=0;AI1811Mux_Init(&mux);
++  memset(snapshots,0,sizeof(snapshots));
+   data_link_ready=0U;ProofReset();
+   boot_report_sent=0U;boot_report_tick=0U;
+   boot_trace_next=0U;boot_trace_tick=0U;
+@@ -126,7 +128,9 @@
+   if(value && enabled) return 1U;
+   enabled=0U;AI1811Mux_ResetStream(&mux);
+   if(value && !LaserRx_LinkReady()) return 0U;
+-  if(!UartCh4_SetReceiving(value)) return 0U;
++  /* Keep raw telemetry alive before treasure and after a strategy stop.
++   * The enabled flag alone controls delivery to the obstacle strategy. */
++  if(!UartCh4_SetReceiving(LaserRx_LinkReady())) return 0U;
+   enabled=value?1U:0U;return 1U;
+ }
+ void LaserRx_UartRxComplete(UART_HandleTypeDef *uart) {UartCh4_RxComplete(uart);}
+@@ -135,6 +139,12 @@
+                   uint16_t firmware,uint32_t tick)
+ {
+   (void)context;
++  if(channel>=LASER_COUNT)return;
++  snapshots[channel].distance_mm=distance;
++  snapshots[channel].firmware=firmware;
++  snapshots[channel].confidence=confidence;
++  snapshots[channel].arrival_tick=tick;
++  snapshots[channel].received=1U;
+   if(application_handler) application_handler((LaserDirection_t)channel,distance,confidence,firmware,tick);
+ }
+ static void Byte(uint8_t byte,uint32_t tick)
+@@ -145,14 +155,21 @@
+ void LaserRx_Poll(LaserRx_Handler handler)
+ {
+   uint8_t i;
+-  if(!enabled) return;
+-  application_handler=handler;
++  if(!LaserRx_LinkReady()) return;
++  application_handler=enabled?handler:0;
+   if(UartCh4_TakeLost()) {
+     AI1811Mux_ResetStream(&mux);
+-    if(handler) for(i=0U;i<LASER_COUNT;i++) handler((LaserDirection_t)i,0U,0U,0U,HAL_GetTick());
++    for(i=0U;i<LASER_COUNT;i++)snapshots[i].received=0U;
++    if(application_handler) for(i=0U;i<LASER_COUNT;i++) application_handler((LaserDirection_t)i,0U,0U,0U,HAL_GetTick());
+   }
+   UartCh4_Poll(Byte);
+   application_handler=0;
++}
++uint8_t LaserRx_GetSnapshot(LaserDirection_t direction,LaserRx_Snapshot *snapshot)
++{
++  if(direction>=LASER_COUNT || !snapshot)return 0U;
++  *snapshot=snapshots[direction];
++  return snapshot->received;
+ }
+ void LaserRx_Counters(LaserDirection_t direction,uint32_t *bad,uint32_t *drop,uint32_t *errors)
+ {
+--- RUN21/Hardware/LaserRx.h
++++ MONITOR1/Hardware/LaserRx.h
+@@ -4,6 +4,11 @@
+ #include "stm32f1xx_hal.h"
+ #define LASER_RX_POLL_BYTES_PER_CHANNEL 32U /* Bounded work after motion control. */
+ typedef enum { LASER_FRONT=0, LASER_LEFT, LASER_RIGHT, LASER_REAR, LASER_COUNT } LaserDirection_t;
++typedef struct {
++  uint16_t distance_mm, firmware;
++  uint8_t confidence, received;
++  uint32_t arrival_tick;
++} LaserRx_Snapshot;
+ typedef void (*LaserRx_Handler)(LaserDirection_t direction, uint16_t distance,
+     uint8_t confidence, uint16_t firmware, uint32_t arrival_tick);
+ void LaserRx_Init(void);
+@@ -14,6 +19,8 @@
+ uint8_t LaserRx_SetEnabled(uint8_t enabled);
+ uint8_t LaserRx_IsEnabled(void);
+ void LaserRx_Poll(LaserRx_Handler handler);
++/* Raw, checksum-verified data; does not imply a strategy obstacle. */
++uint8_t LaserRx_GetSnapshot(LaserDirection_t direction,LaserRx_Snapshot *snapshot);
+ void LaserRx_Counters(LaserDirection_t direction, uint32_t *bad, uint32_t *dropped, uint32_t *errors);
+ void LaserRx_UartRxComplete(UART_HandleTypeDef *huart);
+ void LaserRx_UartError(UART_HandleTypeDef *huart);
+--- RUN21/User/App_ThiefStrategy.c
++++ MONITOR1/User/App_ThiefStrategy.c
+@@ -448,20 +448,27 @@
+   uint32_t bad,dropped,errors;
+   const char *status;
+   uint8_t usable;
++  LaserRx_Snapshot raw;
++  uint8_t received;
+   char line[256];
+   if((uint32_t)(now-last)<25U) return;
+   last=now;
+   status=FrontLaserGate_StatusText(thief_laser[i].status);
+   usable=(uint8_t)((thief_laser_active_mask&(1U<<i))!=0U);
++  received=LaserRx_GetSnapshot((LaserDirection_t)i,&raw);
+   if(!(THIEF_LASER_CHANNEL_MASK&(1U<<i)))status="DISABLED";
+-  else if(!LaserRx_IsEnabled()) status=thief_treasure_passed ? "RX_OFF" : "WAIT_TREASURE";
++  else if(!LaserRx_LinkReady())status="LINK_ERROR";
++  else if(!received)status="WAIT_DATA";
++  else if((uint32_t)(now-raw.arrival_tick)>250U)status="STALE";
++  else if(!raw.distance_mm || !raw.confidence)status="BAD_DATA";
++  else if(!LaserRx_IsEnabled())status="MONITOR_ONLY";
+   else if(!usable) status=thief_pose.valid ? "EDGE_OFF" : "POSE_OFF";
+   else if(!thief_laser_seen[i] || (uint32_t)(now-thief_last_laser_tick[i])>250U) status="NO_DATA";
+   LaserRx_Counters((LaserDirection_t)i,&bad,&dropped,&errors);
+   (void)snprintf(line,sizeof(line),"LASER DIR=%s D=%u C=%u STATUS=%s AGE=%lu BAD=%lu DROP=%lu ERR=%lu STATE=%s FAULT=%s\r\n",
+-    laser_name[i],(unsigned)(usable?thief_laser[i].distance_mm:0U),
+-    (unsigned)(usable?thief_laser[i].confidence:0U),
+-    status,(unsigned long)(thief_laser_seen[i]?now-thief_last_laser_tick[i]:0U),
++    laser_name[i],(unsigned)(received?raw.distance_mm:0U),
++    (unsigned)(received?raw.confidence:0U),
++    status,(unsigned long)(received?now-raw.arrival_tick:0U),
+     (unsigned long)bad,(unsigned long)dropped,(unsigned long)errors,
+     Thief_StrategyName(),route_fault_reason?route_fault_reason:"NONE");
+   (void)UartDebug_TrySendString(line);
+@@ -2160,7 +2167,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN21 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2183,7 +2190,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN21 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2233,7 +2240,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_RUN21 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -3103,8 +3110,9 @@
+         (int32_t)thief_pose.segment_progress_mm);
+   /* Motion/gray work has priority. Multiplex RX processes at most 128 raw bytes here. */
+   Thief_UpdateLaserMask(SystemTime_GetMs());
+-  if(thief_treasure_passed && thief_strategy_state!=THIEF_STRATEGY_FAULT)
+-    LaserRx_Poll(Thief_OnLaserFrame);
++  /* Poll raw telemetry in every state. LaserRx only dispatches strategy
++   * frames while explicitly enabled after treasure. */
++  LaserRx_Poll(Thief_OnLaserFrame);
+   Thief_InterceptReact(SystemTime_GetMs());
+   Thief_LaserLog(SystemTime_GetMs());
+   Thief_LocalizationLog(SystemTime_GetMs());

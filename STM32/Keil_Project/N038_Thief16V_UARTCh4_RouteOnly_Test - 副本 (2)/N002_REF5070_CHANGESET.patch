@@ -1,0 +1,128 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -1364,12 +1364,13 @@
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+   if(map_nav.runtime && !route_trail.returning && !retreat_active) {
+-    /* N011 -> N002 must expose the planned right exit. Opposite-side
++    /* 50-70% is a reference band, not an upper arrival limit.
++     * N011 -> N002 must expose the planned right exit. Opposite-side
+      * fragments on this leg stay line-follow input, not a node arrival. */
+     if(step->from_node==11U && step->to_node==2U &&
+         step->action==MAP_ACTION_RIGHT)
+       return ((raw12&3U)==3U &&
+-          Route_LegProgress()>=(int32_t)step->length_mm*6L/10L)?1U:0U;
++          Route_LegProgress()>=(int32_t)step->length_mm*5L/10L)?1U:0U;
+     return (Route_LegProgress()>=(int32_t)step->length_mm*4L/10L)?1U:0U;
+   }
+   return MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress());
+@@ -1921,7 +1922,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_N002_ENCODER60_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_N002_REF5070_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1947,7 +1948,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N002_ENCODER60_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N002_REF5070_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1996,7 +1997,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_N002_ENCODER60_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_N002_REF5070_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- before/Tests/test_arrival_gate.py
++++ after/Tests/test_arrival_gate.py
+@@ -23,7 +23,7 @@
+  check(not member('map_nav','arrived') and var('thief_current_node')==11,'recovery cannot bypass early-node gate with F00')
+  begin();odom=80;call('Route_HandleJunction',clock,20,4,0xF00)
+  check(not member('map_nav','arrived') and var('junction_count')==0,'shared handler rejects early candidate without mutating node or count')
+- for distance,expected in [(119,0),(120,0),(150,0),(179,0),(180,1),(1000,1)]:
++ for distance,expected in [(119,0),(120,0),(149,0),(150,1),(180,1),(210,1),(211,1),(1000,1)]:
+   odom=distance;check(call('Route_ArrivalPlausible',0xFFF)==expected,f'300mm edge arrival gate at {distance}mm')
+  begin();odom=300;front_raw=0x60;tick()
+  check(not member('map_nav','arrived'),'distance alone never confirms a node')
+--- before/Tests/test_n002_branch.py
++++ after/Tests/test_n002_branch.py
+@@ -23,6 +23,9 @@
+  check(not member('map_nav','arrived') and var('junction_count')==0,'shared handler also rejects logged C40')
+  begin();odom=1000;front_raw=0xC40;tick()
+  check(not member('map_nav','arrived') and var('route_state')==2,'distance overshoot alone neither blesses C40 nor locks vehicle')
++ for distance,expected in [(149,False),(150,True),(210,True),(211,True),(300,True)]:
++  begin();odom=distance;front_raw=0x07F;tick()
++  check(bool(member('map_nav','arrived'))==expected,f'real right exit at {distance}mm obeys 50-percent floor, no 70-percent cap')
+  # Same wrong-side raw on a different map edge retains existing behavior.
+  fresh(21,0);setstep(21,38,2,0,600);call('Route_Start');odom=300
+  check(call('Route_ArrivalPlausible',0xC40)==1,'other edges retain gray arrival acceptance')
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,17 @@
++# N002_REF5070_SL1：N011至N002编码器50%至70%参考范围（本段优先）
++
++当前FW=UARTCH4_16V_N002_REF5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_ENCODER60_before_reference50_70，保存的是上一轮未定稿60%中间版本；之前已定稿PARK50在Reference/PARK50_before_n002_encoder60中。
++
++用户确认：仅正常动态前进的N011→N002且计划右转这段，编码器累计至少路段长度50%后，真实右支路才可确认到点。300mm段为150mm下限，150至210mm是预计参考范围，超过210mm仍继续巡线并允许真实右支路确认；70%没有编码成硬上限，不新增里程超限停车。仅有编码器距离不能认点；C40/F00等缺少右支路的读数不放行。其他路段40%下限、原路返回和半途短回撤处理保持。
++
++三点N011/N038/N063停车主旋转仍50°，最终90°停车目标、灰度对齐、微调350、速度PID、激光和路线策略保持。未新增此前提及的N061全局北上路线约束。
++
++ARMCC5全量编译0错误0警告。提前到点回归74项、N002支路专项150项ARM离线检查通过，共224项；覆盖149/150/210/211/300mm真实右支路到点、错侧继续巡线、恢复入口和其他路段保持。均为合成传感器及轮速，报告绑定当前AXF，非实车证明。证据N002_REF5070_FILES.json、N002_REF5070_CHANGESET.patch、build_n002_ref5070.log及本轮两份报告。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方旧40%或60%描述不是当前N011至N002右转规则。
++
++---
++
+ # PARK50_SL1：N011、N038、N063停车主旋转50°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_PARK50_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/PARK55_before_three_main50。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,17 @@
++# N002_REF5070_SL1：N011至N002编码器50%至70%参考范围（本段优先）
++
++当前FW=UARTCH4_16V_N002_REF5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_ENCODER60_before_reference50_70，保存的是上一轮未定稿60%中间版本；之前已定稿PARK50在Reference/PARK50_before_n002_encoder60中。
++
++用户确认：仅正常动态前进的N011→N002且计划右转这段，编码器累计至少路段长度50%后，真实右支路才可确认到点。300mm段为150mm下限，150至210mm是预计参考范围，超过210mm仍继续巡线并允许真实右支路确认；70%没有编码成硬上限，不新增里程超限停车。仅有编码器距离不能认点；C40/F00等缺少右支路的读数不放行。其他路段40%下限、原路返回和半途短回撤处理保持。
++
++三点N011/N038/N063停车主旋转仍50°，最终90°停车目标、灰度对齐、微调350、速度PID、激光和路线策略保持。未新增此前提及的N061全局北上路线约束。
++
++ARMCC5全量编译0错误0警告。提前到点回归74项、N002支路专项150项ARM离线检查通过，共224项；覆盖149/150/210/211/300mm真实右支路到点、错侧继续巡线、恢复入口和其他路段保持。均为合成传感器及轮速，报告绑定当前AXF，非实车证明。证据N002_REF5070_FILES.json、N002_REF5070_CHANGESET.patch、build_n002_ref5070.log及本轮两份报告。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方旧40%或60%描述不是当前N011至N002右转规则。
++
++---
++
+ # PARK50_SL1：N011、N038、N063停车主旋转50°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_PARK50_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/PARK55_before_three_main50。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,17 @@
++# N002_REF5070_SL1：N011至N002编码器50%至70%参考范围（本段优先）
++
++当前FW=UARTCH4_16V_N002_REF5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_ENCODER60_before_reference50_70，保存的是上一轮未定稿60%中间版本；之前已定稿PARK50在Reference/PARK50_before_n002_encoder60中。
++
++用户确认：仅正常动态前进的N011→N002且计划右转这段，编码器累计至少路段长度50%后，真实右支路才可确认到点。300mm段为150mm下限，150至210mm是预计参考范围，超过210mm仍继续巡线并允许真实右支路确认；70%没有编码成硬上限，不新增里程超限停车。仅有编码器距离不能认点；C40/F00等缺少右支路的读数不放行。其他路段40%下限、原路返回和半途短回撤处理保持。
++
++三点N011/N038/N063停车主旋转仍50°，最终90°停车目标、灰度对齐、微调350、速度PID、激光和路线策略保持。未新增此前提及的N061全局北上路线约束。
++
++ARMCC5全量编译0错误0警告。提前到点回归74项、N002支路专项150项ARM离线检查通过，共224项；覆盖149/150/210/211/300mm真实右支路到点、错侧继续巡线、恢复入口和其他路段保持。均为合成传感器及轮速，报告绑定当前AXF，非实车证明。证据N002_REF5070_FILES.json、N002_REF5070_CHANGESET.patch、build_n002_ref5070.log及本轮两份报告。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方旧40%或60%描述不是当前N011至N002右转规则。
++
++---
++
+ # PARK50_SL1：N011、N038、N063停车主旋转50°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_PARK50_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/PARK55_before_three_main50。

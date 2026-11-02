@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "E:\Downloads\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16V_UARTCh4_RouteOnly_Test\Tests\test_pursuit_geometry.py", line 43, in <module>
+    check(observe(**args)==0,label+' cannot confirm pursuit');cases.append(label)
+  File "E:\Downloads\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16V_UARTCh4_RouteOnly_Test\Tests\test_app_runtime.py", line 120, in check
+    assert x,message
+AssertionError: off-road gap cannot confirm pursuit

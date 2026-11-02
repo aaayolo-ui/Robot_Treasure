@@ -1,0 +1,2020 @@
+--- MONITOR5/User/App_ThiefStrategy.c
++++ MONITOR6/User/App_ThiefStrategy.c
+@@ -150,6 +150,14 @@
+ static uint32_t map_gray_tick,map_gray_log_tick,map_gray_missing_tick;
+ static uint8_t map_gray_missing_active;
+ static RestartLineSearch map_gray_search;
++static ThiefLocCandidates route_identity;
++static uint8_t route_identity_phase;
++static uint16_t route_identity_node;
++static int32_t route_identity_counts;
++static int32_t route_identity_branch_counts;
++static uint32_t route_identity_tick,route_identity_center_ms;
++static RoadHeadingControl_t route_identity_heading;
++static uint8_t route_identity_trim;
+ static uint8_t route_key_release_pending;
+ static uint8_t rear_hw_ready;
+ static uint8_t rear_valid_count;
+@@ -628,7 +636,7 @@
+    * disable STBY and coast, so a missed junction classification could slide
+    * out of the track and then appear to "quit". */
+   Route_BrakeControl();
+-  route_active = 0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
++  route_active = 0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;route_identity_phase=0U;Thief_ClearLatchedThreat();
+   route_state = ROUTE_STATE_FAULT;
+   thief_strategy_state = THIEF_STRATEGY_FAULT;
+   thief_localization.pose.valid=0U;
+@@ -1759,11 +1767,98 @@
+       (uint8_t)((finished->heading+2U*finished->drive_mode)%4U),centered);
+ }
+ 
++static void Route_ObserveIdentity(uint32_t now,uint32_t elapsed_ms)
++{
++  RouteGraySample_t sample;ThiefLocYaw_t yaw;int32_t moved;
++  Route_ResetSample(&sample);front_state=Route_ReadFront(&sample);rear_state=Route_ReadRear(&sample);
++  Thief_LocalYaw(&yaw);Chassis_UpdateFeedback(elapsed_ms);
++  if(front_state==ROUTE_GRAY_I2C_ERROR || rear_state==ROUTE_GRAY_I2C_ERROR) {
++    Route_StopFault("IDENTITY_GRAY_IO");return;
++  }
++  if(front_state==ROUTE_GRAY_NO_LINE && rear_state==ROUTE_GRAY_NO_LINE) {
++    if(!map_gray_missing_active){map_gray_missing_active=1U;map_gray_missing_tick=now;}
++    if((uint32_t)(now-map_gray_missing_tick)>=2000U){Route_StopFault("GRAY_BOTH_NO_LINE");return;}
++  } else map_gray_missing_active=0U;
++  if(!route_identity_trim && (thief_localization.heading_error_x100>1000 ||
++      thief_localization.heading_error_x100< -1000)) {
++    route_identity_trim=1U;RoadHeading_Reset(&route_identity_heading,now);
++    Route_BrakeControl();return;
++  }
++  if(route_identity_trim) {
++    RoadHeadingInput_t in;RoadHeadingOutput_t out;
++    in.cw_error_x100=(int16_t)(thief_localization.heading_error_x100*thief_localization.yaw_cw_sign);
++    in.yaw_tick=yaw.stamp_ms;in.stopped=Route_AllWheelsStopped();in.direction_known=1U;
++    RoadHeading_UpdatePulse(&route_identity_heading,&in,now,1000,&out);
++    if(out.brake)Route_BrakeControl();
++    else {
++      int32_t pwm=out.turn_x10>0?ROUTE_TURN_EQUAL_PWM:-ROUTE_TURN_EQUAL_PWM;
++      Chassis_Enable();
++      Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_LEFT,pwm);
++      Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_RIGHT,-pwm);
++      Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_LEFT,pwm);
++      Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_RIGHT,-pwm);
++    }
++    if(!out.ready)return;
++    route_identity_trim=0U;
++  }
++  moved=MapRoutePosition_DistanceMm(route_identity_counts);
++  if(route_identity_phase==1U) {
++    if(route_identity.armed && !route_identity.branch_frames &&
++        (sample.front_raw12&0x00F0U) &&
++        ((sample.front_raw12&0x0C00U)==0x0C00U || (sample.front_raw12&3U)==3U))
++      route_identity_branch_counts=MapRoutePosition_ForwardCounts();
++    route_identity_node=ThiefLocalization_CandidatesObserve(&route_identity,
++        sample.front_raw12,sample.rear_raw12,moved);
++    if(route_identity.new_branch) {
++      route_identity_counts=route_identity_branch_counts;
++      moved=MapRoutePosition_DistanceMm(route_identity_counts);
++    }
++    if(route_identity_node) {
++      route_identity_phase=2U;route_identity_tick=now;
++      route_identity_center_ms=MapRoutePosition_RemainingApproachMs(
++          ROUTE_TURN_APPROACH_DELAY_MS,moved,ROUTE_TURN_APPROACH_RPM_X10);
++      UartDebug_Printf("LOC_CANDIDATE NODE=N%03u EVIDENCE=%s RAW=%03X,%03X MOVED=%ld CENTER_MS=%lu\r\n",
++          (unsigned)route_identity_node,route_identity.new_branch?"SEQUENCE":
++              route_identity.straight_frames>=3U?"STRAIGHT":"CORNER",
++          (unsigned)sample.front_raw12,(unsigned)sample.rear_raw12,(long)moved,
++          (unsigned long)route_identity_center_ms);
++    } else {
++      if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
++      TravelFrame_SetWheelTargets(500,500,500,500);ChassisSpeedControl_Update(elapsed_ms);
++      if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
++      return;
++    }
++  }
++  if(route_identity_phase==2U) {
++    if((uint32_t)(now-route_identity_tick)<route_identity_center_ms) {
++      if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
++      Route_DriveHideApproach(elapsed_ms);return;
++    }
++    Route_BrakeControl();route_identity_phase=3U;route_identity_tick=now;return;
++  }
++  Route_BrakeControl();
++  if(!Route_AllWheelsStopped() || (int32_t)(yaw.stamp_ms-route_identity_tick)<=0L)return;
++  if(!ThiefLocalization_ConfirmCandidate(&thief_localization,&route_identity,&yaw,now))return;
++  /* An unobserved intermediate leg cannot enter the inverse-route history. */
++  RouteHistory_Reset();route_identity_phase=0U;retreat_active=0U;departure_turn=0U;
++  replan_after_leg=1U;intercept_pending=0U;
++  Route_FinishNodeStop(now,route_identity_node,thief_localization.body_heading,1U);
++  MapTimingLog_Task();
++  UartDebug_Printf("LOC NODE=N%03u X_MM=%d Y_MM=%d BODY=%u TRAVEL=%u MODE=%u VALID=1 PHASE=0 YAW_ERR=%d YAW_AGE=%lu CW_SIGN=%d FIXES=%lu STATUS=RELOCALIZED\r\n",
++      (unsigned)thief_localization.confirmed_node,(int)thief_localization.pose.x_mm,
++      (int)thief_localization.pose.y_mm,(unsigned)thief_localization.body_heading,
++      (unsigned)thief_localization.pose.travel_heading,(unsigned)thief_localization.pose.drive_mode,
++      (int)thief_localization.heading_error_x100,(unsigned long)thief_localization.gyro_age_ms,
++      (int)thief_localization.yaw_cw_sign,(unsigned long)thief_localization.confirmations);
++  UartDebug_Printf("LOC_RESOLVED NODE=N%03u\r\n",(unsigned)route_identity_node);
++}
++
+ static void Route_HandleJunction(uint32_t now, uint32_t elapsed_ms,
+                                  RouteGrayState_t branch, uint16_t raw12)
+ {
+   MapRouteAction_t action;
+   const MapRouteStep_t *candidate=MapRouteNavigator_Current(&map_nav);
++  if(route_identity_phase)return;
+   if(retreat_active && retreat_far_pending && !Route_GrayArrivalReady(raw12)) {
+     /* Crossing the unconfirmed far endpoint is not a return to the source.
+      * Preserve the actual frame and the ordinary20ms drive update. */
+@@ -1800,6 +1895,24 @@
+       Chassis_UpdateFeedback(elapsed_ms);
+       if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
+       Route_DriveHideApproach(elapsed_ms);
++    }
++    return;
++  }
++  if(candidate && retreat_active && map_nav.runtime && !map_nav.arrived &&
++      MapRouteNavigator_TooFar(&map_nav,Route_LegProgress()) &&
++      ThiefLocalization_GrayMatchesStep(candidate,raw12) &&
++      ThiefLocalization_CandidatesBegin(&route_identity,candidate,raw12)>1U) {
++    route_identity_phase=1U;route_identity_trim=0U;
++    route_identity_counts=MapRoutePosition_ForwardCounts();
++    map_gray_missing_active=0U;map_gray_active=0U;turn_exit_active=0U;
++    UartDebug_Printf("LOC_UNCERTAIN EXPECT=N%03u CAND=%u,%u,%u,%u COUNT=%u RAW=%03X\r\n",
++        (unsigned)candidate->to_node,(unsigned)route_identity.nodes[0],
++        (unsigned)route_identity.nodes[1],(unsigned)route_identity.nodes[2],
++        (unsigned)route_identity.nodes[3],(unsigned)route_identity.count,(unsigned)raw12);
++    if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
++    TravelFrame_SetWheelTargets(500,500,500,500);
++    if(elapsed_ms>=LINE_FOLLOW_PID_CONTROL_PERIOD_MS) {
++      last_control_tick=now;Chassis_UpdateFeedback(elapsed_ms);ChassisSpeedControl_Update(elapsed_ms);
+     }
+     return;
+   }
+@@ -1888,7 +2001,7 @@
+   uint32_t now;
+   uint8_t turn_delta=0U;
+ 
+-  map_distance_warned=0U;retreat_far_pending=0U;
++  map_distance_warned=0U;retreat_far_pending=0U;route_identity_phase=0U;
+   map_leg_started_tick=SystemTime_GetMs();
+   restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+@@ -2052,7 +2165,7 @@
+   if(!yaw.valid || (uint32_t)(now-yaw.stamp_ms)>THIEF_LOC_GYRO_STALE_MS)return 0U;
+   Route_ResetSample(&sample);
+   if(Route_ReadRear(&sample)!=ROUTE_GRAY_VALID)return 0U;
+-  Route_BrakeControl();map_gray_active=0U;turn_exit_active=0U;
++  Route_BrakeControl();map_gray_active=0U;turn_exit_active=0U;route_identity_phase=0U;
+   replan_after_leg=1U;intercept_pending=0U;
+   turn_stop_stable_count=0U;route_state=ROUTE_STATE_INTERCEPT_STOP;
+   route_state_tick=now;last_control_tick=now;
+@@ -2101,7 +2214,7 @@
+   if(ThiefIntercept_ShouldReverse(s->heading,mask,clearance,
+       (uint8_t)(!(mask&(1U<<s->heading)) && intercept_has_reversed &&
+        (uint32_t)(now-intercept_reverse_tick)<THIEF_INTERCEPT_COOLDOWN_MS))) {
+-    Route_BrakeControl();map_gray_active=0U;turn_exit_active=0U;
++    Route_BrakeControl();map_gray_active=0U;turn_exit_active=0U;route_identity_phase=0U;
+     intercept_reversals++;
+     ThiefIntercept_BlockLeg(s->from_node,s->to_node,now);
+     route_state=ROUTE_STATE_INTERCEPT_STOP;route_state_tick=now;
+@@ -2265,7 +2378,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR5 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR6 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2288,7 +2401,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR5 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR6 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2338,7 +2451,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR5 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR6 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2609,7 +2722,7 @@
+    * car advances about 1.36 cm in 20 ms, so a narrow P11+P12 or P1+P2 event
+    * can otherwise fall between two control samples. This 5 ms watch only
+    * reads the front board and enters active braking; PID timing is unchanged. */
+-  if ((route_active != 0U) && !departure_turn &&
++  if ((route_active != 0U) && !departure_turn && !route_identity_phase &&
+       (route_state == ROUTE_STATE_FOLLOW) &&
+       ((uint32_t)(now - last_front_watch_tick) >=
+        ROUTE_JUNCTION_WATCH_PERIOD_MS))
+@@ -2656,6 +2769,7 @@
+   elapsed_ms = (uint32_t)(now - last_control_tick);
+   TreasureWheelLog_ControlElapsed(elapsed_ms);
+   last_control_tick = now;
++  if(route_identity_phase) {Route_ObserveIdentity(now,elapsed_ms);goto task_end;}
+   if ((uint32_t)(now - run_start_tick) >= ROUTE_MAX_RUN_MS)
+   {
+     Route_StopFault("RUN_TIMEOUT");
+--- MONITOR5/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ MONITOR6/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -197,70 +197,16 @@
+   if(plan==NULL || body_heading>3U)return 0U;
+   plan->valid=0U;back=(uint8_t)((body_heading+2U)%4U);
+   ThiefRiskSearch_SetEmergency(0U);
+-  /* The north approach at N038 is escaped via the actual east runway:
+-   * N038-N039-N040. Search a complete hide route before accepting it.
+-   * A fresh east threat or either blocked edge keeps the ordinary fallback. */
+-  if(current_node==38U && (threat_mask&1U) && !(threat_mask&2U) &&
+-      (body_heading==1U || body_heading==3U)) {
+-    ThiefRiskSearch_SetDepartureMask(2U);
+-    ThiefRiskSearch_SetDepartureRunway(1U);
+-    ThiefRiskSearch_SetApproachAvoidance(1U);
+-    found=ThiefRiskSearch_Select(current_node,1U,(uint8_t)(body_heading==3U),1U,
+-        threat_mask,0U,previous_hide_node,now,departure,&count,&mode,&decision);
+-    ThiefRiskSearch_SetDepartureRunway(255U);
+-    if(!found)found=ThiefRiskSearch_Select(current_node,1U,(uint8_t)(body_heading==3U),1U,
+-        threat_mask,0U,previous_hide_node,now,departure,&count,&mode,&decision);
+-    ThiefRiskSearch_SetDepartureMask(15U);
+-  }
+-  /* Latest user rule: prefer the actual opposite road for a single bearing.
+-   * Search a complete legal refuge route; blocked/opposed exits still cannot
+-   * override newer observations. Keep the rear travel frame where possible. */
+-  if(!found && threat_mask && !(threat_mask&(uint8_t)(threat_mask-1U))) {
+-    uint8_t threat=0U,away;
+-    while(!(threat_mask&(1U<<threat)))threat++;
+-    away=(uint8_t)((threat+2U)%4U);
+-    ThiefRiskSearch_SetDepartureMask((uint8_t)(1U<<away));
+-    ThiefRiskSearch_SetApproachAvoidance(1U);
++  /* Compare all legal first exits in one complete-route search. Starting
++   * with the rear frame represents the actual body; it does not constrain
++   * the departure. Turn wait, capture margin and blocked edges remain costs.
++   * Avoidance of the observed approach corridor is a tier, not a fixed node. */
++  ThiefRiskSearch_SetDepartureMask(15U);
++  ThiefRiskSearch_SetDepartureRunway(255U);
++  for(pass=0U;pass<2U && !found;pass++) {
++    ThiefRiskSearch_SetApproachAvoidance((uint8_t)(pass==0U && threat_mask!=0U));
+     found=ThiefRiskSearch_Select(current_node,back,1U,1U,threat_mask,
+         0U,previous_hide_node,now,departure,&count,&mode,&decision);
+-    ThiefRiskSearch_SetDepartureMask(15U);
+-  }
+-  /* First find a complete transfer avoiding the enemy's approach corridor.
+-   * If topology/known blocks leave none, relax that preference and keep moving.
+-   * Within each tier retain the user's rear-leading departure preference. */
+-  for(pass=0U;pass<2U && !found;pass++) {
+-  ThiefRiskSearch_SetApproachAvoidance((uint8_t)(pass==0U && threat_mask!=0U));
+-  /* Explicit user route preference supersedes rear-first at this hide:
+-   * north threat at N038 -> depart directly east to N039 if actually clear.
+-   * Search the whole remaining route, retaining all known blocked edges. */
+-  if(pass==0U && current_node==38U && (threat_mask&1U) && !(threat_mask&2U) &&
+-      (body_heading==1U || body_heading==3U)) {
+-    ThiefRiskSearch_SetDepartureMask(2U);
+-    found=ThiefRiskSearch_Select(current_node,1U,(uint8_t)(body_heading==3U),1U,
+-        threat_mask,0U,previous_hide_node,now,departure,&count,&mode,&decision);
+-    ThiefRiskSearch_SetDepartureMask(15U);
+-    if(found)break;
+-  }
+-  /* User preference: leave on the rear axis before any body pivot when that
+-   * actual road is available and clear. A rear-only pursuer is left behind
+-   * by normal forward departure instead of reversing into it. */
+-  if(!threat_mask || (threat_mask&(uint8_t)~(1U<<back))) {
+-    ThiefRiskSearch_SetDepartureMask((uint8_t)(1U<<back));
+-    if(!(threat_mask&(1U<<back)))
+-      found=ThiefRiskSearch_Select(current_node,back,1U,1U,threat_mask,
+-          0U,previous_hide_node,now,departure,&count,&mode,&decision);
+-    if(!found) {
+-      /* No straight-back refuge route: prefer side turns with rear gray as
+-       * the leading board. Root reversals toward the physical front are
+-       * reserved for the fallback, not accidentally selected at this tier. */
+-      ThiefRiskSearch_SetDepartureMask((uint8_t)(15U&~(1U<<body_heading)));
+-      found=ThiefRiskSearch_Select(current_node,back,1U,1U,threat_mask,
+-          0U,previous_hide_node,now,departure,&count,&mode,&decision);
+-    }
+-  }
+-  ThiefRiskSearch_SetDepartureMask(15U);
+-  if(!found)found=ThiefRiskSearch_Select(current_node,body_heading,0U,1U,threat_mask,
+-      0U,previous_hide_node,now,departure,&count,&mode,&decision);
+   }
+   ThiefRiskSearch_SetApproachAvoidance(0U);
+   if(!found) {
+--- MONITOR5/Algorithm/ThiefStrategy/ThiefRiskSearch.c
++++ MONITOR6/Algorithm/ThiefStrategy/ThiefRiskSearch.c
+@@ -147,7 +147,6 @@
+   int32_t best_quality=-0x3FFFFFFFL;
+   int32_t best_margin=-0x3FFFFFFFL;
+   uint16_t best_pause=0U;
+-  uint16_t best_separation=0U;
+   uint8_t have_safe=0U,best_cooling=1U;
+   if(!path || !count || !first_mode || !decision || !start ||
+       start>MAP_ROUTE_NODE_COUNT || heading>3U || mode>1U) return 0U;
+@@ -220,8 +219,11 @@
+       if(margin<=0L) {
+         uint32_t danger=(uint32_t)(-margin);
+         if(danger>6000UL) danger=6000UL;
+-        penalty=15000UL+danger*4UL;
+-      } else if(margin<500L) penalty=(uint32_t)(500L-margin)*4UL;
++        /* Risk exposure scales with time, not arbitrary graph segmentation.
++         * A straight600mm road split at N012 must not pay two fixed fines
++         * while an equivalent unsplit road pays one. Include stationary wait. */
++        penalty=(15000UL+danger*4UL)*(wait+travel)/1000UL;
++      } else if(margin<500L) penalty=(uint32_t)(500L-margin)*4UL*(wait+travel)/1000UL;
+       new_cost=cost[pick]+wait+travel+penalty;
+       if(emergency && ThiefIntercept_EdgeBlocked(from,to,now)) new_cost+=100000UL;
+       if(emergency && pick==root && (threat_mask&(1U<<out))) new_cost+=100000UL;
+@@ -283,7 +285,9 @@
+     /* Keep the route-risk penalties used by the search when comparing hides.
+      * Arrival time alone discarded them whenever start-pose minimum margins
+      * tied, allowing an attractive junction to pull us onto a risky route. */
+-    quality=(int32_t)thief_hide_quality[node-1U]*2L-(int32_t)cost[i];
++    /* Distance is a preference measured against route cost, not an unlimited
++     * license to add turns/wait beside the pursuer for a farther refuge. */
++    quality=(int32_t)thief_hide_quality[node-1U]*2L-(int32_t)cost[i]+(int32_t)separation*400L;
+     {
+       uint8_t body=(uint8_t)((h+2U*(i&1U))%4U);
+       uint16_t forward=thief_exit_branch_ms[node-1U][body];
+@@ -315,17 +319,14 @@
+     /* A fresh hide must not beat a safe reused hide. When every route is
+      * uncertain, delay the first unsafe stop, rather than letting the same
+      * unavoidable start-pose margin erase differences between later turns. */
+-    /* Safety tier first. Among equally viable choices prefer separation
+-     * from the nearest remembered object (one grid-cell buckets), then
+-     * fresh hides and the least-cost route. No fixed hide visitation order. */
++    /* Positive safety remains the first tier. Millisecond differences inside
++     * a100ms forecast band do not dominate whole-route quality. Separation is
++     * a soft term above; no fixed departure direction or hide order. */
+     if(best_goal==NO_STATE || safe>have_safe || (safe==have_safe &&
+-       ((safe && (separation>best_separation || (separation==best_separation &&
+-         (cooling<best_cooling || (cooling==best_cooling && quality>best_quality))))) ||
+-        (!safe && (pause_at>best_pause || (pause_at==best_pause &&
+-         (margin>best_margin || (margin==best_margin &&
+-          (separation>best_separation || (separation==best_separation && quality>best_quality)))))))))) {
++       ((safe && (cooling<best_cooling || (cooling==best_cooling && quality>best_quality))) ||
++        (!safe && (pause_at/100U>best_pause/100U || (pause_at/100U==best_pause/100U &&
++         (margin/100L>best_margin/100L || (margin/100L==best_margin/100L && quality>best_quality)))))))) {
+       best_goal=i;have_safe=safe;best_margin=margin;best_quality=quality;best_cooling=cooling;best_pause=pause_at;
+-      best_separation=separation;
+     }
+   }
+   decision->states_expanded=expanded;decision->threat_count=threats;
+--- MONITOR5/Algorithm/MapLocalization/ThiefLocalization.c
++++ MONITOR6/Algorithm/MapLocalization/ThiefLocalization.c
+@@ -84,6 +84,101 @@
+   if(l==NULL) return;
+   memset(l,0,sizeof(*l));
+   l->error=THIEF_LOC_UNINITIALIZED;
++}
++
++static uint8_t NextObservedJunction(uint16_t from,uint8_t heading,uint16_t *next)
++{
++  uint16_t hops,node=from;
++  for(hops=0U;hops<MAP_ROUTE_NODE_COUNT;hops++) {
++    if(!ThiefMapPlanner_HasRoad(node,heading,&node,NULL))return 0U;
++    /* N005 is a treasure marker on a straight road, not a gray junction. */
++    if(ThiefMapPlanner_Node(node)->kind!=0U){*next=node;return 1U;}
++  }
++  return 0U;
++}
++
++uint8_t ThiefLocalization_CandidatesBegin(ThiefLocCandidates *c,
++    const MapRouteStep_t *s,uint16_t raw)
++{
++  uint16_t node,next;uint8_t hops;
++  MapRouteStep_t observed;
++  if(!c || !s || s->heading>3U)return 0U;
++  memset(c,0,sizeof(*c));c->heading=s->heading;c->branch_raw=raw;
++  observed=*s;node=s->to_node;
++  for(hops=0U;hops<4U;hops++) {
++    const MapRouteNode_t *n=ThiefMapPlanner_Node(node);
++    if(!n)break;
++    observed.to_node=node;observed.target_kind=n->kind;
++    if(ThiefLocalization_GrayMatchesStep(&observed,raw))c->nodes[c->count++]=node;
++    if(!NextObservedJunction(node,s->heading,&next) || next==node)break;
++    node=next;
++  }
++  return c->count;
++}
++
++uint16_t ThiefLocalization_CandidatesObserve(ThiefLocCandidates *c,
++    uint16_t leading,uint16_t trailing,int32_t moved)
++{
++  uint8_t i,count=0U,straight;
++  if(!c || !c->count || c->resolved)return 0U;
++  c->new_branch=0U;
++  if(c->armed && (leading&0x00F0U) &&
++      ((leading&0x0C00U)==0x0C00U || (leading&3U)==3U)) {
++    uint16_t nodes[4];MapRouteStep_t s;
++    if(++c->branch_frames<3U)return 0U;
++    memset(&s,0,sizeof(s));s.heading=c->heading;
++    for(i=0U;i<c->count;i++) {
++      uint16_t node;
++      if(NextObservedJunction(c->nodes[i],c->heading,&node)) {
++        s.to_node=node;s.target_kind=ThiefMapPlanner_Node(node)->kind;
++        if(ThiefLocalization_GrayMatchesStep(&s,leading))nodes[count++]=node;
++      }
++    }
++    if(count) {
++      for(i=0U;i<count;i++)c->nodes[i]=nodes[i];
++      c->count=count;c->branch_raw=leading;c->new_branch=1U;c->armed=0U;
++      c->straight_frames=0U;c->gap_frames=0U;
++      if(count==1U){c->resolved=1U;return c->nodes[0];}
++    }
++    c->branch_frames=0U;return 0U;
++  }
++  c->branch_frames=0U;
++  if(moved<30L)return 0U;
++  /* A real line continuing beyond the branch distinguishes a T from a
++   * corner. Absence requires trailing-board corroboration, not one white read. */
++  if((leading&0x00F0U) && !(leading&0x0C03U)) {
++    if(c->straight_frames<3U)c->straight_frames++;
++    c->gap_frames=0U;
++  } else if(!leading && (trailing&0x00F0U)) {
++    if(c->gap_frames<3U)c->gap_frames++;
++    c->straight_frames=0U;
++  } else {c->straight_frames=0U;c->gap_frames=0U;}
++  if(c->straight_frames<3U && c->gap_frames<3U)return 0U;
++  straight=(uint8_t)(c->straight_frames>=3U);
++  for(i=0U;i<c->count;i++) {
++    if((uint8_t)ThiefMapPlanner_HasRoad(c->nodes[i],c->heading,NULL,NULL)==straight)
++      c->nodes[count++]=c->nodes[i];
++  }
++  /* Inconsistent observations do not conjure a node or erase hypotheses. */
++  if(count)c->count=count;
++  if(count==1U) {c->resolved=1U;return c->nodes[0];}
++  if(count>1U && straight)c->armed=1U;
++  c->straight_frames=0U;c->gap_frames=0U;return 0U;
++}
++
++uint8_t ThiefLocalization_ConfirmCandidate(ThiefLocalization_t *l,
++    const ThiefLocCandidates *c,const ThiefLocYaw_t *y,uint32_t now)
++{
++  if(!l || !c || !l->initialized || l->error!=THIEF_LOC_OK ||
++      !c->resolved || c->count!=1U || c->heading!=l->step.heading ||
++      l->phase!=THIEF_LOC_ON_LEG || !ThiefMapPlanner_Node(c->nodes[0]) ||
++      !Fresh(l,y,now) || !HeadingOK(l,l->body_heading,y,l->yaw_cw_sign))return 0U;
++  if(Abs(l->heading_error_x100)>1000L)return 0U;
++  l->confirmed_node=c->nodes[0];l->phase=THIEF_LOC_AT_NODE;
++  l->gray_raw12=c->branch_raw;l->arrival_yaw_x100=y->yaw_x100;l->confirmations++;
++  ThiefMapPlanner_PoseAtNode(l->confirmed_node,l->body_heading,&l->pose);
++  l->pose.drive_mode=l->step.drive_mode;l->pose.travel_heading=c->heading;
++  return 1U;
+ }
+ uint8_t ThiefLocalization_Start(ThiefLocalization_t *l,uint16_t node,
+     uint8_t body,const ThiefLocYaw_t *y,uint32_t now)
+--- MONITOR5/Algorithm/MapLocalization/ThiefLocalization.h
++++ MONITOR6/Algorithm/MapLocalization/ThiefLocalization.h
+@@ -64,4 +64,16 @@
+     const MapRouteStep_t *next, const ThiefLocYaw_t *yaw, uint32_t now);
+ const char *ThiefLocalization_ErrorText(uint8_t error);
+ 
++/* Local straight-corridor hypotheses. No node is selected by odometry. */
++typedef struct {
++  uint16_t nodes[4],branch_raw;
++  uint8_t count,heading,straight_frames,gap_frames,resolved,armed,branch_frames,new_branch;
++} ThiefLocCandidates;
++uint8_t ThiefLocalization_CandidatesBegin(ThiefLocCandidates *c,
++    const MapRouteStep_t *s,uint16_t raw);
++uint16_t ThiefLocalization_CandidatesObserve(ThiefLocCandidates *c,
++    uint16_t leading,uint16_t trailing,int32_t moved_mm);
++uint8_t ThiefLocalization_ConfirmCandidate(ThiefLocalization_t *l,
++    const ThiefLocCandidates *c,const ThiefLocYaw_t *y,uint32_t now);
++
+ #endif
+--- MONITOR5/Tests/test_treasure_fix.py
++++ MONITOR6/Tests/test_treasure_fix.py
+@@ -71,6 +71,7 @@
+ def fragment_retry_then_complete():
+     global odom,gray_raw,gray_state
+     fresh(4,3)
++    call('ThiefIntercept_BlockLeg',4,3,clock) #Pin this historical road replay, not the global planning policy.
+     check(call('ThiefMapPlanner_PlanEscape',4,3,4,0,clock,plan),'actual N004 escape route exists')
+     check(at(steps,'MapRouteStep_t','to_node')==6,'replay starts on actual compressed N004-N006 leg')
+     call('Route_Start')
+--- MONITOR5/Tests/test_gray_priority.py
++++ MONITOR6/Tests/test_gray_priority.py
+@@ -74,7 +74,8 @@
+  gray_raw=0x60;gray_state=1
+  for _ in range(5):tick()
+  odom=1085;gray_raw=gray_at(4,3);gray_state=4;tick()
+- check(member('map_nav','arrived') and member('thief_localization','confirmations')==fixes+1,'after leaving far T on real narrow gray, actual original-node branch confirms despite late encoder')
++ check(not member('map_nav','arrived') and member('thief_localization','confirmations')==fixes,'MONITOR6 same-shape late return stays ambiguous until further observations')
++ check(var('route_active') and var('route_identity_phase')==1,'ambiguity is an observation state, not odometry fault')
+  return 1
+ def no_line_still_stops():
+  global odom,gray_raw,gray_state,rear_valid,trail_raw,clock
+@@ -90,6 +91,7 @@
+ def n004_to_n006_complete():
+  global odom,gray_raw,gray_state,rear_valid,trail_raw
+  fresh(4,3);rear_valid=1;trail_raw=0x60;gray_raw=0x60;gray_state=1
++ call('ThiefIntercept_BlockLeg',4,3,clock) #Preserve the explicit N004-N006 replay under the new global planner.
+  check(call('ThiefMapPlanner_PlanEscape',4,3,4,0,clock,plan),'actual N004 south-threat escape plan exists')
+  check(at(steps,'MapRouteStep_t','from_node')==4 and at(steps,'MapRouteStep_t','to_node')==6,'log160117 first escape leg is really N004 toN006')
+  call('Route_Start')
+--- MONITOR5/Tests/test_documents123154.py
++++ MONITOR6/Tests/test_documents123154.py
+@@ -79,8 +79,9 @@
+  routes=[]
+  for mask in [1,2,4,8]:
+   fresh(38,1);check(call('ThiefMapPlanner_PlanEscape',38,1,mask,0,clock,plan),'single-direction threat has an escape')
+-  h=1 if mask==1 else (mask.bit_length()-1+2)%4
+-  check(at(steps,'MapRouteStep_t','heading')==h,'N038 north uses east runway; other single threats retain opposite preference')
++  h=at(steps,'MapRouteStep_t','heading')
++  check(not(mask&(1<<h)) and call('ThiefMapPlanner_HasRoad',38,h,0,0),'MONITOR6 complete-route score chooses an actual exit away from observed threat')
++  if mask==1:check(h==1,'actual N038 north-threat map still favors east runway under common score')
+   routes.append(dict(mask=mask,first=at(steps,'MapRouteStep_t','to_node')))
+  return routes
+ failures=[];cases={}
+--- MONITOR5/Tests/test_documents18.py
++++ MONITOR6/Tests/test_documents18.py
+@@ -54,10 +54,13 @@
+         check(call('ThiefMapPlanner_PlanEscape',node,body,1<<body,0,clock,plan)==1,'front-threat escape remains feasible')
+         step=steps
+         check(at(step,'MapRouteStep_t','drive_mode')==1,'prefer rear-leading departure instead of front-leading pivot')
+-        check(at(step,'MapRouteStep_t','heading')==(body+2)%4,'clear rear road leaves straight back before any turn')
+-        check((at(step,'MapRouteStep_t','heading')+2*at(step,'MapRouteStep_t','drive_mode'))%4==body,'initial reversal does not rotate physical body')
++        heading=at(step,'MapRouteStep_t','heading');mode=at(step,'MapRouteStep_t','drive_mode')
++        check(heading!=body,'MONITOR6 full-route search cannot depart into actual front threat')
++        out_body=(heading+2*mode)%4
++        check((out_body-body)%4!=2,'no unnecessary180degree body pivot')
+         call('Route_Start')
+-        check(not var('departure_turn') and call('TravelFrame_IsReverse')==1,'rear-leading gray board starts without in-place body turn')
++        check(bool(var('departure_turn'))==(out_body!=body),'actual chosen route determines whether a real quarter-turn is needed')
++        if out_body==body:check(call('TravelFrame_IsReverse')==1,'straight-back chosen route uses rear gray without body pivot')
+         goal=member('thief_plan','goal_node');result=complete_route()
+         check(result['node']==goal and goal!=node,'rear-first complete route reaches selected refuge')
+         count+=1
+--- MONITOR5/Tests/test_route_identity.py
++++ MONITOR6/Tests/test_route_identity.py
+@@ -0,0 +1,124 @@
++"""001220 complete-route choice and ambiguous N006/N007; synthetic hardware."""
++from pathlib import Path
++import sys,json,hashlib
++src=Path(__file__).with_name('test_documents15.py').read_text(encoding='utf-8').split('parking_pwm=[]')[0]
++src=src.replace('Tests/before_documents15/original.axf','Tests/before_route_identity/original.axf')
++exec(compile(src,str(Path(__file__).with_name('test_documents15.py')),'exec'))
++
++def n011_departure():
++    global clock
++    fresh(11,3);call('Thief_UpdateLaserMask',clock)
++    for _ in range(3):
++        clock+=20;call('Thief_OnLaserFrame',1,217,100,1,clock)
++    check(call('ThiefMapPlanner_PlanEscape',11,3,4,0,clock,plan),'actual south threat has full escape')
++    first=at(steps,'MapRouteStep_t','to_node')
++    print('N011 first',first,'goal',member('thief_plan','goal_node'),flush=True)
++    check(first in (10,12),'full-route score beats forced north pivot atN011')
++    check(at(steps,'MapRouteStep_t','heading')%2==1,'nearby south pursuer is escaped without initial body pivot')
++    call('ThiefIntercept_BlockLeg',11,10,clock)
++    check(call('ThiefMapPlanner_PlanEscape',11,3,4,0,clock,plan),'east route remains when west unsafe')
++    print('west blocked path',[at(steps+i*16,'MapRouteStep_t','to_node') for i in range(at(route,'MapRoute_t','count'))],flush=True)
++    check(at(steps,'MapRouteStep_t','to_node')==12 and at(steps+16,'MapRouteStep_t','to_node')==13,'complete actual N012-N013 route is evaluated')
++    return member('thief_plan','goal_node')
++
++def ambiguous_n006(dt=20,mode=1,sign=1):
++    global odom,clock,gray_raw,gray_state,rear_valid
++    fresh(4,(1+2*mode)%4);rear_valid=1;member('thief_localization','yaw_cw_sign',sign)
++    setstep(4,6,1,mode,300);record(steps,'MapRouteStep_t',dict(segment_count=2));call('Route_Start');tick()
++    var('retreat_active',1);member('thief_localization','reversal_entry_mm',196)
++    odom=728;clock+=600;gray_raw=0x07f;gray_state=5
++    if dt<20:var('last_control_tick',clock-dt)
++    call('Route_HandleJunction',clock,dt,5,gray_raw)
++    check(member('thief_localization','confirmed_node')==4,'late similar gray cannot immediately certifyN006')
++    check(var('route_active'),'ambiguity must continue observing rather than distance-stop')
++    check('route_identity_phase' in symbols and var('route_identity_phase')==1,'candidate observer active')
++    return 1
++
++def n007_observed_reanchor():
++    global odom,clock,gray_raw,gray_state,rear_valid
++    for mode in [0,1]:
++      for sign in [-1,1]:
++        ambiguous_n006(mode=mode,sign=sign);gray_raw=0;gray_state=2;rear_valid=1;odom=40
++        for _ in range(2):
++            clock+=20;call('Route_ObserveIdentity',clock,20)
++            check(member('thief_localization','confirmed_node')==4,'one/two white frames cannot relocate')
++        clock+=20;call('Route_ObserveIdentity',clock,20)
++        check(var('route_identity_node')==7,'observed no-continuation distinguishes actual N007 corner')
++        check(member('thief_localization','confirmed_node')==4,'candidate alone is not centered confirmed pose')
++        ret('Route_AllWheelsStopped',0)
++        for _ in range(10):clock+=20;call('Route_ObserveIdentity',clock,20)
++        check(member('thief_localization','confirmed_node')==4,'moving wheels cannot authorize relocalization')
++        ret('Route_AllWheelsStopped',1)
++        for _ in range(3):clock+=20;call('Route_ObserveIdentity',clock,20)
++        check(member('thief_localization','confirmed_node')==7 and not var('route_identity_phase'),'real corner and centered standstill reanchor N007')
++        check(call('RouteHistory_Count')==0,'skipped/unobserved edge cannot become reverse history')
++    return 4
++
++def exact_log_reversal():
++    global odom,clock,gray_raw,gray_state,rear_valid
++    fresh(6,3);rear_valid=1;member('thief_localization','yaw_cw_sign',-1)
++    setstep(6,4,3,0,300);record(steps,'MapRouteStep_t',dict(segment_count=2));call('Route_Start');tick()
++    odom=104;call('Route_BrakeControl');var('route_state',12)
++    var('route_state_tick',clock-100);var('turn_stop_stable_count',2);var('replan_after_leg',1)
++    clock+=20;call('Thief_InterceptStopped',clock)
++    check(member('thief_localization','reversal_entry_mm')==196,'actual104mm reversal produces196mm signed entry')
++    fixes=member('thief_localization','confirmations')
++    odom=532;clock+=600;gray_raw=0x7f;gray_state=5
++    call('Route_HandleJunction',clock,20,5,gray_raw)
++    check('route_identity_phase' in symbols and var('route_identity_phase')==1 and member('thief_localization','confirmations')==fixes,'actual728mm observation does not falsely reconfirm N006')
++    return 1
++
++def candidates_follow_shape():
++    check('ThiefLocalization_CandidatesBegin' in symbols,'candidate API exists')
++    fresh(4,3);setstep(4,6,1,1,300);record(steps,'MapRouteStep_t',dict(segment_count=2));call('Route_Start');tick()
++    c=allocate('ThiefLocCandidates',0x2000ca00)
++    check(call('ThiefLocalization_CandidatesBegin',c,steps,0x07f)==2,'same raw admits N006 and N007')
++    for _ in range(2):check(call('ThiefLocalization_CandidatesObserve',c,0x60,0x60,40)==0,'two continuing-line frames insufficient')
++    check(call('ThiefLocalization_CandidatesObserve',c,0x60,0x60,40)==6,'real continuation chooses N006 even with suspect odometry')
++    # Sequence of two actual junction observations shifts a corridor hypothesis.
++    setstep(7,6,3,0,600)
++    check(call('ThiefLocalization_CandidatesBegin',c,steps,0xff0)>=2,'reverse corridor has multiple aliases')
++    for _ in range(3):call('ThiefLocalization_CandidatesObserve',c,0x60,0x60,40)
++    for _ in range(3):call('ThiefLocalization_CandidatesObserve',c,0xff0,0x60,300)
++    found=0
++    for _ in range(3):found=call('ThiefLocalization_CandidatesObserve',c,0,0x60,40) or found
++    check(found==1,'observed next branch then absent continuation resolves actual N001')
++    return 2
++
++def ambiguity_laser_priority():
++    global clock
++    ambiguous_n006();call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
++    clock+=1;call('Thief_OnLaserFrame',3,150,100,1,clock)
++    call('Thief_InterceptReact',clock)
++    check(var('route_state')==12 and not var('route_identity_phase'),'new travel-front laser cancels observer and brakes immediately')
++    check(member('thief_localization','confirmed_node')==4,'laser preemption does not invent candidate node')
++    return 1
++
++def ambiguity_loss_deadline():
++    global clock,gray_raw,gray_state,rear_valid,odom
++    ambiguous_n006();gray_raw=0;gray_state=2;rear_valid=2;odom=40
++    clock+=20;call('Route_ObserveIdentity',clock,20)
++    clock+=2000;call('Route_ObserveIdentity',clock,20)
++    check(not var('route_active') and reason()=='GRAY_BOTH_NO_LINE','uncertainty cannot bypass continuous2second gray-loss rule')
++    return 1
++
++def observer_control_cadence():
++    global clock
++    paid=[]
++    hook('ChassisSpeedControl_Update',lambda:(paid.append(u.reg_read(UC_ARM_REG_R0))
++        if 'route_identity_phase' in symbols and var('route_identity_phase') else None) or 0)
++    ambiguous_n006(5)
++    check(not paid,'5ms branch watcher must not integrate an extra speed-control update')
++    clock+=15;call('App_ThiefStrategy_Task')
++    check(paid==[20],'observer runs real wheel PI once on20ms schedule')
++    ret('ChassisSpeedControl_Update')
++    return 1
++
++failures=[];cases={}
++for fn in [n011_departure,ambiguous_n006,n007_observed_reanchor,exact_log_reversal,candidates_follow_shape,ambiguity_laser_priority,ambiguity_loss_deadline,observer_control_cadence]:
++    try:cases[fn.__name__]=fn();print(fn.__name__+': PASS',flush=True)
++    except AssertionError as exc:failures.append(dict(case=fn.__name__,error=str(exc)));print(fn.__name__+': FAIL '+str(exc),flush=True)
++result=dict(checks=checks,failures=failures,cases=cases,hardware_tested=False,
++ axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),test_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
++out=ROOT/'Tests'/('before_route_identity/regression_before.json' if '--before' in sys.argv else 'results_route_identity.json')
++out.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8');print(json.dumps(result,indent=2));sys.exit(bool(failures))
+--- MONITOR5/README.md
++++ MONITOR6/README.md
+@@ -1,3 +1,20 @@
++# 16U MONITOR6：完整路线评分与候选路口消歧
++
++当前UARTCH4_16U_MONITOR6，工程名不变。MONITOR5的AXF/源码/规范与001220日志保存在Tests/before_route_identity；验收VALIDATION_MONITOR6.json，增量ROUTE_IDENTITY_CHANGESET.patch。
++
++- 相反方向、车尾方向和N038特定节点不再提前锁定路线。真实合法出口参与同一完整路线搜索，保留已知堵路、来车方向、接近走廊规避与藏点轴向约束。转弯等待和危险暴露按时间计费，避免N012把直线分成两段就重复加固定罚分。风险仍先分安全等级，100ms预测差异带内比较整路收益，远离敌车作为软偏好与行驶代价一起计入。这是有界启发式评分，不是数学全局最优保证。
++- 对001220的N011南侧217mm回波，离线复现第一段选N012、随后N013，不再先转N002。该观测模型下目标藏点为N063，实际路线经过N026；终点仍按整体风险/藏点条件选择，不硬锁N026。
++- 已确认原路的折返明显超出辅助里程范围、且实际灰度同时匹配附近多个节点时，不立即确认预期节点。最多保留4个同一直线走廊候选，50RPM观察支路后是否有真实直线；3帧继续线支持T口，前端3帧无线且后端有中心线支持末端转角。之后真实路口序列可继续推进候选，N005宝藏标记不当作灰度路口。
++- 候选唯一后，按100RPM/180ms原入中心动作扣除已经实测走过的距离，再测量停稳和新鲜±10度YAW才重锚。不能用编码器独自认节点；没有看到的中间路段不写回撤历史，重锚时清除断开的旧历史。普通无歧义的早/晚灰度仍优先，未恢复LOC_DISTANCE硬停。
++- LOC_UNCERTAIN明确输出候选；LOC_CANDIDATE说明STRAIGHT/CORNER/SEQUENCE证据；停稳确认后发实际LOC和LOC_RESOLVED。配套助手会显示坐标待确认并暂停轨迹预测，激光、陀螺仪、计时和串口继续更新。N004-N005-N006压缩道路也能正常解析MT3。
++- 原正常速度、MONITOR5找线/纠偏、左右800mm前后1000mm、文字区屏蔽、五藏点轴向、连续双板无线2秒与激光抢占保持。观察与纠偏只在身份不确定时低速；真实硬件异常仍独立处理。
++
++Tests/test_route_identity.py检查完整路线、N006/N007误认拒绝、观测后N007重锚、连续路口消歧、激光抢占、双板失线及20ms真实控制周期。旧测试中固定反方向/固定车尾出发和单帧晚到同形节点确认的断言按本次用户要求更新；具体路段回放用真实堵路条件固定测试场景，原脚本在基线保留。
++局部同形节点仍可能无法唯一消歧；传感器覆盖、牵引力、车体是否实际居中以及全场定位精度需实测，不能把候选算法称为绝对定位。
++仅编译通过，尚未完成硬件验证。
++
++以下MONITOR5及更早内容为历史记录。
++
+ # 16U MONITOR5：纠偏无进展脉冲、侧线引导与探线回摸
+ 
+ 当前UARTCH4_16U_MONITOR5，同名工程不变。MONITOR4源码/AXF与214323、214751日志保存在Tests/before_exit_stall；新增Tests/test_exit_stall.py，验收VALIDATION_MONITOR5.json。
+--- MONITOR5/AGENTS.md
++++ MONITOR6/AGENTS.md
+@@ -1,4 +1,6 @@
+ # 本工程修改前必读
++
++最新MONITOR6以规范最前章节为准：全路线评分覆盖固定反向/固定车尾出发；折返同形路口保留候选，真实后续观测与居中停稳后重锚，不能凭里程认节点或重启LOC_DISTANCE硬停。基线Tests/before_route_identity，验收VALIDATION_MONITOR6.json；以下版本为历史。
+ 
+ 最新MONITOR5，规范最前章节优先。新增无进展纠偏PWM脉冲、侧线仅引导、失败探线回摸原点一次；2秒双板失线、±10度、真实停稳/新YAW与实际路口确认不得被旁路。基线Tests/before_exit_stall，当前验收VALIDATION_MONITOR5.json。后文为历史。
+ 
+--- MONITOR5/Docs/修改规范与回归清单.md
++++ MONITOR6/Docs/修改规范与回归清单.md
+@@ -1,4 +1,12 @@
+ # 修改规范与回归清单
++
++## 当前MONITOR6：整路风险评分、局部候选身份
++
++用户最新要求完整路线优于先走反方向；取消单来向强制相反、强制车尾和节点特例的提前选定。实际出口在同一风险搜索里比较等待/行驶/暴露时间；危险罚分按时间而非路段数量叠加，远藏点为软偏好，安全等级仍优先。001220模型选N011-N012-N013，目标依评分选N063并经过N026，不能宣称固定去N026或数学全局最优。
++折返严重里程矛盾且真实灰度有多个走廊解释时，保存最多4个候选，继续观察真实支路后的直线/无直线和下一路口序列；3帧确认，N005不算路口。不因超限硬停或凭里程单独确认。候选唯一后按原180ms/100RPM入中心动作抵扣实测已走距离，停稳与新鲜±10度YAW后才发布实际节点；未知中间路段不得写历史。普通灰度优先、MONITOR5恢复、正常速度、左右800前后1000及双板无线2000ms保持。
++定位观察只在原20ms控制周期支付一次PI积分；激光抢占必须取消观察驱动。LOC_UNCERTAIN期间助手不得把模型预测当成新节点确认；原始激光/YAW/计时继续。真实LOC重锚后恢复地图，不修改实物坐标来迎合网页。
++当前MONITOR6，基线Tests/before_route_identity，验收VALIDATION_MONITOR6.json。局部候选无法保证所有同形路口全局唯一定位；不得宣称已实测居中、无出线或绝对定位正确。
++仅编译通过，尚未完成硬件验证。
+ 
+ ## 当前MONITOR5：无进展纠偏与短距离回摸
+ 
+--- MONITOR5/DesktopSerialMonitor/assets/laser_live_server.py
++++ MONITOR6/DesktopSerialMonitor/assets/laser_live_server.py
+@@ -0,0 +1,752 @@
++"""Serve four laser readings and map positions from the existing UART stream.
++
++The serial connection is receive-only. The server listens on loopback only.
++"""
++
++from __future__ import annotations
++
++import argparse
++import json
++import math
++import re
++import threading
++import time
++import webbrowser
++from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
++from pathlib import Path
++from urllib.parse import parse_qs, urlsplit
++
++import serial
++from serial.tools import list_ports
++
++from live_projection import RoadProjection
++
++
++HEX_LINE = re.compile(r"HEX=([0-9A-Fa-f ]+)")
++STRATEGY_LASER = re.compile(
++    r"LASER DIR=(FRONT|LEFT|RIGHT|REAR) D=(\d+) C=(\d+) STATUS=([A-Z_]+)"
++)
++RANGE_STATS = re.compile(
++    r"^RANGE DIR=(?P<direction>FRONT|LEFT|RIGHT|REAR) N=(?P<n>\d+) "
++    r"MEAN_MM=(?P<mean>\d+) MIN_MM=(?P<min>\d+) MAX_MM=(?P<max>\d+) "
++    r"REJECT=(?P<rejected>\d+) FW=(?P<firmware>\d+) REF_MM=(?P<reference>\d+)"
++    r"(?: FRAMES=(?P<frames>\d+) WINDOW_MS=(?P<window>\d+) HZ_X10=(?P<hz>\d+))?$"
++)
++STRATEGY_STATE = re.compile(r"\bSTATE=([A-Z_]+) FAULT=([A-Z0-9_]+)")
++BOOT_STATE = re.compile(r"^BOOT_STATUS .*\bSTATE=([A-Z_]+).*\bREASON=([A-Z0-9_]+)")
++ROUTE_FAULT = re.compile(r"^ROUTE_FAULT=([A-Z0-9_]+) FROM=([A-Z_]+)")
++LOC_DIAG = re.compile(
++    r"^LOC NODE=N(?P<node>\d+).*? BODY=(?P<body>\d+).*? VALID=(?P<valid>[01]) "
++    r"PHASE=(?P<phase>\d+) YAW_ERR=(?P<yaw_error>-?\d+) "
++    r"YAW_AGE=(?P<yaw_age>\d+) CW_SIGN=(?P<sign>-?\d+)"
++)
++LOC_LINE = re.compile(
++    r"LOC NODE=N(?P<node>\d+) X_MM=(?P<x>-?\d+) Y_MM=(?P<y>-?\d+) "
++    r"BODY=(?P<body>\d+).*? VALID=(?P<valid>[01])"
++)
++MAP_READY_LINE = re.compile(
++    r"^MAP_READY R(?P<run>\d+) START=N(?P<start>\d+) HEADING=(?P<heading>[NESW]) "
++    r"FIRST=N(?P<first>\d+) STEPS=\d+ SIGNATURE=(?P<signature>\d+)$"
++)
++PAGE = Path(__file__).with_name("laser_live.html")
++MAP_FILE = Path(__file__).with_name("full_map_route.json")
++RAW_LOG_DIR = Path(__file__).with_name("logs")
++COUNTS_PER_REV = 1560
++WHEEL_CIRCUMFERENCE_MM = 204.204
++TRACK_LIMIT = 5000
++MOTION_PROFILE = PAGE.parent.parent / "TreasurePursuitSimulator" / "config.json"
++
++
++def motion_speeds() -> tuple[float, float]:
++    """Nominal-distance measurements are a prior, not an absolute position fix."""
++    try:
++        config = json.loads(MOTION_PROFILE.read_text(encoding="utf-8"))
++        forward = float(config["thief_speed_m_s"]) * 1000
++        reverse = forward * float(config["measured_motion"]["reverse_speed_ratio"])
++        if all(math.isfinite(value) and 50 <= value <= 3000 for value in (forward, reverse)):
++            return forward, reverse
++    except (OSError, ValueError, KeyError, TypeError):
++        pass
++    return 674.157, 678.733
++
++
++class LaserFeed:
++    def __init__(self, port: str, baud: int, *, auto_connect: bool = False) -> None:
++        source_map = json.loads(MAP_FILE.read_text(encoding="utf-8"))
++        self.map_signature = source_map["map_route_signature"]
++        self.nodes = {
++            int(node["id"][1:]): tuple(round(value * 1000) for value in node["xy_m"])
++            for node in source_map["nodes"]
++        }
++        self.edges = {
++            frozenset((int(segment["start"][1:]), int(segment["end"][1:]))):
++                round(segment["length_m"] * 1000)
++            for segment in source_map["segments"]
++        }
++        # Firmware coalesces a straight treasure marker (N004-N005-N006).
++        # Accept that real composite road, without drawing an invented shortcut.
++        for marker in source_map["nodes"]:
++            links = marker.get("connections", [])
++            if marker.get("is_track_landmark", True) or len(links) != 2:
++                continue
++            mid = int(marker["id"][1:])
++            a, b = (int(link["neighbor"][1:]) for link in links)
++            x, y = self.nodes[mid]
++            ax, ay = self.nodes[a]; bx, by = self.nodes[b]
++            if (ax-x)*(by-y) != (ay-y)*(bx-x) or (ax-x)*(bx-x)+(ay-y)*(by-y) >= 0:
++                continue
++            self.edges[frozenset((a, b))] = self.edges[frozenset((a, mid))] + self.edges[frozenset((mid, b))]
++        self.projection = RoadProjection(self.nodes, self.edges, *motion_speeds())
++        self.map_view = {
++            "signature": self.map_signature,
++            "calibrated": source_map["calibrated"],
++            "nodes": [{"id": node["id"], "xy_m": node["xy_m"]} for node in source_map["nodes"]],
++            "segments": [{"id": segment["id"], "start": segment["start"], "end": segment["end"]}
++                         for segment in source_map["segments"]],
++        }
++        self.port = port
++        self.baud = baud
++        RAW_LOG_DIR.mkdir(exist_ok=True)
++        self.raw_log_path = RAW_LOG_DIR / f"laser_live_{int(time.time() * 1000)}.log"
++        self.lock = threading.RLock()
++        self.serial_generation = 0
++        self.serial_changed = threading.Event()
++        self.serial_enabled = auto_connect
++        self.serial_reader = None
++        self.stopping = False
++        self.connected = False
++        self.error = ""
++        self.last_receive_ms = 0
++        self.valid_frames = 0
++        self.range_stats = {}
++        self.vehicle_state = None
++        self.fault_reason = None
++        self.status_time_ms = 0
++        self.fault_from = None
++        self.localization_diagnostic = None
++        self.localization_uncertain = None
++        self.gyro = None
++        self.gyro_received_ms = 0
++        self.gray = {"front": None, "rear": None}
++        self.channels = {
++            str(ch): {"mm": None, "confidence": None, "time_ms": 0, "status": None}
++            for ch in range(1, 5)
++        }
++        self.frame_bytes = bytearray()
++        self.map_match = None
++        self.latest_position = None
++        self.track = []
++        self.track_cursor = 0
++        self.track_generation = 0
++        self.leg = None
++        self.last_run = None
++        self.last_sequence = 0
++        # Current thief firmware starts at N054 facing N053 (west).
++        # A valid MAP_READY replaces this fallback with its reported route start.
++        self.initial_pose = (54, 270)
++        self.position_reset_pending = False
++
++    def reset_position_view(self) -> dict:
++        """Reset the dashboard only; no bytes are sent to the vehicle."""
++        with self.lock:
++            node, heading = self.initial_pose
++            self.track.clear()
++            self.latest_position = None
++            self.leg = None
++            self.track_generation += 1
++            self.projection.reset()
++            self.position_reset_pending = True
++            self._add_position(*self.nodes[node], heading, "VIEW_RESET", None, None, None)
++            return self.snapshot()
++
++    def select_port(self, port: str) -> None:
++        available = {item.device.upper(): item.device for item in list_ports.comports()}
++        selected = available.get(port.upper())
++        if selected is None:
++            raise ValueError("串口不存在或已拔出")
++        with self.lock:
++            if selected == self.port:
++                return
++            self.port = selected
++            self.serial_generation += 1
++            self.connected = False
++            self.error = "正在切换串口"
++            self.last_receive_ms = 0
++            self.valid_frames = 0
++            self.range_stats = {}
++            self.vehicle_state = None
++            self.fault_reason = None
++            self.fault_from = None
++            self.status_time_ms = 0
++            self.localization_diagnostic = None
++            self.gyro = None
++            self.gray = {"front": None, "rear": None}
++            self.channels = {
++                str(ch): {"mm": None, "confidence": None, "time_ms": 0, "status": None}
++                for ch in range(1, 5)
++            }
++            self.frame_bytes.clear()
++            self.map_match = None
++            self.latest_position = None
++            self.track.clear()
++            self.track_cursor = 0
++            self.track_generation += 1
++            self.leg = None
++            self.last_run = None
++            self.last_sequence = 0
++            self.projection.reset()
++            self.initial_pose = (54, 270)
++            self.position_reset_pending = False
++            self.raw_log_path = RAW_LOG_DIR / f"laser_live_{int(time.time() * 1000)}.log"
++            self.serial_changed.set()
++
++    def connect_port(self, port: str) -> None:
++        self.select_port(port)
++        with self.lock:
++            self.serial_enabled = True
++            self.error = "正在连接串口"
++            self.serial_changed.set()
++
++    def disconnect(self) -> None:
++        with self.lock:
++            self.serial_enabled = False
++            self.serial_generation += 1
++            self.connected = False
++            self.error = "串口已断开"
++            reader = self.serial_reader
++            self.serial_reader = None
++            self.projection.stop("serial_disconnected")
++        if reader is not None and reader.is_open:
++            try:
++                reader.cancel_read()
++            except (AttributeError, OSError, serial.SerialException):
++                pass
++            reader.close()
++        self.serial_changed.set()
++
++    def stop(self) -> None:
++        self.stopping = True
++        self.disconnect()
++
++    def snapshot(self) -> dict:
++        with self.lock:
++            gyro = self.gyro.copy() if self.gyro else None
++            if gyro:
++                receipt_age = max(0, time.monotonic() * 1000 - self.gyro_received_ms)
++                source_age = self.projection.source_age_ms()
++                gyro["data_age_ms"] = round(max(receipt_age, source_age or 0)
++                                             + gyro["sensor_age_ms"])
++            projection = self.projection.view(connected=self.connected)
++            if self.latest_position and self.latest_position["source"] in ("LOC", "MAP_READY", "VIEW_RESET"):
++                projection = None
++            return {
++                "port": self.port,
++                "baud": self.baud,
++                "raw_log_path": str(self.raw_log_path),
++                "connected": self.connected,
++                "serial_enabled": self.serial_enabled,
++                "error": self.error,
++                "last_receive_ms": self.last_receive_ms,
++                "valid_frames": self.valid_frames,
++                "range_stats": {ch: value.copy() for ch, value in self.range_stats.items()},
++                "vehicle_state": self.vehicle_state,
++                "fault_reason": self.fault_reason,
++                "status_time_ms": self.status_time_ms,
++                "fault_from": self.fault_from,
++                "localization_diagnostic": self.localization_diagnostic.copy()
++                    if self.localization_diagnostic else None,
++                "localization_uncertain": self.localization_uncertain,
++                "gyro": gyro,
++                "gray": {side: value.copy() if value else None for side, value in self.gray.items()},
++                "projection": projection,
++                "channels": {ch: values.copy() for ch, values in self.channels.items()},
++                "position": self.latest_position.copy() if self.latest_position else None,
++                "map_match": self.map_match,
++                "track_cursor": self.track_cursor,
++                "track_generation": self.track_generation,
++                "server_time_ms": int(time.time() * 1000),
++            }
++
++    def path_since(self, cursor: int) -> dict:
++        with self.lock:
++            return {
++                "cursor": self.track_cursor,
++                "generation": self.track_generation,
++                "truncated": bool(self.track and cursor < self.track[0]["id"] - 1),
++                "points": [point.copy() for point in self.track if point["id"] > cursor],
++            }
++
++    @staticmethod
++    def _crc16(text: str) -> int:
++        crc = 0xFFFF
++        for value in text.encode("ascii"):
++            crc ^= value << 8
++            for _ in range(8):
++                crc = ((crc << 1) ^ 0x1021) & 0xFFFF if crc & 0x8000 else (crc << 1) & 0xFFFF
++        return crc
++
++    @staticmethod
++    def _forward_counts(encoders: list[int]) -> float:
++        # Same logical signs and wheel order as NewFrontDriveMap / MapRoutePosition.
++        return (-encoders[0] + encoders[1] - encoders[2] + encoders[3]) / 4.0
++
++    def _add_position(self, x_mm: float, y_mm: float, heading: float,
++                      source: str, run: int | None, sequence: int | None,
++                      mcu_ms: int | None, break_before: bool = False) -> None:
++        previous = self.latest_position
++        if previous is not None:
++            gap = math.hypot(x_mm - previous["x_mm"], y_mm - previous["y_mm"])
++            if gap > 300:
++                break_before = True
++            if (gap < 3 and source == previous["source"] and
++                    int(time.time() * 1000) - previous["time_ms"] < 1000):
++                return
++        self.track_cursor += 1
++        point = {
++            "id": self.track_cursor, "x_mm": round(x_mm, 1), "y_mm": round(y_mm, 1),
++            "heading": round(heading % 360, 1), "source": source,
++            "run": run, "sequence": sequence, "mcu_ms": mcu_ms,
++            "time_ms": int(time.time() * 1000), "break_before": break_before,
++        }
++        self.latest_position = point
++        self.track.append(point)
++        if len(self.track) > TRACK_LIMIT:
++            del self.track[:len(self.track) - TRACK_LIMIT]
++
++    def _parse_timing(self, line: str) -> None:
++        try:
++            payload, checksum = line.strip().split("*", 1)
++            if self._crc16(payload) != int(checksum, 16):
++                return
++            parts = payload.split(",")
++            if len(parts) != 21 or parts[0] != "MT3":
++                return
++            values = [int(value) for value in parts[1:]]
++        except (ValueError, UnicodeError):
++            return
++        run, sequence, mcu_ms, event = values[:4]
++        from_node, to_node = values[7:9]
++        argument, encoders, drive_mode = values[9], values[14:18], values[19]
++        if from_node not in self.nodes or to_node not in self.nodes:
++            return
++        edge_length = self.edges.get(frozenset((from_node, to_node)))
++        if edge_length is None:
++            return
++        start, end = self.nodes[from_node], self.nodes[to_node]
++        travel_heading = math.degrees(math.atan2(end[0] - start[0], start[1] - end[1]))
++        body_heading = travel_heading + (180 if drive_mode else 0)
++        counts = self._forward_counts(encoders)
++        with self.lock:
++            reboot = run == self.last_run and sequence <= self.last_sequence and sequence == 1
++            if reboot:
++                self.leg = None
++                self.map_match = None
++                self.projection.reset()
++            elif run == self.last_run and sequence <= self.last_sequence:
++                return
++            self.last_run, self.last_sequence = run, sequence
++            self.gyro_received_ms = time.monotonic() * 1000
++            self.gyro = {
++                "yaw_deg": values[10] / 100,
++                "valid": bool(values[11]),
++                "sensor_age_ms": values[12],
++                "frames": values[13],
++                "mcu_ms": mcu_ms,
++                "time_ms": int(time.time() * 1000),
++            }
++            if self.localization_uncertain:
++                if event == 15:
++                    self.localization_uncertain = None
++                else:
++                    self.projection.stop("identity_uncertain")
++                    return
++            if self.position_reset_pending:
++                if event not in (2, 16):
++                    return
++                self.position_reset_pending = False
++            progress = None
++            if event == 2:  # MAP_TIMING_START: argument is the map signature.
++                self.map_match = argument == self.map_signature
++                self.leg = None
++                if not self.map_match:
++                    self.projection.stop("map_mismatch")
++                    return
++                self._add_position(*start, body_heading, "MT3", run, sequence, mcu_ms, reboot)
++            if self.map_match is False:
++                return
++            if event == 16:  # LEG_BEGIN provides the encoder baseline for this road.
++                self.leg = (from_node, to_node, counts, drive_mode)
++                progress = 0.0
++                self._add_position(*start, body_heading, "MT3", run, sequence, mcu_ms, reboot)
++            elif event == 15:  # A gray-confirmed node arrival.
++                progress = float(edge_length)
++                self._add_position(*end, body_heading, "MT3", run, sequence, mcu_ms)
++                if 0 <= argument <= 0xFFF:
++                    side = "rear" if drive_mode else "front"
++                    self.gray[side] = {
++                        "mask": argument, "time_ms": int(time.time() * 1000),
++                        "mcu_ms": mcu_ms, "node": to_node,
++                        "source": "NODE_ARRIVE", "filtered": True,
++                    }
++                self.leg = None
++            elif self.leg and self.leg[:2] == (from_node, to_node):
++                _, _, baseline, leg_mode = self.leg
++                delta = (counts - baseline) * (-1 if leg_mode else 1)
++                progress = max(0.0, min(edge_length, delta * WHEEL_CIRCUMFERENCE_MM / COUNTS_PER_REV))
++                fraction = progress / edge_length
++                x_mm = start[0] + (end[0] - start[0]) * fraction
++                y_mm = start[1] + (end[1] - start[1]) * fraction
++                self._add_position(x_mm, y_mm, body_heading, "MT3", run, sequence, mcu_ms)
++            self.projection.on_timing(run, sequence, mcu_ms, event, from_node, to_node,
++                                      0.0 if progress is None else progress,
++                                      body_heading, drive_mode, values[18],
++                                      received_ms=self.gyro_received_ms)
++
++    def _parse_location(self, line: str) -> None:
++        match = LOC_LINE.search(line)
++        if not match or match.group("valid") != "1":
++            return
++        x_mm, y_mm = int(match.group("x")), int(match.group("y"))
++        if not (0 <= x_mm <= 3300 and 0 <= y_mm <= 2700):
++            return
++        node = int(match.group("node"))
++        if node not in self.nodes:
++            return
++        # LOC is emitted only while stationary; reject a pose far from its confirmed node.
++        if math.hypot(x_mm - self.nodes[node][0], y_mm - self.nodes[node][1]) > 160:
++            return
++        with self.lock:
++            if self.map_match is False or self.position_reset_pending:
++                return
++            self.localization_uncertain = None
++            self._add_position(x_mm, y_mm, int(match.group("body")) * 90,
++                               "LOC", self.last_run, None, None)
++            self.projection.stop("stationary")
++
++    def _parse_map_ready(self, line: str) -> None:
++        match = MAP_READY_LINE.match(line.strip())
++        if not match:
++            return
++        start = int(match.group("start"))
++        first = int(match.group("first"))
++        signature_matches = int(match.group("signature")) == self.map_signature
++        with self.lock:
++            self.track_generation += 1
++            self.projection.reset()
++            self.gray = {"front": None, "rear": None}
++            self.gyro = None
++            self.localization_diagnostic = None
++            self.track.clear()
++            self.latest_position = None
++            self.leg = None
++            self.last_run = None
++            self.last_sequence = 0
++            self.map_match = signature_matches
++            self.position_reset_pending = False
++            if (signature_matches and start in self.nodes and first in self.nodes
++                    and frozenset((start, first)) in self.edges):
++                heading = "NESW".index(match.group("heading")) * 90
++                self.initial_pose = (start, heading)
++                self._add_position(*self.nodes[start], heading, "MAP_READY",
++                                   int(match.group("run")), None, None)
++
++    def parse_line(self, line: str) -> None:
++        line = line.strip()
++        if line.startswith("LOC_UNCERTAIN "):
++            match = re.search(r"EXPECT=N(\d+) CAND=([\d,]+) COUNT=(\d+)", line)
++            if match:
++                with self.lock:
++                    self.localization_uncertain = dict(expected=int(match[1]),
++                        candidates=[int(n) for n in match[2].split(",") if int(n)],
++                        count=int(match[3]))
++                    self.projection.stop("identity_uncertain")
++            return
++        if line.startswith(("LOC_RESOLVED ", "MAP_READY ", "BOOT FW=")):
++            with self.lock:
++                self.localization_uncertain = None
++        loc_diag = LOC_DIAG.search(line)
++        if loc_diag:
++            with self.lock:
++                self.localization_diagnostic = {
++                    "node": int(loc_diag.group("node")),
++                    "body": int(loc_diag.group("body")),
++                    "valid": loc_diag.group("valid") == "1",
++                    "phase": int(loc_diag.group("phase")),
++                    "yaw_error_deg": int(loc_diag.group("yaw_error")) / 100,
++                    "yaw_age_ms": int(loc_diag.group("yaw_age")),
++                    "yaw_cw_sign": int(loc_diag.group("sign")),
++                    "time_ms": int(time.time() * 1000),
++                }
++        boot = BOOT_STATE.search(line)
++        strategy = STRATEGY_STATE.search(line)
++        fault = ROUTE_FAULT.search(line)
++        if boot or strategy or fault:
++            with self.lock:
++                self.status_time_ms = int(time.time() * 1000)
++                if fault:
++                    self.vehicle_state = "FAULT"
++                    self.fault_reason = fault.group(1)
++                    self.fault_from = fault.group(2)
++                else:
++                    self.vehicle_state = (boot or strategy).group(1)
++                    self.fault_reason = (boot or strategy).group(2)
++                    if self.vehicle_state != "FAULT":
++                        self.fault_from = None
++                if self.vehicle_state in ("FAULT", "READY", "HIDE", "HIDDEN", "DONE", "STOPPED"):
++                    self.projection.stop("vehicle_stopped")
++        if line.startswith("MAP_READY "):
++            self._parse_map_ready(line)
++            return
++        if line.startswith("MT3,"):
++            self._parse_timing(line)
++            return
++        if line.startswith("LOC NODE="):
++            self._parse_location(line)
++            return
++        if line.startswith("BOOT FW=LASER_RANGE_CAL_"):
++            with self.lock:
++                self.range_stats.clear()
++                for channel in self.channels.values():
++                    channel.update(mm=None, confidence=None, time_ms=0, status=None)
++            return
++        stats = RANGE_STATS.fullmatch(line)
++        if stats:
++            channel = {"FRONT": "1", "LEFT": "2", "RIGHT": "3", "REAR": "4"}[stats["direction"]]
++            count = int(stats["n"])
++            with self.lock:
++                self.range_stats[channel] = {
++                    "n": count,
++                    "mean_mm": int(stats["mean"]) if count else None,
++                    "min_mm": int(stats["min"]) if count else None,
++                    "max_mm": int(stats["max"]) if count else None,
++                    "rejected": int(stats["rejected"]),
++                    "firmware": int(stats["firmware"]),
++                    "reference_mm": int(stats["reference"]) or None,
++                    "frames": int(stats["frames"]) if stats["frames"] else None,
++                    "window_ms": int(stats["window"]) if stats["window"] else None,
++                    "hz": int(stats["hz"]) / 10 if stats["hz"] and int(stats["window"]) > 0 else None,
++                    "time_ms": int(time.time() * 1000),
++                }
++            return
++        strategy_laser = STRATEGY_LASER.search(line)
++        if strategy_laser:
++            channel = {"FRONT": 1, "LEFT": 2, "RIGHT": 3, "REAR": 4}[strategy_laser.group(1)]
++            distance, confidence = int(strategy_laser.group(2)), int(strategy_laser.group(3))
++            with self.lock:
++                self.channels[str(channel)] = {
++                    "mm": distance if distance else None,
++                    "confidence": confidence,
++                    "time_ms": int(time.time() * 1000),
++                    "status": strategy_laser.group(4),
++                }
++                self.valid_frames += 1
++            return
++        # UART-CH4 startup probing prints long, contiguous HEX diagnostics.
++        # They are not live laser frames and must never terminate the reader.
++        if line.startswith("UARTCH4_TRY "):
++            return
++        match = HEX_LINE.search(line)
++        if not match:
++            return
++        try:
++            self.frame_bytes.extend(bytes.fromhex(match.group(1)))
++        except ValueError:
++            return
++        index = 0
++        while index <= len(self.frame_bytes) - 10:
++            data = self.frame_bytes
++            ch = data[index]
++            if (
++                49 <= ch <= 52
++                and data[index + 1] == 35
++                and data[index + 2 : index + 4] == b"\xaa\x05"
++                and data[index + 4] in (0x67, 0x68)
++            ):
++                frame = data[index + 2 : index + 10]
++                if sum(frame[:7]) & 255 == frame[7]:
++                    with self.lock:
++                        self.channels[str(ch - 48)] = {
++                            "mm": frame[4] | (frame[5] << 8),
++                            "confidence": frame[6],
++                            "time_ms": int(time.time() * 1000),
++                            "status": None,
++                        }
++                        self.valid_frames += 1
++                    index += 10
++                    continue
++            index += 1
++        if index:
++            del self.frame_bytes[:index]
++        if len(self.frame_bytes) > 4096:
++            del self.frame_bytes[:-9]
++
++    def run(self) -> None:
++        while not self.stopping:
++            with self.lock:
++                if self.stopping:
++                    return
++                self.serial_changed.clear()
++                enabled = self.serial_enabled
++                active_port = self.port
++                generation = self.serial_generation
++            if not enabled:
++                self.serial_changed.wait()
++                continue
++            port_reader = serial.Serial(port=None, baudrate=self.baud, timeout=0.25)
++            port_reader.port = active_port
++            port_reader.dtr = False
++            port_reader.rts = False
++            try:
++                with self.lock:
++                    if self.serial_generation != generation or not self.serial_enabled:
++                        continue
++                    port_reader.open()
++                    self.serial_reader = port_reader
++                    self.connected = True
++                    self.error = ""
++                text_buffer = ""
++                with (RAW_LOG_DIR / f"laser_live_{int(time.time() * 1000)}.log").open("ab", buffering=0) as raw_log:
++                    with self.lock:
++                        if self.serial_generation == generation:
++                            self.raw_log_path = Path(raw_log.name)
++                    while True:
++                        with self.lock:
++                            if self.serial_generation != generation:
++                                break
++                        chunk = port_reader.read(4096)
++                        if not chunk:
++                            continue
++                        with self.lock:
++                            if self.serial_generation != generation:
++                                break
++                            raw_log.write(chunk)
++                            self.last_receive_ms = int(time.time() * 1000)
++                            text_buffer += chunk.decode("ascii", errors="ignore")
++                            lines = text_buffer.split("\n")
++                            text_buffer = lines.pop()
++                            for line in lines:
++                                self.parse_line(line)
++                            if len(text_buffer) > 16384:
++                                text_buffer = text_buffer[-4096:]
++            except (OSError, serial.SerialException) as exc:
++                with self.lock:
++                    if self.serial_generation == generation:
++                        self.connected = False
++                        self.error = str(exc)
++                self.serial_changed.wait(2)
++            finally:
++                if port_reader.is_open:
++                    port_reader.close()
++                with self.lock:
++                    if self.serial_reader is port_reader:
++                        self.serial_reader = None
++                    if self.serial_generation == generation:
++                        self.connected = False
++
++
++def main() -> None:
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument("--port", default="COM9")
++    parser.add_argument("--baud", type=int, default=115200)
++    parser.add_argument("--http-port", type=int, default=8766)
++    parser.add_argument("--open-browser", action="store_true",
++                        help="Open the local dashboard after its HTTP port is ready")
++    parser.add_argument("--connect", action="store_true", help="Explicitly connect serial on startup")
++    args = parser.parse_args()
++    feed = LaserFeed(args.port, args.baud, auto_connect=args.connect)
++    threading.Thread(target=feed.run, daemon=True).start()
++
++    class Handler(BaseHTTPRequestHandler):
++        def do_GET(self) -> None:
++            request = urlsplit(self.path)
++            path = request.path
++            if path == "/api/laser":
++                body = json.dumps(feed.snapshot(), ensure_ascii=False).encode("utf-8")
++                content_type = "application/json; charset=utf-8"
++            elif path == "/api/ports":
++                ports = sorted((item.device for item in list_ports.comports()), key=str.upper)
++                body = json.dumps({"ports": ports, "selected": feed.snapshot()["port"]}).encode("utf-8")
++                content_type = "application/json; charset=utf-8"
++            elif path == "/api/map":
++                body = json.dumps(feed.map_view, ensure_ascii=False).encode("utf-8")
++                content_type = "application/json; charset=utf-8"
++            elif path == "/api/path":
++                try:
++                    cursor = max(0, int(parse_qs(request.query).get("after", ["0"])[0]))
++                except ValueError:
++                    self.send_error(400, "Invalid path cursor")
++                    return
++                body = json.dumps(feed.path_since(cursor), ensure_ascii=False).encode("utf-8")
++                content_type = "application/json; charset=utf-8"
++            elif path in ("/", "/laser_live.html"):
++                body = PAGE.read_bytes()
++                content_type = "text/html; charset=utf-8"
++            else:
++                self.send_error(404)
++                return
++            self.send_response(200)
++            self.send_header("Content-Type", content_type)
++            self.send_header("Cache-Control", "no-store")
++            self.send_header("Content-Length", str(len(body)))
++            self.end_headers()
++            self.wfile.write(body)
++
++        def do_POST(self) -> None:
++            path = urlsplit(self.path).path
++            if path not in ("/api/serial", "/api/reset-position"):
++                self.send_error(404)
++                return
++            try:
++                if self.headers.get_content_type() != "application/json":
++                    raise ValueError("需要 JSON 请求")
++                size = int(self.headers.get("Content-Length", "0"))
++                if not 0 < size <= 256:
++                    raise ValueError("请求长度无效")
++                payload = json.loads(self.rfile.read(size))
++                if not isinstance(payload, dict):
++                    raise ValueError("请求格式无效")
++                if path == "/api/reset-position":
++                    status, data = 200, feed.reset_position_view()
++                else:
++                    action = payload.get("action", "connect")
++                    if action == "disconnect":
++                        feed.disconnect()
++                    elif action in ("connect", "select"):
++                        port = payload["port"]
++                        if not isinstance(port, str) or not re.fullmatch(r"COM\d{1,3}", port, re.I):
++                            raise ValueError("串口名称无效")
++                        if action == "connect":
++                            feed.connect_port(port)
++                        else:
++                            feed.select_port(port)
++                    else:
++                        raise ValueError("串口操作无效")
++                    snap = feed.snapshot()
++                    status, data = 200, {"port": snap["port"], "connected": snap["connected"], "serial_enabled": snap["serial_enabled"]}
++            except (ValueError, KeyError, json.JSONDecodeError) as exc:
++                status, data = 400, {"error": str(exc)}
++            body = json.dumps(data, ensure_ascii=False).encode("utf-8")
++            self.send_response(status)
++            self.send_header("Content-Type", "application/json; charset=utf-8")
++            self.send_header("Cache-Control", "no-store")
++            self.send_header("Content-Length", str(len(body)))
++            self.end_headers()
++            self.wfile.write(body)
++
++        def log_message(self, _format: str, *_args: object) -> None:
++            pass
++
++    server = ThreadingHTTPServer(("127.0.0.1", args.http_port), Handler)
++    print(f"Laser dashboard: http://127.0.0.1:{args.http_port}/laser_live.html", flush=True)
++    print(f"Receive-only serial: {args.port} at {args.baud} 8N1", flush=True)
++    if args.open_browser:
++        webbrowser.open(f"http://127.0.0.1:{args.http_port}/laser_live.html", new=2)
++    try:
++        server.serve_forever()
++    finally:
++        feed.stop()
++        server.server_close()
++
++
++if __name__ == "__main__":
++    main()
+--- MONITOR5/DesktopSerialMonitor/assets/laser_live.html
++++ MONITOR6/DesktopSerialMonitor/assets/laser_live.html
+@@ -0,0 +1,501 @@
++<!doctype html>
++<html lang="zh-CN">
++<head>
++<meta charset="utf-8">
++<meta name="viewport" content="width=device-width, initial-scale=1">
++<title>实车监控 · Robot Treasure</title>
++<style>
++
++:root{color-scheme:dark;--bg:#0c1016;--panel:#131a23;--line:#26313e;--text:#e9eef6;--muted:#8b9aaf;--front:#62c9ef;--left:#b39bee;--right:#efb26c;--rear:#74cbb7;--bad:#f47e88}
++*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,"Segoe UI","Microsoft YaHei",sans-serif;min-width:320px}button,select,input{font:inherit}button,select,summary,label{touch-action:manipulation}button,select{color:inherit}button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid #91c7ef;outline-offset:4px}button{cursor:pointer}svg{display:block}.app{max-width:1540px;margin:auto;padding:28px 34px 18px}.top{display:flex;align-items:center;justify-content:space-between;gap:24px;padding-bottom:25px;margin-bottom:24px;border-bottom:1px solid #222c38}.brand{display:flex;align-items:center;gap:13px}.brand-mark{width:42px;height:42px;display:grid;place-items:center;border:1px solid #394554;border-radius:12px;background:#1a232f;color:#dbe5ef}.eyebrow{font-size:10px;letter-spacing:.18em;color:#8696ab;font-weight:600}.title h1{font-size:22px;letter-spacing:-.5px;line-height:1.3;margin:3px 0 0;font-weight:650}.connect{display:flex;align-items:center;gap:18px}.status{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#a1adbd;max-width:300px}.status:before{content:"";width:6px;height:6px;border-radius:50%;background:#778496;flex-shrink:0}.status.live{color:#a0d5c3}.status.live:before{background:#78c9ad;box-shadow:0 0 0 4px #78c9ad12}.status.error{color:var(--bad)}.status.error:before{background:var(--bad)}.serial-info{font-size:11px;letter-spacing:.03em;color:#718198;padding-left:18px;border-left:1px solid #2b3440;white-space:nowrap}.clock{font-size:11px;color:#b4c0cf;font-variant-numeric:tabular-nums;white-space:nowrap}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 334px;gap:20px;align-items:start}.map-panel,.sensors-panel,.visual{border:1px solid var(--line);border-radius:17px;background:var(--panel);overflow:hidden}.map-panel{--role-color:#ffb45f;--trail-once:#ffb45f;--trail-twice:#d37a35;--trail-many:#98512d}.map-panel[data-role="police"]{--role-color:#6ac6ff;--trail-once:#6ac6ff;--trail-twice:#348bbf;--trail-many:#285676}.map-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 24px 18px}.section-title h2,.panel-heading h2,.visual-head h2{font-size:17px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}.section-title .eyebrow,.panel-heading .eyebrow{font-size:9px;letter-spacing:.14em}.role-control{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:11px}.role-control select{appearance:none;background:#202a37 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4 3 3 3-3' fill='none' stroke='%2399a9bc' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;border:1px solid #364354;border-radius:9px;padding:8px 31px 8px 12px;min-width:88px;color:var(--role-color);font-weight:600;cursor:pointer}.map-summary{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1.2fr);margin:0 24px 18px;border:1px solid #293442;border-radius:11px;background:#101720}.metric{padding:13px 16px;min-width:0}.metric+.metric{border-left:1px solid #293442}.metric small{display:block;color:#7e90a7;font-size:10px;margin-bottom:5px}.metric strong{font-size:13px;font-weight:550;color:#c7d3e2;display:block;overflow-wrap:anywhere}.metric.position strong{font-size:21px;font-weight:550;letter-spacing:-.5px;color:#f0f5fb;font-variant-numeric:tabular-nums}.metric.vehicle span{font-size:12px;color:#b7c4d6;overflow-wrap:anywhere}.map-stage{position:relative;margin:0 16px;background:#0e151f;border:1px solid #253242;border-radius:12px;overflow:hidden}.stage-label{position:absolute;left:17px;top:15px;display:flex;gap:8px;align-items:center;font-size:9px;font-weight:600;letter-spacing:.13em;color:#73879f;pointer-events:none}.stage-label i{width:5px;height:5px;background:var(--role-color);border-radius:50%}.north{position:absolute;right:18px;top:15px;color:#8393a8;font-size:10px;letter-spacing:.12em;pointer-events:none}.map-svg{width:100%;height:auto;max-height:650px;min-height:290px;background-image:radial-gradient(#34445a30 .7px,transparent .7px);background-size:18px 18px;padding:30px 10px 12px}#map-roads line{stroke:#3a4a5c;stroke-width:4;opacity:.82}#map-nodes circle{fill:#879cb3;r:2.9px}.map-node-label{font-size:8px;fill:#99acc2;paint-order:stroke;stroke:#0e151f;stroke-width:3px}.map-svg #car-marker{filter:drop-shadow(0 0 5px #0008)}.map-svg #car-marker circle,.map-svg #car-marker path{fill:var(--role-color)}.map-trail-layer{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.map-trail-layer.once{stroke:var(--trail-once)}.map-trail-layer.twice{stroke:var(--trail-twice)}.map-trail-layer.many{stroke:var(--trail-many);stroke-width:6}.map-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px}.map-legend{display:flex;gap:13px;flex-wrap:wrap;color:#8ea0b6;font-size:10px}.map-legend i{display:inline-block;width:17px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}.map-legend .once{background:var(--trail-once)}.map-legend .twice{background:var(--trail-twice)}.map-legend .many{background:var(--trail-many)}.map-controls{display:flex;align-items:center;gap:14px;white-space:nowrap;font-size:11px;color:#9eacc0}.map-controls label{display:flex;align-items:center;gap:6px;cursor:pointer}.map-controls input{appearance:none;width:13px;height:13px;margin:0;border:1px solid #5b6b7e;border-radius:3px;background:#17202c;cursor:pointer}.map-controls input:checked{background:var(--role-color);border-color:var(--role-color);box-shadow:inset 0 0 0 3px #17202c}.map-controls button{display:flex;align-items:center;gap:6px;background:transparent;color:#a3b1c3;border:0;padding:4px 0}.map-controls button:hover{color:#f0f4fb}.map-controls button svg{width:13px;height:13px}.source-details{border-top:1px solid #26313e}.source-details summary{display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer;padding:13px 24px;color:#8092a9;font-size:11px}.source-details summary::-webkit-details-marker{display:none}.source-details summary:after{content:"＋";font-size:16px;line-height:1}.source-details[open] summary:after{content:"−"}.map-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:3px 24px 16px}.map-details small{display:block;color:#71849d;font-size:10px;margin-bottom:5px}.map-details span{font-size:11px;color:#b3c0d3;font-variant-numeric:tabular-nums}.map-note{margin:0;padding:0 24px 18px;color:#7e90a7;font-size:11px;line-height:1.75}.sidebar{display:grid;gap:18px}.panel-heading{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 17px}.panel-count{font-size:9px;color:#91a1b6;border:1px solid #344153;border-radius:5px;padding:3px 6px;letter-spacing:.07em}.sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#293442;border-top:1px solid #293442}.card{padding:15px 15px 14px;min-width:0;background:#141c27;position:relative}.card-head{display:flex;align-items:center;justify-content:space-between;gap:6px}.sensor-name{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:550;color:#c9d5e4}.sensor-name i{width:5px;height:5px;background:var(--sensor);border-radius:50%}.direction-icon{font-size:13px;color:var(--sensor);line-height:1}.tag{font-size:8px;letter-spacing:.06em;color:#6e839c;margin-top:4px}.reading{font-size:30px;line-height:1.1;font-weight:550;letter-spacing:-1px;margin:14px 0 14px;font-variant-numeric:tabular-nums}.reading small{font-size:10px;letter-spacing:0;color:#7588a0;margin-left:3px}.meta{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:9px;color:#8091a8}.quality{font-size:10px;color:var(--sensor);font-weight:500}.confidence-bar{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px;height:5px;margin-top:7px}.confidence-bar span{background:#2b3748;border-radius:1px;transition:background .2s,opacity .2s}.confidence-bar span.filled{background:var(--sensor)}.confidence-bar.stale span.filled{opacity:.3}.visual{--car-role-color:#efb26c;padding:18px 18px 13px}.visual[data-role="police"]{--car-role-color:#62c9ef}.car-accent{stroke:var(--car-role-color)}.visual-head{display:flex;align-items:center;justify-content:space-between}.visual-head h2{font-size:14px;margin:0}.visual-head span{font-size:10px;color:#71849d}.car-svg{width:100%;height:270px;margin:4px auto 0}.sensor-label{font-size:15px;font-weight:500}.sensor-ray{transition:opacity .18s}.hint{font-size:10px;color:#74879f;text-align:center;line-height:1.7;margin:3px 4px 0}.footer{display:flex;align-items:center;justify-content:space-between;gap:16px;color:#64778e;font-size:10px;padding:17px 2px 0}.footer-left{display:flex;gap:18px;align-items:center}.footer .footer-brand{font-size:9px;letter-spacing:.12em;color:#8291a5}.footer #frames,#vehicle-status{font-variant-numeric:tabular-nums}
++
++.pose-kind{display:block;font-size:9px!important;color:#8195ae!important;margin-top:3px}.map-legend .forecast{height:0;border-top:2px dashed var(--role-color);background:none}#map-forecast{stroke:var(--role-color);stroke-width:4;stroke-dasharray:5 6;opacity:.65}#prediction-ring circle{stroke:var(--role-color);stroke-width:1;stroke-dasharray:3 4;opacity:.4}.gray-cells rect{fill:#435468;stroke:#8599ac;stroke-width:.5}.gray-cells rect.line-hit{fill:#efcb8a;stroke:#ffe8b8}.gray-cells.stale{opacity:.35}.gray-label{font-size:10px;fill:#7c93ac}.onboard-data{margin-top:9px;border-top:1px solid #293442;padding-top:11px}.gray-readouts,.gyro-readouts{display:grid;grid-template-columns:1fr 1fr;gap:14px}.gray-readouts>div{min-width:0}.gray-readouts span{font-size:10px;color:#9bb0c8;display:flex;justify-content:space-between;gap:5px}.gray-readouts code{font:10px Consolas,monospace;color:#d4dfed}.gray-readouts small{display:block;color:#71849c;font-size:9px;margin-top:3px}.onboard-data .hint{text-align:left;margin:7px 0 10px;font-size:9px}.gyro-readouts{padding-top:10px;border-top:1px solid #26313e}.gyro-readouts small{display:block;font-size:10px;color:#8195ad}.gyro-readouts strong{font-size:22px;font-weight:500;color:#d8e4f0;font-variant-numeric:tabular-nums}.gyro-readouts em{font-style:normal;font-size:12px;color:#758ba4;margin-left:2px}.onboard-status{display:flex;justify-content:space-between;gap:6px;color:#7890aa;font-size:9px;margin-top:7px}.gyro-readouts .stale{opacity:.4}
++.serial-picker{display:flex;align-items:center;gap:7px;color:#8fa1b7;font-size:11px}.serial-picker select{background:#202a37;border:1px solid #364354;border-radius:8px;padding:6px 8px;min-width:84px;max-width:105px;color:#dce8f5;cursor:pointer}.serial-picker select:disabled{opacity:.55}
++.map-head{flex-wrap:wrap}.map-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.reset-position{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;background:#1c2b39;border:1px solid #45617a;border-radius:9px;color:#b9d8f2;font-size:11px;font-weight:550}.reset-position:hover{background:#24394c;border-color:#729abd}.reset-position:disabled{opacity:.5;cursor:wait}.reset-position svg{width:14px;height:14px}
++
++@media(min-width:1400px){.workspace{grid-template-columns:minmax(0,1fr) 360px}.car-svg{height:300px}.reading{font-size:34px}.card{padding:18px}.map-svg{max-height:700px}}
++@media(max-width:1100px){.app{padding:22px}.workspace{grid-template-columns:minmax(0,1fr) 300px;gap:16px}.connect{gap:12px}.serial-info{display:none}.map-head{padding:20px}.map-summary{margin-left:18px;margin-right:18px;grid-template-columns:1.2fr 1fr}.metric.vehicle{grid-column:1/-1;border-left:0;border-top:1px solid #293442;padding:9px 14px;display:flex;align-items:center;gap:12px}.metric.vehicle small{margin:0;flex-shrink:0}.metric{padding:12px 14px}.metric.position strong{font-size:18px}.map-toolbar{padding:12px 18px;flex-wrap:wrap}.map-legend{gap:10px}.card{padding:13px}.reading{font-size:28px}.car-svg{height:260px}.map-details{padding-left:18px;padding-right:18px;grid-template-columns:1fr 1fr}.map-note,.source-details summary{padding-left:18px;padding-right:18px}}
++@media(max-width:880px){.workspace{grid-template-columns:1fr}.sidebar{grid-template-columns:1fr 1fr;align-items:start;gap:16px}.top{align-items:flex-start}.connect{flex-direction:column;align-items:flex-end;gap:5px}.map-summary{grid-template-columns:1.3fr 1fr 1.2fr}.metric.vehicle{grid-column:auto;border-left:1px solid #293442;border-top:0;display:block;padding:12px 14px}.metric.vehicle small{margin-bottom:5px}.map-svg{max-height:620px}.car-svg{height:278px}.footer-left span:not(.footer-brand){display:none}}
++@media(max-width:560px){.app{padding:17px 12px}.top{gap:12px;padding-bottom:18px;margin-bottom:16px}.brand{gap:9px}.brand-mark{width:34px;height:34px;border-radius:10px}.brand-mark svg{width:19px}.eyebrow{font-size:8px;letter-spacing:.1em}.title h1{font-size:18px}.connect .clock{display:none}.status{max-width:133px;font-size:10px;gap:6px}.workspace,.sidebar{gap:14px}.map-head{padding:17px 16px}.section-title h2{font-size:16px}.role-control{gap:7px}.role-control select{padding-left:10px;min-width:80px}.map-summary{margin:0 12px 12px;grid-template-columns:1.15fr 1fr}.metric{padding:11px 12px}.metric strong{font-size:11px}.metric.position strong{font-size:16px}.metric.vehicle{grid-column:1/-1;border-left:0;border-top:1px solid #293442;padding:9px 12px;display:flex;gap:12px;align-items:center}.metric.vehicle small{margin:0}.metric.vehicle span{font-size:11px}.map-stage{margin:0 8px}.map-svg{min-height:260px;padding:30px 0 8px}.stage-label{left:13px;font-size:8px}.north{right:13px}.map-toolbar{padding:12px 16px;gap:13px}.map-legend{width:100%;justify-content:space-between;font-size:9px}.map-controls{width:100%;justify-content:space-between;font-size:11px}.source-details summary{padding:12px 16px}.map-details{padding-left:16px;padding-right:16px;gap:12px}.map-note{padding-left:16px;padding-right:16px;font-size:10px}.sidebar{grid-template-columns:1fr}.sensor-grid{grid-template-columns:1fr 1fr}.panel-heading{padding:17px 16px}.panel-heading h2{font-size:16px}.card{padding:16px}.sensor-name{font-size:12px}.sensor-name i{display:none}.tag{font-size:9px}.reading{font-size:30px;margin:14px 0}.reading small{font-size:10px}.meta{flex-direction:row;align-items:center;gap:4px;font-size:9px}.confidence-bar{gap:3px;height:6px}.visual{padding:16px}.car-svg{height:280px;max-width:300px}.footer{font-size:9px;padding-top:14px}.footer-left{gap:8px}}
++@media(prefers-reduced-motion:reduce){*{transition:none!important}}
++
++.range-cal{margin-top:12px;padding-top:10px;border-top:1px solid #2b3748;font-size:10px;color:#90a3ba;line-height:1.8}.range-cal strong{color:#dce8f5;font-weight:550;font-variant-numeric:tabular-nums}.range-cal label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:5px;white-space:nowrap;margin-top:7px}.range-cal input{width:100%;min-width:0;background:#0e151f;color:#e9eef6;border:1px solid #42526a;border-radius:4px;padding:4px;font-size:11px}.range-error{margin-top:5px}.range-note{padding:12px 20px;color:#8ea0b6;font-size:10px;line-height:1.7;border-top:1px solid #293442}
++</style>
++<link rel="stylesheet" href="/embedded.css">
++</head>
++<body>
++<main class="app">
++<header class="top">
++  <div class="brand"><div class="brand-mark" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 8V4h6M14 4h6v6M20 14v6h-6M10 20H4v-6" stroke="currentColor" stroke-width="1.5"/><path d="M8 12h8M12 8v8" stroke="#e8b16d" stroke-width="1.5"/></svg></div><div class="title"><div class="eyebrow">ROBOT TREASURE / LIVE</div><h1>实车监控</h1></div></div>
++  <div class="connect"><span id="status" class="status" role="status">正在连接采集服务</span><label class="serial-picker" for="serial-port">串口 <select id="serial-port" aria-label="选择电脑串口"><option value="">读取中</option></select></label><button id="serial-toggle" type="button" style="padding:8px 12px;border:1px solid #52687c;border-radius:7px;background:#1c2b38;color:#e7eef7;cursor:pointer;white-space:nowrap">连接串口</button><span class="serial-info" id="serial-info">115200 · 8N1</span><time id="clock" class="clock">--:--:--</time></div>
++</header>
++<div class="workspace">
++<section class="map-panel" data-role="thief" aria-label="地图实时轨迹">
++  <div class="map-head"><div class="section-title"><div class="eyebrow">01 / POSITIONING</div><h2>赛道实时轨迹</h2></div><div class="map-head-actions"><button id="reset-map-position" class="reset-position" type="button" title="清除网页轨迹并显示路线初始位置；实车需手动摆回起点"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 6a5 5 0 1 1-.2 4M3 2v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>回到初始位置</span></button><label class="role-control" for="role-select">车辆角色<select id="role-select"><option value="thief">小偷</option><option value="police">警察</option></select></label></div></div>
++  <div class="map-summary"><div class="metric"><small>定位状态</small><strong id="map-state">等待地图</strong></div><div class="metric position"><small>当前位置 / m</small><strong id="map-position">—</strong><span id="map-pose-kind" class="pose-kind">等待定位</span></div><div class="metric vehicle"><small>车辆状态 / 停车原因</small><span id="vehicle-status">等待车载状态</span></div></div>
++  <div class="map-stage"><div class="stage-label"><i></i>TRACKING VIEW</div><span class="north" aria-hidden="true">N ↑</span><svg id="map-svg" class="map-svg" viewBox="-42 -42 744 624" role="img" aria-label="赛道地图和串口定位轨迹">
++        <g id="map-roads"></g><g id="map-nodes"></g><g id="map-node-labels"></g>
++        <g id="map-trail"><path class="map-trail-layer once"/><path class="map-trail-layer twice"/><path class="map-trail-layer many"/><path class="map-trail-layer once unmatched"/></g>
++        <path id="map-forecast" fill="none"/><g id="prediction-ring" style="display:none"><circle fill="none"/></g><g id="car-marker" style="display:none"><circle r="18" fill="#ffb454" fill-opacity=".16"/><path d="M0 -13 L-9 10 L0 5 L9 10 Z" fill="#ffb454" stroke="#fff1d5" stroke-width="1.5"/></g>
++      </svg></div>
++  <div class="map-toolbar"><div class="map-legend"><span><i class="once"></i>首次经过</span><span><i class="twice"></i>第 2 次</span><span><i class="many"></i>第 3 次及以上</span><span><i class="forecast"></i>时间预测</span></div><div class="map-controls"><label><input id="show-map-nodes" checked disabled type="checkbox">节点编号</label><button id="clear-map-path" type="button"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 5h11M6 2.5h4M4 5l.6 8h6.8l.6-8M6.5 7.5v3M9.5 7.5v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>清除轨迹</button></div></div>
++  <details class="source-details"><summary>定位详情与使用说明</summary><div class="map-details"><div><small>定位依据</small><span id="map-source">—</span></div><div><small>最新定位时间</small><span id="map-time">—</span></div><div><small>行驶批次</small><span id="map-run">—</span></div></div><p class="map-note">按 RESET 后，网页清空旧轨迹并显示固件路线起点；实车仍需摆回该点。角色选择只改变网页颜色。轨迹依据路段、编码器与有效停车定位显示。虚线是当前路段内的时间预测，最多外推 0.7 秒，在未确认的路口前停止；转弯、停车、丢帧或遥测过期时暂停。预测不计入重复轨迹。灰度仅为最近一次路口采样，偏航角取自陀螺仪记录；地图尺度与速度仍是名义标定。</p></details>
++</section>
++<aside class="sidebar">
++  <section class="sensors-panel" aria-label="四向激光测距"><div class="panel-heading"><div><div class="eyebrow">02 / RANGE SENSORS</div><h2>四向激光</h2></div><button class="panel-count" title="展开测频和距离校准统计">统计详情</button></div><div class="sensor-grid"><article class="card" style="--sensor:var(--front)"><div class="card-head"><span class="sensor-name"><i></i>前方</span><span class="direction-icon" aria-hidden="true">↑</span></div><div class="tag">RX1 / CH1</div><div id="distance-1" class="reading">— <small>mm</small></div><div class="meta"><span>置信度 <b id="confidence-1" class="quality">—</b></span><span id="updated-1">等待数据</span></div><div id="confidence-bar-1" class="confidence-bar" role="meter" aria-label="前方传感器置信度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></article>
++<article class="card" style="--sensor:var(--left)"><div class="card-head"><span class="sensor-name"><i></i>左侧</span><span class="direction-icon" aria-hidden="true">←</span></div><div class="tag">RX2 / CH2</div><div id="distance-2" class="reading">— <small>mm</small></div><div class="meta"><span>置信度 <b id="confidence-2" class="quality">—</b></span><span id="updated-2">等待数据</span></div><div id="confidence-bar-2" class="confidence-bar" role="meter" aria-label="左侧传感器置信度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></article>
++<article class="card" style="--sensor:var(--right)"><div class="card-head"><span class="sensor-name"><i></i>右侧</span><span class="direction-icon" aria-hidden="true">→</span></div><div class="tag">RX3 / CH3</div><div id="distance-3" class="reading">— <small>mm</small></div><div class="meta"><span>置信度 <b id="confidence-3" class="quality">—</b></span><span id="updated-3">等待数据</span></div><div id="confidence-bar-3" class="confidence-bar" role="meter" aria-label="右侧传感器置信度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></article>
++<article class="card" style="--sensor:var(--rear)"><div class="card-head"><span class="sensor-name"><i></i>后方</span><span class="direction-icon" aria-hidden="true">↓</span></div><div class="tag">RX4 / CH4</div><div id="distance-4" class="reading">— <small>mm</small></div><div class="meta"><span>置信度 <b id="confidence-4" class="quality">—</b></span><span id="updated-4">等待数据</span></div><div id="confidence-bar-4" class="confidence-bar" role="meter" aria-label="后方传感器置信度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></article></div></section>
++  <section class="visual"><div class="visual-head"><h2>车体感知</h2><span>俯视 · 四向测距</span></div><svg class="car-svg" viewBox="0 0 420 440" role="img" aria-label="四轮机器人与四向激光探头实时示意">
++<defs>
++<linearGradient id="chassis" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#718296"/><stop offset=".45" stop-color="#3f5064"/><stop offset="1" stop-color="#283747"/></linearGradient>
++<linearGradient id="top-shell" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#27384b"/><stop offset="1" stop-color="#192635"/></linearGradient>
++<linearGradient id="tire" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#080c12"/><stop offset=".5" stop-color="#1b2632"/><stop offset="1" stop-color="#080c12"/></linearGradient>
++<pattern id="tread" width="5" height="8" patternUnits="userSpaceOnUse"><path d="M0 3H5" stroke="#536376" stroke-opacity=".38" stroke-width="1"/></pattern>
++<filter id="chassis-shadow" x="-40%" y="-30%" width="180%" height="180%"><feDropShadow dx="0" dy="9" stdDeviation="9" flood-color="#000" flood-opacity=".35"/></filter>
++</defs>
++<path d="M144 104H276L326 154V286L276 336H144L94 286V154Z" fill="none" stroke="#304155" stroke-opacity=".32" stroke-dasharray="2 7"/><path d="M121 148V128H141M279 128H299V148M299 292V312H279M141 312H121V292" fill="none" stroke="#4d637b" stroke-opacity=".35"/>
++<g id="ray-front" class="sensor-ray"><path id="wedge-1" d="" fill="#62c9ef" fill-opacity=".07"/><line id="line-1" x1="210" y1="130" x2="210" y2="34" stroke="#62c9ef" stroke-width="2" stroke-dasharray="5 6"/><circle id="hit-1" cx="210" cy="34" r="5" fill="#62c9ef"/><text x="210" y="18" text-anchor="middle" fill="#62c9ef" class="sensor-label">前 · RX1</text></g>
++<g id="ray-left" class="sensor-ray"><path id="wedge-2" d="" fill="#b39bee" fill-opacity=".07"/><line id="line-2" x1="146" y1="220" x2="40" y2="220" stroke="#b39bee" stroke-width="2" stroke-dasharray="5 6"/><circle id="hit-2" cx="40" cy="220" r="5" fill="#b39bee"/><text x="32" y="200" text-anchor="middle" fill="#b39bee" class="sensor-label">左 RX2</text></g>
++<g id="ray-right" class="sensor-ray"><path id="wedge-3" d="" fill="#efb26c" fill-opacity=".07"/><line id="line-3" x1="274" y1="220" x2="380" y2="220" stroke="#efb26c" stroke-width="2" stroke-dasharray="5 6"/><circle id="hit-3" cx="380" cy="220" r="5" fill="#efb26c"/><text x="388" y="200" text-anchor="middle" fill="#efb26c" class="sensor-label">右 RX3</text></g>
++<g id="ray-rear" class="sensor-ray"><path id="wedge-4" d="" fill="#74cbb7" fill-opacity=".07"/><line id="line-4" x1="210" y1="310" x2="210" y2="406" stroke="#74cbb7" stroke-width="2" stroke-dasharray="5 6"/><circle id="hit-4" cx="210" cy="406" r="5" fill="#74cbb7"/><text x="210" y="432" text-anchor="middle" fill="#74cbb7" class="sensor-label">后 · RX4</text></g>
++<g filter="url(#chassis-shadow)">
++<path d="M139 181H281M139 258H281" stroke="#55677b" stroke-width="9"/>
++<g fill="url(#tire)" stroke="#536477" stroke-width="1"><rect x="127" y="160" width="27" height="49" rx="2"/><rect x="266" y="160" width="27" height="49" rx="2"/><rect x="127" y="233" width="27" height="49" rx="2"/><rect x="266" y="233" width="27" height="49" rx="2"/></g>
++<g fill="url(#tread)"><rect x="131" y="165" width="19" height="39" rx="1"/><rect x="270" y="165" width="19" height="39" rx="1"/><rect x="131" y="238" width="19" height="39" rx="1"/><rect x="270" y="238" width="19" height="39" rx="1"/></g>
++<path d="M166 135H254L270 151V289L254 305H166L150 289V151Z" fill="url(#chassis)" stroke="#91a4b9" stroke-width="1.2"/><path d="M168 141H252L264 153V287L252 299H168L156 287V153Z" fill="url(#top-shell)" stroke="#203044"/><path d="M168 154L183 171H237L252 154M168 286L183 268H237L252 286" fill="none" stroke="#58718a" stroke-opacity=".55" stroke-width="1"/><path d="M158 184L166 192V248L158 256M262 184L254 192V248L262 256" fill="none" stroke="#506881" stroke-opacity=".6"/>
++<path d="M170 157H250M170 283H250" stroke="#6a7e94" stroke-opacity=".45"/><path class="car-accent" d="M181 148H239" fill="none" stroke-width="4"/><path d="M180 143L190 135H230L240 143" fill="#7890a8" opacity=".55"/><path d="M201 128L210 119L219 128" stroke="#b5c5d6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
++<path d="M182 181H238L246 189V251L238 259H182L174 251V189Z" fill="#0d1826" stroke="#456079"/><path d="M191 204V197H199M221 197H229V205M229 228V236H221M199 236H191V228" stroke="#6f879f" stroke-width="1.3" fill="none"/><path class="car-accent" d="M202 216H218M210 208V224" fill="none" stroke-width="2" stroke-linecap="round"/><path d="M210 194L232 216L210 238L188 216Z" fill="none" stroke="#334a61"/>
++<g fill="#9cafc2" opacity=".7"><circle cx="166" cy="169" r="2"/><circle cx="254" cy="169" r="2"/><circle cx="166" cy="274" r="2"/><circle cx="254" cy="274" r="2"/></g><path d="M197 271H223" stroke="#4b6076" stroke-width="3" stroke-linecap="round"/>
++</g>
++<g stroke="#d3e0ed" stroke-width="1"><rect x="200" y="127" width="20" height="8" rx="1" fill="#62c9ef"/><rect x="141" y="211" width="9" height="18" rx="1" fill="#b39bee"/><rect x="270" y="211" width="9" height="18" rx="1" fill="#efb26c"/><rect x="200" y="305" width="20" height="8" rx="1" fill="#74cbb7"/></g>
++<path d="M178 119V135M242 119V135M178 305V320M242 305V320" stroke="#55697f" stroke-width="3"/><path d="M146 106H274L278 110V117L274 121H146L142 117V110Z" fill="#101d2b" stroke="#657c92"/><path d="M146 319H274L278 323V330L274 334H146L142 330V323Z" fill="#101d2b" stroke="#657c92"/><g id="gray-front-cells" class="gray-cells"><rect x="153" y="111" width="7" height="5" data-bit="11"/><rect x="163" y="111" width="7" height="5" data-bit="10"/><rect x="173" y="111" width="7" height="5" data-bit="9"/><rect x="183" y="111" width="7" height="5" data-bit="8"/><rect x="193" y="111" width="7" height="5" data-bit="7"/><rect x="203" y="111" width="7" height="5" data-bit="6"/><rect x="213" y="111" width="7" height="5" data-bit="5"/><rect x="223" y="111" width="7" height="5" data-bit="4"/><rect x="233" y="111" width="7" height="5" data-bit="3"/><rect x="243" y="111" width="7" height="5" data-bit="2"/><rect x="253" y="111" width="7" height="5" data-bit="1"/><rect x="263" y="111" width="7" height="5" data-bit="0"/></g><g id="gray-rear-cells" class="gray-cells"><rect x="153" y="324" width="7" height="5" data-bit="0"/><rect x="163" y="324" width="7" height="5" data-bit="1"/><rect x="173" y="324" width="7" height="5" data-bit="2"/><rect x="183" y="324" width="7" height="5" data-bit="3"/><rect x="193" y="324" width="7" height="5" data-bit="4"/><rect x="203" y="324" width="7" height="5" data-bit="5"/><rect x="213" y="324" width="7" height="5" data-bit="6"/><rect x="223" y="324" width="7" height="5" data-bit="7"/><rect x="233" y="324" width="7" height="5" data-bit="8"/><rect x="243" y="324" width="7" height="5" data-bit="9"/><rect x="253" y="324" width="7" height="5" data-bit="10"/><rect x="263" y="324" width="7" height="5" data-bit="11"/></g><text x="283" y="118" class="gray-label">前灰度</text><text x="283" y="331" class="gray-label">后灰度</text><text id="car-role-label" x="210" y="355" text-anchor="middle" fill="#b1c0d2" font-size="13" font-weight="500">小偷车</text>
++</svg><div class="onboard-data"><div class="gray-readouts"><div><span>前灰度 <code id="gray-front-mask">—</code></span><small id="gray-front-time">等待路口采样</small></div><div><span>后灰度 <code id="gray-rear-mask">—</code></span><small id="gray-rear-time">等待路口采样</small></div></div><p class="hint">灰度亮格 = 识别黑线；显示最近路口的处理后采样。</p><div class="gyro-readouts"><div><small>偏航角</small><strong id="gyro-yaw">—<em>°</em></strong></div><div><small>航向误差 · 停靠更新</small><strong id="gyro-error">—<em>°</em></strong></div></div><div class="onboard-status"><span id="gyro-status">等待陀螺仪数据</span><span id="gyro-time">—</span></div></div><p class="hint">光束上限 4 m。灰度和陀螺仪旧数据会变暗。</p></section>
++</aside>
++</div>
++<footer class="footer"><div class="footer-left"><span class="footer-brand">ROBOT TREASURE</span><span>距离 mm · 坐标 m</span></div><span id="frames">测距记录：0</span></footer>
++</main>
++<script>
++const channelNames={1:'前方',2:'左侧',3:'右侧',4:'后方'};
++const colors={1:'#52c7ff',2:'#9e8cff',3:'#ffb454',4:'#48d6b0'};
++const sensors={
++  1:{x:210,y:130,angle:-90},
++  2:{x:146,y:220,angle:180},
++  3:{x:274,y:220,angle:0},
++  4:{x:210,y:310,angle:90}
++};
++const state=Array.from({length:5},()=>({distance:null,confidence:null,time:0}));
++const statusEl=document.querySelector('#status');
++const serialSelect=document.querySelector('#serial-port');
++let switchingPort=false;
++const svgNS='http://www.w3.org/2000/svg';
++let mapReady=false,trackCursor=0,trackGeneration=null,trackPoints=[],pathInFlight=false,latestMapPosition=null,latestProjection=null,mapMatch=null;
++let viewEpoch=0;
++function setStatus(text,kind='',detail=''){statusEl.textContent=text;statusEl.className='status '+kind;statusEl.title=detail;}
++async function loadPorts(){
++  if(switchingPort)return;
++  try{
++    const response=await fetch('/api/ports',{cache:'no-store'});
++    if(!response.ok)throw new Error(`HTTP ${response.status}`);
++    const data=await response.json();
++    const options=[...data.ports];
++    if(data.selected&&!options.includes(data.selected))options.unshift(data.selected);
++    if(options.join('|')!==[...serialSelect.options].map(option=>option.value).join('|')){
++      serialSelect.replaceChildren(...options.map(port=>new Option(port+(data.ports.includes(port)?'':' · 已拔出'),port)));
++    }
++    serialSelect.disabled=!options.length;
++    serialSelect.value=data.selected;
++  }catch(_error){serialSelect.disabled=true;}
++}
++const serialToggle=document.querySelector('#serial-toggle');
++let serialEnabled=false,bridgeOnline=true,commandPending=false,pendingCommandId=null;
++async function serialAction(action){
++  switchingPort=true;serialSelect.disabled=true;serialToggle.disabled=true;
++  setStatus(action==='disconnect'?'正在断开串口':action==='connect'?'正在连接串口':'正在选择串口');
++  try{
++    const response=await fetch('/api/serial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({port:serialSelect.value,action})});
++    const data=await response.json();
++    if(!response.ok)throw new Error(data.error||`HTTP ${response.status}`);
++    commandPending=Boolean(data.queued);pendingCommandId=data.commandId||null;
++    setStatus(data.queued?'指令已发送，等待电脑确认':action==='disconnect'?'串口已断开':'串口设置已更新');
++  }catch(error){setStatus('串口操作失败','error',error.message);}
++  finally{switchingPort=false;serialToggle.disabled=!bridgeOnline;await loadPorts();}
++}
++serialSelect.addEventListener('change',()=>serialAction('select'));
++serialToggle.addEventListener('click',()=>serialAction(serialEnabled?'disconnect':'connect'));
++function svgElement(tag,attributes){const node=document.createElementNS(svgNS,tag);for(const [key,value] of Object.entries(attributes))node.setAttribute(key,String(value));return node;}
++// Zoom the map drawing, keeping the screen point under the pointer fixed.
++const zoomMap=document.querySelector('#map-svg');
++const initialMapBox={x:-42,y:-42,width:744,height:624};
++let mapZoom=1,mapPan=null;
++zoomMap.setAttribute('title','滚轮缩放；按住左键拖动地图；双击复位；拖动框右下角调整大小');
++document.querySelector('.stage-label').append(document.createTextNode(' · 滚轮缩放 / 左键拖动 / 双击复位'));
++zoomMap.addEventListener('pointerdown',event=>{
++  if(event.button!==0)return;
++  const matrix=zoomMap.getScreenCTM();if(!matrix)return;
++  const inverse=matrix.inverse(),point=zoomMap.createSVGPoint();
++  point.x=event.clientX;point.y=event.clientY;
++  const anchor=point.matrixTransform(inverse),box=zoomMap.viewBox.baseVal;
++  mapPan={pointerId:event.pointerId,inverse,x:anchor.x,y:anchor.y,box:{x:box.x,y:box.y,width:box.width,height:box.height}};
++  zoomMap.setPointerCapture(event.pointerId);zoomMap.style.cursor='grabbing';event.preventDefault();
++});
++zoomMap.addEventListener('pointermove',event=>{
++  if(!mapPan||event.pointerId!==mapPan.pointerId)return;
++  const point=zoomMap.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
++  const current=point.matrixTransform(mapPan.inverse),box=mapPan.box;
++  zoomMap.setAttribute('viewBox',[box.x+mapPan.x-current.x,box.y+mapPan.y-current.y,box.width,box.height].join(' '));
++});
++function endMapPan(){mapPan=null;zoomMap.style.cursor='grab';}
++zoomMap.addEventListener('pointerup',endMapPan);
++zoomMap.addEventListener('pointercancel',endMapPan);
++zoomMap.addEventListener('lostpointercapture',endMapPan);
++zoomMap.addEventListener('wheel',event=>{
++  event.preventDefault();
++  if(mapPan)return;
++  const matrix=zoomMap.getScreenCTM();
++  if(!matrix||event.deltaY===0)return;
++  const point=zoomMap.createSVGPoint();point.x=event.clientX;point.y=event.clientY;
++  const anchor=point.matrixTransform(matrix.inverse());
++  const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?zoomMap.clientHeight:1);
++  const nextZoom=Math.max(.6,Math.min(6,mapZoom*Math.exp(-Math.max(-100,Math.min(100,delta))*.002)));
++  const factor=mapZoom/nextZoom,box=zoomMap.viewBox.baseVal;
++  zoomMap.setAttribute('viewBox',[anchor.x-(anchor.x-box.x)*factor,anchor.y-(anchor.y-box.y)*factor,box.width*factor,box.height*factor].join(' '));
++  mapZoom=nextZoom;
++},{passive:false});
++zoomMap.addEventListener('dblclick',event=>{
++  event.preventDefault();endMapPan();mapZoom=1;
++  zoomMap.setAttribute('viewBox',[initialMapBox.x,initialMapBox.y,initialMapBox.width,initialMapBox.height].join(' '));
++});
++const roleSelect=document.querySelector('#role-select');
++function applyRole(role){
++  const selected=role==='police'?'police':'thief';
++  roleSelect.value=selected;
++  document.querySelector('.map-panel').dataset.role=selected;
++  document.querySelector('.visual').dataset.role=selected;
++  document.querySelector('#car-role-label').textContent=selected==='police'?'警察车':'小偷车';
++  try{localStorage.setItem('laser-live-role',selected);}catch(_error){}
++}
++try{applyRole(localStorage.getItem('laser-live-role'));}catch(_error){applyRole('thief');}
++roleSelect.addEventListener('change',event=>applyRole(event.target.value));
++async function loadMap(){
++  try{
++    const response=await fetch('/api/map',{cache:'no-store'});
++    if(!response.ok)throw new Error(`HTTP ${response.status}`);
++    const data=await response.json(),nodes=new Map(data.nodes.map(node=>[node.id,node]));
++    const roadLayer=document.querySelector('#map-roads'),nodeLayer=document.querySelector('#map-nodes'),labelLayer=document.querySelector('#map-node-labels');
++    for(const road of data.segments){
++      const a=nodes.get(road.start),b=nodes.get(road.end);if(!a||!b)continue;
++      roadLayer.append(svgElement('line',{x1:a.xy_m[0]*200,y1:a.xy_m[1]*200,x2:b.xy_m[0]*200,y2:b.xy_m[1]*200,stroke:'#42566b','stroke-width':5,'stroke-linecap':'round'}));
++    }
++    for(const node of data.nodes){
++      const [x,y]=node.xy_m.map(value=>value*200);
++      nodeLayer.append(svgElement('circle',{cx:x,cy:y,r:3.6,fill:'#a8bbcc'}));
++      const label=svgElement('text',{x:x+6,y:y-6,class:'map-node-label'});label.textContent=node.id;labelLayer.append(label);
++    }
++    labelLayer.style.display='';
++    mapReady=true;
++    document.querySelector('#map-state').textContent='等待定位串口数据';
++    drawTrack();
++  }catch(error){document.querySelector('#map-state').textContent=`地图加载失败：${error.message}`;}
++}
++function buildTrailLayers(points){
++  const cells=new Map(),paths=['','',''],step=30;
++  let unmatched='',pass=0,lastPassKey=null;
++  for(let index=1;index<points.length;index++){
++    const a=points[index-1],b=points[index];
++    if(b.break_before){lastPassKey=null;continue;}
++    const dx=b.x_mm-a.x_mm,dy=b.y_mm-a.y_mm;
++    if(Math.hypot(dx,dy)<8)continue;
++    const axis=Math.abs(dy)<=4?'H':Math.abs(dx)<=4?'V':null;
++    if(!axis){
++      unmatched+=`M${(a.x_mm*.2).toFixed(1)} ${(a.y_mm*.2).toFixed(1)} L${(b.x_mm*.2).toFixed(1)} ${(b.y_mm*.2).toFixed(1)} `;
++      lastPassKey=null;continue;
++    }
++    const fixed=Math.round((axis==='H'?a.y_mm:a.x_mm)/10)*10;
++    const from=axis==='H'?a.x_mm:a.y_mm,to=axis==='H'?b.x_mm:b.y_mm;
++    const passKey=`${axis}:${fixed}:${Math.sign(to-from)}`;
++    if(passKey!==lastPassKey){pass++;lastPassKey=passKey;}
++    const low=Math.min(from,to),high=Math.max(from,to);
++    for(let bucket=Math.floor(low/step);bucket<=Math.floor((high-1e-6)/step);bucket++){
++      const lo=Math.max(low,bucket*step),hi=Math.min(high,(bucket+1)*step);
++      if(hi<=lo)continue;
++      const key=`${axis}:${fixed}:${bucket}`;
++      let cell=cells.get(key);
++      if(!cell){cell={axis,fixed,lo,hi,visits:0,lastPass:0};cells.set(key,cell);}
++      cell.lo=Math.min(cell.lo,lo);cell.hi=Math.max(cell.hi,hi);
++      if(cell.lastPass!==pass){cell.visits++;cell.lastPass=pass;}
++    }
++  }
++  for(const cell of cells.values()){
++    const layer=Math.min(cell.visits,3)-1;
++    if(cell.axis==='H')paths[layer]+=`M${(cell.lo*.2).toFixed(1)} ${(cell.fixed*.2).toFixed(1)} L${(cell.hi*.2).toFixed(1)} ${(cell.fixed*.2).toFixed(1)} `;
++    else paths[layer]+=`M${(cell.fixed*.2).toFixed(1)} ${(cell.lo*.2).toFixed(1)} L${(cell.fixed*.2).toFixed(1)} ${(cell.hi*.2).toFixed(1)} `;
++  }
++  return {paths,unmatched};
++}
++function clearTrail(){document.querySelectorAll('#map-trail path').forEach(path=>path.setAttribute('d',''));}
++function drawTrack(){
++  if(!mapReady)return;
++  const layers=buildTrailLayers(trackPoints);
++  const paths=document.querySelectorAll('#map-trail path');
++  layers.paths.forEach((d,index)=>paths[index].setAttribute('d',d));
++  paths[3].setAttribute('d',layers.unmatched);
++  renderMapPose();
++}
++let identityUncertain=null;
++function renderMapPose(){
++  if(identityUncertain){
++    document.querySelector('#map-position').textContent='待确认';
++    document.querySelector('#map-pose-kind').textContent='保留候选节点 · 轨迹预测暂停';
++    return;
++  }
++  const pose=latestProjection||latestMapPosition,marker=document.querySelector('#car-marker');
++  const forecast=document.querySelector('#map-forecast'),ring=document.querySelector('#prediction-ring');
++  if(!pose){marker.style.display='none';forecast.setAttribute('d','');ring.style.display='none';return;}
++  marker.style.display='';
++  marker.setAttribute('transform',`translate(${pose.x_mm*.2} ${pose.y_mm*.2}) rotate(${pose.heading})`);
++  const stale=latestProjection?['stale','awaiting_samples'].includes(latestProjection.mode):!['MAP_READY','VIEW_RESET'].includes(latestMapPosition.source)&&Date.now()-latestMapPosition.time_ms>2000;
++  marker.style.opacity=stale?'.4':'1';
++  document.querySelector('#map-position').textContent=`${(pose.x_mm/1000).toFixed(2)} m，${(pose.y_mm/1000).toFixed(2)} m`;
++  const labels={predicting:'时间预测',waiting_node:'等待路口确认',stale:'预测已冻结',paused:'平移已暂停',node_confirmed:'路口已校正',awaiting_samples:'等待连续采样'};
++  document.querySelector('#map-pose-kind').textContent=latestProjection?(labels[latestProjection.mode]||'路段估计'):latestMapPosition.source==='VIEW_RESET'?'手动回到起点 · 待实车摆放':latestMapPosition.source==='MAP_READY'?'固件路线起点':'串口定位记录';
++  if(latestProjection){
++    document.querySelector('#map-source').textContent=`路口／路段＋时间 · N${String(pose.from_node).padStart(3,'0')}→N${String(pose.to_node).padStart(3,'0')} · ${(pose.speed_mm_s/1000).toFixed(2)} m/s（估计）`;
++  }else{
++    document.querySelector('#map-source').textContent=pose.source==='VIEW_RESET'?'手动设置网页起点（非实测）':pose.source==='MAP_READY'?'固件路线起点（待实车摆放）':pose.source==='MT3'?'路段＋四轮编码器估计':'停车灰度／陀螺定位';
++  }
++  if(latestProjection&&pose.predicted){
++    forecast.setAttribute('d',`M${pose.anchor_x_mm*.2} ${pose.anchor_y_mm*.2} L${pose.x_mm*.2} ${pose.y_mm*.2}`);
++    forecast.style.opacity=stale?'.25':'.65';
++    ring.style.display='';ring.setAttribute('transform',`translate(${pose.x_mm*.2} ${pose.y_mm*.2})`);
++    ring.querySelector('circle').setAttribute('r',String(Math.min(25,Math.max(7,(pose.uncertainty_mm||35)*.2))));
++  }else{forecast.setAttribute('d','');ring.style.display='none';}
++}
++function showMapPosition(point){
++  latestMapPosition=point;
++  document.querySelector('#map-position').textContent=`${(point.x_mm/1000).toFixed(2)} m，${(point.y_mm/1000).toFixed(2)} m`;
++  document.querySelector('#map-source').textContent=point.source==='VIEW_RESET'?'手动设置网页起点（非实测）':point.source==='MAP_READY'?'固件路线起点（待实车摆放）':point.source==='MT3'?'路段＋四轮编码器估计':'停车灰度／陀螺定位';
++  document.querySelector('#map-time').textContent=new Date(point.time_ms).toLocaleTimeString('zh-CN',{hour12:false});
++  document.querySelector('#map-run').textContent=point.run==null?'—':`第 ${point.run} 趟 · 记录 ${point.sequence??'—'}`;
++  drawTrack();
++}
++async function updatePath(){
++  if(pathInFlight)return;
++  pathInFlight=true;
++  const epoch=viewEpoch;
++  try{
++    const response=await fetch(`/api/path?after=${trackCursor}`,{cache:'no-store'});
++    if(!response.ok)throw new Error(`HTTP ${response.status}`);
++    const data=await response.json();
++    if(epoch!==viewEpoch)return;
++    if(trackGeneration!==data.generation){
++      trackGeneration=data.generation;
++      trackPoints=[];
++      latestMapPosition=null;
++      latestProjection=null;
++      renderMapPose();
++      clearTrail();
++      document.querySelector('#car-marker').style.display='none';
++      document.querySelector('#map-position').textContent='—';
++      document.querySelector('#map-source').textContent='—';
++      document.querySelector('#map-time').textContent='—';
++      document.querySelector('#map-run').textContent='—';
++    }
++    if(data.truncated&&data.points.length) data.points[0].break_before=true;
++    if(data.points.length){
++      trackPoints.push(...data.points);
++      if(trackPoints.length>5000)trackPoints=trackPoints.slice(-5000);
++      showMapPosition(data.points[data.points.length-1]);
++    }
++    trackCursor=data.cursor;
++  }catch(error){document.querySelector('#map-state').textContent=`轨迹接收失败：${error.message}`;}
++  finally{pathInFlight=false;}
++}
++document.querySelector('#show-map-nodes').addEventListener('change',event=>{
++  document.querySelector('#map-node-labels').style.display=event.target.checked?'':'none';
++});
++document.querySelector('#clear-map-path').addEventListener('click',()=>{
++  trackPoints=[];
++  clearTrail();
++});
++document.querySelector('#reset-map-position').addEventListener('click',async event=>{
++  const button=event.currentTarget,label=button.querySelector('span');
++  button.disabled=true;label.textContent='正在更新…';viewEpoch++;
++  try{
++    const response=await fetch('/api/reset-position',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
++    const data=await response.json();
++    if(!response.ok)throw new Error(data.error||`HTTP ${response.status}`);
++    viewEpoch++;
++    if(data.queued){label.textContent='重置请求已发送，等待电脑确认';return;}
++    trackGeneration=data.track_generation;trackCursor=data.track_cursor;
++    trackPoints=[data.position];latestProjection=null;mapMatch=data.map_match;
++    clearTrail();showMapPosition(data.position);
++    document.querySelector('#map-state').textContent='已回到起点 · 等待新一趟定位';
++    label.textContent='已回到初始位置';
++  }catch(error){document.querySelector('#map-state').textContent=`起点更新失败：${error.message}`;label.textContent='回到初始位置';}
++  finally{button.disabled=false;setTimeout(()=>{label.textContent='回到初始位置';},1800);}
++});
++const rangeStatusNames={RAW:'原始测距',OPPONENT:'避障触发',MONITOR_ONLY:'仅监控 · 未参与避障',POSE_OFF:'测距可见 · 方位待确认',INACTIVE:'测距可见 · 策略未启用',TOO_FAR:'超出有效触发范围',NO_DATA:'等待策略有效帧',WAIT_TREASURE:'等待策略启用',WAIT_DATA:'等待测距帧',STALE:'测距帧已过期',BAD_DATA:'测距无效',LINK_ERROR:'扩展板连接失败',RX_OFF:'采集未启用',EDGE_OFF:'测距可见 · 边缘方向忽略'};
++function updateChannel(ch,mm,confidence,timeMs,status){
++  const s=state[ch];s.distance=mm;s.confidence=confidence;s.time=timeMs;s.status=status;
++  const d=document.querySelector(`#distance-${ch}`),c=document.querySelector(`#confidence-${ch}`),u=document.querySelector(`#updated-${ch}`);
++  d.innerHTML=mm===null?'— <small>mm</small>':`${mm.toLocaleString('zh-CN')} <small>mm</small>`;
++  d.style.opacity=mm!==null&&confidence>=20?'1':'.55';
++  const level=Math.max(0,Math.min(100,Number(confidence)||0));
++  c.textContent=`${level}%`;
++  const meter=document.querySelector(`#confidence-bar-${ch}`);
++  meter.setAttribute('aria-valuenow',String(level));
++  meter.setAttribute('aria-valuetext',`${level}%`);
++  meter.classList.remove('stale');
++  meter.querySelectorAll('span').forEach((segment,index)=>segment.classList.toggle('filled',index<Math.ceil(level/10)));
++  u.textContent=rangeStatusNames[status]||(s.time?new Date(s.time).toLocaleTimeString('zh-CN',{hour12:false}):'等待数据');
++  drawSensor(ch);
++}
++function drawSensor(ch){
++  const s=state[ch],g=sensors[ch],maxPx=100,range=Math.max(0,Math.min(maxPx,(s.distance??0)/4000*maxPx));
++  const a=g.angle*Math.PI/180,half=7*Math.PI/180;
++  const x2=g.x+Math.cos(a)*range,y2=g.y+Math.sin(a)*range;
++  const x1=g.x+Math.cos(a-half)*range,y1=g.y+Math.sin(a-half)*range;
++  const x3=g.x+Math.cos(a+half)*range,y3=g.y+Math.sin(a+half)*range;
++  const line=document.querySelector(`#line-${ch}`);
++  line.setAttribute('x1',g.x);line.setAttribute('y1',g.y);
++  line.setAttribute('x2',x2);line.setAttribute('y2',y2);
++  const hit=document.querySelector(`#hit-${ch}`);hit.setAttribute('cx',x2);hit.setAttribute('cy',y2);
++  document.querySelector(`#wedge-${ch}`).setAttribute('d',range>1?`M${g.x} ${g.y} L${x1} ${y1} A${range} ${range} 0 0 1 ${x3} ${y3} Z`:'');
++}
++function updateOnboard(data){
++  for(const side of ['front','rear']){
++    const sample=data.gray?.[side],group=document.querySelector(`#gray-${side}-cells`);
++    const age=sample?Date.now()-sample.time_ms:Infinity;
++    group.classList.toggle('stale',age>1500);
++    group.querySelectorAll('rect').forEach(cell=>cell.classList.toggle('line-hit',Boolean(sample&&(sample.mask&(1<<Number(cell.dataset.bit))))));
++    document.querySelector(`#gray-${side}-mask`).textContent=sample?`0x${sample.mask.toString(16).toUpperCase().padStart(3,'0')}`:'—';
++    document.querySelector(`#gray-${side}-time`).textContent=sample?`N${String(sample.node).padStart(3,'0')} · ${new Date(sample.time_ms).toLocaleTimeString('zh-CN',{hour12:false})}`:'等待路口采样';
++  }
++  const gyro=data.gyro,diagnostic=data.localization_diagnostic;
++  const fresh=gyro&&gyro.valid&&gyro.data_age_ms<1500;
++  const yaw=document.querySelector('#gyro-yaw'),error=document.querySelector('#gyro-error');
++  yaw.innerHTML=gyro?`${gyro.yaw_deg.toFixed(1)}<em>°</em>`:'—<em>°</em>';yaw.classList.toggle('stale',!fresh);
++  const diagnosticFresh=diagnostic&&diagnostic.valid&&diagnostic.yaw_age_ms<1500&&Date.now()-diagnostic.time_ms<3000;
++  error.innerHTML=diagnostic?`${diagnostic.yaw_error_deg.toFixed(1)}<em>°</em>`:'—<em>°</em>';error.classList.toggle('stale',!diagnosticFresh);
++  error.title=diagnostic?`最近停靠记录 ${new Date(diagnostic.time_ms).toLocaleTimeString('zh-CN',{hour12:false})} · 数据龄 ${diagnostic.yaw_age_ms} ms`:'等待停车定位日志';
++  document.querySelector('#gyro-status').textContent=!gyro?'等待陀螺仪数据':!gyro.valid?'偏航角无效':fresh?`有效 · 数据龄 ${gyro.data_age_ms} ms`:'偏航角已过期';
++  document.querySelector('#gyro-time').textContent=gyro?new Date(gyro.time_ms).toLocaleTimeString('zh-CN',{hour12:false}):'—';
++}
++let pollInFlight=false;
++let latestRangeStats={};
++// User's three-grid observations (900 mm from vehicle centre), not sensor scale calibration.
++const mountingReference={2:{offset:100,threeGrid:800},3:{offset:100,threeGrid:800},4:{offset:150,threeGrid:750}};
++function renderRangeStats(){
++  for(let ch=1;ch<=4;ch++){
++    const stats=latestRangeStats[String(ch)],fresh=stats&&Date.now()-stats.time_ms<2500;
++    const put=(key,text)=>document.querySelector(`#range-${key}-${ch}`).textContent=text;
++    put('hz',fresh&&stats.hz!==null?`${stats.hz.toFixed(1)} Hz`:'—');
++    put('mean',fresh&&stats.mean_mm!==null?`${stats.mean_mm} mm`:'—');
++    put('span',fresh&&stats.n?`${stats.min_mm}–${stats.max_mm} mm`:'—');
++    put('count',fresh?`有效 ${stats.n} / 排除 ${stats.rejected}`:'等待统计');
++    const mounting=mountingReference[ch];
++    put('center',!mounting?'前方未标定':fresh&&stats.mean_mm!==null?`≈${stats.mean_mm+mounting.offset} mm ±50`:'—');
++    const input=document.querySelector(`#range-ref-${ch}`);
++    const entered=input.value.trim(),reference=Number(entered);
++    const validReference=entered!==''&&Number.isFinite(reference)&&reference>0&&reference<=10000;
++    const error=fresh&&stats.mean_mm!==null&&validReference?stats.mean_mm-reference:null;
++    put('error',error===null?'—':`${error>0?'+':''}${error.toFixed(1)} mm`);
++    document.querySelector(`#range-hz-${ch}`).title=fresh&&stats.window_ms!==null?`主控收到 ${stats.frames} 帧 / ${stats.window_ms} ms；包括零置信度帧`:'需新版测试固件上报实际帧率';
++  }
++}
++async function poll(){
++  if(pollInFlight)return;
++  pollInFlight=true;
++  const epoch=viewEpoch;
++  try{
++    const response=await fetch('/api/laser',{cache:'no-store'});
++    if(!response.ok)throw new Error(`HTTP ${response.status}`);
++    const data=await response.json();
++    if(epoch!==viewEpoch)return;
++    const age=Date.now()-data.last_receive_ms;
++    let timerBox=document.querySelector('#drive-timer');
++    if(!timerBox){
++      timerBox=document.createElement('div');timerBox.id='drive-timer';timerBox.className='metric';
++      timerBox.innerHTML='<small>本次行驶计时 · 出发至停车</small><strong id="drive-time" style="font-size:28px;font-variant-numeric:tabular-nums">00:00.000</strong><span id="drive-time-state"></span>';
++      document.querySelector('.map-summary').appendChild(timerBox);
++    }
++    const timing=data.drive_timer||{};
++    const duration=Math.max(0,Number(timing.elapsed_ms)||0);
++    document.querySelector('#drive-time').textContent=`${String(Math.floor(duration/60000)).padStart(2,'0')}:${String(Math.floor(duration/1000)%60).padStart(2,'0')}.${String(Math.floor(duration)%1000).padStart(3,'0')}`;
++    document.querySelector('#drive-time-state').textContent=timing.running&&(!data.connected||age>1500)?'数据中断 · 保留最后计时':timing.reason||'等待出发';
++    if(!switchingPort){
++      serialEnabled=Boolean(data.serial_enabled||data.connected);
++      bridgeOnline=data.bridge_online!==false;
++      serialToggle.textContent=serialEnabled?'断开串口':'连接串口';
++      serialToggle.disabled=switchingPort||commandPending||!bridgeOnline;
++      if(data.command?.id===pendingCommandId&&(data.command.acknowledged||data.command.expired))commandPending=false;
++      if(!bridgeOnline)setStatus('桥接电脑离线','error','网页正常；请在电脑启动公网桥接程序');
++      else if(commandPending)setStatus('串口指令等待电脑确认');
++      else if(!data.connected)setStatus(serialEnabled?'串口连接中':'串口已断开',serialEnabled?'error':'',data.error||'点击连接串口开始读取');
++      else if(age>1500)setStatus('已连接 · 等待数据');
++      else setStatus('串口实时接收中','live');
++    }
++    document.querySelector('#serial-info').textContent=`${data.baud} · 8N1`;
++    document.querySelector('#frames').textContent=`测距记录：${data.valid_frames}`;
++    mapMatch=data.map_match;
++    latestProjection=trackGeneration===data.track_generation?data.projection||null:null;
++    updateOnboard(data);
++    identityUncertain=data.localization_uncertain||null;
++    latestRangeStats=data.range_stats||{};
++    renderRangeStats();
++    renderMapPose();
++    const mapState=document.querySelector('#map-state');
++    const vehicleStatus=document.querySelector('#vehicle-status');
++    const statusFresh=data.status_time_ms&&Date.now()-data.status_time_ms<3000;
++    vehicleStatus.textContent=statusFresh?`${data.vehicle_state||'未知'}${data.fault_reason&&data.fault_reason!=='NONE'?` · ${data.fault_reason}`:''}${data.fault_from?` · 来自 ${data.fault_from}`:''}`:'等待新的车载状态';
++    if(mapMatch===false)mapState.textContent='地图签名不匹配，轨迹已暂停';
++    else if(latestMapPosition?.source==='VIEW_RESET')mapState.textContent='已回到起点 · 等待新一趟定位';
++    else if(statusFresh&&data.vehicle_state==='FAULT')mapState.textContent='车辆保护停车';
++    else if(data.localization_uncertain)mapState.textContent=`定位待确认 · 候选 ${data.localization_uncertain.candidates.map(n=>'N'+String(n).padStart(3,'0')).join(' / ')}`;
++    else if(latestProjection&&latestProjection.mode==='predicting')mapState.textContent='沿当前路段预测';
++    else if(latestProjection&&latestProjection.mode==='waiting_node')mapState.textContent='等待路口确认';
++    else if(latestProjection&&latestProjection.mode==='stale')mapState.textContent='预测暂停 · 遥测过期';
++    else if(latestProjection&&latestProjection.mode==='awaiting_samples')mapState.textContent='预测暂停 · 检测到丢帧';
++    else if(!latestMapPosition)mapState.textContent='等待定位串口数据';
++    else if(latestMapPosition.source==='MAP_READY')mapState.textContent='已回到路线起点，等待启动';
++    else if(Date.now()-latestMapPosition.time_ms>2000)mapState.textContent='定位数据已过期';
++    else mapState.textContent='位置实时更新中';
++    for(let ch=1;ch<=4;ch++){
++      const value=data.channels[String(ch)];
++      if(value&&value.time_ms!==state[ch].time)
++        updateChannel(ch,value.mm,value.confidence,value.time_ms,value.status);
++    }
++  }catch(error){setStatus('采集服务离线','error',error.message);}
++  finally{pollInFlight=false;}
++}
++for(let ch=1;ch<=4;ch++){
++  const card=document.querySelector(`#distance-${ch}`).closest('.card');
++  card.insertAdjacentHTML('beforeend',`<div class="range-cal"><div>接收帧率 <strong id="range-hz-${ch}">—</strong></div><div>周期均值 <strong id="range-mean-${ch}">—</strong></div><div>最小–最大 <strong id="range-span-${ch}">—</strong></div><div id="range-count-${ch}">等待统计</div><div>中心估距 <strong id="range-center-${ch}">—</strong></div><div>${mountingReference[ch]?`三格参考：${mountingReference[ch].threeGrid} ±50 mm`:'前方需单独实测'}</div><label for="range-ref-${ch}"><span>尺量值</span><input id="range-ref-${ch}" type="number" min="1" max="10000" step="any" placeholder="mm" aria-label="${['','前方','左侧','右侧','后方'][ch]}尺量实际距离，毫米"><span>mm</span></label><div class="range-error">均值偏差 <strong id="range-error-${ch}">—</strong></div></div>`);
++  const referenceInput=document.querySelector(`#range-ref-${ch}`);
++  try{referenceInput.value=localStorage.getItem(`laser-ruler-${ch}`)||'';}catch{}
++  referenceInput.addEventListener('input',()=>{
++    try{localStorage.setItem(`laser-ruler-${ch}`,referenceInput.value);}catch{}
++    renderRangeStats();
++  });
++  const meter=document.querySelector(`#confidence-bar-${ch}`);
++  for(let segment=0;segment<10;segment++)meter.append(document.createElement('span'));
++  drawSensor(ch);
++  document.querySelector(`#line-${ch}`).setAttribute('opacity','.25');
++  document.querySelector(`#hit-${ch}`).setAttribute('opacity','.25');
++}
++document.querySelector('.sensors-panel').insertAdjacentHTML('beforeend','<div class="range-note">测距测试：距离保留原始 mm。接收帧率由主控逐帧统计，含零置信度帧；均值仅使用距离和置信度均非零的样本。偏差 = 周期均值 − 尺量值；输入仅用于网页计算，不修改传感器。</div>');
++loadMap();loadPorts();poll();updatePath();setInterval(poll,100);setInterval(updatePath,350);setInterval(loadPorts,3000);
++setInterval(()=>{
++  renderRangeStats();
++  const now=Date.now();document.querySelector('#clock').textContent=new Date(now).toLocaleString('zh-CN',{hour12:false});
++  for(let ch=1;ch<=4;ch++){
++    const s=state[ch],age=now-s.time;
++    if(s.time&&age>1500){document.querySelector(`#updated-${ch}`).textContent='数据超时';document.querySelector(`#updated-${ch}`).style.color='var(--muted)';document.querySelector(`#confidence-bar-${ch}`).classList.add('stale');document.querySelector(`#hit-${ch}`).setAttribute('opacity','.25');document.querySelector(`#line-${ch}`).setAttribute('opacity','.25');}
++    else if(s.time){const strong=s.distance!==null&&s.confidence>=20&&s.status!=='STALE';document.querySelector(`#updated-${ch}`).textContent=rangeStatusNames[s.status]||new Date(s.time).toLocaleTimeString('zh-CN',{hour12:false});document.querySelector(`#updated-${ch}`).style.color='';document.querySelector(`#hit-${ch}`).setAttribute('opacity',strong?'1':'.25');document.querySelector(`#line-${ch}`).setAttribute('opacity',strong?'.8':'.25');}
++  }
++},250);
++</script>
++<script>document.querySelector('.panel-count').addEventListener('click',function(){document.querySelector('.sensors-panel').classList.toggle('show-stats');});</script>
++</body>
++</html>
+--- MONITOR5/DesktopSerialMonitor/README.md
++++ MONITOR6/DesktopSerialMonitor/README.md
+@@ -57,3 +57,7 @@
+ ## 出发至停车计时（2026-10-27）
+ 地图上方新增“本次行驶计时”，显示分:秒.毫秒。校验通过的MT3 START开始、END停车定格；转弯和行驶中的重规划不清零，下一次停车后重新出发重新计时。用MCU时间差计算，网页刷新不清零。故障显示“故障停车”；串口断连或超过1.5秒无数据标记“数据中断”，保留最后计时，不虚构停车时刻。中途才连接串口未收到START时不补猜起始时间。计时器只读串口，不向车辆发送命令。
+ 新版桌面文件为“小车串口监控一体助手_行驶计时版.exe”，保留原边框拖动版。使用前在旧助手关闭后台并退出，再打开新版并启动后台、连接串口。已运行的旧后台不会被本次构建自动重启。独立计时测试3项、原串口测试4项及UI脚本检查通过；尚未实车验证。
++
++## 候选路口提示（MONITOR6配套）
++收到LOC_UNCERTAIN后显示“定位待确认”，坐标不显示为确定值，暂停路径预测；原始串口、四路激光、陀螺仪和行驶计时继续。收到实际LOC重锚或已确认路口后恢复绘图。支持固件将N004-N005-N006合为一条直线路段的MT3记录，不把宝藏标记当新路口。
++新版桌面文件“小车串口监控一体助手_定位提示版.exe”。请在旧助手关闭后台并退出，再打开新版启动后台并连接串口。构建不会自动关闭现有服务或打开实车串口。新增离线协议检查验证定位暂停、激光/YAW仍刷新及N007真实LOC恢复；没有实车验证。
+--- MONITOR5/DesktopSerialMonitor/test_identity_monitor.py
++++ MONITOR6/DesktopSerialMonitor/test_identity_monitor.py
+@@ -0,0 +1,27 @@
++"""Offline telemetry ambiguity must not become a false map fix."""
++import sys,unittest
++from pathlib import Path
++sys.path.insert(0,str(Path(__file__).with_name('assets')))
++from console_server import SharedFeed
++
++def mt(feed,event,sequence,enc=0):
++    values=[1,sequence,1000+sequence*20,event,0,1601,0,4,6,
++            feed.map_signature if event==2 else 0,0,1,0,sequence,enc,-enc,enc,-enc,0,1]
++    payload='MT3,'+','.join(map(str,values))
++    return payload+'*%04X'%feed._crc16(payload)
++
++class IdentityMonitorTests(unittest.TestCase):
++    def test_uncertainty_freezes_map_but_keeps_laser_and_yaw(self):
++        f=SharedFeed();f.parse_line(mt(f,2,1));cursor=f.track_cursor
++        f.parse_line('LOC_UNCERTAIN EXPECT=N006 CAND=6,7,0,0 COUNT=2 RAW=07F')
++        f.parse_line('LASER DIR=LEFT D=506 C=100 STATUS=OPPONENT STATE=ESCAPING FAULT=NONE')
++        f.parse_line(mt(f,14,2,4000))
++        self.assertEqual(f.snapshot()['localization_uncertain']['candidates'],[6,7])
++        self.assertEqual(f.track_cursor,cursor)
++        self.assertEqual(f.snapshot()['channels']['2']['mm'],506)
++        self.assertEqual(f.snapshot()['gyro']['frames'],2)
++        f.parse_line('LOC NODE=N007 X_MM=2400 Y_MM=0 BODY=3 TRAVEL=1 MODE=1 VALID=1 PHASE=0 YAW_ERR=0 YAW_AGE=1 CW_SIGN=-1 FIXES=32 STATUS=RELOCALIZED')
++        self.assertIsNone(f.snapshot()['localization_uncertain'])
++        self.assertEqual(f.snapshot()['position']['x_mm'],2400)
++
++if __name__=='__main__':unittest.main()

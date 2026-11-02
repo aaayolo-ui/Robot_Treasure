@@ -1,0 +1,36 @@
+{
+  "firmware": "UARTCH4_16V_STABLE5",
+  "checks": 120,
+  "failures": [],
+  "expected_before_failure": false,
+  "actual_log_yaw": {
+    "133": [
+      121995,
+      1632
+    ],
+    "134": [
+      122015,
+      1632
+    ],
+    "136": [
+      122056,
+      1632
+    ],
+    "138": [
+      122117,
+      3529
+    ],
+    "139": [
+      122237,
+      4055
+    ],
+    "140": [
+      122357,
+      4544
+    ]
+  },
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "test_sha256": "85aafda198285cff52256c155d17eb358b46d387e40bebdfe04dcdbb3ac00bef",
+  "log_sha256": "6dc8718699138b37caabd42a84d88f320221216964c60072be90cc3b2b652952",
+  "hardware_tested": false
+}

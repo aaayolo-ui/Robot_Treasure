@@ -1,0 +1,195 @@
+--- before/User/App_ThiefStrategy.c
++++ GRAY_HIDE/User/App_ThiefStrategy.c
+@@ -1108,9 +1108,21 @@
+       (unsigned)hide_escape_mask);
+ }
+ 
++/* Only two real compact stripes can override map YAW alignment. */
++static uint8_t Route_HideGrayError(int16_t *error)
++{
++  RouteGraySample_t sample;RouteGrayState_t front,rear;
++  Route_ResetSample(&sample);front=Route_ReadFront(&sample);rear=Route_ReadRear(&sample);
++  if((front!=ROUTE_GRAY_VALID && front!=ROUTE_GRAY_LEFT_BLACK && front!=ROUTE_GRAY_RIGHT_BLACK) ||
++      rear!=ROUTE_GRAY_VALID || !ThiefRouteTrail_TrackLine(sample.front_raw12) ||
++      !ThiefRouteTrail_TrackLine(sample.rear_raw12))return 0U;
++  *error=(int16_t)(sample.front_error_x100-sample.rear_error_x100);
++  return 1U;
++}
++
+ static void Route_HideAlign(uint32_t now,uint32_t elapsed_ms)
+ {
+-  RoadHeadingInput_t in;RoadHeadingOutput_t out;ThiefLocYaw_t yaw;int16_t error;
++  RoadHeadingInput_t in;RoadHeadingOutput_t out;ThiefLocYaw_t yaw;int16_t error,gray_error;
+   /* Three valid laser frames preempt trim. The normal settling state still
+    * measures standstill before route planning/departure, even after rotation. */
+   if(thief_escape_requested && hide_escape_mask) {
+@@ -1127,6 +1139,7 @@
+   if(!thief_localization.yaw_cw_sign) in.cw_error_x100=error;
+   in.yaw_tick=yaw.stamp_ms;in.stopped=Route_AllWheelsStopped();
+   in.direction_known=(uint8_t)(thief_localization.yaw_cw_sign!=0);
++  if(Route_HideGrayError(&gray_error))in.cw_error_x100=(int16_t)(-4L*gray_error);
+   RoadHeading_Update(&hide_heading,&in,now,200,&out);
+   if((uint32_t)(now-hide_log_tick)>=100U) {
+     char line[150];hide_log_tick=now;
+@@ -1162,7 +1175,7 @@
+ static void Route_RunParkingTurn(uint32_t now,uint32_t elapsed_ms)
+ {
+   ThiefLocYaw_t yaw;RoadHeadingInput_t in;RoadHeadingOutput_t out;
+-  int16_t delta;int32_t progress;
++  int16_t delta,gray_error,tolerance=500;int32_t progress;
+   Thief_LocalYaw(&yaw);
+   delta=Route_TurnAngleDeltaX100(yaw.yaw_x100,park_start_yaw);
+   progress=(int32_t)delta*thief_localization.yaw_cw_sign*park_turn_quarter;
+@@ -1183,7 +1196,10 @@
+   in.cw_error_x100=(int16_t)((int32_t)delta*thief_localization.yaw_cw_sign-
+       (int32_t)park_turn_quarter*9000L);
+   in.yaw_tick=yaw.stamp_ms;in.stopped=Route_AllWheelsStopped();in.direction_known=1U;
+-  RoadHeading_Update(&hide_heading,&in,now,500,&out);
++  if(progress>=8000L && progress<=10000L && Route_HideGrayError(&gray_error)) {
++    in.cw_error_x100=(int16_t)(-4L*gray_error);tolerance=200;
++  }
++  RoadHeading_Update(&hide_heading,&in,now,tolerance,&out);
+   if(out.brake) {Route_BrakeControl();hide_drive_enabled=0U;}
+   else {
+     if(!hide_drive_enabled){Route_ResetControl(1U);hide_drive_enabled=1U;}
+@@ -1867,7 +1883,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_FIRST38_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_GRAY_HIDE1_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1893,7 +1909,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_FIRST38_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_GRAY_HIDE1_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1942,7 +1958,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_FIRST38_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_GRAY_HIDE1_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- before/README.md
++++ GRAY_HIDE/README.md
+@@ -1,3 +1,19 @@
++# GRAY_HIDE1_SL1：藏点灰度优先对齐（本段优先）
++
++当前工程为用户指定的桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)，FW=UARTCH4_16V_GRAY_HIDE1_SL1。只修改本副本，其他工程未写入。修改前快照Reference/before_gray_hide_align，301项散列。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
++
++到藏点微调新增前后真实灰度对齐：前板与后板使用现有相反安装方向换算到统一坐标，黑线位置差在±50以内（半个探头间距）即合格。两板居中或两板对应同一偏侧均可，不强求回正中。只有两板均看到一簇连续1至4路紧凑线才使用；一板无线、全黑、宽线或多簇读数不能证明对齐。
++
++有效灰度优先于地图YAW：误差取前误差减后误差，转换为原RoadHeading控制器的转向误差，等效P转向，沿用原最大30RPM微转向与轮速控制。灰度已经对齐则停止旋转，仍需原四轮停稳、80ms及连续3帧确认；不会为凑±2°地图YAW继续转。灰度不可用时回退原YAW流程。微调范围未加入毫米安装间距，不能把该误差值当角度。
++
++停车90°转向保持先按陀螺仪主转至70°；只有相对转角80°至100°内才允许灰度覆盖YAW，以避免旧入路线提前结束旋转。完成角度可不精确等于90°，前后真实线形优先。超出窗口仍用原YAW靠近出口；不新增盲目前冲。原激光预警退出微调、超时暂缓、停车确认与真实硬件故障保留。
++
++本副本原FIRST38路线保持，没有移入别的副本VIA21路线。普通巡线PID、速度、转弯和四路激光保持；生产仅修改User/App_ThiefStrategy.c。新增Tests/test_gray_hide.py，生成build_gray_hide.log、Tests/results_gray_hide.json、GRAY_HIDE_CHANGESET.patch与GRAY_HIDE_FILES.json。专项24项检查通过：中心/对应偏侧/同编号歪斜、无效线形、YAW偏12°但灰度对齐结束、YAW为0但灰度歪斜仍修正、75°旧线不提前结束、82°真实接线可结束。原完整藏点任务151项检查通过，所有报告绑定当前AXF。输入和轮速均为仿真，非实物验证。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方旧描述不代表当前微调依据。
++
++---
++
+ # FIRST38_SL1：首次经N001、N037到N038（本段优先）
+ 
+ 当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。
+--- before/AGENTS.md
++++ GRAY_HIDE/AGENTS.md
+@@ -1,3 +1,19 @@
++# GRAY_HIDE1_SL1：藏点灰度优先对齐（本段优先）
++
++当前工程为用户指定的桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)，FW=UARTCH4_16V_GRAY_HIDE1_SL1。只修改本副本，其他工程未写入。修改前快照Reference/before_gray_hide_align，301项散列。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
++
++到藏点微调新增前后真实灰度对齐：前板与后板使用现有相反安装方向换算到统一坐标，黑线位置差在±50以内（半个探头间距）即合格。两板居中或两板对应同一偏侧均可，不强求回正中。只有两板均看到一簇连续1至4路紧凑线才使用；一板无线、全黑、宽线或多簇读数不能证明对齐。
++
++有效灰度优先于地图YAW：误差取前误差减后误差，转换为原RoadHeading控制器的转向误差，等效P转向，沿用原最大30RPM微转向与轮速控制。灰度已经对齐则停止旋转，仍需原四轮停稳、80ms及连续3帧确认；不会为凑±2°地图YAW继续转。灰度不可用时回退原YAW流程。微调范围未加入毫米安装间距，不能把该误差值当角度。
++
++停车90°转向保持先按陀螺仪主转至70°；只有相对转角80°至100°内才允许灰度覆盖YAW，以避免旧入路线提前结束旋转。完成角度可不精确等于90°，前后真实线形优先。超出窗口仍用原YAW靠近出口；不新增盲目前冲。原激光预警退出微调、超时暂缓、停车确认与真实硬件故障保留。
++
++本副本原FIRST38路线保持，没有移入别的副本VIA21路线。普通巡线PID、速度、转弯和四路激光保持；生产仅修改User/App_ThiefStrategy.c。新增Tests/test_gray_hide.py，生成build_gray_hide.log、Tests/results_gray_hide.json、GRAY_HIDE_CHANGESET.patch与GRAY_HIDE_FILES.json。专项24项检查通过：中心/对应偏侧/同编号歪斜、无效线形、YAW偏12°但灰度对齐结束、YAW为0但灰度歪斜仍修正、75°旧线不提前结束、82°真实接线可结束。原完整藏点任务151项检查通过，所有报告绑定当前AXF。输入和轮速均为仿真，非实物验证。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方旧描述不代表当前微调依据。
++
++---
++
+ # FIRST38_SL1：首次经N001、N037到N038（本段优先）
+ 
+ 当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。
+--- before/Docs/修改规范与回归清单.md
++++ GRAY_HIDE/Docs/修改规范与回归清单.md
+@@ -1,3 +1,19 @@
++# GRAY_HIDE1_SL1：藏点灰度优先对齐（本段优先）
++
++当前工程为用户指定的桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)，FW=UARTCH4_16V_GRAY_HIDE1_SL1。只修改本副本，其他工程未写入。修改前快照Reference/before_gray_hide_align，301项散列。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
++
++到藏点微调新增前后真实灰度对齐：前板与后板使用现有相反安装方向换算到统一坐标，黑线位置差在±50以内（半个探头间距）即合格。两板居中或两板对应同一偏侧均可，不强求回正中。只有两板均看到一簇连续1至4路紧凑线才使用；一板无线、全黑、宽线或多簇读数不能证明对齐。
++
++有效灰度优先于地图YAW：误差取前误差减后误差，转换为原RoadHeading控制器的转向误差，等效P转向，沿用原最大30RPM微转向与轮速控制。灰度已经对齐则停止旋转，仍需原四轮停稳、80ms及连续3帧确认；不会为凑±2°地图YAW继续转。灰度不可用时回退原YAW流程。微调范围未加入毫米安装间距，不能把该误差值当角度。
++
++停车90°转向保持先按陀螺仪主转至70°；只有相对转角80°至100°内才允许灰度覆盖YAW，以避免旧入路线提前结束旋转。完成角度可不精确等于90°，前后真实线形优先。超出窗口仍用原YAW靠近出口；不新增盲目前冲。原激光预警退出微调、超时暂缓、停车确认与真实硬件故障保留。
++
++本副本原FIRST38路线保持，没有移入别的副本VIA21路线。普通巡线PID、速度、转弯和四路激光保持；生产仅修改User/App_ThiefStrategy.c。新增Tests/test_gray_hide.py，生成build_gray_hide.log、Tests/results_gray_hide.json、GRAY_HIDE_CHANGESET.patch与GRAY_HIDE_FILES.json。专项24项检查通过：中心/对应偏侧/同编号歪斜、无效线形、YAW偏12°但灰度对齐结束、YAW为0但灰度歪斜仍修正、75°旧线不提前结束、82°真实接线可结束。原完整藏点任务151项检查通过，所有报告绑定当前AXF。输入和轮速均为仿真，非实物验证。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方旧描述不代表当前微调依据。
++
++---
++
+ # FIRST38_SL1：首次经N001、N037到N038（本段优先）
+ 
+ 当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。
+--- before/Tests/test_gray_hide.py
++++ GRAY_HIDE/Tests/test_gray_hide.py
+@@ -0,0 +1,45 @@
++from pathlib import Path
++import json,hashlib
++ROOT=Path(__file__).absolute().parents[1]
++setup=(ROOT/'Tests/test_n068_recovery.py').read_text(encoding='utf-8').split('failures=[]')[0]
++exec(compile(setup,str(ROOT/'Tests/test_n068_recovery.py'),'exec'))
++ptr=0x2000ca00
++cases=[];failures=[]
++def run_align(n=14):
++ global clock
++ for _ in range(n):
++  clock+=20;call('Route_HideAlign',clock,20)
++def start_align():
++ global front_raw,back_raw,physical_rpm
++ fresh(38,0);front_raw=back_raw=0x60;physical_rpm=0;cache(0);commands.clear()
++ var('hide_alignment_pending',1);var('hide_align_tick',clock);call('RoadHeading_Reset',symbols['hide_heading'],clock)
++try:
++ for a,b,aligned in [(0x60,0x60,1),(0x18,0x180,1),(0x180,0x18,1),(0x18,0x18,0),(0x60,0xC,0)]:
++  front_raw=a;back_raw=b
++  good=call('Route_HideGrayError',ptr);err=get(ptr,2);err=err-65536 if err>=32768 else err
++  check(good==1,'two compact real stripes accepted')
++  check((abs(err)<=50)==bool(aligned),'mirrored P positions produce expected alignment')
++  cases.append(dict(front=a,rear=b,error=err))
++ for a,b in [(0,0x60),(0x60,0),(0xFFF,0x60),(0x60,0xFFF),(0x8C0,0x60)]:
++  front_raw=a;back_raw=b;check(call('Route_HideGrayError',ptr)==0,'missing/wide/multiple clusters do not prove alignment')
++ start_align();yaw=1200;run_align()
++ check(not var('hide_alignment_pending'),'centered gray ends trim despite 12-degree map YAW error')
++ check(not any(x[0]=='drive' for x in commands),'aligned gray does not command another rotation')
++ start_align();front_raw=back_raw=0x18;yaw=0;run_align(8)
++ check(var('hide_alignment_pending') and any(x[0]=='drive' and x[1]*x[2]<0 for x in commands),'gray skew commands rotation even at zero YAW error')
++ back_raw=0x180;run_align()
++ check(not var('hide_alignment_pending'),'parallel off-center stripes finish after brake confirmation')
++ fresh(63,0);member('thief_localization','yaw_cw_sign',1)
++ var('park_start_yaw',0);var('park_turn_quarter',1);var('park_turn_pending',2);var('park_target_heading',1)
++ front_raw=back_raw=0x60;physical_rpm=0;cache(0);commands.clear();yaw=7500;clock+=20
++ call('Route_RunParkingTurn',clock,20)
++ check(var('park_turn_pending')!=0,'75-degree old line cannot complete parking turn')
++ yaw=8200
++ for _ in range(18):
++  clock+=20;call('Route_RunParkingTurn',clock,20)
++  if not var('park_turn_pending'):break
++ check(not var('park_turn_pending'),'aligned gray can end parking before forced exact 90 degrees')
++except Exception as e:failures.append(str(e))
++out=dict(checks=checks,failures=failures,cases=cases,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False)
++(ROOT/'Tests/results_gray_hide.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(out,indent=2));assert not failures,failures

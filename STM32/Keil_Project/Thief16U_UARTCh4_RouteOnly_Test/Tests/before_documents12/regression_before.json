@@ -1,0 +1,34 @@
+{
+  "checks": 227,
+  "failures": [
+    {
+      "case": "early_junction",
+      "error": "no latched fault at N022: MAP_NODE_DISTANCE_OR_ORDER"
+    },
+    {
+      "case": "noisy_hide",
+      "error": "isolated Documents12 right-laser frame must not wake hide"
+    },
+    {
+      "case": "repeated_side",
+      "error": "known side hit does not cancel unmoved departure"
+    },
+    {
+      "case": "rear_pursuit",
+      "error": "rear-only pursuit keeps the complete route instead of stopping at N039"
+    },
+    {
+      "case": "brake_credit",
+      "error": "N037 root approach credits braking travel slide=70"
+    },
+    {
+      "case": "launch_speed",
+      "error": "reverse startup acquires line at <=100 RPM"
+    }
+  ],
+  "passed": [],
+  "hardware_tested": false,
+  "firmware_sha256": "d7e53eddd12a64050cd3529ce9c3e2c609a01ca045c0762200bcbe662271fd3d",
+  "app_source_sha256": "5944023b19d4a3e8ed245c8b8e42d1511635c235805925c85e635fb212b3aaa4",
+  "test_script_sha256": "ed7896267693d13587ebc267500b3801b7243579ca7871652183bd7ee273620c"
+}

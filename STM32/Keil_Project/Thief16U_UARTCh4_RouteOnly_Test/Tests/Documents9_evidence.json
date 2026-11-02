@@ -1,0 +1,22 @@
+{
+  "source": "C:\\Users\\ROG\\Desktop\\调试工程\\Documents9.txt",
+  "sha256": "ff833096705f9b60cfcf412aa8f694f4976c344ce733d68b93c609be7717eba9",
+  "firmware": "16S",
+  "confirmed_node": 63,
+  "arrival_time_ms": 86145,
+  "arrival_body_heading": 3,
+  "arrival_drive_mode": 1,
+  "arrival_centered": false,
+  "zero_distance_cancellations_ms": [86559, 86915],
+  "final_departure_start_ms": 87126,
+  "spin_start_ms": 87526,
+  "pre_spin_displacement_mm": 56.03,
+  "fault_time_ms": 88254,
+  "fault": "MAP_NODE_DISTANCE_OR_ORDER",
+  "reported_leg_progress_mm": 112,
+  "expected_leg_length_mm": 600,
+  "arrival_minimum_mm": 190,
+  "diagnosis": "A zero-distance cancellation retained node, branch and centering evidence but left TravelFrame in the cancelled plan mode. The next uncentered turn approached the node in the wrong direction.",
+  "software_reproduction": "The actual linked 16S AXF fails the entry-frame assertion; the 16T AXF passes 96 Documents9 checks.",
+  "hardware_tested": false
+}

@@ -1,0 +1,73 @@
+observed_node_matrix: PASS
+wrong_branch_and_origin: PASS
+reverse_signed_ledger: PASS
+ambiguous_far_node_sequence: PASS
+no_line_still_stops: PASS
+n004_to_n006_complete: PASS
+{
+  "checks": 2151,
+  "failures": [],
+  "cases": {
+    "observed_node_matrix": 56,
+    "wrong_branch_and_origin": 1,
+    "reverse_signed_ledger": 12,
+    "ambiguous_far_node_sequence": 1,
+    "no_line_still_stops": 1,
+    "n004_to_n006_complete": {
+      "frames": 1351,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        7,
+        17,
+        26,
+        35,
+        36,
+        44,
+        53,
+        52,
+        63,
+        78,
+        77,
+        76,
+        75,
+        59,
+        58,
+        46,
+        40,
+        39,
+        38,
+        37,
+        20,
+        10,
+        11
+      ],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    }
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "test_sha256": "8e5a471fa86cc41b57d59241b4fba63deca8e5522735aef189b8f07355a4c28a",
+  "source_sha256": {
+    "User/App_ThiefStrategy.c": "06b6d8e087a952938e0be3eb7ac697c5da94a085e24d318f61c64d6189dea1ae",
+    "Algorithm/MapLocalization/ThiefLocalization.c": "9ce189b4bd97a17495ea4049bf84f78c18396a0154288cdd812ab60dcb03c4b7",
+    "Algorithm/MapRoute/MapRouteNavigator.c": "30839688240011aeb7fd5317e227d9a2b412e4d2f1b1e60cab7a407fe072fbfe"
+  },
+  "helper_sha256": {
+    "test_documents15.py": "28e614c82371b3412925b31de9ce53f3a1fd4a657ce3aadcfbf6e3f5e6ac7c37",
+    "test_app_runtime.py": "ee4d70293122a766d5f4b7fff277ea94cca760bc1cee6420c870182996261fc4",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "2e00498ecf25d44cb903ae325b6869bc40e07ae6b73011315319f342e3a3f27b"
+  }
+}

@@ -1,0 +1,57 @@
+preserved_ports: FAIL arrival preserves the earlier requested branch across a later asymmetric sample
+centered_t: FAIL centered T rotates instead of locking: mode=0 sign=-1 action=-1 reason=MAP_REQUIRED_BRANCH_NOT_SEEN
+invalid_t: PASS
+{
+  "checks": 132,
+  "failures": [
+    {
+      "case": "preserved_ports",
+      "error": "arrival preserves the earlier requested branch across a later asymmetric sample"
+    },
+    {
+      "case": "centered_t",
+      "error": "centered T rotates instead of locking: mode=0 sign=-1 action=-1 reason=MAP_REQUIRED_BRANCH_NOT_SEEN"
+    }
+  ],
+  "cases": [
+    {
+      "case": "both_white",
+      "reason": "MAP_REQUIRED_BRANCH_NOT_SEEN"
+    },
+    {
+      "case": "wide_trailing",
+      "reason": "MAP_REQUIRED_BRANCH_NOT_SEEN"
+    },
+    {
+      "case": "offset_trailing",
+      "reason": "MAP_REQUIRED_BRANCH_NOT_SEEN"
+    },
+    {
+      "case": "leading_on_line",
+      "reason": "MAP_REQUIRED_BRANCH_NOT_SEEN"
+    },
+    {
+      "case": "wrong_yaw",
+      "reason": "MAP_REQUIRED_BRANCH_NOT_SEEN"
+    },
+    {
+      "case": "unknown_sign",
+      "reason": "MAP_REQUIRED_BRANCH_NOT_SEEN"
+    },
+    {
+      "case": "open_junction",
+      "reason": "MAP_REQUIRED_BRANCH_NOT_SEEN"
+    },
+    {
+      "case": "stale_yaw",
+      "reason": "JY61P_STALE"
+    },
+    {
+      "case": "broken_pair",
+      "reason": "MAP_REQUIRED_BRANCH_NOT_SEEN"
+    }
+  ],
+  "axf_sha256": "d1ac6417fc463b45cd5472b8f31d251b0a924c35268fc92d9f8ecf32fd56a4a0",
+  "test_sha256": "a26170c87985359b9eec52f93a5e0fc3c49bd1ba966bd483a33d9b0a2349fe64",
+  "hardware_tested": false
+}

@@ -1,0 +1,545 @@
+--- MONITOR10/User/App_ThiefStrategy.c
++++ MONITOR11/User/App_ThiefStrategy.c
+@@ -213,8 +213,8 @@
+ static int16_t last_leading_error;
+ static uint8_t last_leading_mode;
+ static uint32_t restart_log_tick;
+-static uint8_t treasure_turn_align_active;
+-static RoadHeadingControl_t treasure_turn_heading;
++static uint8_t turn_axis_active;
++static RoadHeadingControl_t turn_axis_heading;
+ static uint32_t yaw_reference_since,yaw_reference_last,yaw_reference_apply;
+ static int32_t yaw_reference_mm;
+ static int16_t yaw_reference_sample;
+@@ -1001,15 +1001,13 @@
+ 
+ static uint8_t Route_HasReachedTurnAngle(int16_t current_angle_x100)
+ {
+-  const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+-  uint16_t node=step?(departure_turn?step->from_node:step->to_node):0U;
+   ThiefLocYaw_t yaw;int16_t error;
+   int32_t delta = (int32_t)Route_TurnAngleDeltaX100(current_angle_x100,
+                                                     turn_start_angle_x100);
+ 
+   /* Fast rotation for the large angle, then brake and pulse-trim the final
+    *15degrees. The map axis includes skew already present before this turn. */
+-  if((node==4U || node==6U) && thief_localization.yaw_cw_sign &&
++  if(thief_localization.yaw_cw_sign &&
+       Route_TurnExitContext(&error,&yaw))return (uint8_t)(error>=-1500 && error<=1500);
+ 
+   if (delta < 0L)
+@@ -1098,13 +1096,14 @@
+                    finish_reason, (int)turn_start_angle_x100,
+                    (int)current_angle_x100, (int)delta);
+   {
+-    const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++    const MapRouteStep_t *step=departure_turn?&thief_localization.step:MapRouteNavigator_Current(&map_nav);
+     uint16_t node=step?(departure_turn?step->from_node:step->to_node):0U;
+-    treasure_turn_align_active=(uint8_t)(node==4U || node==6U);
+-    if(treasure_turn_align_active) {
++    turn_axis_active=(uint8_t)(step &&
++        (step->action==MAP_ACTION_LEFT || step->action==MAP_ACTION_RIGHT));
++    if(turn_axis_active) {
+       /* The legacy45degree spin is coarse acquisition only here. No forward
+        * burst or gray PID until the outgoing map axis is physically aligned. */
+-      Route_BrakeControl();RoadHeading_Reset(&treasure_turn_heading,now);
++      Route_BrakeControl();RoadHeading_Reset(&turn_axis_heading,now);
+       UartDebug_Printf("TURN_AXIS_BEGIN N=%u COARSE_DELTA=%d\r\n",(unsigned)node,(int)delta);
+       return;
+     }
+@@ -1251,9 +1250,7 @@
+     if(step->action==MAP_ACTION_LEFT || step->action==MAP_ACTION_RIGHT) {
+       /* A known map axis remains usable after inertial overshoot beyond
+        *110relative degrees. Only unknown gyro direction needs turn inference. */
+-      if(!thief_localization.yaw_cw_sign ||
+-          ((departure_turn?step->from_node:step->to_node)!=4U &&
+-           (departure_turn?step->from_node:step->to_node)!=6U)) {
++      if(!thief_localization.yaw_cw_sign) {
+         if(!RoadHeading_TurnError(turn_start_angle_x100,TravelFrame_Yaw(yaw->yaw_x100),
+             (int8_t)(step->action==MAP_ACTION_RIGHT?1:-1),thief_localization.yaw_cw_sign,error))return 0U;
+         if(!thief_localization.yaw_cw_sign)return 1U;
+@@ -1277,7 +1274,7 @@
+ }
+ 
+ /* Filtered side pixels are a steering cue, never an observed road exit/node. */
+-static void Route_AlignTreasureTurn(uint32_t now,uint32_t elapsed_ms)
++static void Route_AlignTurnAxis(uint32_t now,uint32_t elapsed_ms)
+ {
+   RoadHeadingInput_t in;RoadHeadingOutput_t out;ThiefLocYaw_t yaw;int16_t error;
+   Chassis_UpdateFeedback(elapsed_ms);
+@@ -1291,7 +1288,7 @@
+   }
+   in.cw_error_x100=error;in.yaw_tick=yaw.stamp_ms;
+   in.stopped=Route_AllWheelsStopped();in.direction_known=1U;
+-  RoadHeading_UpdatePulse(&treasure_turn_heading,&in,now,200,&out);
++  RoadHeading_UpdatePulse(&turn_axis_heading,&in,now,200,&out);
+   if(out.brake)Route_BrakeControl();
+   else {
+     int32_t pwm=out.turn_x10>0?ROUTE_TURN_EQUAL_PWM:-ROUTE_TURN_EQUAL_PWM;
+@@ -1302,7 +1299,7 @@
+     Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_RIGHT,-pwm);
+   }
+   if(out.ready) {
+-    treasure_turn_align_active=0U;route_state_tick=now;
++    turn_axis_active=0U;route_state_tick=now;
+     UartDebug_Printf("TURN_AXIS_READY YAW_ERR=%d\r\n",(int)error);
+     /* The next actual board read still decides whether to follow or search. */
+   }
+@@ -2138,7 +2135,7 @@
+   uint8_t turn_delta=0U;
+ 
+   map_distance_warned=0U;retreat_far_pending=0U;route_identity_phase=0U;
+-  treasure_turn_align_active=0U;yaw_reference_since=0U;yaw_reference_last=0U;
++  turn_axis_active=0U;yaw_reference_since=0U;yaw_reference_last=0U;
+   map_leg_started_tick=SystemTime_GetMs();
+   restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+@@ -2515,7 +2512,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR10 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR11 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2538,7 +2535,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR10 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR11 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2588,7 +2585,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR10 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR11 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -3274,8 +3271,8 @@
+       break;
+ 
+     case ROUTE_STATE_AFTER_TURN_FORWARD:
+-      if(treasure_turn_align_active) {
+-        Route_AlignTreasureTurn(now,elapsed_ms);break;
++      if(turn_axis_active) {
++        Route_AlignTurnAxis(now,elapsed_ms);break;
+       }
+       if ((uint32_t)(now - route_state_tick) >=
+           ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS)
+--- MONITOR10/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ MONITOR11/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -193,7 +193,7 @@
+     uint32_t now,ThiefRoutePlan_t *plan)
+ {
+   uint16_t count;
+-  uint8_t mode,back,pass,found=0U;
++  uint8_t mode,back,pass,found=0U,preferred=0U,runway=255U;
+   if(plan==NULL || body_heading>3U)return 0U;
+   plan->valid=0U;back=(uint8_t)((body_heading+2U)%4U);
+   ThiefRiskSearch_SetEmergency(0U);
+@@ -203,6 +203,23 @@
+    * Avoidance of the observed approach corridor is a tier, not a fixed node. */
+   ThiefRiskSearch_SetDepartureMask(15U);
+   ThiefRiskSearch_SetDepartureRunway(255U);
++  /* N011 has user-selected escape corridors in MAP directions. Prefer the
++   * entire legal corridor, never a blind heading or a route through a block. */
++  if(current_node==11U) {
++    if((threat_mask&4U) && !(threat_mask&3U)) {preferred=2U;runway=1U;}
++    else if((threat_mask&1U) && !(threat_mask&12U))preferred=8U;
++  }
++  if(preferred) {
++    ThiefRiskSearch_SetDepartureMask(preferred);
++    ThiefRiskSearch_SetDepartureRunway(runway);
++    for(pass=0U;pass<2U && !found;pass++) {
++      ThiefRiskSearch_SetApproachAvoidance((uint8_t)(pass==0U));
++      found=ThiefRiskSearch_Select(current_node,back,1U,1U,threat_mask,
++          0U,previous_hide_node,now,departure,&count,&mode,&decision);
++    }
++    ThiefRiskSearch_SetDepartureMask(15U);
++    ThiefRiskSearch_SetDepartureRunway(255U);
++  }
+   for(pass=0U;pass<2U && !found;pass++) {
+     ThiefRiskSearch_SetApproachAvoidance((uint8_t)(pass==0U && threat_mask!=0U));
+     found=ThiefRiskSearch_Select(current_node,back,1U,1U,threat_mask,
+--- MONITOR10/Tests/test_general_turns.py
++++ MONITOR11/Tests/test_general_turns.py
+@@ -0,0 +1,113 @@
++"""Whole-map turn-entry audit and N011 world-direction exit policy; synthetic hardware."""
++from pathlib import Path
++import re,sys,json,hashlib
++src=Path(__file__).with_name('test_documents15.py').read_text(encoding='utf-8').split('parking_pwm=[]')[0]
++src=src.replace('Tests/before_documents15/original.axf','Tests/before_general_turns/original.axf')
++exec(compile(src,str(Path(__file__).with_name('test_documents15.py')),'exec'))
++data=(ROOT/'Algorithm/MapRoute/MapRoutePlan.c').read_text(encoding='utf-8')
++node_text=data.split('const MapRouteNode_t map_route_nodes[] = {')[1].split('};')[0]
++nodes={int(a):(int(kind),int(degree)) for a,x,y0,kind,degree in re.findall(r'\{(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\}',node_text)}
++
++def neighbor(node,heading):
++    total=0;segments=0;current=node
++    for _ in range(4):
++        if not call('ThiefMapPlanner_HasRoad',current,heading,0x2000c400,0x2000c402):return None
++        current=get(0x2000c400,2);total+=get(0x2000c402,2);segments+=1
++        if nodes[current][0]!=0:return current,total,segments
++    return None
++
++def setup_turn(node,incoming,quarter,mode,sign):
++    global clock,odom,yaw,gray_raw,gray_state,rear_valid
++    source,length,segments=neighbor(node,(incoming+2)%4)
++    target,out_length,out_segments=neighbor(node,(incoming+quarter)%4)
++    fresh(source,(incoming+2*mode)%4);member('thief_localization','yaw_cw_sign',sign)
++    setstep(source,node,incoming,mode,length,action=quarter)
++    record(steps,'MapRouteStep_t',dict(segment_count=segments))
++    setstep(node,target,(incoming+quarter)%4,mode,out_length,index=1)
++    record(steps+16,'MapRouteStep_t',dict(segment_count=out_segments));record(route,'MapRoute_t',dict(count=2))
++    call('Route_Start');check(var('route_active'),'actual map road starts '+reason())
++    clock+=500;odom=length
++    left=neighbor(node,(incoming+3)%4);right=neighbor(node,(incoming+1)%4)
++    raw=0x60|(0xc00 if left else 0)|(3 if right else 0)
++    call('Route_HandleJunction',clock,20,3 if left and right else 4 if left else 5,raw)
++    check(member('thief_localization','confirmed_node')==node and member('thief_localization','phase')==2,'actual gray anchors incoming node')
++    var('turn_start_angle_x100',18000 if mode else 0)
++    yaw=sign*quarter*8000;gray_raw=0x60;gray_state=1;rear_valid=1;events.clear()
++    call('Route_EnterAfterTurnForward',clock,20,0x2000ce00,yaw)
++
++def all_map_quarter_turns():
++    global clock,yaw
++    check('turn_axis_active' in symbols and 'Route_AlignTurnAxis' in symbols,'one shared axis stage exists for all mapped turns')
++    count=0;covered=set()
++    for node,(kind,degree) in nodes.items():
++      if not kind or degree<2:continue
++      for incoming in range(4):
++       for quarter in [-1,1]:
++        if not neighbor(node,(incoming+2)%4) or not neighbor(node,(incoming+quarter)%4):continue
++        for mode in [0,1]:
++         for sign in [-1,1]:
++          setup_turn(node,incoming,quarter,mode,sign)
++          check(var('turn_axis_active') and 'Route_DriveStraight' not in events,'no map node bypasses axis alignment')
++          yaw=sign*quarter*9000
++          for _ in range(12):clock+=20;call('Route_AlignTurnAxis',clock,20)
++          check(not var('turn_axis_active'),'shared map axis reaches ready without a fabricated node')
++          check(member('thief_localization','confirmed_node')==node,'turn alignment cannot certify the next node')
++          count+=1;covered.add(node)
++    check(78 in covered,'N078 included in the whole-map matrix')
++    return dict(combinations=count,nodes=sorted(covered))
++
++def n078_original_log():
++    global yaw,clock
++    check('turn_axis_active' in symbols,'N078 shared axis stage')
++    for mode in [0,1]:
++      for sign in [-1,1]:
++        setup_turn(78,1,-1,mode,sign)
++        yaw=-sign*5281;ret('Route_AllWheelsStopped',0)
++        for _ in range(8):clock+=20;call('Route_AlignTurnAxis',clock,20)
++        check(var('turn_axis_active') and member('thief_localization','phase')==2,'52.81degree log sample cannot start the outgoing road')
++        ret('Route_AllWheelsStopped',1);yaw=-sign*9000
++        for _ in range(20):clock+=20;call('Route_AlignTurnAxis',clock,20)
++        check(not var('turn_axis_active'),'N078 can finish the outgoing axis')
++    return 4
++
++def n011_exit_policy():
++    global clock
++    for body in range(4):
++      for threat,expected in [(4,12),(1,10)]:
++        fresh(11,body);call('Thief_UpdateLaserMask',clock)
++        world=2 if threat==4 else 0
++        channel={0:0,1:2,2:3,3:1}[(world-body)%4]
++        for _ in range(3):clock+=20;call('Thief_OnLaserFrame',channel,300,100,1,clock)
++        check(var('hide_escape_mask')&threat,'physical laser maps to the requested world direction')
++        check(call('ThiefMapPlanner_PlanEscape',11,body,threat,0,clock,plan),'preferred corridor has a complete hide route')
++        check(at(steps,'MapRouteStep_t','to_node')==expected,'N011 world-direction priority selects correct first exit')
++        if threat==4:check(at(steps+16,'MapRouteStep_t','to_node')==13,'south pursuer leaves through N012 then N013')
++    for a,b,mask in [(11,12,4),(12,13,4),(11,10,1)]:
++        fresh(11,3);call('ThiefIntercept_BlockLeg',a,b,clock)
++        check(call('ThiefMapPlanner_PlanEscape',11,3,mask,0,clock,plan),'blocked preferred corridor retains fallback')
++        count=at(route,'MapRoute_t','count')
++        check(all({at(steps+16*i,'MapRouteStep_t','from_node'),at(steps+16*i,'MapRouteStep_t','to_node')}!={a,b} for i in range(count)),'fallback never crosses known blocked preferred edge')
++    fresh(11,3)
++    check(call('ThiefMapPlanner_PlanEscape',11,3,6,0,clock,plan),'south plus east threat has a legal alternative')
++    check(at(steps,'MapRouteStep_t','to_node')!=12,'east threat overrides south-to-east preference')
++    fresh(11,3)
++    check(call('ThiefMapPlanner_PlanEscape',11,3,5,0,clock,plan),'opposed north/south threats retain complete planning')
++    check(at(steps,'MapRouteStep_t','to_node') in (10,12),'north/south conflict uses an actual clear lateral exit')
++    fresh(11,1)
++    check(call('ThiefMapPlanner_PlanEscape',11,1,9,0,clock,plan),'north plus west threat overrides the west preference')
++    check(at(steps,'MapRouteStep_t','to_node')!=10,'immediate west threat prevents preferred west departure')
++    fresh(38,1)
++    check(call('ThiefMapPlanner_PlanEscape',38,1,1,0,clock,plan),'other node remains plannable after N011')
++    check(at(steps,'MapRouteStep_t','to_node')==39,'N011 search constraints do not leak to N038')
++    return dict(body_directions=4,world_threats=2,blocked_cases=3)
++
++failures=[];cases={}
++for fn in [all_map_quarter_turns,n078_original_log,n011_exit_policy]:
++    try:cases[fn.__name__]=fn()
++    except Exception as e:failures.append(dict(case=fn.__name__,error=str(e)))
++axf=ROOT/'MDK-ARM'/ROOT.name/(ROOT.name+'.axf')
++if '--before' in sys.argv:axf=ROOT/'Tests/before_general_turns/original.axf'
++r=dict(checks=checks,cases=cases,failures=failures,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),
++       test_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),hardware_tested=False)
++dest=ROOT/('Tests/before_general_turns/regression_before.json' if '--before' in sys.argv else 'Tests/results_general_turns.json')
++dest.write_text(json.dumps(r,indent=2),encoding='utf-8');print(json.dumps(r,indent=2));sys.exit(bool(failures))
+--- MONITOR10/Tests/test_yaw_reference.py
++++ MONITOR11/Tests/test_yaw_reference.py
+@@ -56,15 +56,15 @@
+         if 'Route_HasReachedTurnAngle' in symbols:
+             check(call('Route_HasReachedTurnAngle',call('TravelFrame_Yaw',yaw))==0,'46.57degree rotation still has a large map-axis error')
+         call('Route_EnterAfterTurnForward',clock,20,0x2000ce00,yaw)
+-        check('treasure_turn_align_active' in symbols and var('treasure_turn_align_active'),'N004/N006 46.57deg cannot hand off to PID')
++        check('turn_axis_active' in symbols and var('turn_axis_active'),'N004/N006 46.57deg cannot hand off to PID')
+         check('Route_DriveStraight' not in events,'no translational burst before heading alignment')
+         ret('Route_AllWheelsStopped',0)
+         yaw=(-sign*9000+18000)%36000-18000
+-        for _ in range(6):clock+=20;call('Route_AlignTreasureTurn',clock,20)
+-        check(var('treasure_turn_align_active'),'aligned angle without measured stop cannot hand off')
++        for _ in range(6):clock+=20;call('Route_AlignTurnAxis',clock,20)
++        check(var('turn_axis_active'),'aligned angle without measured stop cannot hand off')
+         ret('Route_AllWheelsStopped',1)
+-        for _ in range(20):clock+=20;call('Route_AlignTreasureTurn',clock,20)
+-        check(not var('treasure_turn_align_active'),f'fresh stable stopped axis releases gray acquisition node={node} mode={mode} sign={sign} phase={member("thief_localization","phase")} arrived={member("map_nav","arrived")} error={member("thief_localization","error")} stable={member("treasure_turn_heading","stable_count")}')
++        for _ in range(20):clock+=20;call('Route_AlignTurnAxis',clock,20)
++        check(not var('turn_axis_active'),f'fresh stable stopped axis releases gray acquisition node={node} mode={mode} sign={sign} phase={member("thief_localization","phase")} arrived={member("map_nav","arrived")} error={member("thief_localization","error")} stable={member("turn_axis_heading","stable_count")}')
+         check(member('thief_localization','phase')==2,'alignment alone never confirms outgoing leg')
+     return 8
+ 
+--- MONITOR10/Tests/test_monitor7_restore.py
++++ MONITOR11/Tests/test_monitor7_restore.py
+@@ -11,7 +11,7 @@
+ 
+ def overshoot_axis():
+     global clock,yaw,odom,gray_raw,gray_state,rear_valid
+-    check('Route_AlignTreasureTurn' in symbols,'saved MONITOR7 axis trim restored')
++    check('Route_AlignTurnAxis' in symbols,'saved MONITOR7 axis trim restored')
+     for mode in [0,1]:
+       for sign in [-1,1]:
+         fresh(15,2*mode);member('thief_localization','yaw_cw_sign',sign)
+@@ -26,12 +26,12 @@
+         error=0x2000cd00;obs=allocate('ThiefLocYaw_t',0x2000cd10)
+         check(call('Route_TurnExitContext',error,obs),'known axis remains available beyond110relative degrees')
+         pwm.clear()
+-        for _ in range(10):clock+=20;call('Route_AlignTreasureTurn',clock,20)
++        for _ in range(10):clock+=20;call('Route_AlignTurnAxis',clock,20)
+         check(pwm and len(pwm)%4==0,'actual four-wheel trim output exists after overshoot')
+         check(pwm[-4]>0 and pwm[-3]<0,'overshoot correction turns back toward the known exit')
+         yaw=-sign*9000
+-        for _ in range(20):clock+=20;call('Route_AlignTreasureTurn',clock,20)
+-        check(not var('treasure_turn_align_active'),'fresh centered stopped axis completes original MONITOR7 trim')
++        for _ in range(20):clock+=20;call('Route_AlignTurnAxis',clock,20)
++        check(not var('turn_axis_active'),'fresh centered stopped axis completes original MONITOR7 trim')
+     return 4
+ 
+ failures=[];cases={}
+--- MONITOR10/Tests/test_documents24.py
++++ MONITOR11/Tests/test_documents24.py
+@@ -12,6 +12,15 @@
+     q=1 if mode==0 else -1
+     setstep(37,20,0,mode,600);call('Route_Start');tick(20);tick(60)
+     yaw=sign*q*5639;tick(380)
++    if 'turn_axis_active' in symbols:
++        # Complete the shared turn stage first, then reproduce a disturbed
++        # pending exit. Never bypass/force the new angle gate in the fixture.
++        yaw=sign*q*9000
++        for _ in range(30):
++            tick()
++            if var('route_state')==7 and not var('turn_axis_active'):break
++        check(var('route_state')==7 and not var('turn_axis_active'),'shared axis stage really completes before recovery replay')
++        yaw=sign*q*5639
+     gray_raw=0;gray_state=2;tick()
+     for _ in range(6):tick()
+     check(var('turn_exit_trim_started'),'replay begins actual missing-line rotation')
+@@ -66,7 +75,7 @@
+     yaw=-4571;tick(340);gray_raw=0;gray_state=2;tick()
+     for angle in range(4671,8730,100):
+         yaw=-angle;tick(100)
+-    yaw=-8729;gray_raw=0x60;gray_state=1
++    yaw=-9000;gray_raw=0x60;gray_state=1
+     for _ in range(12):tick()
+     check(var('route_active') and member('map_nav','step')==1,'actual N020->N010 right turn resumes N010->N011')
+     check(member('thief_localization','confirmed_node')==10 and member('thief_localization','phase')==1,'real exit commits next edge without fabricating N011 arrival')
+--- MONITOR10/Tests/test_app_runtime.py
++++ MONITOR11/Tests/test_app_runtime.py
+@@ -159,20 +159,26 @@
+     clock=50699;yaw=13950;call('App_ThiefStrategy_Task')
+     check(var('route_state')==6,'Documents8 measured stop releases left spin')
+     clock=51099;yaw=-16332;call('App_ThiefStrategy_Task')
+-    check(var('route_state')==7,'57-degree spin transitions to gray alignment')
++    check(var('route_state')==6,'57-degree spin cannot finish the common map turn')
+     clock=51119;call('App_ThiefStrategy_Task')
+-    check(var('route_state')==2 and member('map_nav','arrived')==1,'line found but turn not committed yet')
++    check(var('route_state')==6 and member('map_nav','arrived')==1,'visible line cannot end the remaining spin')
+     clock=51201;yaw=-14450;call('App_ThiefStrategy_Task')
+     if var('route_active')==0:
+         print('DOCUMENTS8_FAULT:',bytes(u.mem_read(get(symbols['route_fault_reason']),64)).split(b'\0')[0].decode(),flush=True)
+     check(var('route_active')==1 and member('thief_localization','error')==0,
+           'Documents8: a 76-degree turn must wait for alignment, not latch LOC_HEADING_MISMATCH')
+     check(member('map_nav','step')==0 and member('thief_localization','phase')==2,'pending turn does not skip into the next leg')
++    clock+=20;yaw=-13000;call('App_ThiefStrategy_Task')
++    check(var('route_state')==7 and var('turn_axis_active'),'coarse map-axis rotation enters measured alignment before timeout replay')
+     pending=bytes(u.mem_read(0x20000000,0x10000))
+     # Synthetic completion: real gray stability counter, three separate samples.
+-    yaw=-13050
++    yaw=-11806 # Actual outgoing map axis, rather than relative90 preserving arrival skew.
++    for _ in range(30):
++        clock+=20;call('App_ThiefStrategy_Task')
++        if var('route_state')==7 and not var('turn_axis_active'):break
++    check(var('route_state')==7 and not var('turn_axis_active'),'real stopped shared alignment precedes gray commit')
+     for i in range(3):
+-        clock=51221+20*i;call('App_ThiefStrategy_Task')
++        clock+=20;call('App_ThiefStrategy_Task')
+         check(member('map_nav','step')==(1 if i==2 else 0),'three stable aligned samples before committing exit')
+     check(var('route_active')==1 and member('thief_localization','body_heading')==0 and
+           member('thief_localization','phase')==1,'aligned turn resumes N013 to N003')
+@@ -188,10 +194,9 @@
+         check(call('ThiefLocalization_ExitReady',local_loc,local_steps+16,1,local_yaw,clock)==0 and
+               member('thief_localization','error')==error,'wrong-sign and over-110-degree turns remain rejected')
+     u.mem_write(0x20000000,pending)
+-    clock=53620;yaw=-14450;call('App_ThiefStrategy_Task')
+-    reason=bytes(u.mem_read(get(symbols['route_fault_reason']),64)).split(b'\0')[0]
+-    check(var('route_active')==0 and reason==b'MAP_TURN_NOT_ALIGNED',
+-          'unchanged 2500ms alignment deadline still brakes a nonconverging turn')
++    clock+=2501;yaw=-14450;call('App_ThiefStrategy_Task')
++    check(var('route_active') and member('thief_localization','phase')==2 and var('turn_axis_active'),
++          'fresh gyro and real line keep incomplete shared alignment pending, without inventing an exit or a2500ms fault')
+     u.mem_write(0x20000000,pristine);clock=initial_clock;yaw=initial_yaw;gray_raw=0x60;gray_state=1
+     for n in ['MapRoutePosition_DistanceMm','MapRoutePosition_ForwardCounts',*task_stubs]:
+         u.hook_del(hooks.pop(n))
+--- MONITOR10/Tests/test_documents15.py
++++ MONITOR11/Tests/test_documents15.py
+@@ -79,7 +79,14 @@
+     setstep(11,target,heading,mode,length);call('Route_Start')
+     tick(20);tick(60)
+     yaw=wrap(physical_sign*quarter*5166);tick(340)
+-    check(var('route_state')==7,'original45degree spin handoff preserved')
++    if 'turn_axis_active' in symbols:
++        check(member('thief_localization','phase')==2,'half turn cannot commit a departure')
++        yaw=wrap(physical_sign*quarter*9000)
++        for _ in range(30):
++            tick()
++            if var('route_state')==7 and not var('turn_axis_active'):break
++        check(var('route_state')==7 and not var('turn_axis_active'),'real shared axis stage completes before missing-exit replay')
++    else:check(var('route_state')==7,'original45degree spin handoff preserved')
+     tick(20);gray_raw=0;gray_state=2;rear_valid=1
+     for _ in range(15):tick()
+     check('turn_exit_active' in symbols and var('turn_exit_active'),
+@@ -105,6 +112,12 @@
+     odom=600;clock+=600;call('Route_HandleJunction',clock,20,5,0x83f)
+     tick(180);tick(20);tick(80)
+     yaw=-5166;tick(340);tick(20)
++    if 'turn_axis_active' in symbols:
++        yaw=-9000
++        for _ in range(30):
++            tick()
++            if var('route_state')==7 and not var('turn_axis_active'):break
++        check(var('route_state')==7 and not var('turn_axis_active'),'N078 completes shared axis before exit recovery replay')
+     gray_raw=0;gray_state=2;rear_valid=1
+     for _ in range(15):tick()
+     check('turn_exit_active' in symbols and var('turn_exit_active'),'Documents15 N078 reverse uses outgoing turn recovery')
+--- MONITOR10/Tests/test_documents22.py
++++ MONITOR11/Tests/test_documents22.py
+@@ -27,7 +27,14 @@
+     q=1 if mode==0 else -1
+     setstep(37,20,0,mode,600);call('Route_Start');tick(20);tick(60)
+     yaw=entry_error+sign*q*5639;tick(380)
+-    check(var('route_state')==7,'replay N037 rear-leading left turn handoff at56.39degrees')
++    if 'turn_axis_active' in symbols:
++        yaw=sign*q*9000
++        for _ in range(30):
++            tick()
++            if var('route_state')==7 and not var('turn_axis_active'):break
++        check(var('route_state')==7 and not var('turn_axis_active'),'shared turn axis completes before disturbed-exit scan')
++        yaw=entry_error+sign*q*5639
++    else:check(var('route_state')==7,'replay N037 rear-leading left turn handoff at56.39degrees')
+     gray_raw=0;gray_state=2;tick()
+     for _ in range(100):
+         if var('turn_exit_line_phase'):break
+--- MONITOR10/Tests/test_speed16t.py
++++ MONITOR11/Tests/test_speed16t.py
+@@ -27,6 +27,11 @@
+ tick(20);tick(60);yaw=9000;tick(200)
+ check(var('route_state')==7,'actual turn hands off to exit-line following')
+ check(var('leave_target_rpm_x10')==2000,'post-turn seed is200RPM')
++if 'turn_axis_active' in symbols:
++    for _ in range(30):
++        tick()
++        if not var('turn_axis_active'):break
++    check(not var('turn_axis_active'),'measure normal exit speed only after the shared stopped axis stage completes')
+ targets.clear()
+ for _ in range(4):tick()
+ curves['turn_exit']=targets[:]
+--- MONITOR10/README.md
++++ MONITOR11/README.md
+@@ -1,3 +1,16 @@
++# 16U MONITOR11：全地图转弯对齐与N011方向优先
++
++固件UARTCH4_16U_MONITOR11，工程名不变。每次改代码前必读Docs/修改规范与回归清单.md最前“防遗漏核对表”及当前版本章节；AGENTS.md已加入强制入口。核对表包含本轮遗漏原因及控制输出/状态交接证据要求。
++
++- 所有地图左右转弯与根节点重新出发统一进入MONITOR7式±2度脉冲微调、实测停稳/新鲜YAW确认，再交灰度巡线。删除仅N004/N006启用的节点判断，覆盖N078及其他合法转弯；保持原550PWM、±15度粗转交接、直道YAW校准与正常速度。未知陀螺仪方向仍用原粗转推断，再完成全部转角。已知出口轴的恢复不再因累计110度而丢失上下文；真正节点确认约束不改变。
++- N011按世界方向优先：下方N022来车走N012再N013，上方N002来车走N010。优先走廊已堵、该出口也有威胁、南北同时来车或找不到完整合法路线时回退原风险搜索；约束每次复位。探头按车头方向换算，不硬绑某一路激光。目标藏点仍动态选择，途中拦截仍按原流程回撤重算。
++- test_general_turns.py枚举实际地图1016种合法左右转弯/正反帧/陀螺仪符号，检查N078的52.81度不能交接前进，以及N011四朝向/双来向/堵路回退。旧恢复测试已调整前置过程，先实际完成公共对齐，再复现后续缺线扰动；原断言与脚本保存在基线，未用假标志跳过新阶段。
++
++MONITOR10源码/AXF、034515日志及修改前脚本保存Tests/before_general_turns；验收VALIDATION_MONITOR11.json，差异GENERAL_TURNS_CHANGESET.patch。原始YAW、左右800/前后1000、候选定位、真实轮速重新启用、连续双板无线2秒保持。
++仅编译通过，尚未完成硬件验证。整图软件矩阵不证明每个实物路口都能居中或消除惯性。
++
++以下MONITOR10及更早内容为历史。
++
+ # 16U MONITOR10：恢复MONITOR7转向，保留轮速恢复修复
+ 
+ 用户033134实测仍过冲并明确偏好MONITOR7。本版从Tests/before_turn_resume保存的MONITOR7 App源码恢复N004/N006转弯、±2度PWM脉冲微调及停稳/3帧新鲜YAW确认。原普通550PWM、出口±15度粗转交接和直道YAW参考学习原样恢复；不保留MONITOR9的350PWM末段或单次COAST交接。工程名不变，固件标识UARTCH4_16U_MONITOR10。
+--- MONITOR10/AGENTS.md
++++ MONITOR11/AGENTS.md
+@@ -1,4 +1,8 @@
+ # 本工程修改前必读
++
++**每次改代码、参数或状态机之前（同一轮后续修改也一样），必须重新阅读Docs/修改规范与回归清单.md最前面的“每次改代码前必读：防遗漏核对表”、当前版本章节和README。按影响范围逐项核对调用路径、全地图节点/转向、根节点出发、正反帧、世界激光方向、真实PI/PWM重启、道路身份/航向恢复、连续2秒失线及验证证据，不得只修单个日志节点。**
++
++最新MONITOR11：全地图合法左右转弯共用Route_AlignTurnAxis，不再仅限N004/N006；N011地图南侧威胁优先N012-N013，北侧优先N010，有拦截/堵路则回退普通风险搜索。旧脚本和源码在Tests/before_general_turns，验收VALIDATION_MONITOR11.json。下文版本为历史。
+ 
+ 最新MONITOR10按用户偏好恢复MONITOR7转弯与±2度微调/停稳新YAW，来自Tests/before_turn_resume保存源码；删除MONITOR9末段350PWM/COAST方案。保留真实轮速重新启用和道路偏航恢复。仅N004/N006已知陀螺仪方向时，出口轴纠偏不再被累计110度拒绝，其他相对转角与节点规则保持。基线Tests/before_monitor7_restore，验收VALIDATION_MONITOR10.json。
+ 
+--- MONITOR10/Docs/修改规范与回归清单.md
++++ MONITOR11/Docs/修改规范与回归清单.md
+@@ -1,4 +1,40 @@
+ # 修改规范与回归清单
++
++## 每次改代码前必读：防遗漏核对表
++
++每次修改源码、控制参数、传感器配置或状态机（包括同一轮后续修改）前，重新读取本节、当前版本章节、README和最新有关日志；按改动影响逐项记录“已覆盖/不适用/尚未验证”，不得只修出现问题的一个节点。
++
++1. **先列完整调用路径。** 区分正常到口转弯、藏点/路口重新出发、半路拦截折返、出口找线、道路失线恢复。检查所有调用者和状态入口，尤其departure_turn使用的虚拟起步动作与路线第一步终点动作不同，不能用错step。
++2. **转弯必须查全地图。** 共用转弯逻辑，不写只覆盖N004/N006而遗漏N078的节点名单。依据实际MapRoutePlan拓扑枚举合法左右转弯、正反行驶、两种陀螺仪符号；单独验证根节点重新出发与首次未知符号。没有道路的方向不得因“反方向逃跑”而直冲（例如N078到N087没有直接道路）。
++3. **区分角度到位和转动停止。** 原始YAW不等于地图误差，日志角度单位x100。目标用出口地图轴，不能把入弯偏斜带进相对90度。粗转结束后必须经过统一轴向确认，实测停稳、新鲜YAW和实际灰度各自承担明确条件；不能看到一次线就提前交巡线。检查正负180度、过冲与相对累计转角边界。
++4. **检查控制链真的接上。** 制动会关闭轮速PI；进入FOLLOW只在IsEnabled实际为真时允许保留，否则重新启用。验证全四轮目标、控制器使能、PI到PWM输出，不能只看STATE=FOLLOW或目标非零；测试不得把这些控制层全部模拟掉后宣称能走。5ms灰度观察不得重复支付20ms轮速积分。
++5. **地图方向不等于固定探头。** 上/右/下/左是世界N/E/S/W；前/左/右/后探头固定在车身，按body_heading换算。倒车时TravelFrame、领先/跟随灰度板、转向符号和物理车头分开核对。边界射线过滤、传感器偏置和800/1000mm有效距离规则不能被路线修改覆盖。
++6. **规划和执行都要覆盖避障。** N011下方来车优先N012-N013，上方来车优先N010；优先出口/第二段已有堵路或该出口也有即时威胁时回退普通合法路线。约束用完必须复位，不能泄漏到N038等其他节点。行驶中实际激光拦截仍优先回撤/重算，不能为履行旧路线继续硬闯。
++7. **道路身份与航向门槛分开。** 超±10度不能直接等于道路上下文消失；可在已提交道路上继续航向恢复，不能放宽真正出口/节点确认条件。检查连续双板无线2秒在阶段切换中不被重置，有真实线时不累计分散的无线间隔；不能又增加固定纠偏总时限直接停车。
++8. **定位证据不能混用。** 编码器仅辅助，不凭里程直接认节点；半路折返保留已走位移的有符号账本。迟到相似路口需候选与真实后续观测，不把上一轮残留灰度、单帧全黑或显示预测当确认。入中心动作仍用原100RPM/180ms及已走位移抵扣；不为掩盖问题降低用户认可的正常速度。
++9. **回归入口必须真实。** 更新状态机后，旧用例应先实际完成新增前置阶段再复现后续扰动；禁止强设成功标志、虚构传感器、删除失线/停稳/新YAW断言来让测试通过。用户明确改变规则时，保留旧脚本并说明新预期；覆盖范围、实际执行的源码/AXF散列和未测试硬件必须写清。
++10. **交付之前核对一致性。** 保留修改前工程/AXF/日志及失败复现；更新当前版本、README、AGENTS、差异与验证报告。只在新改动或失败有理由时重跑相应检查。不得自动烧录、驱动实物、占用串口、提交或推送。编译/仿真不能冒充实车证明。
++
++## 当前MONITOR11：全地图公共转弯与N011出口优先
++
++统一使用turn_axis_active/Route_AlignTurnAxis：所有合法地图左右转弯及根节点重新出发，均按MONITOR7方式完成出口轴±2度、实测停稳和3帧新鲜YAW后交灰度。已知方向时在出口±15度结束粗转；未知方向先原45度粗转，再以实际转角推断完成剩余转向。已知地图轴的恢复不再依节点名单受累计110度拒绝；节点/出口确认原规则保持。普通550PWM、正常直行速度、直道基准学习、轮速真实重新启用、恢复计时与激光阈值不变。
++N011的地图南侧威胁优先11-12-13（第一段东、第二段继续东），北侧威胁优先11-10。北南同时威胁、优先出口自身受威胁、优先走廊已堵或无完整藏点路线时回退原风险搜索；不允许约束泄漏到其他节点。目标藏点仍动态选择，起步不应反复试探两个出口。
++Tests/test_general_turns.py枚举全拓扑转弯并复现N078半转弯和N011四种车头/激光换算；旧恢复测试先通过真实公共对齐，再注入出口扰动，原脚本存Tests/before_general_turns。验收VALIDATION_MONITOR11.json，差异GENERAL_TURNS_CHANGESET.patch。仅编译通过，尚未完成硬件验证。
++
++### MONITOR11本轮防遗漏核对结果
++
++| 核对项 | 状态 | 可复核证据与范围 |
++| --- | --- | --- |
++| 1 完整调用路径 | 已覆盖软件 | 正常到口与departure_turn根节点共用对齐；documents15的34个根节点/倒车转向场景、完整逃跑与拦截场景通过。 |
++| 2 全地图转弯 | 已覆盖软件 | results_general_turns.json：1016种实际拓扑合法转弯，N078包含在内；kind=0标记点和无合法左右转的死端不虚构转弯。 |
++| 3 角度/停稳/新YAW | 已覆盖软件；实物未验证 | 公共阶段±2度/停稳/新帧；原yaw_reference与monitor7_restore跨180度/过冲测试通过，未知符号根节点包含在34例中。 |
++| 4 真实控制链 | 已覆盖软件 | test_turn_resume运行真实制动/使能/轮速PI/PWM计算；route_identity保留20ms与5ms观察节拍断言。 |
++| 5 世界方向/探头/倒车 | 已覆盖软件 | N011四车头×南北来向实际激光帧；整图正反帧/两种符号；原激光边界与地图射线回归通过。 |
++| 6 优先走廊与回退 | 已覆盖软件 | 南向12-13、北向10；3种堵路、南北同时威胁、优先出口也受威胁、N038不继承搜索约束均通过。 |
++| 7 道路身份/恢复计时 | 已覆盖软件 | documents14、road_probe、exit_stall检查偏航恢复、双板连续2秒、分段无线不累加；灰度/节点确认不因优先路线放宽。 |
++| 8 定位与原速度 | 已覆盖软件 | route_identity92项、378个纯算法/定位用例、16T正常速度/增益/入中心参数对比通过。实际定位精度未实测。 |
++| 9 回归入口与证据 | 已覆盖软件 | 旧45度入口用例先真实完成公共对齐后才模拟出口扰动；原脚本保留before_general_turns。最终AXF/源码/脚本散列在VALIDATION_MONITOR11.json。 |
++| 10 交付与实物边界 | 已覆盖文档；实车未验证 | 原工程/AXF/日志已备份，README/AGENTS/差异/报告更新；未烧录、未驱动实物、未开串口。本次网页/助手改动不适用。 |
+ 
+ ## 当前MONITOR10：按用户要求恢复MONITOR7
+ 

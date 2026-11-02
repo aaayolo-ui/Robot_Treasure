@@ -1,0 +1,20 @@
+{
+  "checks": 132,
+  "failures": [],
+  "negative_cases": [
+    "low confidence",
+    "too near",
+    "front beyond max",
+    "left beyond max",
+    "right beyond max",
+    "rear beyond max",
+    "single frame",
+    "duplicate frames",
+    "spaced frames",
+    "outside north edge",
+    "ahead of travel",
+    "off-road gap"
+  ],
+  "axf_sha256": "a26c7892cf8f02e7264234b223b356d47359ef7490986203e58264abaeacba6d",
+  "hardware_tested": false
+}

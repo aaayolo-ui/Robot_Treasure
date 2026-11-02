@@ -1,0 +1,6 @@
+MDK-ARM/Thief16M_UARTCh4_InterceptEscape_Test/
+MDK-ARM/*.uvguix.*
+MDK-ARM/*.uvoptx
+MDK-ARM/*.bak
+Tests/build/
+Tests/__pycache__/

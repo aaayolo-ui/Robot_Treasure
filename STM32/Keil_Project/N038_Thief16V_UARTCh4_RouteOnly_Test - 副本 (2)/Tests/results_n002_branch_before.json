@@ -1,0 +1,9 @@
+{
+  "checks": 19,
+  "failures": [
+    "opposite-side evidence does not become N002"
+  ],
+  "axf_sha256": "385eec60a4d608e850c3e56b4be43b2b40ab19d43242c0fd9272b29443a625f8",
+  "hardware_tested": false,
+  "before": true
+}

@@ -1,0 +1,26 @@
+{
+  "firmware": "UARTCH4_16V_STABLE2",
+  "checks": 39,
+  "failures": [
+    "N063 west -> only N078, no automatic next leg",
+    "temporary parking is vertical",
+    "N063 west -> only N078, no automatic next leg",
+    "temporary parking is vertical",
+    "N063 west -> only N078, no automatic next leg",
+    "temporary parking is vertical",
+    "N063 west -> only N078, no automatic next leg",
+    "temporary parking is vertical",
+    "N078 uses normal N/S parking centering",
+    "requested corridor, not just first compass bit: [77, 76, 85, 84, 68, 58, 46, 40, 39, 38, 37, 20, 10, 11]",
+    "requested corridor, not just first compass bit: [77, 76, 85, 84, 68, 58, 46, 40, 39, 38, 37, 20, 10, 11]",
+    "next-road geometry hit=(1800, 1800), blocked=False",
+    "only a hit on next road truncates the route",
+    "actual west laser chooses temporary N078",
+    "actual west laser chooses temporary N078"
+  ],
+  "lifecycles": [],
+  "expected_before_failure": true,
+  "axf_sha256": "0eec5ed8352253cdf0ed188f3f24b56abb6c2efcab905e9a155bf4fed344979c",
+  "test_sha256": "4cecca09d429573425962e74ececccac0f90a6d2e82bc2c24f608a5a2ed49dac",
+  "hardware_tested": false
+}

@@ -1,0 +1,18 @@
+{
+  "checks": 59,
+  "failures": [
+    {
+      "case": "edge_line",
+      "error": "N068 compact edge line must produce recovery motion, not permanent zero"
+    },
+    {
+      "case": "brake_feedback",
+      "error": "recovery must refresh cached wheel speed while braking"
+    }
+  ],
+  "cases": [],
+  "axf_sha256": "0b80471cbe83528830b1b166bc9c6cfbf5bcd56863d6f39045d4d58482ae23a9",
+  "real_gray_classification": true,
+  "real_stopped_predicate": true,
+  "hardware_tested": false
+}

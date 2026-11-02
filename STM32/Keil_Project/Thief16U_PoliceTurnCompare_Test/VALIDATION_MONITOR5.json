@@ -1,0 +1,194 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR5",
+  "firmware_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d",
+  "hex_sha256": "61b2bbcea9eefd41086947ed299fd077775222e1ea2cdcae225e34ec9b7d6f70",
+  "limits_raw_mm": {
+    "front": 1000,
+    "left": 800,
+    "right": 800,
+    "rear": 1000
+  },
+  "new_checks": 988,
+  "road_probe_checks": 1798,
+  "boundary_checks": 442,
+  "pure_checks": 366181,
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "1ed1111181d863ef136221753b5673c3514dc9160748973a5fd5f4fdb7c48f0e",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "74637fb87cdf949f2a493207abed3868c3636633238bbeeb139a2fef8a2be8cc",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "bd4042ff2c821e3c966c9f1acd713c833d255269498e5a854a20bc35ae1ee8b4",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "1c5399dea20cca38e4c255fa4784e4d7f66b5cb6fb5aadd30577b772f9b08092",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "2b52c717b1769a7bbee79c33ceae8021d9c9082fba7a0ff0ab8f8230987fc21f",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "a9b1095126ab53858eaed2b32f1de65a63c41b4cdd62ea7e89d9e697f7714aae",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "437d195883747d756d3bb47b31d9afecc803ceb7294da049123a520b4c100c5e",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "e6a8b1c7e0ad5e50ef646f40c8066067c7dfee70c0c99e9ba428c5c3279992b4",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "d4aa79b33b17ec3ba7cb443dd406522e1ac32b8a46b5539b79078be8f18a61eb",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "30429f550c40225a8f93fb10ddd625df4e5debb268c3464ce60b9a8dc7ec5f3b",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "c12b00de00edeb31219d403120ae6326fc849b269b0ed670f88d3256f770a4a2",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "f63050eaee7e32d36d5c2d77e719b01e14f3f0e2fbb692575971e1199d39ccd9",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "79c6a7f36c847d92e89232c55c886b7bd7e437593c357609af4a8cbdcf801be3",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "6c7fef3259b3f88e2b88e34de3a2e940c54c57f33545972817f2478c07d989e4",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "95a91a8e281e6783726de8dcaeb15ad71aaf607c662988ad04dcf4c800560186",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "679e8a2e1074fd0d811a14be9c5227943f9090d3b895dc5603643986d1eb6efb",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "a6da27fc1168ba84572dd60a20469a0e666ac2533ac34b7d83a7a04ae53e8b93",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "609c0ebcf128cdf4c1374bdcc52a2c7b15ff2efd7e40a7fe18a254751ad1d1c5",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "ad82cb6060309b0d85731a709834009131aae9289da3ecabd3dda1740fcc680f",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "36c47f09b96857f3d9eb6ba212c3dec17813716a7d27db0613298b3875978b35",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "62ded79105c353e040b28cb6e7f1ebc291e802f9c39aed62913a0cba286a7c76",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "c1a06d88b2d2310c3523bec7c0f7e418ada120b4cf8214d6b31220d3a5698553",
+      "axf_sha256": "c4d2de1a0d03c2169cae49fd10422ca4faeff913e8c1c571fe54c93248954d7d"
+    }
+  ],
+  "before_failures": [
+    {
+      "case": "stagnant_yaw",
+      "error": "stagnant15.46degree yaw must escalate to four-wheel measured PWM pulses"
+    },
+    {
+      "case": "side_guidance",
+      "error": "actual side gray must steer toward observed side, not stale/default bias"
+    },
+    {
+      "case": "boost_stop_and_fresh_yaw",
+      "error": "standstill and fresh yaw authorize measured recovery pulse"
+    },
+    {
+      "case": "failed_probe_return",
+      "error": "failed100mm probe must retrace toward its measured origin"
+    },
+    {
+      "case": "return_origin_bound",
+      "error": "return stage really reached"
+    }
+  ],
+  "files": {
+    "User/App_ThiefStrategy.c": "b82f67feb0608c2cdded03be480dbd0e28e2fa58425f2c62f2f9c9e5d7071cb9",
+    "Control/RestartLineSearch.c": "d2077b71077e1196e1022f7d21ed22c6bb7859d0c5a6ace4dcf63e173b3f5955",
+    "Tests/test_exit_stall.py": "29df2554bf0aee3b5ce2fc70d30f61cdc5835dbe5479694af4598dc5367863ee",
+    "README.md": "67cc2649ab4130cb5c3b3f3355841880ca74e8a0d7bc96b4ead9e1c5ddce0a15",
+    "AGENTS.md": "3521d57af340f7fdab3d0b07423339c9d9767412a33746789d2b63607501376c",
+    "Docs/修改规范与回归清单.md": "d47eeeaec7480bdef72b653437027e62f5646d6a1966733ef6c193fa13b4f427",
+    "Tests/validate_monitor5.py": "cbf948e59d69c16d557adb26e0b742f1ab5999bcd3fb2ced06f4ebe9e189c00d",
+    "EXIT_STALL_CHANGESET.patch": "1251585d87c674ab23d77d5a0a599dda8ec3aa1be9e1a1e537c6fb97b428ce01",
+    "build_monitor5.log": "1acf470e40b7efac8da3be70478e23e98d432114ce98410b557dab96cd36dd48",
+    "Tests/results_exit_stall.json": "87b7a5ae86427182fd52e75ccc3683df2d6890c0993432a9f7e109d8f2e9a9dc",
+    "Tests/results_road_probe.json": "21343a545a9beed57ee24bbd2213c3dfd56e21a038c5b4c7cc8c994b385a8018",
+    "Tests/results_left800.json": "d85787be5e1be6a3a3c6ddf67f3491ad37198bf262b9a6c511fdd9d26f3b7092",
+    "Tests/results_monitor_suite.json": "765fa5641afe85097e1c29d5a282626a671650404b09554e9d53a1ea77ccf400",
+    "Tests/results_16m.json": "8798dc10b2806d2e20c6981a9fd37834c23724cda6cf6b74f699cd33b9343d69"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "Only simulated hardware feedback; torque, traction, actual gray coverage and physical recovery are unverified.",
+    "Continuous BOTH-board loss still stops after2000ms; bounded probing cannot guarantee finding an arbitrary displaced line."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "firmware": "UARTCH4_16V_STABLE4",
+  "checks": 407,
+  "cases": {
+    "unchanged_control_files": 16,
+    "motion_functions": 13,
+    "shadow_no_actuation": 1,
+    "no_hidden_map_veto": 1,
+    "shadow_route_execution": 1,
+    "single_gray_recovery": 2,
+    "both_white_deadline": 1,
+    "gyro_sign_root_turns": 8,
+    "n011_body_masks": 64
+  },
+  "failures": [],
+  "axf_sha256": "e3f3ba49beecf48cbe028fd1fd89543f5aaf53d6f9da2f544247e4dc40fd3935",
+  "hardware_tested": false
+}

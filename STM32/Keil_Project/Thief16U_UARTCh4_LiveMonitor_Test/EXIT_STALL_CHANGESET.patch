@@ -1,0 +1,413 @@
+--- MONITOR4/User/App_ThiefStrategy.c
++++ MONITOR5/User/App_ThiefStrategy.c
+@@ -139,6 +139,8 @@
+ static uint32_t hide_align_tick,hide_log_tick;
+ static RoadHeadingControl_t hide_heading;
+ static uint8_t turn_exit_active,turn_exit_line_phase,turn_exit_drive_enabled,turn_exit_trim_started;
++static uint8_t turn_exit_boost,turn_exit_return_used,turn_exit_return_driving;
++static int8_t turn_exit_return_sign;
+ static uint32_t turn_exit_tick,turn_exit_log_tick;
+ static int16_t turn_exit_best_error;
+ static int32_t turn_exit_line_counts;
+@@ -1234,6 +1236,12 @@
+   return 1U;
+ }
+ 
++/* Filtered side pixels are a steering cue, never an observed road exit/node. */
++static uint8_t Route_SideLineHint(uint16_t raw)
++{
++  return (uint8_t)(raw && (!(raw&0x00FFU) || !(raw&0x0FF0U)));
++}
++
+ static void Route_TurnExitRecover(uint32_t now,uint32_t elapsed_ms,RouteGraySample_t *sample)
+ {
+   RoadHeadingInput_t in;RoadHeadingOutput_t heading;
+@@ -1253,7 +1261,7 @@
+   } else map_gray_missing_active=0U;
+   Route_UpdateJunctionArm(front_state);
+   magnitude=(int16_t)(error<0?-(int32_t)error:error);
+-  visible_exit=(uint8_t)(front_state==ROUTE_GRAY_VALID &&
++  visible_exit=(uint8_t)(front_state==ROUTE_GRAY_VALID && !Route_SideLineHint(sample->front_raw12) &&
+       magnitude<=ROUTE_MAP_GRAY_YAW_TOL_X100);
+   /* On a committed edge a wide black frame can be the real next junction,
+    * not a failed narrow exit. Check actual map shape, distance and yaw before
+@@ -1278,6 +1286,17 @@
+   if(!turn_exit_line_phase && (int32_t)magnitude+100L<=turn_exit_best_error) {
+     turn_exit_best_error=magnitude;turn_exit_tick=now;
+   }
++  if(!turn_exit_line_phase && !turn_exit_boost && magnitude>ROUTE_MAP_GRAY_YAW_TOL_X100 &&
++      (uint32_t)(now-turn_exit_tick)>=500U) {
++    /* Low-RPM PI can stall below breakaway torque. Use the same measured
++     * four-wheel20ms PWM pulses already used for refuge alignment. */
++    turn_exit_boost=1U;Route_BrakeControl();turn_exit_drive_enabled=0U;
++    RoadHeading_Reset(&turn_exit_heading,now);
++    UartDebug_Printf("TURN_EXIT_BOOST N=%u ERROR=%d RAW=%03X,%03X\r\n",
++        (unsigned)thief_localization.confirmed_node,(int)error,
++        (unsigned)sample->front_raw12,(unsigned)sample->rear_raw12);
++    return;
++  }
+   if(!turn_exit_line_phase && !visible_exit &&
+       magnitude<=ROUTE_MAP_GRAY_YAW_TOL_X100 &&
+       (uint32_t)(now-turn_exit_tick)>=MAP_ROUTE_ALIGN_TIMEOUT_MS) {
+@@ -1295,6 +1314,7 @@
+    * ExitReady still gates the real leg commit; no synthetic node/gray fix.
+    * Once an in-place trim has started, finish its measured brake first. */
+   if(!turn_exit_line_phase && !turn_exit_trim_started && front_state==ROUTE_GRAY_VALID &&
++      !Route_SideLineHint(sample->front_raw12) &&
+       error>=-ROUTE_MAP_GRAY_YAW_TOL_X100 && error<=ROUTE_MAP_GRAY_YAW_TOL_X100) {
+     turn_exit_active=0U;
+     Route_EnterFollow(now,0U,ROUTE_AFTER_TURN_START_RPM_X10,1U);
+@@ -1302,9 +1322,11 @@
+   }
+   if((uint32_t)(now-turn_exit_log_tick)>=100U) {
+     char text[160];turn_exit_log_tick=now;
+-    (void)snprintf(text,sizeof(text),"TURN_EXIT_RECOVER N=%u PH=%u ERROR=%d RAW=%03X MODE=%u\r\n",
++    (void)snprintf(text,sizeof(text),"TURN_EXIT_RECOVER N=%u PH=%u ERROR=%d RAW=%03X MODE=%u REAR=%03X FS=%u RS=%u BOOST=%u LOST_MS=%lu\r\n",
+         (unsigned)thief_localization.confirmed_node,(unsigned)turn_exit_line_phase,
+-        (int)error,(unsigned)sample->front_raw12,(unsigned)TravelFrame_IsReverse());
++        (int)error,(unsigned)sample->front_raw12,(unsigned)TravelFrame_IsReverse(),
++        (unsigned)sample->rear_raw12,(unsigned)front_state,(unsigned)rear_state,
++        (unsigned)turn_exit_boost,(unsigned long)(map_gray_missing_active?now-map_gray_missing_tick:0U));
+     (void)UartDebug_TrySendString(text);
+   }
+   if(!turn_exit_line_phase) {
+@@ -1312,15 +1334,26 @@
+     in.stopped=Route_AllWheelsStopped();in.direction_known=1U;
+     /* Recovered gray accepts the user's10degree range even after trim began.
+      * UpdateTurn still measures standstill and a fresh yaw before translation. */
+-    RoadHeading_UpdateTurn(&turn_exit_heading,&in,now,
++    if(turn_exit_boost)RoadHeading_UpdatePulse(&turn_exit_heading,&in,now,
++        ROUTE_MAP_GRAY_YAW_TOL_X100,&heading);
++    else RoadHeading_UpdateTurn(&turn_exit_heading,&in,now,
+         ROUTE_MAP_GRAY_YAW_TOL_X100,&heading);
+     if(heading.brake) {Route_BrakeControl();turn_exit_drive_enabled=0U;}
+     else {
+       turn_exit_trim_started=1U;
+-      if(!turn_exit_drive_enabled) {Route_ResetControl(1U);turn_exit_drive_enabled=1U;}
+-      TravelFrame_SetWheelTargets(heading.turn_x10,-heading.turn_x10,heading.turn_x10,-heading.turn_x10);
+-      ChassisSpeedControl_Update(elapsed_ms);
+-      if(ChassisSpeedControl_HasStall()) {Route_StopFault("STALL");return;}
++      if(turn_exit_boost) {
++        int32_t pwm=heading.turn_x10>0?ROUTE_TURN_EQUAL_PWM:-ROUTE_TURN_EQUAL_PWM;
++        Chassis_Enable();turn_exit_drive_enabled=1U;
++        Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_LEFT,pwm);
++        Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_RIGHT,-pwm);
++        Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_LEFT,pwm);
++        Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_RIGHT,-pwm);
++      } else {
++        if(!turn_exit_drive_enabled) {Route_ResetControl(1U);turn_exit_drive_enabled=1U;}
++        TravelFrame_SetWheelTargets(heading.turn_x10,-heading.turn_x10,heading.turn_x10,-heading.turn_x10);
++        ChassisSpeedControl_Update(elapsed_ms);
++        if(ChassisSpeedControl_HasStall()) {Route_StopFault("STALL");return;}
++      }
+     }
+     if(!heading.ready)return;
+     turn_exit_line_phase=1U;turn_exit_tick=now;turn_exit_line_counts=MapRoutePosition_ForwardCounts();
+@@ -1341,7 +1374,42 @@
+         (unsigned)TravelFrame_IsReverse());
+     return;
+   }
+-  line.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID);
++  if(turn_exit_line_phase==2U && !turn_exit_return_used &&
++      front_state==ROUTE_GRAY_NO_LINE && rear_state==ROUTE_GRAY_NO_LINE &&
++      magnitude<=ROUTE_MAP_GRAY_YAW_TOL_X100 && (uint32_t)(now-turn_exit_tick)>=200U) {
++    int32_t mm=MapRoutePosition_DistanceMm(turn_exit_line_counts);
++    if(mm>10L || mm< -10L) {
++      turn_exit_line_phase=3U;turn_exit_return_used=1U;turn_exit_return_driving=0U;
++      turn_exit_return_sign=mm>0L?-1:1;turn_exit_tick=now;
++      Route_BrakeControl();turn_exit_drive_enabled=0U;
++      UartDebug_Printf("TURN_EXIT_RETURN N=%u MM=%ld RAW=%03X,%03X\r\n",
++          (unsigned)thief_localization.confirmed_node,(long)mm,
++          (unsigned)sample->front_raw12,(unsigned)sample->rear_raw12);return;
++    }
++  }
++  if(turn_exit_line_phase==3U) {
++    int32_t mm=MapRoutePosition_DistanceMm(turn_exit_line_counts);
++    uint8_t found=(uint8_t)(front_state==ROUTE_GRAY_VALID || rear_state==ROUTE_GRAY_VALID ||
++        Route_SideLineHint(sample->front_raw12));
++    if(found || (turn_exit_return_sign<0?mm<=10L:mm>=-10L) || magnitude>ROUTE_MAP_GRAY_YAW_TOL_X100) {
++      Route_BrakeControl();turn_exit_drive_enabled=0U;turn_exit_line_phase=2U;turn_exit_tick=now;
++      RestartLineSearch_BeginScan(&turn_exit_line,last_leading_error);return;
++    }
++    if(!turn_exit_return_driving) {
++      Route_BrakeControl();
++      if(!Route_AllWheelsStopped() || (int32_t)(yaw.stamp_ms-turn_exit_tick)<=0L)return;
++      Route_ResetControl(1U);turn_exit_return_driving=1U;turn_exit_drive_enabled=1U;
++    }
++    {
++      int16_t turn=RoadHeading_Correction(error,200);
++      int16_t base=(int16_t)(500*turn_exit_return_sign);
++      TravelFrame_SetWheelTargets(base+turn,base-turn,base+turn,base-turn);
++      ChassisSpeedControl_Update(elapsed_ms);
++      if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
++    }
++    return;
++  }
++  line.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID || Route_SideLineHint(sample->front_raw12));
+   line.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
+   line.leading_error=sample->front_error_x100;line.trailing_error=sample->rear_error_x100;
+   line.yaw_known=1U;line.yaw_cw_x100=error;line.stopped=Route_AllWheelsStopped();
+@@ -1349,6 +1417,9 @@
+       (uint8_t)(turn_exit_line_phase==1U && rear_state!=ROUTE_GRAY_I2C_ERROR &&
+        MapRoutePosition_DistanceMm(turn_exit_line_counts)> -100L &&
+        MapRoutePosition_DistanceMm(turn_exit_line_counts)<100L),&motion);
++  if(front_state!=ROUTE_GRAY_VALID || Route_SideLineHint(sample->front_raw12)) {
++    motion.ready=0U;turn_exit_line.line_count=0U;
++  }
+   if(motion.failed) {
+     RestartLineSearch_BeginScan(&turn_exit_line,last_leading_error);
+     Route_BrakeControl();turn_exit_drive_enabled=0U;return;
+@@ -1387,6 +1458,7 @@
+   front_recovery_valid_count = 0U;
+   map_gray_active=0U;turn_exit_active=0U;
+   map_gray_missing_active=0U;
++  turn_exit_boost=0U;turn_exit_return_used=0U;turn_exit_return_driving=0U;
+   if(cause==ROUTE_GRAY_NO_LINE &&
+       (route_state==ROUTE_STATE_FOLLOW || route_state==ROUTE_STATE_MAP_PASS ||
+        route_state==ROUTE_STATE_LEAVE_START || route_state==ROUTE_STATE_AFTER_TURN_FORWARD) &&
+@@ -1467,7 +1539,8 @@
+ {
+   LineFollowPID_Output_t control;
+   int32_t gain_pct = ROUTE_PID_CENTER_GAIN_PCT;
+-  uint8_t map_stable = (front_state == ROUTE_GRAY_VALID) ? 1U : 0U;
++  uint8_t map_stable = (uint8_t)(front_state==ROUTE_GRAY_VALID &&
++      !Route_SideLineHint(sample->front_raw12));
+   const MapRouteStep_t *map_step = departure_turn ? &thief_localization.step :
+       MapRouteNavigator_Current(&map_nav);
+ 
+@@ -1588,7 +1661,7 @@
+     map_gray_active=0U;
+     Route_HandleJunction(now,elapsed_ms,front_state,sample->front_raw12);return;
+   }
+-  input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID);
++  input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID || Route_SideLineHint(sample->front_raw12));
+   input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
+   input.leading_error=sample->front_error_x100;input.trailing_error=sample->rear_error_x100;
+   input.yaw_known=1U;
+@@ -1596,6 +1669,9 @@
+   input.stopped=Route_AllWheelsStopped();
+   RestartLineSearch_Probe(&map_gray_search,&input,
+       (uint8_t)(mm-map_gray_start_mm> -100L && mm-map_gray_start_mm<100L),&output);
++  if(front_state!=ROUTE_GRAY_VALID || Route_SideLineHint(sample->front_raw12)) {
++    output.ready=0U;map_gray_search.line_count=0U;
++  }
+   if((uint32_t)(now-map_gray_log_tick)>=100U) {
+     char line[200];map_gray_log_tick=now;
+     (void)snprintf(line,sizeof(line),
+@@ -1619,7 +1695,7 @@
+     Route_ResetControl(1U);map_gray_braked=0U;
+     follow_smoothing.base_rpm_x10=front_resume_base_rpm_x10;
+   }
+-  if(input.leading_valid) {
++  if(front_state==ROUTE_GRAY_VALID && !Route_SideLineHint(sample->front_raw12)) {
+     /* Track the actually visible front line at the previous normal speed
+      * while the existing three-frame check completes. A scan/brake phase
+      * returned above and cannot enter this path while still rotating. */
+@@ -2189,7 +2265,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR4 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR5 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2212,7 +2288,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR4 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR5 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2262,7 +2338,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR4 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR5 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- MONITOR4/Control/RestartLineSearch.c
++++ MONITOR5/Control/RestartLineSearch.c
+@@ -82,7 +82,9 @@
+   if(in->yaw_known && !in->leading_valid && !in->trailing_valid &&
+       allow_translate && s->phase==TRACK &&
+       in->yaw_cw_x100>=-1000 && in->yaw_cw_x100<=1000) {
+-    int16_t turn=Clamp(((int32_t)s->bias*400-in->yaw_cw_x100)/2,200);
++    /* With neither board visible, the mapped axis is the evidence we have;
++     * do not invent a4degree bend from an old/default side bias. */
++    int16_t turn=Clamp(-(int32_t)in->yaw_cw_x100/2,200);
+     s->line_count=0U;
+     out->left_x10=(int16_t)(500+turn);out->right_x10=(int16_t)(500-turn);
+     out->brake=0U;out->ready=0U;out->failed=0U;return;
+--- MONITOR4/Tests/test_exit_stall.py
++++ MONITOR5/Tests/test_exit_stall.py
+@@ -0,0 +1,122 @@
++"""214751 stagnant yaw/side gray and214323 blind probe; simulated hardware."""
++from pathlib import Path
++import sys,json,hashlib
++src=Path(__file__).with_name('test_documents15.py').read_text(encoding='utf-8').split('parking_pwm=[]')[0]
++src=src.replace('Tests/before_documents15/original.axf','Tests/before_exit_stall/original.axf')
++exec(compile(src,str(Path(__file__).with_name('test_documents15.py')),'exec'))
++src=Path(__file__).with_name('test_documents24.py').read_text(encoding='utf-8')
++exec(src[src.index('def pending('):src.index('def slow_correction(')])
++pwm=[]
++def capture_pwm():
++    v=u.reg_read(UC_ARM_REG_R1);v=v-2**32 if v>=2**31 else v
++    pwm.append((u.reg_read(UC_ARM_REG_R0),v));return 0
++hook('Chassis_SetWheelLogicalPwm',capture_pwm)
++cue_error=0
++def cue_read():
++    result=readgray()
++    record(u.reg_read(UC_ARM_REG_R0),'RouteGraySample_t',dict(front_error_x100=cue_error))
++    return result
++hook('Route_ReadFront',cue_read)
++
++def stagnant_yaw():
++    global yaw,gray_raw,gray_state,rear_valid,clock
++    for mode in [0,1]:
++      for sign in [-1,1]:
++        pending(mode,sign);yaw=sign*q*(9000-1546);gray_raw=0xc00;gray_state=4;rear_valid=1;pwm.clear()
++        for _ in range(35):tick()
++        check(pwm and len(pwm)%4==0,'stagnant15.46degree yaw must escalate to four-wheel measured PWM pulses')
++        check(all(abs(v)==550 for _,v in pwm),'fallback reuses verified normal-turn PWM550')
++        check(sum(v for _,v in pwm[-4:])==0,'boost is rotation, not blind translation outside10degrees')
++        yaw=sign*q*(9000-500)
++        for _ in range(20):tick()
++        check(var('turn_exit_line_phase')==1,'fresh observed correction may enter original10degree search')
++    return 4
++
++def side_guidance():
++    global yaw,gray_raw,gray_state,rear_valid,targets,cue_error
++    for mode in [0,1]:
++     for raw,error in [(0xc00,-500),(0x003,500),(0x800,-550),(0x001,550)]:
++      pending(mode,1);yaw=q*(9000-100);rear_valid=2
++      for _ in range(10):tick()
++      gray_raw=raw;gray_state=1 if raw in (0x800,1) else 4;cue_error=error;targets.clear()
++      for _ in range(8):tick()
++      check(any(l+r>0 for l,r,*_ in targets),'side-only leading black must guide bounded search instead of stationary sweep')
++      check(any((l-r)*error>0 for l,r,*_ in targets),'actual side gray must steer toward observed side, not stale/default bias')
++      check(member('thief_localization','phase')==2,'side fragment cannot certify outgoing edge')
++      cue_error=0
++    return 8
++
++def boost_stop_and_fresh_yaw():
++    global yaw,gray_raw,gray_state,rear_valid,clock
++    pending();yaw=q*(9000-1546);gray_raw=0xc00;gray_state=4
++    ret('Route_AllWheelsStopped',0);pwm.clear()
++    for _ in range(25):
++        tick()
++        if 'turn_exit_boost' in symbols and var('turn_exit_boost'):break
++    stamp=clock
++    for _ in range(2):tick()
++    check(not pwm,'boost must measure standstill before first PWM pulse')
++    ret('Route_AllWheelsStopped',1)
++    hook('JY61P_GetLastUpdateMs',lambda:stamp)
++    for _ in range(3):tick()
++    check(not pwm,'old yaw cannot authorize a new boost pulse')
++    hook('JY61P_GetLastUpdateMs',lambda:clock)
++    for _ in range(8):tick()
++    check(pwm,'standstill and fresh yaw authorize measured recovery pulse')
++    return 1
++
++def failed_probe_return():
++    global yaw,gray_raw,gray_state,rear_valid,clock,odom
++    for mode in [0,1]:
++      for sign in [-1,1]:
++        pending(mode,sign);yaw=sign*q*(9000-100);rear_valid=2
++        for _ in range(10):tick()
++        odom=100;tick();targets.clear()
++        ret('Route_AllWheelsStopped',0)
++        for _ in range(18):tick()
++        check(not any(l+r<0 for l,r,*_ in targets),'return cannot reverse moving wheels')
++        ret('Route_AllWheelsStopped',1)
++        for _ in range(8):tick()
++        check(any(l+r<0 for l,r,*_ in targets),'failed100mm probe must retrace toward its measured origin')
++        check(member('thief_localization','phase')==2,'probe return does not move confirmed node')
++        gray_raw=0x60;gray_state=1;targets.clear();tick()
++        check(not targets,'line caught while rewinding must brake before forward follow')
++        for _ in range(18):tick()
++        check(member('thief_localization','phase')==1,'real recovered line permits measured-stop exit handoff')
++    return 4
++
++def return_origin_bound():
++    global yaw,gray_raw,gray_state,rear_valid,clock,odom
++    pending();yaw=q*(9000-100);rear_valid=2
++    for _ in range(10):tick()
++    odom=100
++    for _ in range(25):tick()
++    check(var('turn_exit_line_phase')==3,'return stage really reached')
++    odom=5;targets.clear();tick()
++    check(var('turn_exit_line_phase')==2 and not targets,'measured origin stops reverse probing')
++    odom=100;targets.clear()
++    for _ in range(20):tick()
++    check(not any(l+r<0 for l,r,*_ in targets),'one failed probe must not rewind repeatedly')
++    check(member('thief_localization','confirmed_node')==37,'return envelope cannot fabricate node')
++    return 1
++
++def continuous_loss_still_stops():
++    global yaw,gray_raw,gray_state,rear_valid,clock,odom
++    pending();yaw=q*(9000-100);rear_valid=2
++    for _ in range(10):tick()
++    odom=100
++    for _ in range(110):
++        clock+=20;call('App_ThiefStrategy_Task')
++    check(not var('route_active') and reason()=='GRAY_BOTH_NO_LINE','return/scan must not renew continuous2second loss clock')
++    return 1
++
++failures=[];cases={}
++for fn in [stagnant_yaw,side_guidance,boost_stop_and_fresh_yaw,failed_probe_return,return_origin_bound,continuous_loss_still_stops]:
++    try:cases[fn.__name__]=fn();print(fn.__name__+': PASS',flush=True)
++    except AssertionError as exc:failures.append(dict(case=fn.__name__,error=str(exc)));print(fn.__name__+': FAIL '+str(exc),flush=True)
++    finally:
++        cue_error=0;ret('Route_AllWheelsStopped',1);hook('JY61P_GetLastUpdateMs',lambda:clock)
++result=dict(checks=checks,failures=failures,cases=cases,hardware_tested=False,
++ axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),test_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
++out=ROOT/'Tests'/('before_exit_stall/regression_before.json' if '--before' in sys.argv else 'results_exit_stall.json')
++out.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8');print(json.dumps(result,indent=2));sys.exit(bool(failures))
+--- MONITOR4/README.md
++++ MONITOR5/README.md
+@@ -1,3 +1,17 @@
++# 16U MONITOR5：纠偏无进展脉冲、侧线引导与探线回摸
++
++当前UARTCH4_16U_MONITOR5，同名工程不变。MONITOR4源码/AXF与214323、214751日志保存在Tests/before_exit_stall；新增Tests/test_exit_stall.py，验收VALIDATION_MONITOR5.json。
++
++- 对N001的15.46度停滞：出口纠偏每有新鲜YAW至少1度改善更新进展计时；超过500ms无改善且仍超±10度，先测量停稳，再复用藏点纠偏已采用的四轮550PWM、20ms脉冲。每次脉冲后制动，等停稳和新鲜YAW再决定下一步，不把时间当角度、不把±10度放宽。正常转弯PWM和正常行驶速度不变。
++- C00/003等过滤后真实侧边黑色可引导50RPM找线，但不贡献出口连续有效帧，不能直接确认节点。领先板真正有效、原停稳/YAW/路口检查仍保留。地图文字侧屏蔽不取消。
++- 前后都无线的平移不再沿默认/旧4度偏向，优先保持地图道路轴。100mm探线失败后先停稳扫线，200ms仍无线时，测量停稳和制动后新鲜YAW，向本次探线原点回摸一次；碰到真实线、到原点附近或偏离±10度即制动再检查，绝不借此修改确认节点或重置2秒失线计时。只在出口恢复局部执行，不改TravelFrame路线方向。
++- 出口日志增加真实本次REAR、FS/RS分类、BOOST和LOST_MS，避免再用早期TW缓存猜停车瞬间灰度。左右800mm/前后1000mm、地图规划、原始激光、正常速度、五藏点与180ms入中心保持。
++
++前后连续无线2秒仍停车；这不是保证任意物理偏线都能恢复，也不是仅靠灰度完成绝对定位。测试以模拟硬件执行真实ARM控制代码，记录指令/状态，不代表已观察实车动力和牵引力。
++仅编译通过，尚未完成硬件验证。
++
++以下MONITOR4及更早内容为历史记录。
++
+ # 16U MONITOR4：地图方向探线与双板失线判断
+ 
+ 当前标识UARTCH4_16U_MONITOR4；工程名称不变。基线Tests/before_road_probe保留MONITOR3源码、AXF和203905/205445日志。
+--- MONITOR4/AGENTS.md
++++ MONITOR5/AGENTS.md
+@@ -1,4 +1,6 @@
+ # 本工程修改前必读
++
++最新MONITOR5，规范最前章节优先。新增无进展纠偏PWM脉冲、侧线仅引导、失败探线回摸原点一次；2秒双板失线、±10度、真实停稳/新YAW与实际路口确认不得被旁路。基线Tests/before_exit_stall，当前验收VALIDATION_MONITOR5.json。后文为历史。
+ 
+ 最新为MONITOR4地图方向探线版本，规范最前MONITOR4章节优先。基线Tests/before_road_probe，验收VALIDATION_MONITOR4.json。出口与道路恢复双板连续无线2秒终止，真实单板有线不得因2500ms/80或100mm辅助距离单独停车。盲探±100mm，真实灰度才确认路口；不可冒称全地图绝对重定位。以下MONITOR3描述为历史。
+ 
+--- MONITOR4/Docs/修改规范与回归清单.md
++++ MONITOR5/Docs/修改规范与回归清单.md
+@@ -1,4 +1,11 @@
+ # 修改规范与回归清单
++
++## 当前MONITOR5：无进展纠偏与短距离回摸
++
++针对214323 N004探线失败、214751 N001侧边C00且15.46度停滞。500ms新鲜YAW无至少1度改善且仍超10度时，测量停稳后复用四轮550PWM/20ms纠偏脉冲；脉冲间停稳和新鲜YAW不可省略，不把超时当成功。侧边黑色只引导、不累计有效出口帧，不绕过原地图灰度/文字区规则。
++双板无线探线保持地图轴，不沿默认4度偏向。100mm失败扫描200ms后，可测量停稳并在制动后新YAW支持下回摸本次原点一次，碰线/到原点/超10度即制动重检。回摸不重置2秒失线时钟，不改确认节点或路线TravelFrame。前后连续无线2000ms仍终止。正常速度/转弯/左右800前后1000及180ms保持。
++当前MONITOR5，基线Tests/before_exit_stall，新增Tests/test_exit_stall.py，差异EXIT_STALL_CHANGESET.patch，验收VALIDATION_MONITOR5.json。日志需保留本次双板参与控制的灰度值（经过文字区屏蔽）与分类，不能用旧TW证明当前可见线。
++仅编译通过，尚未完成硬件验证。
+ 
+ ## 当前MONITOR4：地图轴短距离探线
+ 

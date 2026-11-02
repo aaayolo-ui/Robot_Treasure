@@ -1,0 +1,20 @@
+{
+  "checks": 140,
+  "failures": [],
+  "passed": [
+    "straight_continuity",
+    "corroborated_recovery",
+    "both_missing_scan",
+    "unsupported_context",
+    "bounded_recovery",
+    "obstacle_priority"
+  ],
+  "hardware_tested": false,
+  "firmware_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "app_source_sha256": "06b6d8e087a952938e0be3eb7ac697c5da94a085e24d318f61c64d6189dea1ae",
+  "test_script_sha256": "2e00498ecf25d44cb903ae325b6869bc40e07ae6b73011315319f342e3a3f27b",
+  "helper_sha256": {
+    "test_app_runtime.py": "ee4d70293122a766d5f4b7fff277ea94cca760bc1cee6420c870182996261fc4",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878"
+  }
+}

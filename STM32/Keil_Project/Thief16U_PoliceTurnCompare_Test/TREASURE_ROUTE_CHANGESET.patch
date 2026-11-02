@@ -1,0 +1,237 @@
+--- MONITOR1/User/App_ThiefStrategy.c
++++ MONITOR2/User/App_ThiefStrategy.c
+@@ -206,6 +206,7 @@
+ static uint8_t replan_after_leg;
+ static uint8_t retreat_active;
+ static uint8_t map_distance_warned;
++static uint32_t map_leg_started_tick;
+ static uint8_t retreat_far_pending; /* 1=observe unconfirmed far node,2=leave it on real line. */
+ static uint8_t intercept_pending;
+ static uint8_t intercept_has_reversed;
+@@ -509,6 +510,7 @@
+   Route_MapContext();
+   map_leg_start_counts = MapRoutePosition_ForwardCounts();
+   map_progress_offset_mm = 0L;map_distance_warned=0U;retreat_far_pending=0U;
++  map_leg_started_tick=now;
+   node_centered=0U;node_stop_counts_valid=0U;
+   junction_armed=0U;junction_latched=0U;front_was_valid=0U;rearm_valid_count=0U;
+   branch_node=0U;branch_headings=0U;
+@@ -668,16 +670,26 @@
+ static uint16_t Route_FilterTreasureGray(uint16_t raw12, uint8_t leading)
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+-  /* FOLLOW also serves post-turn alignment before the incoming step is
+-   * advanced. Never use that old step's text side after a body rotation. */
+-  uint8_t approaching=(uint8_t)(!map_nav.arrived &&
+-      (route_state==ROUTE_STATE_FOLLOW || route_state==ROUTE_STATE_LEAVE_START ||
+-       route_state==ROUTE_STATE_FRONT_RECOVERY));
+-  uint8_t straight_pass=(uint8_t)(step!=NULL && step->action==MAP_ACTION_STRAIGHT &&
+-      (route_state==ROUTE_STATE_MAP_PASS ||
+-       (route_state==ROUTE_STATE_FRONT_RECOVERY && front_resume_state==ROUTE_STATE_MAP_PASS)));
+-  return TreasureGrayMask_Apply(step,(uint8_t)(route_active && (approaching || straight_pass)),
+-      leading,raw12);
++  if(!route_active || !step)return raw12;
++  if(map_nav.arrived || departure_turn) {
++    uint16_t node=departure_turn?step->from_node:step->to_node;
++    ThiefLocYaw_t yaw;int32_t best=18001L;uint8_t body,heading=0U;
++    if(node<3U || node>7U)return raw12;
++    Thief_LocalYaw(&yaw);
++    if(!yaw.valid || !thief_localization.yaw_cw_sign ||
++        (uint32_t)(SystemTime_GetMs()-yaw.stamp_ms)>THIEF_LOC_GYRO_STALE_MS)return raw12;
++    /* Do not use a stale incoming-step side after rotation. N007 starts
++     * north-facing and is unaffected; its west-facing phase filters north. */
++    for(body=0U;body<4U;body++) {
++      int32_t error=RoadHeading_AxisError(thief_localization.origin_yaw_x100,
++          thief_localization.origin_heading,body,thief_localization.yaw_cw_sign,yaw.yaw_x100);
++      if(error<0L)error=-error;
++      if(error<best){best=error;heading=body;}
++    }
++    heading=(uint8_t)((heading+2U*TravelFrame_IsReverse())%4U);
++    return TreasureGrayMask_AtNode(node,heading,leading,raw12);
++  }
++  return TreasureGrayMask_Apply(step,1U,leading,raw12);
+ }
+ 
+ static RouteGrayState_t Route_ReadFront(RouteGraySample_t *sample)
+@@ -1683,7 +1695,10 @@
+   /* A partial/opposite branch frame is not a node fix or a permanent fault.
+    * Validate real odometry/yaw before continuing along the existing axis;
+    * retry without consuming navigator state, history or junction count. */
+-  if(candidate && !map_nav.arrived && !ThiefLocalization_GrayMatchesStep(candidate,raw12)) {
++  if(candidate && !map_nav.arrived &&
++      (!ThiefLocalization_GrayMatchesStep(candidate,raw12) ||
++       (!retreat_active && (uint32_t)(now-map_leg_started_tick)<120U &&
++        Route_LegProgress()<60L))) {
+     ThiefLocYaw_t yaw;
+     Thief_LocalYaw(&yaw);
+     if(!ThiefLocalization_Update(&thief_localization,Route_LegProgress(),&yaw,SystemTime_GetMs())) {
+@@ -1792,6 +1807,7 @@
+   uint8_t turn_delta=0U;
+ 
+   map_distance_warned=0U;retreat_far_pending=0U;
++  map_leg_started_tick=SystemTime_GetMs();
+   restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+       thief_localization.phase==THIEF_LOC_AT_NODE &&
+@@ -2167,7 +2183,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR2 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2190,7 +2206,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR2 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2240,7 +2256,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR2 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- MONITOR1/Algorithm/MapRoute/TreasureGrayMask.c
++++ MONITOR2/Algorithm/MapRoute/TreasureGrayMask.c
+@@ -1,21 +1,21 @@
+ #include "TreasureGrayMask.h"
+ #include <stddef.h>
+ 
+-uint16_t TreasureGrayMask_Apply(const MapRouteStep_t *step, uint8_t enabled,
+-                               uint8_t leading, uint16_t gray12)
++uint16_t TreasureGrayMask_AtNode(uint16_t node,uint8_t heading,
++                                 uint8_t leading,uint16_t gray12)
+ {
+   uint16_t mask;
+-  if ((enabled == 0U) || (step == NULL)) return gray12;
+-  if ((step->from_node == 4U) && (step->to_node == 6U) &&
+-      (step->heading == 1U)) {
+-    /* East: north is travel-left. */
+-    mask = (leading != 0U) ? 0x0C00U : 0x0003U;
+-  } else if ((step->from_node == 6U) && (step->to_node == 4U) &&
+-             (step->heading == 3U)) {
+-    /* West: north is travel-right. */
+-    mask = (leading != 0U) ? 0x0003U : 0x0C00U;
+-  } else {
+-    return gray12;
+-  }
++  if(node<3U || node>7U || !(heading&1U) || heading>3U)return gray12;
++  /* Text is outside the north border. Exclude all four outer side sensors,
++   * preserving the four central line sensors and the real south branches.
++   * TravelFrame swaps physical boards; the trailing installation is mirrored. */
++  mask=((heading==1U && leading) || (heading==3U && !leading))?0x0F00U:0x000FU;
+   return (uint16_t)(gray12 & (uint16_t)~mask);
+ }
++uint16_t TreasureGrayMask_Apply(const MapRouteStep_t *step,uint8_t enabled,
++                               uint8_t leading,uint16_t gray12)
++{
++  if(!enabled || !step || step->from_node<3U || step->from_node>7U ||
++      step->to_node<3U || step->to_node>7U)return gray12;
++  return TreasureGrayMask_AtNode(step->from_node,step->heading,leading,gray12);
++}
+--- MONITOR1/Algorithm/MapRoute/TreasureGrayMask.h
++++ MONITOR2/Algorithm/MapRoute/TreasureGrayMask.h
+@@ -6,4 +6,7 @@
+  * TravelFrame already swaps physical boards in reverse mode. Text is north. */
+ uint16_t TreasureGrayMask_Apply(const MapRouteStep_t *step, uint8_t enabled,
+                                uint8_t leading, uint16_t gray12);
++/* Turn at a border node: heading is the measured current travel quadrant. */
++uint16_t TreasureGrayMask_AtNode(uint16_t node,uint8_t heading,
++                                 uint8_t leading,uint16_t gray12);
+ #endif
+--- MONITOR1/Algorithm/MapLocalization/ThiefLocalization.c
++++ MONITOR2/Algorithm/MapLocalization/ThiefLocalization.c
+@@ -64,6 +64,9 @@
+ {
+   uint8_t ports=0U,expected=0U;
+   if(!s || s->heading>3U || !ThiefMapPlanner_Node(s->to_node))return 0U;
++  /* A side-only text/edge fragment (007/003/00F) is not an intersection.
++   * A real candidate must also expose the line under the central sensors. */
++  if(!(raw&0x00F0U))return 0U;
+   /* Runtime 16J routes put the node degree in expected_ports; legacy ROM
+    * routes put a branch bitmask there. Derive actual relative roads instead. */
+   if(ThiefMapPlanner_HasRoad(s->to_node,(uint8_t)((s->heading+3U)%4U),NULL,NULL)) expected|=1U;
+--- MONITOR1/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ MONITOR2/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -197,10 +197,25 @@
+   if(plan==NULL || body_heading>3U)return 0U;
+   plan->valid=0U;back=(uint8_t)((body_heading+2U)%4U);
+   ThiefRiskSearch_SetEmergency(0U);
++  /* The north approach at N038 is escaped via the actual east runway:
++   * N038-N039-N040. Search a complete hide route before accepting it.
++   * A fresh east threat or either blocked edge keeps the ordinary fallback. */
++  if(current_node==38U && (threat_mask&1U) && !(threat_mask&2U) &&
++      (body_heading==1U || body_heading==3U)) {
++    ThiefRiskSearch_SetDepartureMask(2U);
++    ThiefRiskSearch_SetDepartureRunway(1U);
++    ThiefRiskSearch_SetApproachAvoidance(1U);
++    found=ThiefRiskSearch_Select(current_node,1U,(uint8_t)(body_heading==3U),1U,
++        threat_mask,0U,previous_hide_node,now,departure,&count,&mode,&decision);
++    ThiefRiskSearch_SetDepartureRunway(255U);
++    if(!found)found=ThiefRiskSearch_Select(current_node,1U,(uint8_t)(body_heading==3U),1U,
++        threat_mask,0U,previous_hide_node,now,departure,&count,&mode,&decision);
++    ThiefRiskSearch_SetDepartureMask(15U);
++  }
+   /* Latest user rule: prefer the actual opposite road for a single bearing.
+    * Search a complete legal refuge route; blocked/opposed exits still cannot
+    * override newer observations. Keep the rear travel frame where possible. */
+-  if(threat_mask && !(threat_mask&(uint8_t)(threat_mask-1U))) {
++  if(!found && threat_mask && !(threat_mask&(uint8_t)(threat_mask-1U))) {
+     uint8_t threat=0U,away;
+     while(!(threat_mask&(1U<<threat)))threat++;
+     away=(uint8_t)((threat+2U)%4U);
+--- MONITOR1/Algorithm/ThiefStrategy/ThiefRiskSearch.c
++++ MONITOR2/Algorithm/ThiefStrategy/ThiefRiskSearch.c
+@@ -19,6 +19,7 @@
+ static uint8_t exposed[MAP_ROUTE_NODE_COUNT];
+ static uint8_t emergency;
+ static uint8_t departure_mask=15U;
++static uint8_t departure_runway=255U;
+ static uint8_t avoid_approach;
+ void ThiefRiskSearch_SetApproachAvoidance(uint8_t enabled) {avoid_approach=enabled;}
+ 
+@@ -44,6 +45,7 @@
+   return 0U;
+ }
+ void ThiefRiskSearch_SetDepartureMask(uint8_t mask) {departure_mask=(uint8_t)(mask&15U);}
++void ThiefRiskSearch_SetDepartureRunway(uint8_t heading) {departure_runway=heading;}
+ void ThiefRiskSearch_SetEmergency(uint8_t enabled) {emergency=enabled;}
+ 
+ static uint16_t State(uint16_t node,uint8_t heading,uint8_t mode)
+@@ -54,7 +56,7 @@
+ void ThiefRiskSearch_Init(void)
+ {
+   uint16_t n;
+-  emergency=0U;departure_mask=15U;avoid_approach=0U;
++  emergency=0U;departure_mask=15U;departure_runway=255U;avoid_approach=0U;
+   for(n=0U;n<MAP_ROUTE_NODE_COUNT;n++) {exposed[n]=0U;exposed_at[n]=0UL;}
+ }
+ void ThiefRiskSearch_MarkExposed(uint16_t node,uint32_t now)
+@@ -193,6 +195,7 @@
+       if(map_route_nodes[from-1U].kind==0U && delta!=0U) continue;
+       if(!emergency && ThiefIntercept_EdgeBlocked(from,to,now)) continue;
+       if(pick==root && !(departure_mask&(1U<<out)))continue;
++      if(departure_runway<4U && parent[pick]==root && out!=departure_runway)continue;
+       if(pick==root && !emergency && (threat_mask&(1U<<out))) continue;
+       next_mode=(uint8_t)((pick&1U)^((delta==2U)?1U:0U));
+       turn=(delta==1U || delta==3U)?1U:0U;
+--- MONITOR1/Algorithm/ThiefStrategy/ThiefRiskSearch.h
++++ MONITOR2/Algorithm/ThiefStrategy/ThiefRiskSearch.h
+@@ -29,6 +29,8 @@
+ void ThiefRiskSearch_SetApproachAvoidance(uint8_t enabled);
+ /* Only the first physical departure is constrained; reset to15 after use. */
+ void ThiefRiskSearch_SetDepartureMask(uint8_t mask);
++/* Optional second-edge runway; 255 disables it after the preference search. */
++void ThiefRiskSearch_SetDepartureRunway(uint8_t heading);
+ void ThiefRiskSearch_MarkExposed(uint16_t node,uint32_t now);
+ uint8_t ThiefRiskSearch_Select(uint16_t start,uint8_t heading,uint8_t mode,
+     uint8_t axis_only,uint8_t threat_mask,uint16_t blocked,uint16_t previous,

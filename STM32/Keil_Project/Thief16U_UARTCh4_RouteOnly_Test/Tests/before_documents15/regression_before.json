@@ -1,0 +1,24 @@
+{
+  "checks": 22,
+  "failures": [
+    {
+      "case": "parking_cases",
+      "error": "approach steers against observed heading error"
+    },
+    {
+      "case": "turns",
+      "error": "no latched fault at N078: FRONT_NO_LINE"
+    }
+  ],
+  "passed": [],
+  "cases": {},
+  "hardware_tested": false,
+  "firmware_sha256": "8f378f78cf58996e79e32572e2ac4cf5770c04883415df461abf704792d3fa96",
+  "app_source_sha256": "fc1d6ff031252a901201cdbc47570dbbc9671887be6dcb3dc95e176d59b1f373",
+  "test_script_sha256": "e39cd20d9881a7c5f543e6486db51bf353a6d043ef7968b08cb1e5c96acd1ab5",
+  "helper_sha256": {
+    "test_app_runtime.py": "0aed8aa532491558e6da158bf0a699e94cfc5db2c7df5aa4c1ed87cb5a414203",
+    "test_escape_completion.py": "01e21ac4f1cc7ec209652dba825fe3e2a6eefd7d7488bd5ac303e43ac785ce9e",
+    "test_documents13.py": "1bac297603ebe91518075f530493365ebc5a0389bbf9e5ee7c9de8545d7af994"
+  }
+}

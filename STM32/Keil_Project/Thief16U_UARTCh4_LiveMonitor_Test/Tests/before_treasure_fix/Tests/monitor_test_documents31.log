@@ -1,0 +1,404 @@
+mismatch_retry: PASS
+full_black_next_junction: PASS
+emergency_clear_departure: PASS
+scan_junction_brake: PASS
+{
+  "checks": 7774,
+  "failures": [],
+  "cases": {
+    "mismatch_retry": [
+      {
+        "frames": 783,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          68,
+          84,
+          85,
+          76,
+          70,
+          61,
+          49,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          13,
+          12,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 464,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          46,
+          40,
+          39,
+          38,
+          37,
+          20,
+          10,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    ],
+    "full_black_next_junction": [
+      {
+        "frames": 497,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          58,
+          46,
+          40,
+          39,
+          38,
+          37,
+          20,
+          10,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 560,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          68,
+          58,
+          46,
+          40,
+          39,
+          38,
+          37,
+          20,
+          10,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 497,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          58,
+          46,
+          40,
+          39,
+          38,
+          37,
+          20,
+          10,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 560,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          68,
+          58,
+          46,
+          40,
+          39,
+          38,
+          37,
+          20,
+          10,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 751,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          84,
+          85,
+          76,
+          70,
+          61,
+          49,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          13,
+          12,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 691,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          85,
+          76,
+          70,
+          61,
+          49,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          13,
+          12,
+          11
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 751,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          84,
+          85,
+          76,
+          70,
+          61,
+          49,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          13,
+          12,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 691,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          85,
+          76,
+          70,
+          61,
+          49,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          13,
+          12,
+          11
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    ],
+    "emergency_clear_departure": {
+      "first": 77,
+      "heading": 3,
+      "goal": 38,
+      "completion": {
+        "frames": 569,
+        "node": 38,
+        "body": 3,
+        "fixes": [
+          77,
+          76,
+          75,
+          59,
+          58,
+          46,
+          40,
+          39,
+          38
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    "scan_junction_brake": {
+      "frames": 497,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        58,
+        46,
+        40,
+        39,
+        38,
+        37,
+        20,
+        10,
+        11
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    }
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "b2205b6197523eae5ef83b4e801688401aeb493d9ce64ae3cd6e49a62ea675ba",
+  "app_source_sha256": "1d75bad867788f130a2c813174637e536601e1c48911a2ea06c686355851dfbc",
+  "test_script_sha256": "5bade539c6ca2ffb0ec0300f852b9c6e7cc591e8e160ad736982be03b0438f5b",
+  "helper_sha256": {
+    "test_documents15.py": "956fedafa7ea99b584c1721a9b430c36e9a707161ebf37fb69d28abcbfe957b5",
+    "test_app_runtime.py": "d2d3dcd4503a0d14561fdea52540df7904ee0982e9930b785283f96cd042994a",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "a80cb0e4dec3b143d96eab7bb1509b748bb882fd62685d7435e6ba52e460976a"
+  }
+}

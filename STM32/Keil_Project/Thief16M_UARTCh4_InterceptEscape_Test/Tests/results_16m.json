@@ -1,0 +1,21 @@
+{
+  "test_checks": 62425,
+  "test_failures": 0,
+  "test_first_line": 0,
+  "test_case": 378,
+  "test_done": 1,
+  "elapsed_seconds": 13.563,
+  "scope": "ARMCC5 actual algorithm and localization on CPU emulation; no motor/hardware execution",
+  "source_sha256": {
+    "Tests/test_16m.c": "087af9833171883b80b08e4eec8f959351f06330c8a53c12cf172040887e36e4",
+    "Algorithm/ThiefStrategy/ThiefInterceptPolicy.c": "0da85b1aed16bd0926ef94608c9e8984ec852f6f536a3eb68a9cdac3c9909d2d",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "f4c51f52c669065678154794fc34d5e30cd8ec1d9b0f4c4c4cf3022fb93d2a4e",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c": "073a312b8426ca7bb21fe63cce999405304499b2ba571b67bf182a08f3a53943",
+    "Algorithm/ThiefStrategy/ThiefThreatModel.c": "930bfeb4998c2d1c0092a0a14b0f919f40c17a194d3e100f1b57fb855dc37c26",
+    "Algorithm/ThiefStrategy/FrontLaserGate.c": "bba2278812eade74f44ca5343d633521bed8392b45eb32d0647ea4d90b348259",
+    "Algorithm/MapLocalization/ThiefLocalization.c": "303229be39841e2e26dad8dd2d33c9af3bb230bdaa21f66be474809e5a6dad72",
+    "Algorithm/MapLocalization/MapLaserMask.c": "ed832f14e3e588648825eee64a6cdb1c0e92c7cde9f43d0c18c9a831c58d2af7",
+    "Algorithm/MapRoute/MapRoutePlan.c": "c7066594d5204c7fa0c0db4a8ef0d1511d47a9f88dd4a96b21285b6f6bd24575",
+    "Algorithm/MapRoute/MapRouteNavigator.c": "aa3ac346d8bf742f92ef06f85b3029d26e753353f823bb3782f0a50a0889f3f2"
+  }
+}

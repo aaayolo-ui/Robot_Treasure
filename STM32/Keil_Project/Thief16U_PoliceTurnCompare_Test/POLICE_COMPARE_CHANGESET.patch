@@ -1,0 +1,136 @@
+--- MONITOR12/User/App_ThiefStrategy.c
++++ COMPARE1/User/App_ThiefStrategy.c
+@@ -47,7 +47,7 @@
+ #define ROUTE_TURN_STOP_STABLE_SAMPLES        2U
+ #define ROUTE_TURN_GYRO_WAIT_MS             500U
+ #define ROUTE_TURN_TIMEOUT_MS              4000U
+-#define ROUTE_TURN_TARGET_ANGLE_X100       7500L /* Unknown gyro sign:75deg coarse turn, then measured brake/gray. */
++#define ROUTE_TURN_TARGET_ANGLE_X100       4500L /* Police baseline: relative45deg, then actual gray acquisition. */
+ #define ROUTE_JY61P_STALE_MS                150U /* No fresh angle during turn: stop safely. */
+ #define ROUTE_JUNCTION_WATCH_PERIOD_MS        5U /* PID period is in LineFollowPID.h. */
+ #define MAP_ROUTE_PASS_TIMEOUT_MS         1800U
+@@ -213,8 +213,6 @@
+ static int16_t last_leading_error;
+ static uint8_t last_leading_mode;
+ static uint32_t restart_log_tick;
+-static uint8_t turn_axis_active;
+-static RoadHeadingControl_t turn_axis_heading;
+ static uint32_t yaw_reference_since,yaw_reference_last,yaw_reference_apply;
+ static int32_t yaw_reference_mm;
+ static int16_t yaw_reference_sample;
+@@ -1010,14 +1008,8 @@
+ 
+ static uint8_t Route_HasReachedTurnAngle(int16_t current_angle_x100)
+ {
+-  ThiefLocYaw_t yaw;int16_t error;
+   int32_t delta = (int32_t)Route_TurnAngleDeltaX100(current_angle_x100,
+                                                     turn_start_angle_x100);
+-
+-  /* Fast rotation for the large angle, then brake and pulse-trim the final
+-   *15degrees. The map axis includes skew already present before this turn. */
+-  if(thief_localization.yaw_cw_sign &&
+-      Route_TurnExitContext(&error,&yaw))return (uint8_t)(error>=-1500 && error<=1500);
+ 
+   if (delta < 0L)
+   {
+@@ -1104,19 +1096,6 @@
+   UartDebug_Printf("TURN_DONE=%s START=%d CURRENT=%d DELTA=%d\r\n",
+                    finish_reason, (int)turn_start_angle_x100,
+                    (int)current_angle_x100, (int)delta);
+-  {
+-    const MapRouteStep_t *step=departure_turn?&thief_localization.step:MapRouteNavigator_Current(&map_nav);
+-    uint16_t node=step?(departure_turn?step->from_node:step->to_node):0U;
+-    turn_axis_active=(uint8_t)(step &&
+-        (step->action==MAP_ACTION_LEFT || step->action==MAP_ACTION_RIGHT));
+-    if(turn_axis_active) {
+-      /* The legacy45degree spin is coarse acquisition only here. No forward
+-       * burst or gray PID until the outgoing map axis is physically aligned. */
+-      Route_BrakeControl();RoadHeading_Reset(&turn_axis_heading,now);
+-      UartDebug_Printf("TURN_AXIS_BEGIN N=%u COARSE_DELTA=%d\r\n",(unsigned)node,(int)delta);
+-      return;
+-    }
+-  }
+   Route_DriveStraight(elapsed_ms);
+ }
+ 
+@@ -1283,33 +1262,7 @@
+ }
+ 
+ /* Filtered side pixels are a steering cue, never an observed road exit/node. */
+-static void Route_AlignTurnAxis(uint32_t now,uint32_t elapsed_ms)
+-{
+-  ThiefLocYaw_t yaw;int16_t error;
+-  Chassis_UpdateFeedback(elapsed_ms);
+-  if(!Route_TurnExitContext(&error,&yaw)) {
+-    /* Wait under the existing gyro freshness deadline, without accepting gray
+-     * as a substitute for the remaining physical turn. */
+-    Route_BrakeControl();
+-    if((uint32_t)(now-JY61P_GetLastUpdateMs())>ROUTE_GYRO_RECOVERY_MS)
+-      Route_StopFault("JY61P_STALE");
+-    return;
+-  }
+-  /* One brake absorbs remaining wheel rotation. Small angle residuals belong
+-   * to real gray PID, not a mandatory +/-2degree stationary pulse sequence. */
+-  Route_BrakeControl();
+-  if(Route_AllWheelsStopped()) {
+-    if(turn_axis_heading.stopped_count<2U)turn_axis_heading.stopped_count++;
+-  } else turn_axis_heading.stopped_count=0U;
+-  if(turn_axis_heading.stopped_count>=2U &&
+-      (int32_t)(yaw.stamp_ms-turn_axis_heading.brake_tick)>0L) {
+-    turn_axis_active=0U;route_state_tick=now;
+-    UartDebug_Printf("TURN_HANDOFF N=%u YAW_ERR_CW=%d RAW_YAW=%d WAIT_MS=%lu STOP=1\r\n",
+-        (unsigned)thief_localization.confirmed_node,(int)error,(int)yaw.yaw_x100,
+-        (unsigned long)(now-turn_axis_heading.brake_tick));
+-    /* The next actual board read still decides whether to follow or search. */
+-  }
+-}
++
+ 
+ static uint8_t Route_SideLineHint(uint16_t raw)
+ {
+@@ -2141,7 +2094,7 @@
+   uint8_t turn_delta=0U;
+ 
+   map_distance_warned=0U;retreat_far_pending=0U;route_identity_phase=0U;
+-  turn_axis_active=0U;yaw_reference_since=0U;yaw_reference_last=0U;
++  yaw_reference_since=0U;yaw_reference_last=0U;
+   map_leg_started_tick=SystemTime_GetMs();
+   restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+@@ -2518,7 +2471,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR12 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_POLICE_COMPARE1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2541,7 +2494,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR12 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_PoliceTurnCompare_Test FW=UARTCH4_16U_POLICE_COMPARE1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2591,7 +2544,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR12 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_POLICE_COMPARE1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -3277,9 +3230,6 @@
+       break;
+ 
+     case ROUTE_STATE_AFTER_TURN_FORWARD:
+-      if(turn_axis_active) {
+-        Route_AlignTurnAxis(now,elapsed_ms);break;
+-      }
+       if ((uint32_t)(now - route_state_tick) >=
+           ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS)
+       {

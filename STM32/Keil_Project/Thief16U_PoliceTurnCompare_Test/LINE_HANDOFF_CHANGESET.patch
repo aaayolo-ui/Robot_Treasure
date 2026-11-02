@@ -1,0 +1,438 @@
+--- MONITOR11/User/App_ThiefStrategy.c
++++ MONITOR12/User/App_ThiefStrategy.c
+@@ -47,7 +47,7 @@
+ #define ROUTE_TURN_STOP_STABLE_SAMPLES        2U
+ #define ROUTE_TURN_GYRO_WAIT_MS             500U
+ #define ROUTE_TURN_TIMEOUT_MS              4000U
+-#define ROUTE_TURN_TARGET_ANGLE_X100       4500L /* 45.00 deg spin, then gray-controlled line acquisition. */
++#define ROUTE_TURN_TARGET_ANGLE_X100       7500L /* Unknown gyro sign:75deg coarse turn, then measured brake/gray. */
+ #define ROUTE_JY61P_STALE_MS                150U /* No fresh angle during turn: stop safely. */
+ #define ROUTE_JUNCTION_WATCH_PERIOD_MS        5U /* PID period is in LineFollowPID.h. */
+ #define MAP_ROUTE_PASS_TIMEOUT_MS         1800U
+@@ -776,6 +776,15 @@
+ /* Real outgoing-line rearm is stronger than encoder timing. Recovery that
+  * has not observed source clearance may still use the old near-node window
+  * as auxiliary evidence; unarmed source all-black must not become next node. */
++/* Shared by actual heading feedback and all three rear-guided recovery paths.
++ * A broad junction/lettering patch remains raw node evidence, not a line offset. */
++static uint8_t Route_IsTrackLine(uint16_t raw12)
++{
++  uint8_t count=0U;
++  while(raw12) {raw12=(uint16_t)(raw12&(raw12-1U));count++;}
++  return (uint8_t)(count>0U && count<=4U);
++}
++
+ static uint8_t Route_GrayArrivalReady(uint16_t raw12)
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+@@ -877,7 +886,7 @@
+ static void Route_UpdateFollowMode(RouteGraySample_t *sample)
+ {
+   rear_state = Route_ReadRear(sample);
+-  if (rear_state == ROUTE_GRAY_VALID)
++  if (rear_state == ROUTE_GRAY_VALID && Route_IsTrackLine(sample->rear_raw12))
+   {
+     if (rear_valid_count < ROUTE_REAR_VALID_REQUIRED)
+     {
+@@ -1276,7 +1285,7 @@
+ /* Filtered side pixels are a steering cue, never an observed road exit/node. */
+ static void Route_AlignTurnAxis(uint32_t now,uint32_t elapsed_ms)
+ {
+-  RoadHeadingInput_t in;RoadHeadingOutput_t out;ThiefLocYaw_t yaw;int16_t error;
++  ThiefLocYaw_t yaw;int16_t error;
+   Chassis_UpdateFeedback(elapsed_ms);
+   if(!Route_TurnExitContext(&error,&yaw)) {
+     /* Wait under the existing gyro freshness deadline, without accepting gray
+@@ -1286,21 +1295,18 @@
+       Route_StopFault("JY61P_STALE");
+     return;
+   }
+-  in.cw_error_x100=error;in.yaw_tick=yaw.stamp_ms;
+-  in.stopped=Route_AllWheelsStopped();in.direction_known=1U;
+-  RoadHeading_UpdatePulse(&turn_axis_heading,&in,now,200,&out);
+-  if(out.brake)Route_BrakeControl();
+-  else {
+-    int32_t pwm=out.turn_x10>0?ROUTE_TURN_EQUAL_PWM:-ROUTE_TURN_EQUAL_PWM;
+-    Chassis_Enable();
+-    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_LEFT,pwm);
+-    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_RIGHT,-pwm);
+-    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_LEFT,pwm);
+-    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_RIGHT,-pwm);
+-  }
+-  if(out.ready) {
++  /* One brake absorbs remaining wheel rotation. Small angle residuals belong
++   * to real gray PID, not a mandatory +/-2degree stationary pulse sequence. */
++  Route_BrakeControl();
++  if(Route_AllWheelsStopped()) {
++    if(turn_axis_heading.stopped_count<2U)turn_axis_heading.stopped_count++;
++  } else turn_axis_heading.stopped_count=0U;
++  if(turn_axis_heading.stopped_count>=2U &&
++      (int32_t)(yaw.stamp_ms-turn_axis_heading.brake_tick)>0L) {
+     turn_axis_active=0U;route_state_tick=now;
+-    UartDebug_Printf("TURN_AXIS_READY YAW_ERR=%d\r\n",(int)error);
++    UartDebug_Printf("TURN_HANDOFF N=%u YAW_ERR_CW=%d RAW_YAW=%d WAIT_MS=%lu STOP=1\r\n",
++        (unsigned)thief_localization.confirmed_node,(int)error,(int)yaw.yaw_x100,
++        (unsigned long)(now-turn_axis_heading.brake_tick));
+     /* The next actual board read still decides whether to follow or search. */
+   }
+ }
+@@ -1478,7 +1484,7 @@
+     return;
+   }
+   line.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID || Route_SideLineHint(sample->front_raw12));
+-  line.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
++  line.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID && Route_IsTrackLine(sample->rear_raw12));
+   line.leading_error=sample->front_error_x100;line.trailing_error=sample->rear_error_x100;
+   line.yaw_known=1U;line.yaw_cw_x100=error;line.stopped=Route_AllWheelsStopped();
+   RestartLineSearch_Probe(&turn_exit_line,&line,
+@@ -1803,7 +1809,7 @@
+     Route_HandleJunction(now,elapsed_ms,front_state,sample->front_raw12);return;
+   }
+   input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID || Route_SideLineHint(sample->front_raw12));
+-  input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
++  input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID && Route_IsTrackLine(sample->rear_raw12));
+   input.leading_error=sample->front_error_x100;input.trailing_error=sample->rear_error_x100;
+   input.yaw_known=1U;
+   input.yaw_cw_x100=(int16_t)(thief_localization.heading_error_x100*thief_localization.yaw_cw_sign);
+@@ -2512,7 +2518,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR11 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR12 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2535,7 +2541,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR11 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR12 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2585,7 +2591,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR11 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR12 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2946,7 +2952,7 @@
+         }
+         rear_state=Route_ReadRear(&sample);
+         input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID);
+-        input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
++        input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID && Route_IsTrackLine(sample.rear_raw12));
+         input.leading_error=sample.front_error_x100;
+         input.trailing_error=sample.rear_error_x100;
+         input.yaw_known=(uint8_t)(thief_localization.yaw_cw_sign!=0);
+--- MONITOR11/Tests/test_line_handoff.py
++++ MONITOR12/Tests/test_line_handoff.py
+@@ -0,0 +1,96 @@
++"""042252: no routine +/-2degree pulses; actual narrow gray drives the PID."""
++from pathlib import Path
++import re,sys,json,hashlib
++src=Path(__file__).with_name('test_documents15.py').read_text(encoding='utf-8').split('parking_pwm=[]')[0]
++src=src.replace('Tests/before_documents15/original.axf','Tests/before_line_handoff/original.axf')
++exec(compile(src,str(Path(__file__).with_name('test_documents15.py')),'exec'))
++helpers=Path(__file__).with_name('test_general_turns.py').read_text(encoding='utf-8')
++exec(helpers[helpers.index('data=(ROOT'):helpers.index('def all_map_quarter_turns(')])
++pwm=[]
++def capture():
++    v=u.reg_read(UC_ARM_REG_R1);pwm.append(v-2**32 if v>=2**31 else v);return 0
++hook('Chassis_SetWheelLogicalPwm',capture)
++
++def five_degree_handoff():
++    global yaw,clock
++    for mode in [0,1]:
++      for sign in [-1,1]:
++        setup_turn(78,1,-1,mode,sign)
++        yaw=-sign*8500;ret('Route_AllWheelsStopped',0);pwm.clear()
++        for _ in range(3):clock+=20;call('Route_AlignTurnAxis',clock,20)
++        check(var('turn_axis_active'),'moving wheels cannot hand off')
++        ret('Route_AllWheelsStopped',1)
++        for _ in range(4):clock+=20;call('Route_AlignTurnAxis',clock,20)
++        check(not var('turn_axis_active'),'5degree residual must hand to real gray rather than stationary2degree trim')
++        check(not pwm,'normal handoff cannot emit fine-trim rotation pulses')
++        check(member('thief_localization','confirmed_node')==78 and member('thief_localization','phase')==2,'heading alone does not confirm another node or exit')
++    return 4
++
++rear_raw=0x60;rear_offset=0
++def real_rear_sample():
++    record(u.reg_read(UC_ARM_REG_R0),'RouteGraySample_t',dict(rear_raw12=rear_raw,rear_error_x100=rear_offset))
++    return 1
++hook('Route_ReadRear',real_rear_sample)
++
++def rear_width_follow():
++    global rear_raw,rear_offset
++    if 'Route_UpdateFollowMode' in hooks:u.hook_del(hooks.pop('Route_UpdateFollowMode'))
++    for mode in [0,1]:
++        fresh(4,(3+2*mode)%4);setstep(4,3,3,mode,300);call('Route_Start');tick()
++        sample=allocate('RouteGraySample_t',0x2000cd00)
++        record(sample,'RouteGraySample_t',dict(front_raw12=0x60,front_error_x100=0))
++        rear_raw=0x60;rear_offset=0
++        for _ in range(4):call('Route_UpdateFollowMode',sample)
++        rear_raw=0x0ff;rear_offset=300
++        call('Route_UpdateFollowMode',sample)
++        check(at(sample,'RouteGraySample_t','heading_error_x100')==0,'wide rear branch must not become dual-board heading error')
++        check(at(sample,'RouteGraySample_t','rear_raw12')==0x0ff,'raw wide branch remains available for node evidence')
++        rear_raw=0x60;rear_offset=100
++        for _ in range(4):call('Route_UpdateFollowMode',sample)
++        check(at(sample,'RouteGraySample_t','heading_error_x100')!=0,'a narrow rear line still contributes actual heading correction')
++    return 2
++
++seen=[]
++def observe_probe(uc,address,length,data):
++    p=uc.reg_read(UC_ARM_REG_R1)
++    seen.append(at(p,'RestartLineInput','trailing_valid'))
++if 'RestartLineSearch_Probe' in symbols:
++    u.hook_add(UC_HOOK_CODE,observe_probe,begin=symbols['RestartLineSearch_Probe']&~1,end=symbols['RestartLineSearch_Probe']&~1)
++
++def rear_width_recovery():
++    global rear_raw,rear_offset,gray_raw,gray_state,odom
++    for raw,expected in [(0xff,0),(0xff0,0),(0x60,1),(0xc0,1)]:
++        fresh(4,3);setstep(4,3,3,0,300);call('Route_Start');tick()
++        gray_raw=0;gray_state=2;var('front_state',2);odom=30
++        rear_raw=raw;rear_offset=300;seen.clear()
++        var('map_gray_active',1);var('route_state',8)
++        sample=allocate('RouteGraySample_t',0x2000cd00)
++        call('Route_MapGrayRecover',clock,20,sample)
++        check(seen and seen[-1]==expected,'wide rear cannot steer recovery; narrow rear can')
++        check(var('route_active'),'rear-width classification must not introduce a parking fault')
++    return 4
++
++def first_unknown_sign_turn():
++    global clock,yaw
++    fresh(11,1);member('thief_localization','yaw_cw_sign',0)
++    setstep(11,22,2,0,300);call('Route_Start');tick(20);tick(60)
++    for _ in range(20):
++        tick()
++        if var('route_state') in (5,6):break
++    check(var('route_state')==5,'actual unknown-sign first right turn has begun')
++    yaw=4500;tick()
++    check(var('route_state')==5,'removing fine trim must not leave the first unknown-sign turn at45degrees')
++    yaw=7500;tick()
++    check(var('route_state')==7 and var('turn_axis_active'),'unknown-sign first turn reaches75degree coarse target')
++    return 1
++
++failures=[];cases={}
++for fn in [five_degree_handoff,rear_width_follow,rear_width_recovery,first_unknown_sign_turn]:
++    try:cases[fn.__name__]=fn()
++    except Exception as e:failures.append(dict(case=fn.__name__,error=str(e)))
++axf=ROOT/'MDK-ARM'/ROOT.name/(ROOT.name+'.axf')
++if '--before' in sys.argv:axf=ROOT/'Tests/before_line_handoff/original.axf'
++r=dict(checks=checks,cases=cases,failures=failures,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),
++       test_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),hardware_tested=False)
++out=ROOT/('Tests/before_line_handoff/regression_before.json' if '--before' in sys.argv else 'Tests/results_line_handoff.json')
++out.write_text(json.dumps(r,indent=2),encoding='utf-8');print(json.dumps(r,indent=2));sys.exit(bool(failures))
+--- MONITOR11/Tests/test_monitor7_restore.py
++++ MONITOR12/Tests/test_monitor7_restore.py
+@@ -27,8 +27,8 @@
+         check(call('Route_TurnExitContext',error,obs),'known axis remains available beyond110relative degrees')
+         pwm.clear()
+         for _ in range(10):clock+=20;call('Route_AlignTurnAxis',clock,20)
+-        check(pwm and len(pwm)%4==0,'actual four-wheel trim output exists after overshoot')
+-        check(pwm[-4]>0 and pwm[-3]<0,'overshoot correction turns back toward the known exit')
++        check(not pwm,'normal stopped handoff does not issue stationary fine-trim pulses')
++        check(not var('turn_axis_active'),'one measured brake releases without waiting for a2degree axis')
+         yaw=-sign*9000
+         for _ in range(20):clock+=20;call('Route_AlignTurnAxis',clock,20)
+         check(not var('turn_axis_active'),'fresh centered stopped axis completes original MONITOR7 trim')
+--- MONITOR11/Tests/test_speed16t.py
++++ MONITOR12/Tests/test_speed16t.py
+@@ -14,7 +14,10 @@
+ for key in params:
+     a=re.search(r'^#define\s+'+key+r'\s+(\w+)',source,re.M)[1]
+     b=re.search(r'^#define\s+'+key+r'\s+(\w+)',original,re.M)[1]
+-    check(a==b,'speed/turn/gray gain equals16T: '+key);values[key]=a
++    if key=='ROUTE_TURN_TARGET_ANGLE_X100':
++        check(a=='7500L','unknown-sign coarse turn reaches75degrees before gray handoff')
++    else:check(a==b,'speed/turn/gray gain equals16T: '+key)
++    values[key]=a
+ check('FollowSmoothing_LimitBase' not in source,'no extra normal-follow speed cap')
+ curves={}
+ for mode,label in [(0,'forward'),(1,'reverse')]:
+--- MONITOR11/Tests/analyze_turn_042252.py
++++ MONITOR12/Tests/analyze_turn_042252.py
+@@ -0,0 +1,39 @@
++"""Derive observed total angle and alignment time, not unmeasured inertia."""
++from pathlib import Path
++import re,json,statistics,hashlib
++root=Path(__file__).resolve().parents[1]
++path=root/'Tests/before_line_handoff/小车串口_20261028_042252.txt'
++lines=path.read_text(encoding='utf-8',errors='replace').splitlines()
++signs={int(v) for v in re.findall(r'CW_SIGN=(-?\d+)', '\n'.join(lines))}
++assert signs=={-1},signs
++cw=-1;wrap=lambda x:(x+18000)%36000-18000
++pending=None;done=None;rows=[]
++for i,line in enumerate(lines):
++    m=re.search(r'TURN_DONE=.*START=(-?\d+) CURRENT=(-?\d+) DELTA=(-?\d+)',line)
++    if m:done=tuple(map(int,m.groups()))
++    m=re.search(r'TURN_AXIS_BEGIN N=(\d+)',line)
++    if m:pending=dict(node=int(m[1]),start=done[0],coarse=done[1],delta=done[2],line=i+1)
++    if pending and line.startswith('MT3,'):
++        f=line.split(',')
++        if int(f[4])==7:pending['begin_ms']=int(f[3])
++        if int(f[4])==8 and 'error_cw' in pending:
++            pending['ready_yaw']=int(f[11]);pending['wait_ms']=int(f[3])-pending['begin_ms']
++            pending['derived_target']=wrap(pending['ready_yaw']-pending['error_cw']*cw)
++            direction=1 if pending['delta']>0 else -1
++            pending['direction']='left' if direction*cw<0 else 'right'
++            pending['additional_deg']=direction*wrap(pending['derived_target']-pending['coarse'])/100
++            pending['total_deg']=direction*wrap(pending['derived_target']-pending['start'])/100
++            rows.append(pending);pending=None
++    m=re.search(r'TURN_AXIS_READY YAW_ERR=(-?\d+)',line)
++    if m and pending:pending['error_cw']=int(m[1])
++summary={}
++for direction in ['left','right']:
++    a=[r for r in rows if r['direction']==direction]
++    summary[direction]=dict(samples=len(a),total_deg_mean=statistics.mean(r['total_deg'] for r in a),
++        additional_deg_mean=statistics.mean(r['additional_deg'] for r in a),alignment_ms_mean=statistics.mean(r['wait_ms'] for r in a))
++report=dict(log_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),rows=rows,summary=summary,
++ mean_alignment_ms=statistics.mean(r['wait_ms'] for r in rows),
++ limitation='Only4complete turns. Totals include entry skew; no first-stopped-before-pulse YAW was logged. This does not estimate pure inertia or a reliable fixed left/right motor cutoff.',
++ selected_policy='User chose actual map exit direction, no mandatory +/-2degree fine trim, real gray PID handles small residuals.')
++(root/'Docs/turn_042252_analysis.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
++print(json.dumps(summary,indent=2));print('mean alignment ms:',report['mean_alignment_ms'])
+--- MONITOR11/Docs/turn_042252_analysis.json
++++ MONITOR12/Docs/turn_042252_analysis.json
+@@ -0,0 +1,82 @@
++{
++  "log_sha256": "53d44d9290a45ff469d26b4d129e3a58a86bed82e859492765cddec8da5d93b3",
++  "rows": [
++    {
++      "node": 52,
++      "start": 6129,
++      "coarse": 15079,
++      "delta": 8950,
++      "line": 26,
++      "begin_ms": 64581,
++      "error_cw": -40,
++      "ready_yaw": 15507,
++      "wait_ms": 2100,
++      "derived_target": 15467,
++      "direction": "left",
++      "additional_deg": 3.88,
++      "total_deg": 93.38
++    },
++    {
++      "node": 78,
++      "start": 14653,
++      "coarse": 6880,
++      "delta": -7773,
++      "line": 514,
++      "begin_ms": 74635,
++      "error_cw": 82,
++      "ready_yaw": 6385,
++      "wait_ms": 2000,
++      "derived_target": 6467,
++      "direction": "right",
++      "additional_deg": 4.13,
++      "total_deg": 81.86
++    },
++    {
++      "node": 76,
++      "start": 5545,
++      "coarse": -2746,
++      "delta": -8291,
++      "line": 715,
++      "begin_ms": 78615,
++      "error_cw": 71,
++      "ready_yaw": -2604,
++      "wait_ms": 2420,
++      "derived_target": -2533,
++      "direction": "right",
++      "additional_deg": -2.13,
++      "total_deg": 80.78
++    },
++    {
++      "node": 6,
++      "start": -3192,
++      "coarse": 5119,
++      "delta": 8311,
++      "line": 1079,
++      "begin_ms": 84897,
++      "error_cw": -153,
++      "ready_yaw": 6620,
++      "wait_ms": 1100,
++      "derived_target": 6467,
++      "direction": "left",
++      "additional_deg": 13.48,
++      "total_deg": 96.59
++    }
++  ],
++  "summary": {
++    "left": {
++      "samples": 2,
++      "total_deg_mean": 94.985,
++      "additional_deg_mean": 8.68,
++      "alignment_ms_mean": 1600
++    },
++    "right": {
++      "samples": 2,
++      "total_deg_mean": 81.32,
++      "additional_deg_mean": 1.0,
++      "alignment_ms_mean": 2210
++    }
++  },
++  "mean_alignment_ms": 1905,
++  "limitation": "Only4complete turns. Totals include entry skew; no first-stopped-before-pulse YAW was logged. This does not estimate pure inertia or a reliable fixed left/right motor cutoff.",
++  "selected_policy": "User chose actual map exit direction, no mandatory +/-2degree fine trim, real gray PID handles small residuals."
++}--- MONITOR11/README.md
++++ MONITOR12/README.md
+@@ -1,3 +1,16 @@
++# 16U MONITOR12：取消逐次微调，真实灰度PID接管
++
++当前UARTCH4_16U_MONITOR12。按用户明确选择，仍以地图出口方向转弯，取消每次±2度停车脉冲微调及3帧角度确认；粗转后仅一次实测制动，两次轮速停稳和制动后新鲜YAW即可交给下一次实际灰度读取。有线用PID修小偏差，无线走原找线恢复，不能凭YAW就认为车在线中央。常规转弯不再逐次精调；藏点/真正缺线恢复不是本次删除范围。
++
++- 保留全地图已知出口轴±15度粗转交接和550PWM。首次未知陀螺仪方向不能再“45度粗转后补微调”，因此首次粗转目标改为75度，再以出口实测灰度学习方向；不改变正常巡线速度、增益和180ms入中心参数。
++- 后板1—4个黑像素可作线位置，0FF等宽黑不再当双板航向/恢复的偏移量；原始宽黑仍用于真实节点/回撤识别，也不把实际黑误计成双板无线。该分类供正常跟线和三类恢复统一使用。
++- 042252的4次完整转弯总角度均值左94.985度、右81.32度，包含入弯偏差；逐次对齐均耗1905ms。不能从它分离出惯性补偿，所以按你选择不固定转95/81。统计见Docs/turn_042252_analysis.json；新日志TURN_HANDOFF打印停稳后交接误差与耗时，不再把“总微调前后差”当纯余转。
++
++MONITOR11源码/AXF/042252日志及旧测试保存Tests/before_line_handoff；新增test_line_handoff.py，验收VALIDATION_MONITOR12.json，差异LINE_HANDOFF_CHANGESET.patch。N011出口优先、四路激光800/1000、道路身份/航向恢复、候选定位、轮速真实重新启用及双板连续无线2秒保持。
++每次修改前仍读Docs/修改规范与回归清单.md的防遗漏核对表。仅编译通过，尚未完成硬件验证；最后一次实际无线可能包含横向偏移/位置误认，不能只凭该日志证明物理原因全部消除。
++
++以下MONITOR11及更早内容为历史。
++
+ # 16U MONITOR11：全地图转弯对齐与N011方向优先
+ 
+ 固件UARTCH4_16U_MONITOR11，工程名不变。每次改代码前必读Docs/修改规范与回归清单.md最前“防遗漏核对表”及当前版本章节；AGENTS.md已加入强制入口。核对表包含本轮遗漏原因及控制输出/状态交接证据要求。
+--- MONITOR11/AGENTS.md
++++ MONITOR12/AGENTS.md
+@@ -1,4 +1,6 @@
+ # 本工程修改前必读
++
++最新MONITOR12按042252后用户选择：保留地图出口方向，取消每次±2度驻车脉冲/3帧角度等待，只一次实测停稳/新YAW交给实际灰度PID。首次未知符号粗转同步75度，不能遗留45度半转弯。宽黑后灰度不参与姿态偏移，但原始值仍可作节点证据；YAW为0不证明在线。仍必须先读下列防遗漏核对表和当前README。基线Tests/before_line_handoff，验收VALIDATION_MONITOR12.json；历史要求以最新用户选择和最前章节覆盖。
+ 
+ **每次改代码、参数或状态机之前（同一轮后续修改也一样），必须重新阅读Docs/修改规范与回归清单.md最前面的“每次改代码前必读：防遗漏核对表”、当前版本章节和README。按影响范围逐项核对调用路径、全地图节点/转向、根节点出发、正反帧、世界激光方向、真实PI/PWM重启、道路身份/航向恢复、连续2秒失线及验证证据，不得只修单个日志节点。**
+ 
+--- MONITOR11/Docs/修改规范与回归清单.md
++++ MONITOR12/Docs/修改规范与回归清单.md
+@@ -8,7 +8,7 @@
+ 
+ 1. **先列完整调用路径。** 区分正常到口转弯、藏点/路口重新出发、半路拦截折返、出口找线、道路失线恢复。检查所有调用者和状态入口，尤其departure_turn使用的虚拟起步动作与路线第一步终点动作不同，不能用错step。
+ 2. **转弯必须查全地图。** 共用转弯逻辑，不写只覆盖N004/N006而遗漏N078的节点名单。依据实际MapRoutePlan拓扑枚举合法左右转弯、正反行驶、两种陀螺仪符号；单独验证根节点重新出发与首次未知符号。没有道路的方向不得因“反方向逃跑”而直冲（例如N078到N087没有直接道路）。
+-3. **区分角度到位和转动停止。** 原始YAW不等于地图误差，日志角度单位x100。目标用出口地图轴，不能把入弯偏斜带进相对90度。粗转结束后必须经过统一轴向确认，实测停稳、新鲜YAW和实际灰度各自承担明确条件；不能看到一次线就提前交巡线。检查正负180度、过冲与相对累计转角边界。
++3. **区分角度、转动停止和在线位置。** 原始YAW不等于地图误差，日志角度单位x100，YAW误差为0也不证明车在线中央。目标用出口地图轴，不能把入弯偏斜的统计均值直接当固定旋转角。按MONITOR12用户选择，普通转弯只做一次实测消余转制动和新鲜YAW交接，不逐次驻车修到±2度或等3帧角度；随后实际灰度决定巡线/找线，小偏差交PID。检查正负180度、过冲、未知符号首次粗转与累计转角边界。
+ 4. **检查控制链真的接上。** 制动会关闭轮速PI；进入FOLLOW只在IsEnabled实际为真时允许保留，否则重新启用。验证全四轮目标、控制器使能、PI到PWM输出，不能只看STATE=FOLLOW或目标非零；测试不得把这些控制层全部模拟掉后宣称能走。5ms灰度观察不得重复支付20ms轮速积分。
+ 5. **地图方向不等于固定探头。** 上/右/下/左是世界N/E/S/W；前/左/右/后探头固定在车身，按body_heading换算。倒车时TravelFrame、领先/跟随灰度板、转向符号和物理车头分开核对。边界射线过滤、传感器偏置和800/1000mm有效距离规则不能被路线修改覆盖。
+ 6. **规划和执行都要覆盖避障。** N011下方来车优先N012-N013，上方来车优先N010；优先出口/第二段已有堵路或该出口也有即时威胁时回退普通合法路线。约束用完必须复位，不能泄漏到N038等其他节点。行驶中实际激光拦截仍优先回撤/重算，不能为履行旧路线继续硬闯。
+@@ -16,6 +16,14 @@
+ 8. **定位证据不能混用。** 编码器仅辅助，不凭里程直接认节点；半路折返保留已走位移的有符号账本。迟到相似路口需候选与真实后续观测，不把上一轮残留灰度、单帧全黑或显示预测当确认。入中心动作仍用原100RPM/180ms及已走位移抵扣；不为掩盖问题降低用户认可的正常速度。
+ 9. **回归入口必须真实。** 更新状态机后，旧用例应先实际完成新增前置阶段再复现后续扰动；禁止强设成功标志、虚构传感器、删除失线/停稳/新YAW断言来让测试通过。用户明确改变规则时，保留旧脚本并说明新预期；覆盖范围、实际执行的源码/AXF散列和未测试硬件必须写清。
+ 10. **交付之前核对一致性。** 保留修改前工程/AXF/日志及失败复现；更新当前版本、README、AGENTS、差异与验证报告。只在新改动或失败有理由时重跑相应检查。不得自动烧录、驱动实物、占用串口、提交或推送。编译/仿真不能冒充实车证明。
++
++## 当前MONITOR12：取消逐次微调，实际灰度接管小偏差
++
++用户042252后明确选择“仍按地图出口方向转，取消每次±2度微调，小偏差交灰度PID”，覆盖MONITOR11逐次精调。已知地图轴的粗转±15度交接保持，之后只一次制动；实测连续2次轮速停稳及制动后新鲜YAW即可结束该阶段，不发旋转脉冲、不等3帧角度。下一次实际前灰度读取决定跟线/恢复，不因为YAW就声称在线。真实缺线/藏点姿态恢复仍独立存在，不把正常每次转弯等同故障恢复。
++首次尚未学到陀螺仪符号时，原45度后补微调已经取消，粗转目标同步改75度，再用实际出口灰度学习符号；不能删除后半段逻辑却留下45度半转弯。转向550PWM、正常直行速度/增益、入中心180ms等原参数保持。
++日志0FF一类后板宽黑不能当车身偏移。Route_IsTrackLine在双板航向反馈、出口恢复、道路恢复、重启找线四个使用点共用：1—4个黑像素才作为后板位置线索，宽黑原始值仍留给路口/回撤识别；实际黑存在仍按原无线计时处理，不因过滤姿态线索新增停车。
++042252仅4组完整转弯，修正到目标轴的总角度左均94.985度、右均81.32度，粗转后附加量左均8.68/右均1度，逐次对齐耗时均1905ms。该差值混合入弯偏斜、惯性和微调；日志缺首个停稳后/首脉冲前角度，不能作为纯惯性补偿。按用户选择不写死95/81；统计见Docs/turn_042252_analysis.json。新TURN_HANDOFF记录真实停稳交接时的YAW_ERR_CW/RAW_YAW/WAIT_MS，供下一轮实测判断。
++基线Tests/before_line_handoff，新增test_line_handoff.py复现旧版4类失败；旧速度测试仅对已授权的首次粗转角75度更新，其余16T速度/增益比较不变。验收VALIDATION_MONITOR12.json，差异LINE_HANDOFF_CHANGESET.patch。仅编译通过，尚未完成硬件验证；不能宣称0度就在线、仅靠取消微调就能保证找线或定位成功。
+ 
+ ## 当前MONITOR11：全地图公共转弯与N011出口优先
+ 

@@ -1,0 +1,14 @@
+{
+  "renderer": "packaged render_docx.py with native Word PDF backend",
+  "pages": 46,
+  "contacts": [
+    "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\排版检查\\contact-1.jpg",
+    "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\排版检查\\contact-2.jpg",
+    "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\排版检查\\contact-3.jpg",
+    "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\排版检查\\contact-4.jpg",
+    "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\排版检查\\contact-5.jpg",
+    "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\排版检查\\contact-6.jpg",
+    "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\排版检查\\contact-7.jpg",
+    "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\排版检查\\contact-8.jpg"
+  ]
+}

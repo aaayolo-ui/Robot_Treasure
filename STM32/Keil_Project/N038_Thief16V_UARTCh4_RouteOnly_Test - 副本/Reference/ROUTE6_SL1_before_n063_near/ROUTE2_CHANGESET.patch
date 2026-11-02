@@ -1,0 +1,55 @@
+--- ROUTE1/User/App_ThiefStrategy.c
++++ ROUTE2/User/App_ThiefStrategy.c
+@@ -1730,7 +1730,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE1_STABLE4 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE2_STABLE4 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1754,7 +1754,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE1_STABLE4 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE2_STABLE4 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1803,7 +1803,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE1_STABLE4 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ROUTE2_STABLE4 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- ROUTE1/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ ROUTE2/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -194,6 +194,23 @@
+   uint16_t count;uint8_t mode,pass,found=0U,allowed,preferred;
+   if(!plan || body_heading>3U)return 0U;
+   plan->valid=0U;allowed=current_node==11U?10U:15U;
++  if(current_node==11U && (threat_mask&8U) && !(threat_mask&3U)) {
++    static const uint16_t fixed_path[]={11U,12U,23U,31U,32U,48U,49U,61U,62U,63U};
++    uint16_t i;
++    mode=(uint8_t)(body_heading==3U);
++    if(!BuildRoute(fixed_path,10U,mode,ESCAPE_ID,plan))return 0U;
++    /* The final eastbound leg arrives horizontally. Center first, then
++     * perform the separately authorized parking quarter-turn to north. */
++    plan->final_body_heading=0U;
++    memset(&decision,0,sizeof(decision));
++    decision.goal_node=63U;decision.parking_heading=0U;
++    decision.planner_kind=5U;decision.degraded=1U;decision.threat_count=1U;
++    decision.travel_ms=THIEF_STARTUP_MS;
++    for(i=0U;i<plan->route.count;i++)
++      decision.travel_ms+=ThiefRiskSearch_LegTime(plan->steps[i].length_mm,mode,
++          (uint8_t)(i?plan->steps[i-1U].action!=MAP_ACTION_STRAIGHT:body_heading%2U==0U),0U);
++    return 1U;
++  }
+   if(current_node==63U && !(threat_mask&1U) && (threat_mask&8U)) {
+     static const uint16_t temporary_path[]={63U,78U};
+     /* Already north-facing: reverse-follow south without a chassis U-turn. */

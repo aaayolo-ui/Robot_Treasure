@@ -1,0 +1,130 @@
+{
+  "checks": 2618,
+  "failures": [],
+  "passed": [
+    "straight_exit_gap",
+    "middle_both_missing",
+    "history_available",
+    "complete_history_return",
+    "bounded_history",
+    "startup_and_road_scopes",
+    "gray_failure_backtrack",
+    "obstacle_history_return"
+  ],
+  "cases": {
+    "straight_exit_gap": 12,
+    "middle_both_missing": 1,
+    "history_available": 1,
+    "complete_history_return": {
+      "outbound": {
+        "frames": 121,
+        "node": 56,
+        "body": 1,
+        "fixes": [
+          55,
+          56
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          6,
+          7,
+          9
+        ],
+        "intercepted": false
+      },
+      "returned": {
+        "frames": 121,
+        "node": 37,
+        "body": 2,
+        "fixes": [
+          55,
+          37
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          9
+        ],
+        "intercepted": false
+      }
+    },
+    "bounded_history": 40,
+    "startup_and_road_scopes": 12,
+    "gray_failure_backtrack": {
+      "frames": 417,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        55,
+        37,
+        20,
+        10,
+        11
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    "obstacle_history_return": {
+      "frames": 839,
+      "node": 26,
+      "body": 2,
+      "fixes": [
+        55,
+        37,
+        20,
+        10,
+        1,
+        2,
+        3,
+        4,
+        14,
+        15,
+        25,
+        33,
+        34,
+        35,
+        26
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    }
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "51aef090e1b578d7490351b21ed670ae519b5bfaa02c0e3bf39ae25f18f3a489",
+  "app_source_sha256": "2acbc6a6fc02a6adc24ce2755dab5c013ac455236e039de2dc34d0cf9be75d33",
+  "test_script_sha256": "d008f4cd8af4e570e727b1176bf316f96e258b268c223853fa2ba7cee5809f2a",
+  "helper_sha256": {
+    "test_documents15.py": "956fedafa7ea99b584c1721a9b430c36e9a707161ebf37fb69d28abcbfe957b5",
+    "test_app_runtime.py": "d2d3dcd4503a0d14561fdea52540df7904ee0982e9930b785283f96cd042994a",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "a80cb0e4dec3b143d96eab7bb1509b748bb882fd62685d7435e6ba52e460976a"
+  }
+}

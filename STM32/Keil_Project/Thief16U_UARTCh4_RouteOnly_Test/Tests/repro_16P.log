@@ -1,0 +1,12 @@
+Failed to find real location of D:\python\python.exe
+Documents5 departure fault: MAP_REQUIRED_BRANCH_NOT_SEEN
+Traceback (most recent call last):
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16Q_UARTCh4_NodeEvidence_Test\Tests\test_app_runtime.py", line 223, in <module>
+    check(var('route_state')==6 and var('route_active')==1,
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          'Documents5: retained north branch permits departure left turn with no new gray')
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16Q_UARTCh4_NodeEvidence_Test\Tests\test_app_runtime.py", line 108, in check
+    assert x,message
+           ^
+AssertionError: Documents5: retained north branch permits departure left turn with no new gray

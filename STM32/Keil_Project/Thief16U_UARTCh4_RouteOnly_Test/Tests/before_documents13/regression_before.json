@@ -1,0 +1,36 @@
+{
+  "checks": 72,
+  "failures": [
+    {
+      "case": "straight_continuity",
+      "error": "straight next leg does not drop to 100 RPM"
+    },
+    {
+      "case": "corroborated_recovery",
+      "error": "no latched fault at N036: FRONT_NO_LINE"
+    },
+    {
+      "case": "both_missing_scan",
+      "error": "confirmed exit uses stationary scan with zero translation"
+    },
+    {
+      "case": "bounded_recovery",
+      "error": "distance prevents endless searching"
+    },
+    {
+      "case": "obstacle_priority",
+      "error": "map recovery entered"
+    }
+  ],
+  "passed": [
+    "unsupported_context"
+  ],
+  "hardware_tested": false,
+  "firmware_sha256": "a7446eee25bb95166e655a6e1ac719b2e6fa87386f0a058471a8a38b6d76ed76",
+  "app_source_sha256": "b093246bd78d17cd52b56511644028c5e6faa735af5e9efbd2ffd50b3df30a53",
+  "test_script_sha256": "1bac297603ebe91518075f530493365ebc5a0389bbf9e5ee7c9de8545d7af994",
+  "helper_sha256": {
+    "test_app_runtime.py": "87a3143113f0e49cbe708be0505bf5d31370f7ad25071e6912063d5c53d6f2d7",
+    "test_escape_completion.py": "7cde476ca5743cef510464cb48edfb7a360ca3e65ac1d33f3c62cd1deb7f8711"
+  }
+}

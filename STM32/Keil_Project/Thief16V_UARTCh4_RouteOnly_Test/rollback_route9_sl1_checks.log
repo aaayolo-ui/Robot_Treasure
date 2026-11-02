@@ -1,0 +1,30 @@
+{
+  "firmware": "UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1",
+  "checks": 16,
+  "failures": [],
+  "axf_sha256": "d1defea1fc8e8d553beb3672d717c48be1c61f465022d8a0e1b808203d4838f4",
+  "hex_sha256": "2036a3410b5e9d42e356d21b1ab3f292b521611748c60dfd9c49d3d32e5b7201",
+  "rom_bytes": 68192,
+  "ram_bytes": 44888,
+  "modified_production": [
+    "Core/Src/main.c",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx",
+    "User/App_ThiefStrategy.c"
+  ],
+  "added_production": [
+    "Hardware/PowerSoundLight.c",
+    "Hardware/PowerSoundLight.h"
+  ],
+  "source_hashes": {
+    "Core/Src/main.c": "c94334ed73d0eaafcdb4ce954ef74e03eb88634667983ea9ecf29884f6987bbc",
+    "Hardware/PowerSoundLight.c": "c4f9e1228280cfbb769dba3d7df91eeede497d2f73a01bab1c117ab85ee46700",
+    "Hardware/PowerSoundLight.h": "6e2e651814c20217e4708e69d171e1ff9456a43185e92cdaf080944471f80b0a",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx": "a874eb04c941875036d2ce6a3f8766e7f6642b62936a5e80bdb5122e969b9933",
+    "User/App_ThiefStrategy.c": "5213e68003a4e854d3b98a91960935ea3eac211dff34c3ba196883a23ce21c39"
+  },
+  "test_sha256": "4ec6d3ab1064cb65da9d2efb17ae06518cfe4bb48d563931527d2eebe8515d6d",
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "physical_motors_run": false
+}

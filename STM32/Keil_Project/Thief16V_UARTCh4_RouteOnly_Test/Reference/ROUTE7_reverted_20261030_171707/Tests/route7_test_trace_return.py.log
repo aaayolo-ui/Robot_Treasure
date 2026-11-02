@@ -1,0 +1,558 @@
+{
+  "checks": 5342,
+  "failures": [],
+  "lifecycles": [
+    {
+      "home": 11,
+      "body": 1,
+      "sign": 1,
+      "requested_step": 0,
+      "hit_mm": 10,
+      "origin": 0,
+      "expected": [
+        11
+      ],
+      "visited": [
+        11
+      ],
+      "result": {
+        "frames": 24,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          11
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 11,
+      "body": 3,
+      "sign": -1,
+      "requested_step": 0,
+      "hit_mm": 44,
+      "origin": 17950,
+      "expected": [
+        11
+      ],
+      "visited": [
+        11
+      ],
+      "result": {
+        "frames": 29,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          11
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 11,
+      "body": 1,
+      "sign": 1,
+      "requested_step": 1,
+      "hit_mm": 120,
+      "origin": 0,
+      "expected": [
+        12,
+        11
+      ],
+      "visited": [
+        12,
+        11
+      ],
+      "result": {
+        "frames": 151,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          12
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 11,
+      "body": 3,
+      "sign": -1,
+      "requested_step": 2,
+      "hit_mm": 44,
+      "origin": 0,
+      "expected": [
+        23,
+        12,
+        11
+      ],
+      "visited": [
+        23,
+        12,
+        11
+      ],
+      "result": {
+        "frames": 203,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          12
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 11,
+      "body": 1,
+      "sign": -1,
+      "requested_step": 3,
+      "hit_mm": 120,
+      "origin": 17950,
+      "expected": [
+        31,
+        23,
+        12,
+        11
+      ],
+      "visited": [
+        31,
+        23,
+        12,
+        11
+      ],
+      "result": {
+        "frames": 325,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          12
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 11,
+      "body": 3,
+      "sign": 1,
+      "requested_step": 6,
+      "hit_mm": 120,
+      "origin": 0,
+      "expected": [
+        49,
+        48,
+        32,
+        31,
+        23,
+        12,
+        11
+      ],
+      "visited": [
+        49,
+        48,
+        32,
+        31,
+        23,
+        12,
+        11
+      ],
+      "result": {
+        "frames": 769,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          12
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 38,
+      "body": 0,
+      "sign": 1,
+      "requested_step": 0,
+      "hit_mm": 44,
+      "origin": 0,
+      "expected": [
+        38
+      ],
+      "visited": [
+        38
+      ],
+      "result": {
+        "frames": 81,
+        "node": 38,
+        "body": 0,
+        "fixes": [],
+        "states": [
+          1,
+          2,
+          4,
+          5,
+          7,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 38,
+      "body": 2,
+      "sign": -1,
+      "requested_step": 1,
+      "hit_mm": 120,
+      "origin": 17950,
+      "expected": [
+        39,
+        38
+      ],
+      "visited": [
+        39,
+        38
+      ],
+      "result": {
+        "frames": 161,
+        "node": 38,
+        "body": 2,
+        "fixes": [],
+        "states": [
+          1,
+          2,
+          4,
+          6,
+          7,
+          9,
+          11,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 63,
+      "body": 0,
+      "sign": -1,
+      "requested_step": 0,
+      "hit_mm": 44,
+      "origin": 0,
+      "expected": [
+        63
+      ],
+      "visited": [
+        63
+      ],
+      "result": {
+        "frames": 29,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          63
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 63,
+      "body": 2,
+      "sign": 1,
+      "requested_step": 2,
+      "hit_mm": 120,
+      "origin": 0,
+      "expected": [
+        77,
+        78,
+        63
+      ],
+      "visited": [
+        77,
+        78,
+        63
+      ],
+      "result": {
+        "frames": 277,
+        "node": 63,
+        "body": 2,
+        "fixes": [
+          78
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 35,
+      "body": 1,
+      "sign": 1,
+      "requested_step": 0,
+      "hit_mm": 44,
+      "origin": 0,
+      "expected": [
+        35
+      ],
+      "visited": [
+        35
+      ],
+      "result": {
+        "frames": 29,
+        "node": 35,
+        "body": 1,
+        "fixes": [
+          35
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 26,
+      "body": 0,
+      "sign": -1,
+      "requested_step": 1,
+      "hit_mm": 120,
+      "origin": 0,
+      "expected": [
+        17,
+        26
+      ],
+      "visited": [
+        17,
+        26
+      ],
+      "result": {
+        "frames": 109,
+        "node": 26,
+        "body": 0,
+        "fixes": [
+          17
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          11,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 35,
+      "body": 1,
+      "sign": 1,
+      "requested_step": 0,
+      "hit_mm": 44,
+      "origin": 0,
+      "expected": [
+        35
+      ],
+      "visited": [
+        35
+      ],
+      "result": {
+        "frames": 80,
+        "node": 35,
+        "body": 1,
+        "fixes": [],
+        "states": [
+          1,
+          2,
+          4,
+          6,
+          7,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 35,
+      "body": 3,
+      "sign": -1,
+      "requested_step": 0,
+      "hit_mm": 44,
+      "origin": 17950,
+      "expected": [
+        35
+      ],
+      "visited": [
+        35
+      ],
+      "result": {
+        "frames": 80,
+        "node": 35,
+        "body": 3,
+        "fixes": [],
+        "states": [
+          1,
+          2,
+          4,
+          5,
+          7,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 26,
+      "body": 0,
+      "sign": 1,
+      "requested_step": 0,
+      "hit_mm": 44,
+      "origin": 0,
+      "expected": [
+        26
+      ],
+      "visited": [
+        26
+      ],
+      "result": {
+        "frames": 80,
+        "node": 26,
+        "body": 0,
+        "fixes": [],
+        "states": [
+          1,
+          2,
+          4,
+          5,
+          7,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "home": 26,
+      "body": 2,
+      "sign": -1,
+      "requested_step": 0,
+      "hit_mm": 44,
+      "origin": 17950,
+      "expected": [
+        26
+      ],
+      "visited": [
+        26
+      ],
+      "result": {
+        "frames": 80,
+        "node": 26,
+        "body": 2,
+        "fixes": [],
+        "states": [
+          1,
+          2,
+          4,
+          6,
+          7,
+          9,
+          12,
+          13
+        ],
+        "intercepted": false
+      }
+    }
+  ],
+  "trace_bytes": 876,
+  "axf_sha256": "a26c7892cf8f02e7264234b223b356d47359ef7490986203e58264abaeacba6d",
+  "hardware_tested": false
+}

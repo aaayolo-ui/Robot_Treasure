@@ -1,0 +1,669 @@
+RUN test_stable1.py
+{
+  "firmware": "UARTCH4_16V_STABLE5",
+  "checks": 407,
+  "cases": {
+    "unchanged_control_files": 16,
+    "motion_functions": 13,
+    "shadow_no_actuation": 1,
+    "no_hidden_map_veto": 1,
+    "shadow_route_execution": 1,
+    "single_gray_recovery": 2,
+    "both_white_deadline": 1,
+    "gyro_sign_root_turns": 8,
+    "n011_body_masks": 64
+  },
+  "failures": [],
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "hardware_tested": false
+}
+RUN test_escape_completion.py
+Documents11 root-turn regression passed
+escape N011 body=1 FRONT -> N063 passed
+escape N011 body=1 LEFT -> N063 passed
+escape N011 body=1 RIGHT -> N063 passed
+escape N011 body=1 REAR -> N063 passed
+escape N011 body=3 FRONT -> N063 passed
+escape N011 body=3 LEFT -> N063 passed
+escape N011 body=3 RIGHT -> N063 passed
+escape N011 body=3 REAR -> N063 passed
+escape N038 body=0 FRONT -> N063 passed
+escape N038 body=0 LEFT -> N026 passed
+escape N038 body=0 RIGHT -> N026 passed
+escape N038 body=0 REAR -> N026 passed
+escape N038 body=2 FRONT -> N026 passed
+escape N038 body=2 LEFT -> N026 passed
+escape N038 body=2 RIGHT -> N026 passed
+escape N038 body=2 REAR -> N063 passed
+escape N026 body=0 FRONT -> N038 passed
+escape N026 body=0 LEFT -> N038 passed
+escape N026 body=0 RIGHT -> N038 passed
+escape N026 body=0 REAR -> N011 passed
+escape N026 body=2 FRONT -> N011 passed
+escape N026 body=2 LEFT -> N038 passed
+escape N026 body=2 RIGHT -> N038 passed
+escape N026 body=2 REAR -> N063 passed
+escape N035 body=1 FRONT -> N011 passed
+escape N035 body=1 LEFT -> N063 passed
+escape N035 body=1 RIGHT -> N011 passed
+escape N035 body=1 REAR -> N063 passed
+escape N035 body=3 FRONT -> N063 passed
+escape N035 body=3 LEFT -> N011 passed
+escape N035 body=3 RIGHT -> N038 passed
+escape N035 body=3 REAR -> N011 passed
+escape N063 body=0 FRONT -> N011 passed
+escape N063 body=0 LEFT -> N078 passed
+escape N063 body=0 RIGHT -> N011 passed
+escape N063 body=0 REAR -> N035 passed
+escape N063 body=2 FRONT -> N035 passed
+escape N063 body=2 LEFT -> N011 passed
+escape N063 body=2 RIGHT -> N078 passed
+escape N063 body=2 REAR -> N011 passed
+{
+  "checks": 26961,
+  "escapes": 40,
+  "ignored": 0,
+  "interceptions": [
+    {
+      "laser": "FRONT",
+      "frames": 672,
+      "node": 26,
+      "body": 2,
+      "fixes": [
+        38,
+        21,
+        20,
+        10,
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        17,
+        26
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        12,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "REAR",
+      "frames": 666,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        39,
+        40,
+        46,
+        58,
+        68,
+        84,
+        85,
+        76,
+        77,
+        78,
+        63
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "LEFT",
+      "trigger": "departure before translation",
+      "frames": 666,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        39,
+        40,
+        46,
+        58,
+        68,
+        84,
+        85,
+        76,
+        77,
+        78,
+        63
+      ],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "RIGHT",
+      "trigger": "departure before translation",
+      "frames": 666,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        39,
+        40,
+        46,
+        58,
+        68,
+        84,
+        85,
+        76,
+        77,
+        78,
+        63
+      ],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": true
+    }
+  ]
+}
+RUN test_turn_resume.py
+{
+  "cases": {
+    "resume_after_brake": 2,
+    "continuous_loop_kept": 1
+  },
+  "failures": [],
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "test_sha256": "6f1424e97f96592e3c441502659b03fb3cff77552fe50df650b04dc90fb78acc",
+  "hardware_tested": false
+}
+RUN test_left800.py
+{
+  "checks": 442,
+  "failure": null,
+  "expected_before_failure": false,
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "test_sha256": "09ff1e4bb49313145f3858517e6ad4d45d471715c65eba175ba36fb5b6d25f0b",
+  "hardware_tested": false
+}
+RUN test_live_monitor.py
+{
+  "checks": 21,
+  "failures": 0,
+  "axf": "E:\\Downloads\\Robot_Treasure-main\\Robot_Treasure-main\\STM32\\Keil_Project\\Thief16V_UARTCh4_StableBase_Test\\MDK-ARM\\Thief16V_UARTCh4_StableBase_Test\\Thief16V_UARTCh4_StableBase_Test.axf",
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "hardware_tested": false
+}
+RUN test_strategy_stable2.py
+{
+  "firmware": "UARTCH4_16V_STABLE5",
+  "checks": 229,
+  "failures": [],
+  "expected_before_failure": false,
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "test_sha256": "613018be99e37012e7d7740582effdb5290c867155dce821f3c9b86fff38bee2",
+  "hardware_tested": false
+}
+RUN test_temp78_stable3.py
+{
+  "firmware": "UARTCH4_16V_STABLE5",
+  "checks": 62,
+  "failures": [],
+  "lifecycles": [
+    {
+      "threat_heading": 0,
+      "wait": {
+        "frames": 76,
+        "node": 78,
+        "body": 0,
+        "fixes": [
+          78
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      },
+      "escape": {
+        "frames": 782,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          77,
+          76,
+          75,
+          59,
+          58,
+          46,
+          40,
+          39,
+          38,
+          37,
+          20,
+          10,
+          11
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "threat_heading": 3,
+      "wait": {
+        "frames": 76,
+        "node": 78,
+        "body": 0,
+        "fixes": [
+          78
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      },
+      "escape": {
+        "frames": 797,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          63,
+          52,
+          53,
+          44,
+          36,
+          35,
+          34,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          13,
+          12,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    }
+  ],
+  "expected_before_failure": false,
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "test_sha256": "868e1fed9c0419f08b833c88842c47e97a1e0b8906854368af4852b2e6dc918c",
+  "hardware_tested": false
+}
+RUN test_hide_routes_stable4.py
+{
+  "firmware": "UARTCH4_16V_STABLE5",
+  "checks": 162,
+  "failures": [],
+  "lifecycles": [
+    {
+      "kind": "initial",
+      "result": {
+        "frames": 827,
+        "node": 38,
+        "body": 2,
+        "fixes": [
+          53,
+          44,
+          36,
+          35,
+          34,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          2,
+          11,
+          22,
+          21,
+          38
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "kind": "fixed",
+      "body": 1,
+      "gyro_sign": -1,
+      "world_heading": 0,
+      "result": {
+        "frames": 605,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          12,
+          23,
+          31,
+          32,
+          48,
+          49,
+          61,
+          62,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "kind": "fixed",
+      "body": 1,
+      "gyro_sign": 1,
+      "world_heading": 0,
+      "result": {
+        "frames": 605,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          12,
+          23,
+          31,
+          32,
+          48,
+          49,
+          61,
+          62,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "kind": "fixed",
+      "body": 3,
+      "gyro_sign": -1,
+      "world_heading": 0,
+      "result": {
+        "frames": 605,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          12,
+          23,
+          31,
+          32,
+          48,
+          49,
+          61,
+          62,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "kind": "fixed",
+      "body": 3,
+      "gyro_sign": 1,
+      "world_heading": 0,
+      "result": {
+        "frames": 605,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          12,
+          23,
+          31,
+          32,
+          48,
+          49,
+          61,
+          62,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "kind": "fixed",
+      "body": 1,
+      "gyro_sign": 1,
+      "world_heading": 2,
+      "result": {
+        "frames": 605,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          12,
+          23,
+          31,
+          32,
+          48,
+          49,
+          61,
+          62,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "kind": "fixed",
+      "body": 1,
+      "gyro_sign": 1,
+      "world_heading": 3,
+      "result": {
+        "frames": 605,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          12,
+          23,
+          31,
+          32,
+          48,
+          49,
+          61,
+          62,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    }
+  ],
+  "expected_before_failure": false,
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "test_sha256": "7793e026d9b7eb068f9101f4bfa907fe8aabb42492397ec64cbfbee04dd00470",
+  "hardware_tested": false
+}
+RUN test_turn_line_stable5.py
+{
+  "firmware": "UARTCH4_16V_STABLE5",
+  "checks": 120,
+  "failures": [],
+  "expected_before_failure": false,
+  "actual_log_yaw": {
+    "133": [
+      121995,
+      1632
+    ],
+    "134": [
+      122015,
+      1632
+    ],
+    "136": [
+      122056,
+      1632
+    ],
+    "138": [
+      122117,
+      3529
+    ],
+    "139": [
+      122237,
+      4055
+    ],
+    "140": [
+      122357,
+      4544
+    ]
+  },
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "test_sha256": "85aafda198285cff52256c155d17eb358b46d387e40bebdfe04dcdbb3ac00bef",
+  "log_sha256": "6dc8718699138b37caabd42a84d88f320221216964c60072be90cc3b2b652952",
+  "hardware_tested": false
+}
+{
+  "status": "PASS",
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "rom_bytes": 65484,
+  "ram_bytes": 44016,
+  "suites": 9,
+  "modified_sources": [
+    "User/App_ThiefStrategy.c",
+    "Algorithm/MapRoute/MapRouteNavigator.c",
+    "Algorithm/ThiefStrategy/FrontLaserGate.c",
+    "Algorithm/ThiefStrategy/ThiefInterceptPolicy.c",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.c",
+    "Algorithm/ThiefStrategy/ThiefRiskSearch.h",
+    "Algorithm/ThiefStrategy/ThiefStrategyConfig.h",
+    "Hardware/LaserRx.c",
+    "Hardware/LaserRx.h"
+  ]
+}

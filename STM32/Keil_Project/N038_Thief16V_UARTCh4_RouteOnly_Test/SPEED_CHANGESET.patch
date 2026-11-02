@@ -1,0 +1,239 @@
+--- TOP7/AGENTS.md
++++ SPEED/AGENTS.md
+@@ -1,3 +1,17 @@
++# TOP7_SPEED_SL1：硬币短遮挡保持原速（本段优先）
++
++当前FW=`UARTCH4_16V_TOP7_SPEED_SL1`。仅E盘本工程，桌面未写入。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_coin_speed，298项散列。
++
++用户要求只有瞬时无线，保持原速通过。Route_TreasureRearBridge不再固定500（50RPM），直接使用进入遮挡前FollowSmoothing的实际base_rpm_x10；后板误差仍最多±20RPM差速，左右平均目标等于原基速，原20ms控制周期不变。不是把所有路段速度强改成某一固定RPM，也不是实测轮速保证。
++
++首次N006→N004、前板无线且后板真实紧凑线、最多50mm的启用条件保持；前板恢复交回原巡线，后板失线或超限回原找线。当前完整取宝路线、N002入N011后90°横停、N011北敌车经N031到N063、四路测距和PA3保持。KEY与连续双白两秒等原规则保持。
++
++ARMCC5编译0错误0警告，当前16组离线回归通过；专项覆盖120/220/260RPM保持原基速。ROM68548、RAM44896字节（相对TOP7不增加），剩4256字节，含3KB预留栈；已知最大920字节，实物栈水位未测。证据VALIDATION_SPEED.json、SPEED_FILES.json、SPEED_CHANGESET.patch、Tests/speed_inputs.json、Tests/speed_suites.json。详见Docs/SPEED_硬币短遮挡原速通过.md。下方50RPM描述和旧固件报告均为历史。
++
++仅编译通过，尚未完成硬件验证；未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST11_TOP7_SL1：首次经N035、N007取宝（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_FIRST11_TOP7_SL1`。仅修改E盘本工程，桌面工程未写入。每次修改前必须读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/VIA2_before_top7_coin，294项散列。
+--- TOP7/Docs/SPEED_硬币短遮挡原速通过.md
++++ SPEED/Docs/SPEED_硬币短遮挡原速通过.md
+@@ -0,0 +1,20 @@
++# TOP7_SPEED_SL1
++
++按用户要求，短瞬间无线保持原速通过。只改E盘本工程，桌面未写入。基线TOP7完整静态文件和映像快照Reference/TOP7_before_coin_speed，298项散列。
++
++Route_TreasureRearBridge原500L固定基准改成follow_smoothing.base_rpm_x10，沿用本次正常巡线实际使用的平滑基速。两侧目标为base±后板P修正（修正限200，即20RPM），平均目标严格等于base。正常巡线PID、速度、平滑及20ms目标更新周期不变。前板恢复后交回原巡线，无50RPM降速动作；不将旧的高于当前平滑速度的预设速度硬塞回控制器。
++
++启用范围仍是首次1600路线N006→N004、正向FOLLOW、前板无线且后板真实紧凑线，最多50mm。没有真实后板线索则不辅助前进；双白两秒、KEY和其他原规则保留。普通路段、倒车、离开宝藏后的路线不放宽。真实前板RAW不伪造、地图游标不推进。此处基速是目标速度，不是实车实测轮速保证。
++
++首次完整路线仍54→53→44→36→35→26→17→7→6→5→4→3→2→11，N011到点停稳后转90°朝西横停；N011北侧逃跑仍经12→23→31到63。激光前后1000/左右900mm、PA3声光保持。
++
++生产只改User/App_ThiefStrategy.c中短遮挡辅助的基速来源及三处固件标识。ThiefMapPlanner及其他生产文件保持TOP7。Tests/test_top7_coin.py改为检查120/220/260RPM三种入口速度、三种后板偏差，要求左右目标为正、平均值等于入口速度且差速不超40RPM；50mm、前板恢复、非目标状态、双白两秒等原断言继续保留。
++
++最初专项测试的循环变量与DWARF辅助函数base重名，导致夹具报int不可调用；改名后只重跑该专项通过，生产映像未改变。初次失败及重跑说明保存在speed_suites.json。原15组和专项共16组最终通过，全部报告绑定当前AXF。输入、陀螺仪和电机反馈仍是合成，不是实车测试。
++
++ARMCC5全量编译0错误0警告。ROM68548、RAM44896字节，RAM不增加，48KB剩4256字节；预留栈3072、已知最大920字节，实际栈水位未测。证据VALIDATION_SPEED.json、SPEED_CHANGESET.patch、SPEED_FILES.json。复核：全量编译后Tests/run_speed.py，再Tests/validate_speed.py。
++
++修改文件：User/App_ThiefStrategy.c、Tests/test_top7_coin.py、README.md、AGENTS.md、Docs/修改规范与回归清单.md。新增本说明、Tests/run_speed.py、Tests/validate_speed.py及SPEED构建/输入散列/报告/差异清单。每次更改前继续读本工程三份规范，旧50RPM说明不能作为现行规则。
++
++仅编译通过，尚未完成硬件验证；未烧录、未占串口、未运行实物电机、未提交推送。
++
+--- TOP7/Docs/修改规范与回归清单.md
++++ SPEED/Docs/修改规范与回归清单.md
+@@ -1,3 +1,17 @@
++# TOP7_SPEED_SL1：硬币短遮挡保持原速（本段优先）
++
++当前FW=`UARTCH4_16V_TOP7_SPEED_SL1`。仅E盘本工程，桌面未写入。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_coin_speed，298项散列。
++
++用户要求只有瞬时无线，保持原速通过。Route_TreasureRearBridge不再固定500（50RPM），直接使用进入遮挡前FollowSmoothing的实际base_rpm_x10；后板误差仍最多±20RPM差速，左右平均目标等于原基速，原20ms控制周期不变。不是把所有路段速度强改成某一固定RPM，也不是实测轮速保证。
++
++首次N006→N004、前板无线且后板真实紧凑线、最多50mm的启用条件保持；前板恢复交回原巡线，后板失线或超限回原找线。当前完整取宝路线、N002入N011后90°横停、N011北敌车经N031到N063、四路测距和PA3保持。KEY与连续双白两秒等原规则保持。
++
++ARMCC5编译0错误0警告，当前16组离线回归通过；专项覆盖120/220/260RPM保持原基速。ROM68548、RAM44896字节（相对TOP7不增加），剩4256字节，含3KB预留栈；已知最大920字节，实物栈水位未测。证据VALIDATION_SPEED.json、SPEED_FILES.json、SPEED_CHANGESET.patch、Tests/speed_inputs.json、Tests/speed_suites.json。详见Docs/SPEED_硬币短遮挡原速通过.md。下方50RPM描述和旧固件报告均为历史。
++
++仅编译通过，尚未完成硬件验证；未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST11_TOP7_SL1：首次经N035、N007取宝（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_FIRST11_TOP7_SL1`。仅修改E盘本工程，桌面工程未写入。每次修改前必须读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/VIA2_before_top7_coin，294项散列。
+--- TOP7/README.md
++++ SPEED/README.md
+@@ -1,3 +1,17 @@
++# TOP7_SPEED_SL1：硬币短遮挡保持原速（本段优先）
++
++当前FW=`UARTCH4_16V_TOP7_SPEED_SL1`。仅E盘本工程，桌面未写入。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_coin_speed，298项散列。
++
++用户要求只有瞬时无线，保持原速通过。Route_TreasureRearBridge不再固定500（50RPM），直接使用进入遮挡前FollowSmoothing的实际base_rpm_x10；后板误差仍最多±20RPM差速，左右平均目标等于原基速，原20ms控制周期不变。不是把所有路段速度强改成某一固定RPM，也不是实测轮速保证。
++
++首次N006→N004、前板无线且后板真实紧凑线、最多50mm的启用条件保持；前板恢复交回原巡线，后板失线或超限回原找线。当前完整取宝路线、N002入N011后90°横停、N011北敌车经N031到N063、四路测距和PA3保持。KEY与连续双白两秒等原规则保持。
++
++ARMCC5编译0错误0警告，当前16组离线回归通过；专项覆盖120/220/260RPM保持原基速。ROM68548、RAM44896字节（相对TOP7不增加），剩4256字节，含3KB预留栈；已知最大920字节，实物栈水位未测。证据VALIDATION_SPEED.json、SPEED_FILES.json、SPEED_CHANGESET.patch、Tests/speed_inputs.json、Tests/speed_suites.json。详见Docs/SPEED_硬币短遮挡原速通过.md。下方50RPM描述和旧固件报告均为历史。
++
++仅编译通过，尚未完成硬件验证；未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST11_TOP7_SL1：首次经N035、N007取宝（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_FIRST11_TOP7_SL1`。仅修改E盘本工程，桌面工程未写入。每次修改前必须读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/VIA2_before_top7_coin，294项散列。
+--- TOP7/Tests/run_speed.py
++++ SPEED/Tests/run_speed.py
+@@ -0,0 +1,23 @@
++"""Actual linked firmware, simulated peripherals only. No serial/flash/motors."""
++from pathlib import Path
++import sys,subprocess,concurrent.futures,json,hashlib
++r=Path(__file__).resolve().parents[1];sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
++image=r/'MDK-ARM'/r.name/(r.name+'.axf')
++inputs={p.relative_to(r).as_posix():sha(p) for folder in ['User','Control','Algorithm','Hardware','Core','System','Drivers','MDK-ARM'] for p in (r/folder).rglob('*') if p.is_file() and p.suffix.lower() in ['.c','.h','.s','.uvprojx']}
++test_inputs={p.relative_to(r).as_posix():sha(p) for p in (r/'Tests').glob('*.py')}
++(r/'Tests/speed_inputs.json').write_text(json.dumps(dict(production=inputs,test_sources=test_inputs,axf_sha256=sha(image)),indent=2),encoding='utf-8')
++tests=['test_strategy_stable2.py','test_temp78_stable3.py','test_n011_first_plan_stable10.py','test_hide_routes_stable4.py','test_escape_completion.py','test_turn_resume.py','test_left800.py','test_live_monitor.py','test_west63.py','test_trace_front_probe.py','test_trace_return.py','test_trace_recovery.py','test_n068_recovery.py','test_rear_retrace.py','test_short_return.py','test_top7_coin.py']
++def run(n):
++    with (r/'Tests'/('speed_'+n+'.log')).open('w',encoding='utf-8') as f:
++        p=subprocess.run([sys.executable,'-X','utf8',str(r/'Tests'/n)],stdout=f,stderr=subprocess.STDOUT)
++    return dict(test=n,exit_code=p.returncode)
++results=[]
++with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
++    for f in concurrent.futures.as_completed([ex.submit(run,n) for n in tests]):
++        result=f.result();results.append(result);print(result,flush=True)
++        if result['exit_code']:print((r/'Tests'/('speed_'+result['test']+'.log')).read_text(encoding='utf-8')[-3000:],flush=True)
++(r/'Tests/speed_suites.json').write_text(json.dumps(results,indent=2),encoding='utf-8')
++assert all(x['exit_code']==0 for x in results),results
++assert all(sha(r/p)==h for p,h in inputs.items()),'production changed during tests'
++assert all(sha(r/p)==h for p,h in test_inputs.items()),'test source changed during tests'
++
+--- TOP7/Tests/test_top7_coin.py
++++ SPEED/Tests/test_top7_coin.py
+@@ -27,16 +27,17 @@
+     check(nodes==[53,44,36,35,26,17,7,6,4,3,2,11],'complete requested map route, N005 remains an internal mark')
+     check(member('thief_plan','goal_node')==11 and member('thief_plan','final_body_heading')==3,'first hide remains N011 west parked')
+     cases.append(dict(case='route',nodes=nodes))
+-    for raw in [0x60,0x30,0xC0]:
++    for raw,entry_speed in [(0x60,1200),(0x30,2200),(0xC0,2600)]:
+         coin_start();front_raw=0;back_raw=raw
++        member('follow_smoothing','base_rpm_x10',entry_speed)
+         for _ in range(3):
+             cycle();odom+=8
+             check(var('route_state')==2 and not member('map_nav','arrived'),'rear stripe passes short gap without claiming N004')
+         drive=[x for x in commands if x[0]=='drive']
+-        check(drive and all(300<=x[1]<=700 and 300<=x[2]<=700 for x in drive),'rear P correction commands forward targets only')
++        check(drive and all(x[1]>0 and x[2]>0 and x[1]+x[2]==2*entry_speed and abs(x[1]-x[2])<=400 for x in drive),'rear correction preserves actual entry speed without a 50RPM dip')
+         front_raw=back_raw=0x60;cycle()
+         check(var('route_state')==2 and not var('treasure_rear_bridge'),'front stripe restores normal follow')
+-        cases.append(dict(case='coin',raw=raw,commands=drive))
++        cases.append(dict(case='coin',raw=raw,entry_rpm_x10=entry_speed,commands=drive))
+     coin_start();front_raw=0;cycle();odom=225;cycle()
+     check(var('route_state')==8,'50mm front gap falls back to existing recovery')
+     for args in [(6,4,3,0,1601),(4,6,1,1,1600),(75,59,0,0,1600)]:
+--- TOP7/Tests/validate_speed.py
++++ SPEED/Tests/validate_speed.py
+@@ -0,0 +1,56 @@
++"""Current image/source/report binding; synthetic tests are not hardware proof."""
++from pathlib import Path
++import json,hashlib,re,difflib,xml.etree.ElementTree as ET
++r=Path(__file__).resolve().parents[1];b=r/'Reference/TOP7_before_coin_speed'
++sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
++read=lambda p:p.read_text(encoding='utf-8')
++load=lambda p:json.loads(read(p))
++image=r/'MDK-ARM'/r.name/(r.name+'.axf');ah=sha(image)
++z=load(r/'Tests/speed_inputs.json');assert z['axf_sha256']==ah
++assert all(sha(r/n)==h for n,h in z['production'].items())
++assert all(sha(r/n)==h for n,h in z['test_sources'].items())
++snapshot=load(b/'SNAPSHOT_SHA256.json');assert len(snapshot)==298 and all(sha(b/n)==h for n,h in snapshot.items())
++delta={n for n in z['production'] if sha(b/n)!=sha(r/n)}
++assert delta=={'User/App_ThiefStrategy.c'}
++app=read(r/'User/App_ThiefStrategy.c');old=read(b/'User/App_ThiefStrategy.c')
++assert app.count('UARTCH4_16V_TOP7_SPEED_SL1')==3 and b'UARTCH4_16V_TOP7_SPEED_SL1' in image.read_bytes()
++normalized=app.replace('UARTCH4_16V_TOP7_SPEED_SL1','UARTCH4_16V_FIRST11_TOP7_SL1')
++normalized=normalized.replace('  int32_t progress,turn,base;','  int32_t progress,turn;').replace('  base=follow_smoothing.base_rpm_x10;\n','').replace('TravelFrame_SetWheelTargets(base+turn,base-turn,base+turn,base-turn);','TravelFrame_SetWheelTargets(500L+turn,500L-turn,500L+turn,500L-turn);')
++assert normalized==old,'application changed beyond bridge speed and identity'
++def fn(s,name):
++    m=re.search(r'^static [^;\n]+\b'+name+r'\([^;]*?\)\s*\{',s,re.M);assert m,name
++    j=s.index('{',m.start());k=j+1;depth=1
++    while depth:depth+=(s[k]=='{')-(s[k]=='}');k+=1
++    return s[m.start():k]
++frozen=['Route_ReadFront','Route_ReadRear','Route_UpdateErrors','Route_UpdateFollowMode','Route_RunFollow','Route_FinishNodeStop','Route_DriveLeftTurn','Route_DriveRightTurn','Route_EnterTurnApproach','Route_EnterTurnStop','Route_HasReachedTurnAngle']
++assert all(fn(app,n)==fn(old,n) for n in frozen)
++planner='Algorithm/ThiefStrategy/ThiefMapPlanner.c'
++assert read(r/planner).split('uint8_t ThiefMapPlanner_PlanInitial(',1)[1]==read(b/planner).split('uint8_t ThiefMapPlanner_PlanInitial(',1)[1]
++suites=load(r/'Tests/speed_suites.json');assert len(suites)==16 and all(x['exit_code']==0 for x in suites)
++reports={}
++for n in ['results_strategy_stable2.json','results_temp78_stable3.json','results_n011_first_plan_stable10.json','results_hide_routes_stable4.json','results_escape_completion.json','results_turn_resume.json','results_left800.json','results_live_monitor.json','west63_after.json','trace_front_after.json','results_trace_return.json','results_trace_recovery.json','results_n068_recovery.json','results_rear_retrace.json','results_short_return.json','results_top7_coin.json']:
++    p=r/'Tests'/n;q=load(p);assert not q.get('failures') and not q.get('failure'),n
++    assert q.get('axf_sha256',q.get('firmware_sha256'))==ah,n
++    reports[n]=dict(checks=q.get('checks'),sha256=sha(p))
++initial=next(x for x in load(r/'Tests/results_hide_routes_stable4.json')['lifecycles'] if x['kind']=='initial')
++assert initial['result']['node']==11 and initial['result']['body']==3
++nodes=load(r/'Tests/results_top7_coin.json')['cases'][0]['nodes']
++assert nodes==[53,44,36,35,26,17,7,6,4,3,2,11]
++coins=[c for c in load(r/'Tests/results_top7_coin.json')['cases'] if c['case']=='coin']
++assert {c['entry_rpm_x10'] for c in coins}=={1200,2200,2600}
++assert all(l+rr==2*c['entry_rpm_x10'] for c in coins for _,l,rr in c['commands'])
++proj=r/'MDK-ARM'/(r.name+'.uvprojx');paths=ET.parse(proj).findall('.//FilePath')
++assert len(paths)==len({n.text.lower() for n in paths}) and all((proj.parent/n.text.replace('\\','/')).exists() for n in paths)
++assert '0 Error(s), 0 Warning(s)' in read(r/'build_speed.log')
++mp=read(image.with_suffix('.map'));htm=read(image.with_suffix('.htm'))
++rom=int(re.search(r'Total ROM Size[^\n]+?\)\s+(\d+)',mp)[1]);ram=int(re.search(r'Total RW\s+Size[^\n]+?\)\s+(\d+)',mp)[1]);stack=int(re.search(r'Maximum Stack Usage =\s*(\d+)',htm)[1])
++assert (rom,ram,stack)==(68548,44896,920)
++changed=[n for n,h in snapshot.items() if n.endswith(('.c','.h','.s','.md','.py','.ioc','.uvprojx','.uvoptx')) and sha(r/n)!=h]
++added=['Tests/run_speed.py','Tests/validate_speed.py','Docs/SPEED_\u786c\u5e01\u77ed\u906e\u6321\u539f\u901f\u901a\u8fc7.md']
++patch=''.join(''.join(difflib.unified_diff(read(b/n).splitlines(True) if (b/n).exists() else [],read(r/n).splitlines(True),fromfile='TOP7/'+n,tofile='SPEED/'+n)) for n in sorted(changed+added))
++(r/'SPEED_CHANGESET.patch').write_text(patch,encoding='utf-8')
++artifacts=changed+added+['SPEED_CHANGESET.patch','build_speed.log','Tests/speed_inputs.json','Tests/speed_suites.json']+['Tests/'+n for n in reports]+[p.relative_to(r).as_posix() for p in (r/'Tests').glob('speed_*.log')]+[image.with_suffix(s).relative_to(r).as_posix() for s in ('.axf','.hex','.map','.htm')]
++(r/'SPEED_FILES.json').write_text(json.dumps(dict(modified=changed,added=added,hashes={n:sha(r/n) for n in sorted(set(artifacts))},generated_manifests=['SPEED_FILES.json','VALIDATION_SPEED.json']),ensure_ascii=False,indent=2),encoding='utf-8')
++out=dict(firmware='UARTCH4_16V_TOP7_SPEED_SL1',project=str(r),axf_sha256=ah,hex_sha256=sha(image.with_suffix('.hex')),source_hashes=z['production'],test_source_hashes=z['test_sources'],validator_sha256=sha(Path(__file__)),production_changed=sorted(delta),frozen_functions=frozen,suites=suites,reports=reports,baseline_files_checked=298,rom_bytes=rom,ram_bytes=ram,ram_added_bytes=0,ram_remaining_bytes=48*1024-ram,reserved_stack_bytes=3072,linker_known_stack_bytes=stack,hardware_stack_watermark_measured=False,desktop_written=False,hardware_tested=False,flashed=False,serial_opened=False,motors_run=False)
++(r/'VALIDATION_SPEED.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(dict(firmware=out['firmware'],suites=len(suites),initial_hide=11,ram_bytes=ram,axf_sha256=ah,hardware_tested=False),indent=2))
+--- TOP7/User/App_ThiefStrategy.c
++++ SPEED/User/App_ThiefStrategy.c
+@@ -814,7 +814,7 @@
+ static uint8_t Route_TreasureRearBridge(RouteGraySample_t *sample,uint32_t dt)
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+-  int32_t progress,turn;
++  int32_t progress,turn,base;
+   if(front_state!=ROUTE_GRAY_NO_LINE || departure_turn || map_nav.arrived ||
+       !step || map_nav.route->id!=1600U || step->from_node!=6U ||
+       step->to_node!=4U || step->heading!=3U || TravelFrame_IsReverse())return 0U;
+@@ -830,7 +830,8 @@
+   if(dt<LINE_FOLLOW_PID_CONTROL_PERIOD_MS)return 1U;
+   turn=sample->rear_error_x100;
+   if(turn>200L)turn=200L;else if(turn< -200L)turn=-200L;
+-  TravelFrame_SetWheelTargets(500L+turn,500L-turn,500L+turn,500L-turn);
++  base=follow_smoothing.base_rpm_x10;
++  TravelFrame_SetWheelTargets(base+turn,base-turn,base+turn,base-turn);
+   ChassisSpeedControl_Update(dt);
+   if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
+   return 1U;
+@@ -1866,7 +1867,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_FIRST11_TOP7_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_TOP7_SPEED_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1892,7 +1893,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_FIRST11_TOP7_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_TOP7_SPEED_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1941,7 +1942,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_FIRST11_TOP7_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_TOP7_SPEED_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,

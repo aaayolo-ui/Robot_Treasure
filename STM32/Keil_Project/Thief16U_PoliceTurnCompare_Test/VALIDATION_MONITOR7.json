@@ -1,0 +1,191 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR7",
+  "firmware_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480",
+  "hex_sha256": "255ca8fadf876eae140af61d5cb58c3dd7fe1772e1d3e184c8adcea02eaa5f9e",
+  "before_failures": [
+    {
+      "case": "straight_reference",
+      "error": "straight reference learning exists"
+    },
+    {
+      "case": "treasure_turn_handoff",
+      "error": "N004/N006 46.57deg cannot hand off to PID"
+    },
+    {
+      "case": "reference_wrap_reverse",
+      "error": "reference learner exists"
+    }
+  ],
+  "new_cases": {
+    "straight_reference": 70,
+    "treasure_turn_handoff": 8,
+    "reference_wrap_reverse": 4
+  },
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "3234ae30ca2ebc4c7ba68c9e9284ba09126af9d95777d52ca0174fecc76af5f6",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "6ce9619d275518afab667d315987b9a173d0cd704fcb9c8602370b7842f3fd43",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "d71a645001c4514494b24c79f4caf53b60fb5388718f141c17cd7e1b44b727e9",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "0619fb5244a1bf6d683e4278e678826cfbc1177b21764e8b6e4267a7f69388fe",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "bd781393d3fceb823e2cd06515430e9979ced22e609b0336501e36246789f61b",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "a9878f0f5d3c36d63f826b94e6b5eac5153609cec8a7f9f8326650bab9063289",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "437dd99b2ac63e7a4ca7602a6a15e170b1ffdc39c031f9b9a9fc6a295d06fe47",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "2ffca2cfea9b5b65e44c62eddf7cb3b8eaa0559defc4bcd6cdc638d79d0e78ad",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "40c3b0e62700dc1523a0ca496e69c1854872b6d1fbc624abde65b5e0733741c2",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "b9fd40835c6c1b0270806df5142652112609af7b52d7220a9114bb69790cbfbc",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "ebc6a0ce9ff297981c4ac577ba0dd8a7f3d0e6738804ccc09ab0ecb748ba646d",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "a215f07f393f38bbd9e93de9367d3b2bfbb8882a7401a38f16dcdc11f2a4ac94",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "f60f94d648f3acb0587ef271893daefcd02a19fc77d546c4bc220c96807152ba",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "46b6a8783ede87b4dafd851923625d8e3cf8e041712336efa66b8379d0f11a1f",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "8e221a98448be4013c2ca9c5a536e988cd41125e2f33822772d4eee027d4c5cf",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "608a6abdfff32e3252c3ab0caaf83544afe27e3b9b181cb12e3b213297e8855e",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "c823cecc51c1a684feb5845d045bacbdd1d8cffbeb3ec059889850f33edd7c56",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "f91b0b36eea5c138d623645d223507259e1098f2dda26c31097ccf13822d5696",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "113cd9c1c76347662df9cdbb31c7d52a61ffa4b19e0895142eb36fd1e91fc2ec",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "9c929cf9d5ad0b15013c2142527a69fe22548be6ef78f5dacfbf5c777fe598c3",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "83d02615f94ef6bc288fefb7d8ad27623a0736a2789aa13a34dcc1d45b312891",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "6a8e4706cfea0cce40445b73dfedec81f7761d15b1f932eb8b7435914f9bbc08",
+      "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480"
+    }
+  ],
+  "supplemental": {
+    "route_identity": 92,
+    "exit_stall": 988,
+    "road_probe": 1798,
+    "left800": 442
+  },
+  "unchanged_algorithm_checks": 366155,
+  "unchanged_algorithm_evidence": "Tests/results_16m.json; source hashes revalidated, no algorithm changes",
+  "files": {
+    "User/App_ThiefStrategy.c": "9a234975ecb117e20e2882da539d90004a69d880e5d48594d85860a05a265deb",
+    "Tests/test_yaw_reference.py": "c1398149ebcce35c0be6c5a4866a571b8d14324d585841483f3d65a244246443",
+    "README.md": "97471756ab310332b1844571588b3e7dc465d932eaab60fb80105e836117bf98",
+    "AGENTS.md": "d0d3511e8e624ea79a8a3622aeb102264f1c34f8ae6bdb27ed29256e0bd49c90",
+    "Docs/修改规范与回归清单.md": "69794543ffee611079491bcd2bbb5738f8b00befd9a30a498d50c490bcf2902b",
+    "Tests/validate_monitor7.py": "2d8e086c1b66e6bd87db31a128a0aabfc041c27fad95509e5ed6751ae5a12c26",
+    "YAW_REFERENCE_CHANGESET.patch": "881e037b03b2c17923db1315fc2baa174273b543a750bffdeecdeb831cf65f37",
+    "build_monitor7.log": "d7453e3f84ac9a918757cbf0a230da110e5dbe68aaf8f3d6732b9a86534c2816",
+    "Tests/results_yaw_reference.json": "ab6b60ded7b3d634e81c2da29d5ca2a9871a79b4f727ae650d2f4d6035636edc",
+    "Tests/results_monitor_suite.json": "a501cdb36cb9107c6b749d58798a42a9ad60d120f70015150db934d654992b3f",
+    "Tests/results_route_identity.json": "68ca5056cc285caf991ee3de97972f79256f3d6513781c951fd8ea2b91c5beda",
+    "Tests/results_exit_stall.json": "99177b1b267a5d0239a6f745c8f4fe50e02170ec3a4ff8ba56556fea3349c338",
+    "Tests/results_road_probe.json": "4c4ddbaefc75b21e27a88c73940a72e92ee2a8cbb3c8ec94343a063fe999416b",
+    "Tests/results_left800.json": "40ffdf9dc77c04fb808c320333e0acdcab8323e45e743c36aa45255a09f5b1a5"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "Physical turning inertia, traction, centering and yaw drift convergence require vehicle tests.",
+    "Raw YAW remains untouched. Calibration only adjusts the map reference under sustained corroborated straight-line observations.",
+    "Only N004/N006 turns gain the new map-axis handoff; other turn parameters remain unchanged.",
+    "No webpage or desktop helper changes in this version."
+  ]
+}

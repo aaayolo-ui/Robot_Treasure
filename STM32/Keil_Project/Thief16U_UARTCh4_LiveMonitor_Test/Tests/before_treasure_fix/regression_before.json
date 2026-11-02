@@ -1,0 +1,33 @@
+{
+  "checks": 27,
+  "failures": [
+    {
+      "case": "text_mask_matrix",
+      "error": "north-side text excluded; real center and south side preserved"
+    },
+    {
+      "case": "side_fragments_are_not_nodes",
+      "error": "isolated edge fragment cannot confirm a mapped node"
+    },
+    {
+      "case": "eighteen_ms_restart",
+      "error": "18ms/13mm restart cannot become next node even with center black"
+    },
+    {
+      "case": "n007_turn_phase",
+      "error": "after turning toward the text road, mask the actual north side"
+    },
+    {
+      "case": "n038_north_runway",
+      "error": "use actual east runway N038-N039-N040 before generic opposite direction"
+    },
+    {
+      "case": "fragment_retry_then_complete",
+      "error": "repeated007 edge fragments keep driving without confirming N006"
+    }
+  ],
+  "cases": {},
+  "axf_sha256": "b2205b6197523eae5ef83b4e801688401aeb493d9ce64ae3cd6e49a62ea675ba",
+  "test_sha256": "7cad2b65cde25636e1f21601f13752a4760282a464a7240c8056afaa11f4619b",
+  "hardware_tested": false
+}

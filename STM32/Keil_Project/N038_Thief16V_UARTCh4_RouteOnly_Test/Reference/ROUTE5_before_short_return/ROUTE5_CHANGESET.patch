@@ -1,0 +1,168 @@
+--- ROUTE4/Control/RestartLineSearch.c
++++ ROUTE5/Control/RestartLineSearch.c
+@@ -1,11 +1,13 @@
+ #include "RestartLineSearch.h"
+ 
+-/* Trial gains: 50 RPM translation, <=20 RPM differential; a stationary scan
+- * targets +/-4 degrees from the mapped road heading. No elapsed-time turns. */
++/* Recovery only: 50 RPM translation, <=20 RPM differential. Rear-only line
++ * is followed backwards, with a measured stop before either direction change.
++ * Both-white scan stays within +/-4 degrees of the entry yaw. */
+ #define TRACK 0U
+ #define BRAKE 1U
+ #define SWEEP 2U
+ #define FAILED 3U
++#define BACKTRACK 4U
+ static int16_t Clamp(int32_t x, int16_t bound)
+ {
+   return (int16_t)(x>bound?bound:x < -bound?-bound:x);
+@@ -31,7 +33,9 @@
+     out->brake=1U;
+     if(in->stopped) s->stopped_count++;else s->stopped_count=0U;
+     if(s->stopped_count>=2U) {
+-      s->phase=visible?TRACK:s->next_phase;s->line_count=0U;
++      s->phase=(s->next_phase==BACKTRACK && !in->leading_valid && in->trailing_valid)?
++          BACKTRACK:(visible?TRACK:s->next_phase);
++      s->line_count=0U;
+       if(s->phase==FAILED) out->failed=1U;
+     }
+     return;
+@@ -50,6 +54,17 @@
+     return;
+   }
+   if(s->phase==FAILED) {out->brake=1U;out->failed=1U;return;}
++  if(s->phase==BACKTRACK) {
++    if(in->leading_valid || !in->trailing_valid) {
++      s->line_count=0U;s->sweep_count=0U;s->target_yaw=(int16_t)(s->bias*400);
++      BrakeTo(s,in->leading_valid?TRACK:SWEEP);out->brake=1U;return;
++    }
++    /* In reverse the trailing stripe is the leading evidence. Its lateral
++     * sign is inverted; TravelFrame still maps the four physical wheels once. */
++    turn=Clamp(-(int32_t)in->trailing_error,200);
++    out->left_x10=(int16_t)(-500+turn);out->right_x10=(int16_t)(-500-turn);
++    return;
++  }
+   if(!visible) {
+     s->line_count=0U;s->sweep_count=0U;s->target_yaw=(int16_t)(s->bias*400);
+     BrakeTo(s,SWEEP);out->brake=1U;return;
+@@ -61,11 +76,8 @@
+     if(s->line_count>=3U) out->ready=1U;
+   } else {
+     s->line_count=0U;
+-    if(in->trailing_error) s->bias=in->trailing_error<0?-1:1;
+-    /* Rear-only P is non-minimum-phase. Convert its offset to a small desired
+-     * heading and close that loop with yaw instead of copying the front PID. */
+-    desired=Clamp((int32_t)in->trailing_error*2,400);
+-    turn=Clamp(((int32_t)desired-in->yaw_cw_x100)/2,200);
++    if(in->trailing_error) s->bias=in->trailing_error<0?1:-1;
++    BrakeTo(s,BACKTRACK);out->brake=1U;return;
+   }
+   out->left_x10=(int16_t)(500+turn);out->right_x10=(int16_t)(500-turn);
+ }
+--- ROUTE4/User/App_ThiefStrategy.c
++++ ROUTE5/User/App_ThiefStrategy.c
+@@ -268,6 +268,9 @@
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+   ThiefLocYaw_t yaw;Thief_LocalYaw(&yaw);
++  /* Keep the last on-route estimate after a fault; the parked refuge is not
++   * the place where the vehicle stopped. This does not claim an absolute fix. */
++  if(thief_strategy_state==THIEF_STRATEGY_FAULT){thief_pose.valid=0U;return;}
+   if(thief_localization.initialized)
+     observer_ok=ThiefLocalization_Update(&thief_localization,route_active?Route_LegProgress():0L,&yaw,SystemTime_GetMs());
+   /* Navigation estimate is separate from the diagnostic observer. Neither
+@@ -614,6 +617,7 @@
+   uint32_t now;
+   uint32_t last_yaw_tick;
+ 
++  Thief_UpdatePose();
+   n011_first_mask=0U;n011_escape_locked=0U;
+   route_trail.enabled=0U;route_trail.returning=0U;
+   TreasureWheelLog_Event(TREASURE_WHEEL_BEFORE_FAULT,SystemTime_GetMs(),(uint8_t)fault_from);
+@@ -1832,7 +1836,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE4_RECOVER STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE5_RETRACE STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1858,7 +1862,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE4_RECOVER ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE5_RETRACE ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1907,7 +1911,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE4_RECOVER T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ROUTE5_RETRACE T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2568,35 +2572,37 @@
+           if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
+           Route_HandleJunction(now,elapsed_ms,front_state,sample.front_raw12);break;
+         }
+-        input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID ||
+-            front_state==ROUTE_GRAY_LEFT_BLACK || front_state==ROUTE_GRAY_RIGHT_BLACK);
+-        input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
+-        if(route_trail.returning) {
+-          /* After a confirmed straight junction, a compact stripe at the
+-           * board edge still supports gray recovery. It is not exit proof. */
+-          input.leading_valid=(uint8_t)((front_state==ROUTE_GRAY_VALID ||
+-              (front_resume_state==ROUTE_STATE_MAP_PASS &&
+-               (front_state==ROUTE_GRAY_LEFT_BLACK || front_state==ROUTE_GRAY_RIGHT_BLACK))) &&
+-              ThiefRouteTrail_TrackLine(sample.front_raw12));
+-          input.trailing_valid=(uint8_t)(input.trailing_valid && ThiefRouteTrail_TrackLine(sample.rear_raw12));
+-          if(front_resume_state==ROUTE_STATE_AFTER_TURN_FORWARD)input.trailing_valid=0U;
+-        }
++        /* Only a compact actual stripe can authorize recovery translation.
++         * A trailing old road cannot undo an unfinished turn. */
++        input.leading_valid=(uint8_t)((front_state==ROUTE_GRAY_VALID ||
++            ((!route_trail.returning || front_resume_state==ROUTE_STATE_MAP_PASS) &&
++             (front_state==ROUTE_GRAY_LEFT_BLACK || front_state==ROUTE_GRAY_RIGHT_BLACK))) &&
++            ThiefRouteTrail_TrackLine(sample.front_raw12));
++        input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID && ThiefRouteTrail_TrackLine(sample.rear_raw12) &&
++            !departure_turn && front_resume_state!=ROUTE_STATE_AFTER_TURN_FORWARD &&
++            (!map_nav.arrived || MapRouteNavigator_Current(&map_nav)->action==MAP_ACTION_STRAIGHT));
+         if(input.leading_valid && (!route_trail.returning || front_state==ROUTE_GRAY_VALID)) {
+-          if(++front_recovery_valid_count>=ROUTE_FRONT_RECOVERY_VALID_SAMPLES) {
+-            Route_EnterFollow(now,1U,front_resume_base_rpm_x10,0U);
+-            if(route_trail.returning && front_resume_state==ROUTE_STATE_MAP_PASS) {
+-              /* The straight-pass owner must confirm and commit this node;
+-               * retain its first-detection encoder anchor through recovery. */
+-              route_state=ROUTE_STATE_MAP_PASS;map_pass_valid_count=0U;
+-            }
+-            (void)Route_RunFollow(&sample,elapsed_ms);break;
+-          }
++          if(front_recovery_valid_count<ROUTE_FRONT_RECOVERY_VALID_SAMPLES)front_recovery_valid_count++;
+         } else front_recovery_valid_count=0U;
+         input.leading_error=sample.front_error_x100;input.trailing_error=sample.rear_error_x100;
+         input.yaw_known=(uint8_t)(yaw.valid && (uint32_t)(now-yaw.stamp_ms)<=ROUTE_JY61P_STALE_MS);
+         input.yaw_cw_x100=(int16_t)(Route_TurnAngleDeltaX100(yaw.yaw_x100,gray_entry_yaw)*thief_localization.yaw_cw_sign);
+         input.stopped=Route_AllWheelsStopped();
+         RestartLineSearch_Update(&gray_search,&input,&output);
++        if(output.left_x10<0 && output.right_x10<0) {
++          /* A stripe reached while backing is recovery evidence, not the next
++           * forward junction. Ordinary follow re-arms after reacquisition. */
++          junction_armed=0U;front_was_valid=0U;rearm_valid_count=0U;
++        }
++        if(output.ready && front_recovery_valid_count>=ROUTE_FRONT_RECOVERY_VALID_SAMPLES) {
++            Route_EnterFollow(now,1U,front_resume_base_rpm_x10,0U);
++            if(front_resume_state==ROUTE_STATE_MAP_PASS) {
++              /* The straight-pass owner must confirm and commit this node;
++               * retain its first-detection encoder anchor through recovery. */
++              route_state=ROUTE_STATE_MAP_PASS;map_pass_valid_count=0U;
++            }
++            (void)Route_RunFollow(&sample,elapsed_ms);break;
++        }
+         if(output.brake || output.failed) {
+           Route_BrakeControl();
+           /* Refresh stopped-wheel evidence for the next search cycle. Drive

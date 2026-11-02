@@ -1,0 +1,79 @@
+{
+  "checks": 4982,
+  "failures": 0,
+  "alignment_checks": 17,
+  "entry_frame_checks": 96,
+  "departure_checks": 61,
+  "departure_laser_plans": [
+    {
+      "laser": "FRONT",
+      "heading": 3,
+      "drive_mode": 1,
+      "state": 1
+    },
+    {
+      "laser": "LEFT",
+      "heading": 1,
+      "drive_mode": 0,
+      "state": 1
+    },
+    {
+      "laser": "RIGHT",
+      "heading": 3,
+      "drive_mode": 1,
+      "state": 1
+    },
+    {
+      "laser": "REAR",
+      "heading": 1,
+      "drive_mode": 0,
+      "state": 1
+    }
+  ],
+  "scope": "Actual application functions from linked ARMCC5 firmware; hardware functions stubbed",
+  "firmware_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba",
+  "app_source_sha256": "d592fed2639bdd9761f5ad7001d86c89f1581242434fd331597edd143960be29",
+  "test_script_sha256": "ee4d70293122a766d5f4b7fff277ea94cca760bc1cee6420c870182996261fc4",
+  "root_turn_cases": 508,
+  "branch_reuse_cases": 128,
+  "hide_arrival_cases": 20,
+  "recovery_model_cases": [
+    {
+      "initial_y": -40,
+      "initial_deg": -8,
+      "frames": 11,
+      "travel_mm": 37.44
+    },
+    {
+      "initial_y": 40,
+      "initial_deg": 8,
+      "frames": 11,
+      "travel_mm": 37.44
+    },
+    {
+      "initial_y": -47,
+      "initial_deg": 0,
+      "frames": 10,
+      "travel_mm": 6.81
+    },
+    {
+      "initial_y": 47,
+      "initial_deg": 0,
+      "frames": 10,
+      "travel_mm": 6.81
+    }
+  ],
+  "scenarios": [
+    "Documents5 confirmed arrival and replan retains branch",
+    "128 confirmed-root turns with complete, opposite, absent and other-node branch cache",
+    "single-frame interception and immediate brake",
+    "measured-stop-gated reversal",
+    "partial-leg coordinate continuity",
+    "full-task return, settle, replan and restart",
+    "root quarter-turn and first-step commit",
+    "slow valid planner keeps running",
+    "transient junction gray failure recovers",
+    "post-reverse gray failure recovers",
+    "manual stop preserved"
+  ]
+}

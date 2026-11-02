@@ -1,0 +1,24 @@
+boundary_matrix: PASS
+right_cap_independent_of_heading: PASS
+{
+  "checks": 144,
+  "failures": [],
+  "cases": {
+    "boundary_matrix": 44,
+    "right_cap_independent_of_heading": 20
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "test_sha256": "acb297d49d08b3f136098b491de0b6470dfe99fecfaf102d2f1fc5c2fc783976",
+  "source_sha256": {
+    "User/App_ThiefStrategy.c": "06b6d8e087a952938e0be3eb7ac697c5da94a085e24d318f61c64d6189dea1ae",
+    "Algorithm/ThiefStrategy/FrontLaserGate.c": "9cfdc5389898625b3530fb642c3229a0408205ddb6347b14a2bcb114115cbada",
+    "Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "3de825f2e03658417e77d613599cb6ee5fb5cf505bcf7d85a804b8fbe3ff1f19"
+  },
+  "helper_sha256": {
+    "test_documents15.py": "28e614c82371b3412925b31de9ce53f3a1fd4a657ce3aadcfbf6e3f5e6ac7c37",
+    "test_app_runtime.py": "ee4d70293122a766d5f4b7fff277ea94cca760bc1cee6420c870182996261fc4",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "2e00498ecf25d44cb903ae325b6869bc40e07ae6b73011315319f342e3a3f27b"
+  }
+}

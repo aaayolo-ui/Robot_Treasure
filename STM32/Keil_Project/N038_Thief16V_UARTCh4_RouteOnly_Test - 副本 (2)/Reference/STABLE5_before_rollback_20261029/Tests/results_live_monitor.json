@@ -1,0 +1,7 @@
+{
+  "checks": 21,
+  "failures": 0,
+  "axf": "E:\\Downloads\\Robot_Treasure-main\\Robot_Treasure-main\\STM32\\Keil_Project\\Thief16V_UARTCh4_StableBase_Test\\MDK-ARM\\Thief16V_UARTCh4_StableBase_Test\\Thief16V_UARTCh4_StableBase_Test.axf",
+  "axf_sha256": "b233c86977c624adfd6289e9febcd242b196ead35cdf409d4c62c0d271c33e59",
+  "hardware_tested": false
+}

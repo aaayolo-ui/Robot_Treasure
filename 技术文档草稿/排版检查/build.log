@@ -1,0 +1,69 @@
+{
+  "output": "E:\\Downloads\\Robot_Treasure-main\\技术文档草稿\\密室夺宝机器人技术文档_内容扩展草稿_D1.docx",
+  "characters": 35845,
+  "paragraphs": 401,
+  "tables": 19,
+  "nodes": 88,
+  "edges": 106,
+  "firmware": "UARTCH4_16V_TOP7_SPEED_SL1",
+  "source_mismatches": [
+    "Algorithm/ThiefStrategy/ThiefStrategyConfig.h"
+  ],
+  "axf_sha256": "95bb2965990470b53a3bdebfc75dac1857de1f28a113996e984e148635e656c6",
+  "references": [
+    [
+      "W1",
+      "用户公开项目仓库",
+      "https://github.com/aaayolo-ui/Robot_Treasure",
+      "项目来源与历史硬件说明  与本地版本分别记录"
+    ],
+    [
+      "W2",
+      "STM32CubeF1 上游",
+      "https://github.com/STMicroelectronics/STM32CubeF1",
+      "HAL CMSIS等组件包  实际采用基础"
+    ],
+    [
+      "W3",
+      "CMSIS 5 上游",
+      "https://github.com/ARM-software/CMSIS_5",
+      "Cortex M基础接口  实际工程基础"
+    ],
+    [
+      "W4",
+      "Unicorn 上游",
+      "https://github.com/unicorn-engine/unicorn",
+      "PC侧ARM离线执行  非车载运行"
+    ],
+    [
+      "W5",
+      "pyelftools 上游",
+      "https://github.com/eliben/pyelftools",
+      "PC侧ELF DWARF解析"
+    ],
+    [
+      "W6",
+      "PythonRobotics",
+      "https://github.com/AtsushiSakai/PythonRobotics",
+      "可参考 未直接采用"
+    ],
+    [
+      "W7",
+      "PathPlanning",
+      "https://github.com/zhm-real/PathPlanning",
+      "可参考 未直接采用"
+    ],
+    [
+      "W8",
+      "A星及图搜索教程",
+      "https://www.redblobgames.com/pathfinding/a-star/introduction.html",
+      "理论说明 未作为固件库直接导入"
+    ],
+    [
+      "W9",
+      "STM32CubeF1许可清单",
+      "https://github.com/STMicroelectronics/STM32CubeF1/blob/master/LICENSE.md",
+      "逐组件许可核对入口"
+    ]
+  ]
+}

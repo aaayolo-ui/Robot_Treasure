@@ -1,0 +1,1 @@
+{"firmware": "MONITOR13", "checks": 1987, "cases": {"seed_incoming_edges": 210, "actual_map_sequences": {"paths": 208, "resolved_observations": 838}, "application_reanchor": [35], "local_turn_frames": 4, "n011_body_masks": 64}, "axf_sha256": "3276d8bcee116dc2845ac0830316f8f064fc6f88c6fef2819a38cd01b7488895", "hardware_tested": false, "candidate_bytes": 38}

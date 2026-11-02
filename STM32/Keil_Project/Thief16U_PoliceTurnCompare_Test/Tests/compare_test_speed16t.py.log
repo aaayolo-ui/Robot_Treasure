@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "E:\Downloads\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16U_PoliceTurnCompare_Test\Tests\test_speed16t.py", line 18, in <module>
+    check(a=='7500L','unknown-sign coarse turn reaches75degrees before gray handoff')
+  File "E:\Downloads\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16U_PoliceTurnCompare_Test\Tests\test_app_runtime.py", line 120, in check
+    assert x,message
+AssertionError: unknown-sign coarse turn reaches75degrees before gray handoff

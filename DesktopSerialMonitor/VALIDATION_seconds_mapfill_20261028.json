@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-28",
+  "target": "C:/Users/Administrator/Desktop/小车串口监控一体助手_定位提示版.exe",
+  "original_sha256": "3dd50f3300156d167857524c6e2a6a60a2293d192331f55945ff43fa7aaf9136",
+  "built_sha256": "2ef1d07044901d62f139c9cccb1a1c024637421f839c0ffe7f7f7cc5432064b3",
+  "timer_backend_unchanged": true,
+  "baseline_resource_match_count": 15,
+  "compile": "passed",
+  "timer_offline_tests": 3,
+  "identity_offline_tests": 1,
+  "window_seconds_checked": "2.128 秒",
+  "map_bottom_alignment_checked": true,
+  "map_resize_drag_checked": true,
+  "serial_connection_preserved": "COM9",
+  "new_physical_drive_test": false,
+  "files": {
+    "DesktopSerialMonitor\\Program.cs": "b5af429b30317b9cb1dc4aeca2c0e20bc823d983a56dad76e06c68bea2faec09",
+    "DesktopSerialMonitor\\assets\\laser_live.html": "7caf207430a139433a44e81f903cff55868e66dcf59b3b5d214f485d467c9dc3",
+    "DesktopSerialMonitor\\assets\\embedded.css": "91dab58bcd26e8bb4e06404eed13354cefc138e47d844cbb1e7940445ce4766f",
+    "DesktopSerialMonitor\\assets\\drive_timer.py": "0e3928646087d873fccb6f40fed09ab0685109ef327a94ce969d354e7bd9d8e9"
+  }
+}

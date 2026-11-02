@@ -1,0 +1,138 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -49,7 +49,7 @@
+ #define ROUTE_TURN_TIMEOUT_MS              4000U
+ #define ROUTE_TURN_TARGET_ANGLE_X100       4500L /* 45.00 deg spin, then gray-controlled line acquisition. */
+ #define ROUTE_JY61P_STALE_MS                150U /* No fresh angle during turn: stop safely. */
+-#define ROUTE_JUNCTION_WATCH_PERIOD_MS        5U /* PID period is in LineFollowPID.h. */
++#define ROUTE_JUNCTION_WATCH_PERIOD_MS        2U /* PID period is in LineFollowPID.h. */
+ #define MAP_ROUTE_PASS_TIMEOUT_MS         1800U
+ #define MAP_ROUTE_ALIGN_TIMEOUT_MS        1200U
+ #define ROUTE_RESTART_BLIND_MM              180L
+@@ -1929,7 +1929,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_SHORTLEG5070_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_GRAY500_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1955,7 +1955,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_SHORTLEG5070_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_GRAY500_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2004,7 +2004,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_SHORTLEG5070_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_GRAY500_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2253,7 +2253,7 @@
+ 
+   /* Junction detection must not wait for the 20 ms PID period. At 200 RPM the
+    * car advances about 1.36 cm in 20 ms, so a narrow P11+P12 or P1+P2 event
+-   * can otherwise fall between two control samples. This 5 ms watch only
++   * can otherwise fall between two control samples. This 2 ms watch only
+    * reads the front board and enters active braking; PID timing is unchanged. */
+   if ((route_active != 0U) && !departure_turn &&
+       (route_state == ROUTE_STATE_FOLLOW) &&
+@@ -2286,7 +2286,7 @@
+         last_control_tick=now;
+       goto task_end;
+     }
+-    /* Arm after three consecutive fast valid samples (about 15 ms). A
++    /* Arm after three consecutive fast valid samples (about 6 ms). A
+      * junction/invalid sample between them must restart that count. */
+     Route_UpdateJunctionArm(front_state);
+     if ((front_state == ROUTE_GRAY_NO_LINE) ||
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,15 @@
++# GRAY500_SL1：前端灰度快速检测目标500Hz（本段优先）
++
++当前FW=UARTCH4_16V_GRAY500_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/SHORTLEG5070_before_gray500。
++
++按用户要求，普通FOLLOW状态下行进方向前端灰度路口监测由每5ms改每2ms，目标500Hz；倒车时前端指行进方向的领先板。不是前后两板、所有状态都500Hz。巡线PID仍20ms/50Hz，总线驱动、后板读取、串口输出频率、激光及控制参数均未改。连续三帧有效线重启用条件仍三帧，对应目标间隔从约15ms变约6ms，未另加保护或延时。三个藏点主旋转50°、微调350、一格短段150mm下限和地图支路检查保持。
++
++ARMCC5全量编译0错误0警告。test_gray500.py专项46项：在理想1ms任务调度和模拟I2C条件下，实际ARM任务于2/4/6/8/10/12/14/16/18/20ms采样10次，PID仅20ms更新一次；2ms出现的真实右支路可在PID前识别。短段129项、完整藏点151项回归通过，总326项。报告绑定当前AXF。实物I2C耗时、任务抖动和实际采样率未测，不能宣称硬件已稳定500Hz，也不能宣称已解决N059长段支路确认失败。
++
++证据GRAY500_FILES.json、GRAY500_CHANGESET.patch、build_gray500.log及本轮三份报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方5ms/200Hz为历史设置。
++
++---
++
+ # SHORTLEG5070_SL1：所有正常一格路段采用50%至70%参考（本段优先）
+ 
+ 当前FW=UARTCH4_16V_SHORTLEG5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_REF5070_before_shortlegs。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,15 @@
++# GRAY500_SL1：前端灰度快速检测目标500Hz（本段优先）
++
++当前FW=UARTCH4_16V_GRAY500_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/SHORTLEG5070_before_gray500。
++
++按用户要求，普通FOLLOW状态下行进方向前端灰度路口监测由每5ms改每2ms，目标500Hz；倒车时前端指行进方向的领先板。不是前后两板、所有状态都500Hz。巡线PID仍20ms/50Hz，总线驱动、后板读取、串口输出频率、激光及控制参数均未改。连续三帧有效线重启用条件仍三帧，对应目标间隔从约15ms变约6ms，未另加保护或延时。三个藏点主旋转50°、微调350、一格短段150mm下限和地图支路检查保持。
++
++ARMCC5全量编译0错误0警告。test_gray500.py专项46项：在理想1ms任务调度和模拟I2C条件下，实际ARM任务于2/4/6/8/10/12/14/16/18/20ms采样10次，PID仅20ms更新一次；2ms出现的真实右支路可在PID前识别。短段129项、完整藏点151项回归通过，总326项。报告绑定当前AXF。实物I2C耗时、任务抖动和实际采样率未测，不能宣称硬件已稳定500Hz，也不能宣称已解决N059长段支路确认失败。
++
++证据GRAY500_FILES.json、GRAY500_CHANGESET.patch、build_gray500.log及本轮三份报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方5ms/200Hz为历史设置。
++
++---
++
+ # SHORTLEG5070_SL1：所有正常一格路段采用50%至70%参考（本段优先）
+ 
+ 当前FW=UARTCH4_16V_SHORTLEG5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_REF5070_before_shortlegs。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,15 @@
++# GRAY500_SL1：前端灰度快速检测目标500Hz（本段优先）
++
++当前FW=UARTCH4_16V_GRAY500_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/SHORTLEG5070_before_gray500。
++
++按用户要求，普通FOLLOW状态下行进方向前端灰度路口监测由每5ms改每2ms，目标500Hz；倒车时前端指行进方向的领先板。不是前后两板、所有状态都500Hz。巡线PID仍20ms/50Hz，总线驱动、后板读取、串口输出频率、激光及控制参数均未改。连续三帧有效线重启用条件仍三帧，对应目标间隔从约15ms变约6ms，未另加保护或延时。三个藏点主旋转50°、微调350、一格短段150mm下限和地图支路检查保持。
++
++ARMCC5全量编译0错误0警告。test_gray500.py专项46项：在理想1ms任务调度和模拟I2C条件下，实际ARM任务于2/4/6/8/10/12/14/16/18/20ms采样10次，PID仅20ms更新一次；2ms出现的真实右支路可在PID前识别。短段129项、完整藏点151项回归通过，总326项。报告绑定当前AXF。实物I2C耗时、任务抖动和实际采样率未测，不能宣称硬件已稳定500Hz，也不能宣称已解决N059长段支路确认失败。
++
++证据GRAY500_FILES.json、GRAY500_CHANGESET.patch、build_gray500.log及本轮三份报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方5ms/200Hz为历史设置。
++
++---
++
+ # SHORTLEG5070_SL1：所有正常一格路段采用50%至70%参考（本段优先）
+ 
+ 当前FW=UARTCH4_16V_SHORTLEG5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_REF5070_before_shortlegs。
+--- /dev/null
++++ after/Tests/test_gray500.py
+@@ -0,0 +1,25 @@
++from pathlib import Path
++import json,hashlib
++ROOT=Path(__file__).absolute().parents[1]
++setup=(ROOT/'Tests/test_arrival_gate.py').read_text(encoding='utf-8').split('try:')[0]
++exec(compile(setup,str(ROOT/'Tests/test_arrival_gate.py'),'exec'))
++failures=[];reads=[]
++def sample_front():
++ reads.append(clock)
++ return gray_read(front_raw)
++hook('TravelFrame_ReadLeading',sample_front)
++try:
++ begin();odom=180;front_raw=back_raw=0x60
++ var('last_front_watch_tick',clock);var('last_control_tick',clock);reads.clear();commands.clear();start=clock
++ for _ in range(20):tick(1)
++ offsets=[v-start for v in reads]
++ check(offsets==list(range(2,21,2)),f'actual ARM task reads leading board every 2ms under ideal 1ms task scheduling: {offsets}')
++ check(len([x for x in commands if x[0]=='drive'])==1,'20ms PID still updates once during ten fast gray reads')
++ begin();odom=180;front_raw=0x60;var('last_front_watch_tick',clock);var('last_control_tick',clock)
++ tick(1);check(not member('map_nav','arrived'),'no sampling before 2ms watch interval')
++ front_raw=0x07F;tick(1)
++ check(member('map_nav','arrived') and var('route_state')==3,'short right branch at 2ms is accepted before next PID cycle')
++except Exception as e:failures.append(str(e))
++out=dict(checks=checks,failures=failures,sample_offsets_ms=offsets,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False,ideal_scheduler=True)
++(ROOT/'Tests/results_gray500.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(out,indent=2));assert not failures,failures

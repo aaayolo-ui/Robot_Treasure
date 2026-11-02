@@ -1,0 +1,22 @@
+{
+  "firmware": "UARTCH4_16V_GRAY45_SL1",
+  "modified": [
+    "User/App_ThiefStrategy.c",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "added": [
+    "Tests/test_gray45.py"
+  ],
+  "reports": [
+    "Tests/results_gray45.json",
+    "Tests/results_shortleg5070.json",
+    "Tests/results_hide_routes_stable4.json"
+  ],
+  "axf_sha256": "d36792c04f8723d711e4eabe0038d8dc08fba0376a175aa4ccc3ea024f4a79a8",
+  "checks": 364,
+  "other_production_unchanged": true,
+  "hardware_tested": false,
+  "backup": "C:\\Users\\Administrator\\Desktop\\N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)\\Reference\\GRAY3MS_before_gray45"
+}

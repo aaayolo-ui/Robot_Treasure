@@ -1,0 +1,5 @@
+{
+  "expected_rule_violation": true,
+  "reason": "LOC_DISTANCE",
+  "axf_sha256": "a95ddd8809950e67116bee212128abc2ab81c75eed32bc3589062efe8bb00ded"
+}

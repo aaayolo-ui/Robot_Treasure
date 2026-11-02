@@ -1,0 +1,300 @@
+--- baseline/Algorithm/ThiefStrategy/FrontLaserGate.c
++++ 16N/Algorithm/ThiefStrategy/FrontLaserGate.c
+@@ -9,6 +9,17 @@
+ #define FIELD_MAX_X_MM 3450
+ #define FIELD_MIN_Y_MM (-150)
+ #define FIELD_MAX_Y_MM 2850
++
++/* Side/rear offsets use the user's 3-cell mounting measurements (about +/-50 mm).
++ * Front retains the older proportional estimate until its probe is replaced. */
++uint16_t FrontLaserGate_CenterDistanceMm(uint16_t raw_mm, uint8_t direction)
++{
++  uint32_t value;
++  if (direction==1U || direction==2U) value=(uint32_t)raw_mm+THIEF_LASER_SIDE_OFFSET_MM;
++  else if (direction==3U) value=(uint32_t)raw_mm+THIEF_LASER_REAR_OFFSET_MM;
++  else value=(uint32_t)raw_mm*THIEF_LASER_SCALE_NUM/THIEF_LASER_SCALE_DEN;
++  return (uint16_t)(value>65535UL?65535UL:value);
++}
+ 
+ static uint8_t ProjectOnRoad(const ThiefMapPose_t *pose, uint16_t distance_mm,
+                              int16_t *hit_x, int16_t *hit_y)
+@@ -95,8 +106,10 @@
+                                uint8_t detection_enabled,
+                                uint16_t distance_mm,
+                                uint8_t confidence,
+-                               uint16_t firmware)
++                               uint16_t firmware,
++                               uint8_t direction)
+ {
++  uint16_t center_mm=FrontLaserGate_CenterDistanceMm(distance_mm,direction);
+   uint8_t geometric_valid = 0U;
+   uint8_t i;
+   uint16_t minimum = 0xFFFFU;
+@@ -111,16 +124,24 @@
+     gate->status = FRONT_LASER_BAD_QUALITY;
+   } else if (distance_mm > LASER_MAX_MM) {
+     gate->status = FRONT_LASER_TOO_FAR;
+-  } else if (ProjectOnRoad(pose, (uint16_t)((uint32_t)distance_mm *
+-                           THIEF_LASER_SCALE_NUM / THIEF_LASER_SCALE_DEN),
+-                           &gate->hit_x_mm, &gate->hit_y_mm) == 0U) {
+-    gate->status = FRONT_LASER_NO_MAP_ROAD;
+-  } else if ((gate->hit_x_mm < FIELD_MIN_X_MM) || (gate->hit_x_mm > FIELD_MAX_X_MM) ||
+-             (gate->hit_y_mm < FIELD_MIN_Y_MM) || (gate->hit_y_mm > FIELD_MAX_Y_MM)) {
+-    gate->status = FRONT_LASER_OUTSIDE_FIELD;
+   } else {
+-    gate->status = FRONT_LASER_UNSTABLE;
+-    geometric_valid = 1U;
++    /* Test the actual projected hit before road connectivity. A car near an
++     * edge can see beyond the field even when it is not exactly on the edge. */
++    gate->hit_x_mm=(int16_t)(pose->x_mm +
++        (pose->body_heading==1U?center_mm:pose->body_heading==3U?-(int32_t)center_mm:0L));
++    gate->hit_y_mm=(int16_t)(pose->y_mm +
++        (pose->body_heading==2U?center_mm:pose->body_heading==0U?-(int32_t)center_mm:0L));
++    if ((gate->hit_x_mm < FIELD_MIN_X_MM) || (gate->hit_x_mm > FIELD_MAX_X_MM) ||
++        (gate->hit_y_mm < FIELD_MIN_Y_MM) || (gate->hit_y_mm > FIELD_MAX_Y_MM)) {
++      gate->status=FRONT_LASER_OUTSIDE_FIELD;
++    } else if (!ProjectOnRoad(pose,center_mm,&gate->hit_x_mm,&gate->hit_y_mm)) {
++      gate->status=FRONT_LASER_NO_MAP_ROAD;
++    } else if (center_mm>THIEF_LASER_TRIGGER_MM) {
++      gate->status=FRONT_LASER_IN_RANGE;
++    } else {
++      gate->status=FRONT_LASER_UNSTABLE;
++      geometric_valid=1U;
++    }
+   }
+ 
+   gate->valid_history = (uint8_t)(((gate->valid_history << 1U) |
+@@ -148,7 +169,7 @@
+    * high-quality map-projected frames can trigger retreat. Never combine
+    * different sensors, a missing/invalid frame, or off-map returns. This is
+    * an obstacle response, not proof of the object's identity. */
+-  if (geometric_valid && distance_mm <= THIEF_NEAR_CONFIRM_MM &&
++  if (geometric_valid && center_mm <= THIEF_NEAR_CONFIRM_MM &&
+       confidence >= THIEF_NEAR_CONFIDENCE &&
+       (gate->valid_history & 3U) == 3U && gate->near_previous &&
+       maximum - minimum <= 80U) {
+@@ -157,7 +178,7 @@
+     return 1U;
+   }
+   gate->near_previous = (uint8_t)(geometric_valid &&
+-      distance_mm <= THIEF_NEAR_CONFIRM_MM && confidence >= THIEF_NEAR_CONFIDENCE);
++      center_mm <= THIEF_NEAR_CONFIRM_MM && confidence >= THIEF_NEAR_CONFIDENCE);
+ #endif
+   return 0U;
+ }
+@@ -166,7 +187,7 @@
+ {
+   static const char *const text[] = {
+     "NO_DATA", "INACTIVE", "BAD_DATA", "TOO_FAR",
+-    "NO_ROAD", "OUT_FIELD", "UNSTABLE", "OPPONENT"
++    "NO_ROAD", "OUT_FIELD", "UNSTABLE", "OPPONENT", "IN_RANGE"
+   };
+   return ((uint8_t)status < (uint8_t)(sizeof(text) / sizeof(text[0]))) ?
+          text[(uint8_t)status] : "UNKNOWN";
+--- baseline/Algorithm/ThiefStrategy/FrontLaserGate.h
++++ 16N/Algorithm/ThiefStrategy/FrontLaserGate.h
+@@ -12,7 +12,8 @@
+   FRONT_LASER_NO_MAP_ROAD,
+   FRONT_LASER_OUTSIDE_FIELD,
+   FRONT_LASER_UNSTABLE,
+-  FRONT_LASER_OPPONENT
++  FRONT_LASER_OPPONENT,
++  FRONT_LASER_IN_RANGE
+ } FrontLaserGateStatus_t;
+ 
+ typedef struct {
+@@ -37,7 +38,10 @@
+                                uint8_t detection_enabled,
+                                uint16_t distance_mm,
+                                uint8_t confidence,
+-                               uint16_t firmware);
++                               uint16_t firmware,
++                               uint8_t direction);
++/* Direction: front=0, left=1, right=2, rear=3. Keep telemetry raw. */
++uint16_t FrontLaserGate_CenterDistanceMm(uint16_t raw_mm, uint8_t direction);
+ const char *FrontLaserGate_StatusText(FrontLaserGateStatus_t status);
+ 
+ #endif
+--- baseline/Algorithm/ThiefStrategy/ThiefStrategyConfig.h
++++ 16N/Algorithm/ThiefStrategy/ThiefStrategyConfig.h
+@@ -8,6 +8,9 @@
+ #define THIEF_STRATEGY_VERSION_16M 1
+ /* Software acceptance range, not the sensor's physical ranging limit. */
+ #define THIEF_LASER_MAX_MM 1000U
++#define THIEF_LASER_TRIGGER_MM 600U /* Two 300 mm cells, measured from car center. */
++#define THIEF_LASER_SIDE_OFFSET_MM 100U
++#define THIEF_LASER_REAR_OFFSET_MM 150U
+ /* User calibration point: raw 1000 mm ~= physical 900 mm. Single-point
+  * proportional estimate for map projection, not a measured calibration curve. */
+ #define THIEF_LASER_SCALE_NUM 9UL
+@@ -110,7 +113,7 @@
+ #ifndef THIEF_FAST_NEAR_CONFIRM
+ #define THIEF_FAST_NEAR_CONFIRM 1
+ #endif
+-#define THIEF_NEAR_CONFIRM_MM 1000U /* Two good consecutive frames trigger reaction. */
++#define THIEF_NEAR_CONFIRM_MM THIEF_LASER_TRIGGER_MM /* Two good consecutive frames trigger reaction. */
+ #define THIEF_NEAR_CONFIDENCE 20U
+ #define THIEF_CONFIRM_FRAME_MS 20UL /* Estimate; actual UART frame cadence matters */
+ #ifndef THIEF_HIDE_REACTION_WEIGHT
+--- baseline/User/App_ThiefStrategy.c
++++ 16N/User/App_ThiefStrategy.c
+@@ -49,6 +49,7 @@
+ #define ROUTE_JUNCTION_WATCH_PERIOD_MS        5U /* PID period is in LineFollowPID.h. */
+ #define MAP_ROUTE_PASS_TIMEOUT_MS         1800U
+ #define MAP_ROUTE_ALIGN_TIMEOUT_MS        2500U
++#define ROUTE_RESTART_FIND_LINE_MS          300U /* Low-speed departure from a confirmed node. */
+ #define ROUTE_FRONT_RECOVERY_MS             200U /* Brake and retry a transient front-gray fault. */
+ #define ROUTE_FRONT_RECOVERY_VALID_SAMPLES    2U
+ #define ROUTE_GYRO_RECOVERY_MS              600U /* Brake while waiting for fresh YAW. */
+@@ -165,6 +166,7 @@
+ static uint8_t departure_entry_mode;
+ static uint8_t node_centered;
+ static uint8_t departure_centered;
++static uint8_t departure_reacquire;
+ static uint8_t replan_after_leg;
+ static uint8_t retreat_active;
+ static uint8_t intercept_pending;
+@@ -274,7 +276,7 @@
+   }
+   TreasureWheelLog_Event(TREASURE_WHEEL_AFTER_LASER,SystemTime_GetMs(),(uint8_t)route_state);
+   thief_treasure_passed=1U;
+-  UartDebug_SendString("TREASURE_N005 LASER_RX=FOUR_UARTCH4 FRONT_UART2=OFF RANGE_MM=1000 PHYSICAL_EST_MM=900\r\n");
++  UartDebug_SendString("TREASURE_N005 LASER_RX=FOUR_UARTCH4 FRONT_UART2=OFF VALID_RAW_MM=1000 TRIGGER_CENTER_MM=600\r\n");
+   return 1U;
+ }
+ static void Thief_UpdateLaserMask(uint32_t now)
+@@ -335,7 +337,7 @@
+   if(!allow) FrontLaserGate_ResetEvidence(&thief_laser[i]);
+   if(FrontLaserGate_Observe(&thief_laser[i],&sensor_pose,
+       allow,
+-      distance,confidence,firmware)) {
++      distance,confidence,firmware,i)) {
+     if(thief_strategy_state==THIEF_STRATEGY_HIDING) {
+       ThiefMapPlanner_ObserveThreat(thief_pose.node_id,sensor_pose.body_heading,
+           thief_laser[i].hit_x_mm,thief_laser[i].hit_y_mm,tick);
+@@ -372,8 +374,8 @@
+   uint32_t bad,dropped,errors;
+   const char *status;
+   uint8_t usable;
+-  if(route_active || thief_strategy_state==THIEF_STRATEGY_SETTLING) return;
+-  if((uint32_t)(now-last)<125U) return;
++  char line[256];
++  if((uint32_t)(now-last)<25U) return;
+   last=now;
+   status=FrontLaserGate_StatusText(thief_laser[i].status);
+   usable=(uint8_t)((thief_laser_active_mask&(1U<<i))!=0U);
+@@ -381,12 +383,13 @@
+   else if(!usable) status=thief_pose.valid ? "EDGE_OFF" : "POSE_OFF";
+   else if(!thief_laser_seen[i] || (uint32_t)(now-thief_last_laser_tick[i])>250U) status="NO_DATA";
+   LaserRx_Counters((LaserDirection_t)i,&bad,&dropped,&errors);
+-  UartDebug_Printf("LASER DIR=%s D=%u C=%u STATUS=%s AGE=%lu BAD=%lu DROP=%lu ERR=%lu STATE=%s FAULT=%s\r\n",
++  (void)snprintf(line,sizeof(line),"LASER DIR=%s D=%u C=%u STATUS=%s AGE=%lu BAD=%lu DROP=%lu ERR=%lu STATE=%s FAULT=%s\r\n",
+     laser_name[i],(unsigned)(usable?thief_laser[i].distance_mm:0U),
+     (unsigned)(usable?thief_laser[i].confidence:0U),
+     status,(unsigned long)(thief_laser_seen[i]?now-thief_last_laser_tick[i]:0U),
+     (unsigned long)bad,(unsigned long)dropped,(unsigned long)errors,
+     Thief_StrategyName(),route_fault_reason?route_fault_reason:"NONE");
++  (void)UartDebug_TrySendString(line);
+   i=(uint8_t)((i+1U)%LASER_COUNT);
+ }
+ 
+@@ -1179,6 +1182,9 @@
+   uint32_t now;
+   uint8_t turn_delta=0U;
+ 
++  departure_reacquire=(uint8_t)(thief_localization.initialized &&
++      thief_localization.phase==THIEF_LOC_AT_NODE &&
++      thief_localization.confirmed_node==thief_plan.route.start_node);
+   departure_entry_mode=TravelFrame_IsReverse();
+   departure_centered=node_centered;
+   node_centered=0U;
+@@ -1239,7 +1245,8 @@
+                    (unsigned)sample.front_raw12,
+                    (int)sample.front_error_x100);
+   if ((front_state != ROUTE_GRAY_VALID) && (front_state != ROUTE_GRAY_ALL_BLACK) &&
+-      (front_state != ROUTE_GRAY_LEFT_BLACK) && (front_state != ROUTE_GRAY_RIGHT_BLACK))
++      (front_state != ROUTE_GRAY_LEFT_BLACK) && (front_state != ROUTE_GRAY_RIGHT_BLACK) &&
++      !(departure_reacquire && front_state==ROUTE_GRAY_NO_LINE))
+   {
+     Route_StopFault("MAP_START_REQUIRES_LINE");
+     return;
+@@ -1324,7 +1331,8 @@
+   if(!mask) return;
+   for(i=0U;i<LASER_COUNT;i++) if(thief_laser[i].status==FRONT_LASER_OPPONENT &&
+       thief_laser_seen[i] && (uint32_t)(now-thief_last_laser_tick[i])<=250UL)
+-    clearance[(thief_pose.body_heading+laser_heading_offset[i])%4U]=thief_laser[i].distance_mm;
++    clearance[(thief_pose.body_heading+laser_heading_offset[i])%4U]=
++        FrontLaserGate_CenterDistanceMm(thief_laser[i].distance_mm,i);
+   replan_after_leg=1U;
+   if(ThiefIntercept_ShouldReverse(s->heading,mask,clearance,
+       (uint8_t)(intercept_has_reversed &&
+@@ -1478,7 +1486,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16M_RUN1 ALGO=16M UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16M_RUN1 ALGO=16N UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1492,7 +1500,7 @@
+       (long)ROUTE_TURN_EQUAL_PWM, (long)ROUTE_TURN_TARGET_ANGLE_X100,
+       (unsigned long)MAP_ROUTE_WHEEL_CIRCUMFERENCE_UM);
+   UartDebug_SendString("LASER UARTCH4 MAIN_TX=PB6 MAIN_RX=PB7 CH1=FRONT CH2=LEFT CH3=RIGHT CH4=REAR 115200; LOG_TX=PB10; TFT=OFF; ENCODER_B_B=PB14\r\n");
+-  UartDebug_SendString("LASER RANGE_MM=1000 PHYSICAL_EST_MM=900 START=AFTER_N005 MOVING_RX=ON REPLAN=INTERCEPT_RETREAT_FIRST\r\n");
++  UartDebug_SendString("LASER VALID_RAW_MM=1000 TRIGGER_CENTER_MM=600 START=AFTER_N005 MOVING_RX=ON REPLAN=INTERCEPT_RETREAT_FIRST\r\n");
+   UartDebug_SendString("HIDES N011=EW N038=EW N026=NS N035=EW N063=NS FAR=THREAT_SEPARATION EDGE=OUTWARD_OFF\r\n");
+   UartDebug_SendString("TREASURE_GRAY=MASK1 N004_N006=NORTH_OUTER_TWO TRANSLATION_ONLY\r\n");
+   UartDebug_SendString("THIEF: N054 HEAD=W; KEY2=start treasure+hide; laser map gate triggers escape\r\n");
+@@ -1824,7 +1832,20 @@
+       }
+       else if (front_state == ROUTE_GRAY_VALID)
+       {
++        departure_reacquire=0U;
+         Route_EnterFollow(now, 1U, leave_target_rpm_x10, 0U);
++      }
++      else if (front_state==ROUTE_GRAY_NO_LINE && departure_reacquire)
++      {
++        /* A stopped junction may sit between the gray boards. Move along the
++         * planned edge briefly instead of locking on one empty sample. */
++        if ((uint32_t)(now-route_state_tick)>=ROUTE_RESTART_FIND_LINE_MS) {
++          Route_StopFault("RESTART_LINE_NOT_FOUND");
++        } else {
++          leave_target_rpm_x10=ROUTE_TURN_APPROACH_RPM_X10;
++          Route_DriveTurnApproach(elapsed_ms);
++          if (ChassisSpeedControl_HasStall()) Route_StopFault("STALL");
++        }
+       }
+       else if ((front_state == ROUTE_GRAY_ALL_BLACK) ||
+                (front_state == ROUTE_GRAY_LEFT_BLACK) ||
+--- baseline/project.uvprojx
++++ 16N/project.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Thief16M_UARTCh4_InterceptEscape_Test</TargetName>
++      <TargetName>Thief16N_UARTCh4_RestartRecovery_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Thief16M_UARTCh4_InterceptEscape_Test\</OutputDirectory>
+-          <OutputName>Thief16M_UARTCh4_InterceptEscape_Test</OutputName>
++          <OutputDirectory>Thief16N_UARTCh4_RestartRecovery_Test\</OutputDirectory>
++          <OutputName>Thief16N_UARTCh4_RestartRecovery_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -955,7 +955,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
+         <targetInfos>
+-          <targetInfo name="Thief16M_UARTCh4_InterceptEscape_Test"/>
++          <targetInfo name="Thief16N_UARTCh4_RestartRecovery_Test"/>
+         </targetInfos>
+       </component>
+     </components>

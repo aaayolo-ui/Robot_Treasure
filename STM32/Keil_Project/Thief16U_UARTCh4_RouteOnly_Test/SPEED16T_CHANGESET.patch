@@ -1,0 +1,262 @@
+--- 16U_RUN4/User/App_ThiefStrategy.c
++++ 16U_RUN5/User/App_ThiefStrategy.c
+@@ -33,9 +33,9 @@
+ 
+ /* RPM targets use x10 units. Keep the user's cruise/turn settings separate. */
+ #define ROUTE_LEAVE_START_RPM_X10          2000L
+-#define ROUTE_LEAVE_INITIAL_RPM_X10        1000L
++#define ROUTE_LEAVE_INITIAL_RPM_X10        2000L
+ #define ROUTE_LEAVE_RAMP_STEP_RPM_X10       10L
+-#define ROUTE_AFTER_TURN_START_RPM_X10     1000L
++#define ROUTE_AFTER_TURN_START_RPM_X10     2000L
+ #define ROUTE_TURN_EQUAL_PWM                550L
+ #define ROUTE_TURN_APPROACH_RPM_X10       1000L
+ #define ROUTE_TURN_APPROACH_DELAY_MS        180U /* Controlled forward approach before braking. */
+@@ -129,7 +129,6 @@
+ static LineFollowPID_Controller_t line_follow_pid;
+ static FollowSmoothing_t follow_smoothing;
+ static uint8_t route_active;
+-static uint8_t launch_slow;
+ static uint8_t map_gray_active,map_gray_braked;
+ static int32_t map_gray_start_mm;
+ static uint32_t map_gray_tick,map_gray_log_tick;
+@@ -929,7 +928,7 @@
+   MapTimingLog_Event(MAP_TIMING_SPIN_END, junction_count, now,
+                       (finish_reason[0] == 'Y') ? 0L : 1L);
+   Route_ResetControl(1U);
+-  leave_target_rpm_x10 = ROUTE_AFTER_TURN_START_RPM_X10;launch_slow=1U;
++  leave_target_rpm_x10 = ROUTE_AFTER_TURN_START_RPM_X10;
+   route_state = ROUTE_STATE_AFTER_TURN_FORWARD;
+   route_state_tick = now;
+   follow_mode = ROUTE_FOLLOW_FRONT_ONLY;
+@@ -1103,11 +1102,6 @@
+                                  control.final_correction_rpm_x10;
+   FollowSmoothing_Apply(&follow_smoothing, sample->position_error_x100,
+                          elapsed_ms, &control);
+-  /* Acquire the outgoing line before accelerating, including reverse starts. */
+-  if(launch_slow && !map_nav.arrived && !departure_turn && Route_LegProgress()>=100L)
+-    launch_slow=0U;
+-  if(map_nav.arrived || departure_turn || launch_slow)
+-    FollowSmoothing_LimitBase(&follow_smoothing,1000L,&control);
+   TravelFrame_SetWheelTargets(control.left_target_rpm_x10,
+                                       control.right_target_rpm_x10,
+                                       control.left_target_rpm_x10,
+@@ -1205,7 +1199,7 @@
+   if(ChassisSpeedControl_HasStall()) {Route_StopFault("STALL");return;}
+   if(output.ready) {
+     map_gray_active=0U;
+-    Route_EnterFollow(now,1U,500L,0U);
++    Route_EnterFollow(now,1U,front_resume_base_rpm_x10,0U);
+     (void)Route_RunFollow(sample,elapsed_ms);
+   }
+ }
+@@ -1325,7 +1319,7 @@
+   uint32_t now;
+   uint8_t turn_delta=0U;
+ 
+-  restart_search_active=0U;map_gray_active=0U;launch_slow=1U;
++  restart_search_active=0U;map_gray_active=0U;
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+       thief_localization.phase==THIEF_LOC_AT_NODE &&
+       thief_localization.confirmed_node==thief_plan.route.start_node);
+@@ -1610,7 +1604,7 @@
+ 
+ void App_ThiefStrategy_Init(void)
+ {
+-  map_gray_active=0U;launch_slow=0U;
++  map_gray_active=0U;
+   TravelFrame_SetReverse(0U);
+   reverse_pending = 0U;
+   map_progress_offset_mm=0L;departure_turn=0U;replan_after_leg=0U;
+@@ -1661,7 +1655,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN4 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN5 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1684,7 +1678,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN4 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN5 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1733,7 +1727,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_RUN4 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_RUN5 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- 16U_RUN4/Tests/test_documents12.py
++++ 16U_RUN5/Tests/test_documents12.py
+@@ -80,7 +80,7 @@
+     hook('TravelFrame_SetWheelTargets',capture)
+     fresh(38,1);setstep(38,37,3,1,300);call('Route_Start')
+     for _ in range(6):tick()
+-    check(targets and max((a+b)//2 for a,b,_,_ in targets)<=1000,'reverse startup acquires line at <=100 RPM')
++    check(targets and min((a+b)//2 for a,b,_,_ in targets)>=2000,'reverse startup matches 16T 200 RPM seed')
+     odom=150;targets.clear()
+     for _ in range(5):tick()
+     check(any((a+b)//2>1000 for a,b,_,_ in targets),'normal cruise resumes after departure zone')
+--- 16U_RUN4/Tests/test_speed16t.py
++++ 16U_RUN5/Tests/test_speed16t.py
+@@ -0,0 +1,47 @@
++"""Compare actual ARM wheel target curves to the user's 16T reference."""
++from pathlib import Path
++import sys,re,json
++setup=Path(__file__).with_name('test_documents13.py').read_text(encoding='utf-8')
++exec(compile(setup.split('failures=[];passed=[]')[0],str(Path(__file__).with_name('test_documents13.py')),'exec'))
++ref=ROOT.parent/'Thief16T_UARTCh4_EntryFrameRestore_Test'
++source=(ROOT/'User/App_ThiefStrategy.c').read_text(encoding='utf-8')
++original=(ref/'User/App_ThiefStrategy.c').read_text(encoding='utf-8')
++params=['ROUTE_LEAVE_INITIAL_RPM_X10','ROUTE_LEAVE_START_RPM_X10','ROUTE_AFTER_TURN_START_RPM_X10',
++ 'ROUTE_LEAVE_RAMP_STEP_RPM_X10','ROUTE_TURN_APPROACH_RPM_X10','ROUTE_TURN_APPROACH_DELAY_MS',
++ 'ROUTE_TURN_EQUAL_PWM','ROUTE_TURN_TARGET_ANGLE_X100','ROUTE_PID_CENTER_GAIN_PCT',
++ 'ROUTE_PID_SIDE_GAIN_PCT','ROUTE_PID_CENTER_EDGE_GAIN_PCT']
++values={}
++for key in params:
++    a=re.search(r'^#define\s+'+key+r'\s+(\w+)',source,re.M)[1]
++    b=re.search(r'^#define\s+'+key+r'\s+(\w+)',original,re.M)[1]
++    check(a==b,'speed/turn/gray gain equals16T: '+key);values[key]=a
++check('FollowSmoothing_LimitBase' not in source,'no extra normal-follow speed cap')
++curves={}
++for mode,label in [(0,'forward'),(1,'reverse')]:
++    start(38,1,37 if mode else 39,3 if mode else 1,mode)
++    targets.clear()
++    for _ in range(4):tick()
++    curves[label]=targets[:]
++    check(len(targets)==4 and all(sum(t[:2])//2>=2000 for t in targets),'normal launch retains16T speed: '+label)
++fresh(11,1);setstep(11,22,2,0,300);call('Route_Start')
++tick(20);tick(60);yaw=9000;tick(200)
++check(var('route_state')==7,'actual turn hands off to exit-line following')
++check(var('leave_target_rpm_x10')==2000,'post-turn seed is200RPM')
++targets.clear()
++for _ in range(4):tick()
++curves['turn_exit']=targets[:]
++check(targets and all(sum(t[:2])//2>=2000 for t in targets),'turn exit has no added100RPM cap')
++if '--baseline-16t' not in sys.argv:
++    start();odom=8;gray_raw=0;gray_state=2
++    for _ in range(4):tick()
++    gray_raw=0x60;gray_state=1;targets.clear()
++    for _ in range(3):tick()
++    check(var('route_state')==2 and sum(targets[-1][:2])//2>=2000,
++          'real leading confirmation restores pre-anomaly speed without a new50RPM normal seed')
++result=dict(checks=checks,failures=0,curves=curves,parameters=values,
++ firmware_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False,
++ app_source_sha256=hashlib.sha256(((ref if '--baseline-16t' in sys.argv else ROOT)/'User/App_ThiefStrategy.c').read_bytes()).hexdigest(),
++ test_script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
++ reference_source_sha256=hashlib.sha256((ref/'User/App_ThiefStrategy.c').read_bytes()).hexdigest())
++out=ROOT/'Tests'/('results_speed16t_reference.json' if '--baseline-16t' in sys.argv else 'results_speed16t.json')
++out.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8');print(json.dumps(result,indent=2))
+--- 16U_RUN4/Tests/verify_snapshot.py
++++ 16U_RUN5/Tests/verify_snapshot.py
+@@ -59,13 +59,23 @@
+ assert escape_result['test_script_sha256']==sha(ROOT/'Tests/test_escape_completion.py')
+ assert len(escape_result['escapes'])==36 and len(escape_result['ignored'])==4
+ assert len(escape_result['interceptions'])==4
+-assert 'UARTCH4_16U_RUN4' in app
+-before=ROOT/'Tests/before_documents13'
++assert 'UARTCH4_16U_RUN5' in app
++before=ROOT/'Tests/before_speed16t'
+ before_hashes=json.loads((before/'source_sha256.json').read_text())
+ fix_sources=[rel for rel,value in before_hashes.items() if sha(ROOT/rel)!=value]
+-assert set(fix_sources)=={'User/App_ThiefStrategy.c','Algorithm/ThiefStrategy/ThiefStrategyConfig.h'},fix_sources
+-before_regression=json.loads((before/'regression_before.json').read_text())
+-assert len(before_regression['failures'])==5
++assert fix_sources==['User/App_ThiefStrategy.c'],fix_sources
++speed=json.loads((ROOT/'Tests/results_speed16t.json').read_text())
++reference_speed=json.loads((ROOT/'Tests/results_speed16t_reference.json').read_text())
++assert speed['failures']==0 and reference_speed['failures']==0
++assert speed['firmware_sha256']==sha(axf)
++assert speed['app_source_sha256']==sha(ROOT/'User/App_ThiefStrategy.c')
++assert speed['test_script_sha256']==sha(ROOT/'Tests/test_speed16t.py')
++assert reference_speed['test_script_sha256']==speed['test_script_sha256']
++assert speed['curves']==reference_speed['curves'],'normal target curves differ from16T'
++assert speed['reference_source_sha256']==sha(OLD/'User/App_ThiefStrategy.c')
++assert reference_speed['app_source_sha256']==speed['reference_source_sha256']
++assert reference_speed['firmware_sha256']==sha(OLD/'MDK-ARM'/OLD.name/(OLD.name+'.axf'))
++assert 'FollowSmoothing_LimitBase' not in app
+ regression=json.loads((ROOT/'Tests/results_documents13.json').read_text())
+ assert not regression['failures'] and regression['firmware_sha256']==sha(axf)
+ assert regression['app_source_sha256']==sha(ROOT/'User/App_ThiefStrategy.c')
+@@ -79,18 +89,18 @@
+ assert '#define THIEF_LASER_TRIGGER_MM 1000U' in (ROOT/'Algorithm/ThiefStrategy/ThiefStrategyConfig.h').read_text()
+ for name,value in prior_regression['helper_sha256'].items():assert sha(ROOT/'Tests'/name)==value
+ fix_diff=[]
+-fix_files=['User/App_ThiefStrategy.c','Algorithm/ThiefStrategy/ThiefStrategyConfig.h','Tests/test_16m.c','Tests/test_documents13.py','Tests/verify_snapshot.py','README.md']
++fix_files=['User/App_ThiefStrategy.c','Tests/test_documents12.py','Tests/test_speed16t.py','Tests/verify_snapshot.py','README.md']
+ for rel in fix_files:
+     old=before/rel;current=ROOT/rel
+     fix_diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+-        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN3/'+rel,tofile='16U_RUN4/'+rel))
+-(ROOT/'DOCUMENTS13_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
++        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN4/'+rel,tofile='16U_RUN5/'+rel))
++(ROOT/'SPEED16T_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
+ old_project=OLD/'MDK-ARM'/(OLD.name+'.uvprojx')
+ assert (ROOT/(ROOT.name+'.ioc')).read_text(encoding='utf-8')==\
+     (OLD/(OLD.name+'.ioc')).read_text(encoding='utf-8').replace(OLD.name,ROOT.name), 'CubeMX settings changed'
+ diff.extend(difflib.unified_diff(old_project.read_text(encoding='utf-8').splitlines(True),
+     project.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/project.uvprojx',tofile='16U/project.uvprojx'))
+-for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py','Tests/test_documents12.py','Tests/test_documents13.py']:
++for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py','Tests/test_documents12.py','Tests/test_documents13.py','Tests/test_speed16t.py']:
+     p=ROOT/rel;old=OLD/rel
+     diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+         p.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/'+rel,tofile='16U/'+rel))
+@@ -105,16 +115,17 @@
+  unchanged_source_count=len(equal),unchanged_hardware_core=True,project_file_count=len(paths),
+  duplicate_sources=0,compile_errors=0,compile_warnings=0,hex_sha256=sha(hexfile),
+  algorithm_checks=result['test_checks'],application_checks=app_result['checks'],
+- hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN4',
+- documents13_fix_source_files=fix_sources,documents13_fix_files=fix_files,
++ hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN5',
++ speed_restore_source_files=fix_sources,speed_restore_files=fix_files,
++ speed_restore_checks=speed['checks'],reference_speed_checks=reference_speed['checks'],speed_curves_match_16t=True,
+  documents13_checks=regression['checks'],documents12_checks=prior_regression['checks'],
+  brake_credit_matrix_cases=prior_regression['brake_credit_matrix_cases'],trigger_center_mm=1000,
+- documents13_backup=str(before),escape_completion_checks=escape_result['checks'],
++ speed_restore_backup=str(before),escape_completion_checks=escape_result['checks'],
+  escape_completion_cases=len(escape_result['escapes']),ignored_no_road_cases=len(escape_result['ignored']),
+  interception_completion_cases=len(escape_result['interceptions']),
+  generated_evidence=['build_16U.log','Tests/results_16m.json','Tests/results_app_runtime.json',
+  'Tests/Documents10_evidence.json','Tests/results_escape_completion.json',
+- 'Tests/before_documents13/regression_before.json','Tests/results_documents12.json','Tests/results_documents13.json','DOCUMENTS13_CHANGESET.patch','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
+- notes='16U RUN4 is an in-place Documents13 fix with 1000mm center trigger in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_documents13. No hardware execution.')
++ 'Tests/before_documents13/regression_before.json','Tests/results_documents12.json','Tests/results_documents13.json','DOCUMENTS13_CHANGESET.patch','Tests/results_speed16t.json','Tests/results_speed16t_reference.json','SPEED16T_CHANGESET.patch','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
++ notes='16U RUN5 restores16T normal-speed targets and retains gray recovery/1000mm trigger in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_speed16t. No hardware execution.')
+ (ROOT/'VALIDATION_16U.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+ print(json.dumps({k:v for k,v in report.items() if k!='baseline_sha256_at_verification'},indent=2,ensure_ascii=False))
+--- 16U_RUN4/README.md
++++ 16U_RUN5/README.md
+@@ -1,3 +1,24 @@
++# 16U RUN5：恢复16T正常速度，保留灰度误停修复
++
++本次按用户指定的16T速度恢复正常运动，直接修改桌面16U，固件标识 **UARTCH4_16U_RUN5**。1000 mm中心触发和地图辅助灰度恢复继续有效。
++
++- 正常起步、倒车起步、转弯后起步种子目标恢复为16T的 **200 RPM**。
++- 去掉RUN3/RUN4附加的正常循迹100 RPM上限及其状态变量；正常巡航、速度渐变、灰度增益和转弯参数与16T保持一致。
++- 转弯前180 ms、100 RPM入路口动作属于16T原有配置，保持原值；没有修改该基准工程。
++- 真正处于前板异常的地图辅助找线仍复用16T原有的50 RPM找线控制器；前板三次真实确认后恢复异常前速度，不再额外从50 RPM重新启动正常循迹。
++
++验证中同时执行新固件与现有16T的实际ARM代码，在相同合成输入下，正向、倒车和转弯出口前三条目标曲线完全一致：212、224、236、248 RPM。该结果是软件目标输出一致，不是实车速度测量。
++
++本次修改文件：`User/App_ThiefStrategy.c`、`Tests/test_documents12.py`、`Tests/verify_snapshot.py`、本README；新增 `Tests/test_speed16t.py`、两份 `Tests/results_speed16t*.json` 和 `SPEED16T_CHANGESET.patch`。构建日志、现有测试结果、累计差异和验证报告更新。RUN4原文件及AXF在 `Tests/before_speed16t/`；以前的修复差异保留。
++
++新旧速度比较47项检查通过；应用、灰度恢复、五藏点路线回归结果见 `VALIDATION_16U.json`，最终审计核对它们与新固件一致。ARMCC5全量编译 **0 Error(s), 0 Warning(s)**。Code54204、RO9576、RW504、ZI41384字节。
++
++**仅编译通过，尚未完成硬件验证。** 未自动烧录、占用串口或驱动电机。工程文件名仍是 `Thief16U_UARTCh4_ImmediateRetreat700_Test.uvprojx`，烧录后核对 **UARTCH4_16U_RUN5**。
++
++复核速度：`E:/Python/python.exe Tests/test_speed16t.py` 和 `E:/Python/python.exe Tests/test_speed16t.py --baseline-16t`；然后执行既有应用、完整路线、Documents12、Documents13测试及 `Tests/verify_snapshot.py`。
++
++以下保留RUN4修复说明，涉及正常速度的100 RPM描述已被上述RUN5变更取代。
++
+ # 16U RUN4：直行速度连续、地图辅助灰度恢复、1000 mm 触发
+ 
+ 本次直接修改用户指定桌面 16U 工程，启动标识 **UARTCH4_16U_RUN4**。工程目录和 Keil 工程文件仍保留原来的 `ImmediateRetreat700_Test` 名字；实际触发配置已改为 **1000 mm 中心距离**。

@@ -1,0 +1,382 @@
+--- 16U_RUN1/User/App_ThiefStrategy.c
++++ 16U_RUN2/User/App_ThiefStrategy.c
+@@ -1528,7 +1528,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_RUN2 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1551,7 +1551,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16U_RUN2 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1600,7 +1600,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_RUN1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_RUN2 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2097,10 +2097,13 @@
+           (void)Route_RunFollow(&sample, elapsed_ms);
+           break;
+         }
+-        if ((!departure_turn && MapRouteNavigator_ConfirmTurn(&map_nav) == 0U) ||
+-            (departure_turn && !departure_centered && !(map_nav.seen_ports &
+-              (((turn_target_state==ROUTE_STATE_TURN_LEFT) ^
+-                 (departure_entry_mode!=thief_plan.route.drive_mode))?1U:2U)))) {
++        /* A root departure already has a confirmed node, a validated map
++         * edge and a fresh heading (StartRuntime + PrepareDeparture). A
++         * stopped board may see only the opposite side of that junction;
++         * missing the chosen side must not veto this replan. ExitReady still
++         * requires outgoing gray and YAW alignment before committing the leg.
++         * Moving arrivals retain their normal branch confirmation. */
++        if (!departure_turn && MapRouteNavigator_ConfirmTurn(&map_nav) == 0U) {
+           Route_StopFault("MAP_REQUIRED_BRANCH_NOT_SEEN");
+           break;
+         }
+--- 16U_RUN1/Tests/test_app_runtime.py
++++ 16U_RUN2/Tests/test_app_runtime.py
+@@ -696,13 +696,8 @@
+                     clock+=180;call('App_ThiefStrategy_Task')
+                     clock+=20;call('App_ThiefStrategy_Task')
+                     clock+=60;call('App_ThiefStrategy_Task')
+-                    if evidence=='correct':
+-                        check(var('route_state')==(5 if delta==1 else 6) and var('route_active')==1,
+-                              f'absolute branch transforms correctly {incoming=} {entry_mode=} {out_mode=} {side=}')
+-                    else:
+-                        reason=bytes(u.mem_read(get(symbols['route_fault_reason']),40)).split(b'\0')[0]
+-                        check(var('route_active')==0 and reason==b'MAP_REQUIRED_BRANCH_NOT_SEEN',
+-                              'missing, opposite or other-node branch must still fault')
++                    check(var('route_state')==(5 if delta==1 else 6) and var('route_active')==1,
++                          f'confirmed root uses validated map edge {incoming=} {entry_mode=} {out_mode=} {side=} {evidence=}')
+                     branch_reuse_cases+=1
+ 
+ # Exercise recovery through the actual application, including the reported
+@@ -850,7 +845,7 @@
+  branch_reuse_cases=branch_reuse_cases,
+  hide_arrival_cases=hide_arrival_cases,
+  recovery_model_cases=model_results,
+- scenarios=['Documents5 confirmed arrival and replan retains branch','128 absolute branch reprojection and rejection cases','single-frame interception and immediate brake','measured-stop-gated reversal',
++ scenarios=['Documents5 confirmed arrival and replan retains branch','128 confirmed-root turns with complete, opposite, absent and other-node branch cache','single-frame interception and immediate brake','measured-stop-gated reversal',
+  'partial-leg coordinate continuity','full-task return, settle, replan and restart',
+  'root quarter-turn and first-step commit','slow valid planner keeps running',
+  'transient junction gray failure recovers','post-reverse gray failure recovers','manual stop preserved'])
+--- 16U_RUN1/Tests/test_escape_completion.py
++++ 16U_RUN2/Tests/test_escape_completion.py
+@@ -0,0 +1,175 @@
++"""Actual 16U AXF state-machine regression. Synthetic sensor/encoder inputs;
++no motors, serial ports or hardware execution. Reuse only emulator setup.
++"""
++from pathlib import Path
++setup = Path(__file__).with_name('test_app_runtime.py').read_text(encoding='utf-8')
++exec(compile(setup.split('def documents8_cases():')[0], str(Path(__file__).with_name('test_app_runtime.py')), 'exec'))
++
++for n in ['Key_GetEvent','Key_IsPressed','JY61P_Task','TreasureMotorSnapshot_Probe',
++          'TreasureWheelLog_Task','LaserRx_Poll','LaserRx_BootLogTask',
++          'StartupStatus_Task','WheelMapLog_Task','Thief_LaserLog','Thief_LocalizationLog']:
++    ret(n)
++pristine = bytes(u.mem_read(0x20000000, 0x10000))
++loc=symbols['thief_localization'];plan=symbols['thief_plan'];nav=symbols['map_nav']
++po=fields(variables['thief_plan']);steps=plan+po['steps'][0];route=plan+po['route'][0]
++y=0x2000c200
++odom=0
++hook('MapRoutePosition_DistanceMm',lambda:odom)
++def resetcounts():
++    global odom
++    odom=0
++    return 1000
++hook('MapRoutePosition_ForwardCounts',resetcounts)
++
++def at(addr,typ,key):
++    off,t=fields(types[typ])[key];return get(addr+off,size(t))
++def current():return steps+member('map_nav','step')*size(types['MapRouteStep_t'])
++def reason():
++    addr=get(symbols['route_fault_reason'])
++    return bytes(u.mem_read(addr,80)).split(b'\0')[0].decode() if addr else 'NONE'
++def fresh(node,body,centered=1):
++    global clock,yaw,gray_raw,gray_state,odom
++    u.mem_write(0x20000000,pristine);clock=10000;yaw=0;odom=0
++    gray_raw=0x60;gray_state=1;events.clear()
++    call('ThiefMapPlanner_Init')
++    record(y,'ThiefLocYaw_t',dict(yaw_x100=0,stamp_ms=clock,valid=1))
++    check(call('ThiefLocalization_Start',loc,node,body,y,clock)==1,'initialize confirmed hide')
++    member('thief_localization','yaw_cw_sign',1)
++    var('thief_strategy_state',2);var('thief_current_node',node);var('thief_body_heading',body)
++    var('thief_treasure_passed',1);var('rear_hw_ready',1);var('node_centered',centered)
++    call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
++
++def tick(dt=20):
++    global clock
++    clock+=dt;call('App_ThiefStrategy_Task')
++    check(var('route_state')!=10 and var('thief_strategy_state')!=4,
++          f'no latched fault at N{member("thief_localization","confirmed_node"):03}: {reason()}')
++
++def setstep(a,b,heading,mode,length,action=2,index=0):
++    end=call('ThiefMapPlanner_Node',b)
++    record(steps+index*size(types['MapRouteStep_t']),'MapRouteStep_t',dict(from_node=a,to_node=b,
++      length_mm=length,segment_count=1,heading=heading,expected_ports=at(end,'MapRouteNode_t','degree'),
++      target_kind=at(end,'MapRouteNode_t','kind'),action=action,drive_mode=mode))
++    if index==0:
++        record(route,'MapRoute_t',dict(id=1601,count=1,start_node=a,heading=heading,drive_mode=mode))
++        member('thief_plan','valid',1);member('thief_plan','goal_node',b)
++
++def complete_route(limit=3500,intercept=None,intercepted_before=False):
++    """Feed synthetic physical inputs to the real task until final settled hide.
++    No task/nav/pose state is forced. Targets assume ideal yaw/line response.
++    Optional one-shot obstacle is injected at 120 mm on a committed first leg.
++    """
++    global odom,yaw,gray_raw,gray_state,clock
++    injected=intercepted_before;states=set();fixes=[];lastfix=member('thief_localization','confirmations')
++    for frame in range(limit):
++        state=var('route_state');states.add(state)
++        if not var('route_active') and var('thief_strategy_state')==2 and not var('replan_after_leg'):
++            return dict(frames=frame,node=var('thief_current_node'),body=var('thief_body_heading'),
++                        fixes=fixes,states=sorted(states),intercepted=injected)
++        gray_raw=0x60;gray_state=1
++        step=current();phase=member('thief_localization','phase')
++        if phase==2 and state in [5,6,7,2]:
++            nxt=step if var('departure_turn') else step+size(types['MapRouteStep_t'])
++            targetbody=(at(nxt,'MapRouteStep_t','heading')+2*at(nxt,'MapRouteStep_t','drive_mode'))%4
++            target=(targetbody-member('thief_localization','origin_heading'))*9000
++            diff=(target-yaw+18000)%36000-18000
++            yaw=(yaw+max(-600,min(600,diff))+18000)%36000-18000
++        if phase==1 and state in [1,2] and not member('map_nav','arrived'):
++            length=at(step,'MapRouteStep_t','length_mm')
++            odom=min(odom+10,length-var('map_progress_offset_mm'))
++            progress=call('Route_LegProgress')
++            if intercept is not None and not injected and progress>=120 and progress<length-30:
++                call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
++                clock+=1
++                # Direction is relative to the physical body, not travel frame.
++                call('Thief_OnLaserFrame',intercept,150,100,1,clock)
++                if var('intercept_pending'):
++                    injected=True
++            if progress>=length and var('junction_armed'):
++                gray_raw=0xfff;gray_state=3
++        tick()
++        count=member('thief_localization','confirmations')
++        if count!=lastfix:fixes.append(member('thief_localization','confirmed_node'));lastfix=count
++    raise AssertionError(f'completion timeout state={var("route_state")} node={member("thief_localization","confirmed_node")}')
++
++# Log regression: N063 -> N078, one-sided DF4 evidence, then west departure.
++# Run through actual arrival producer and root turn; RUN1 must fail here.
++fresh(63,2,0)
++setstep(63,78,2,0,600);call('Route_Start');var('replan_after_leg',1)
++odom=600;clock+=600;call('Route_HandleJunction',clock,20,4,0xdf4)
++check(var('branch_node')==78 and var('branch_headings')==2,'Documents11 retains only east branch')
++tick(40);tick(60)
++setstep(78,77,3,0,300);gray_raw=0x40;gray_state=1
++call('Route_Start')
++check(var('departure_turn')==1 and member('map_nav','seen_ports')==1,'Documents11 west exit with east-only evidence')
++tick(180);tick(20);tick(60)
++check(var('route_state')==5 and var('route_active')==1,'Documents11 right turn must start')
++log_result=complete_route()
++check(log_result['node']==77,'Documents11 reaches N077 after the formerly blocked turn')
++print('Documents11 root-turn regression passed',flush=True)
++if '--documents11-only' in sys.argv:
++    print(json.dumps(dict(checks=checks,failures=0,log_regression=log_result)))
++    sys.exit(0)
++
++results=[];ignored=[]
++for node in [11,38,26,35,63]:
++    for body in ([1,3] if node in [11,38,35] else [0,2]):
++        for direction,label in enumerate(['FRONT','LEFT','RIGHT','REAR']):
++            fresh(node,body)
++            clock+=1;call('Thief_OnLaserFrame',direction,150,100,1,clock)
++            if not var('thief_escape_requested'):
++                # A nonexistent road/off-map ray is intentionally not an opponent.
++                sensor=(body+[0,3,1,2][direction])%4
++                check(not call('ThiefMapPlanner_HasRoad',node,sensor,0,0),
++                      f'valid in-map direction must trigger {node=} {body=} {label=}')
++                ignored.append(dict(node=node,body=body,laser=label,reason='no road in sensor direction'))
++                continue
++            tick();goal=member('thief_plan','goal_node')
++            check(var('route_active') and goal!=node,'laser starts a route to another refuge')
++            result=complete_route()
++            check(result['node']==goal and result['node'] in [11,38,26,35,63], 'arrives at chosen refuge')
++            check((result['body']%2)==(1 if goal in [11,38,35] else 0),'destination hide axis')
++            results.append(dict(start=node,start_body=body,laser=label,goal=goal,**result))
++            print(f'escape N{node:03} body={body} {label} -> N{goal:03} passed',flush=True)
++
++# End-to-end one-shot obstacle while already escaping, all body-relative lasers.
++interceptions=[]
++for direction,label in [(0,'FRONT'),(3,'REAR')]:
++    fresh(38,1);clock+=1;call('Thief_OnLaserFrame',3,150,100,1,clock);tick()
++    result=complete_route(intercept=direction)
++    check(result['intercepted'],'partial-leg laser must actually trigger')
++    check(result['node'] in [11,38,26,35,63],'intercepted escape completes at a permitted hide')
++    interceptions.append(dict(laser=label,**result))
++
++# Side rays only project onto a road while still at the cross junction.
++# Trigger after Route_Start but before translation: exercise real cancellation,
++# settle, replan, turn and complete route, rather than forcing a threat mask.
++for direction,label in [(1,'LEFT'),(2,'RIGHT')]:
++    fresh(38,1);clock+=1;call('Thief_OnLaserFrame',3,150,100,1,clock);tick()
++    call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
++    clock+=1;call('Thief_OnLaserFrame',direction,150,100,1,clock)
++    check(var('intercept_pending')==1,'side threat at departure crosses the real laser gate')
++    tick()
++    check(var('route_state')==12,'side threat immediately brakes departure')
++    result=complete_route(intercepted_before=True)
++    check(result['node'] in [11,38,26,35,63],'side interception replans and completes at a hide')
++    interceptions.append(dict(laser=label,trigger='departure before translation',**result))
++
++# Map authority is restricted to a genuinely confirmed, correctly located root.
++# Wrong node / midpoint and a nonexistent edge remain rejected before motion.
++for invalid,expected in [('wrong_node','ROOT_TURN_POSE'),('on_leg','ROOT_TURN_POSE'),
++                         ('invalid_edge','MAP_RUNTIME_PLAN_INVALID')]:
++    fresh(78,2,0);setstep(78,77,3,0,300)
++    if invalid=='wrong_node':member('thief_localization','confirmed_node',79)
++    elif invalid=='on_leg':member('thief_localization','phase',1)
++    else:record(steps,'MapRouteStep_t',dict(to_node=62))
++    call('Route_Start')
++    check(var('route_active')==0 and reason()==expected,'invalid root remains rejected: '+invalid)
++
++result=dict(checks=checks,failures=0,log_regression=log_result,escapes=results,ignored=ignored,
++    interceptions=interceptions,scope='Linked ARM firmware task + real planner, synthetic gray/yaw/encoder; no physical motion proof',
++    firmware_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),
++    app_source_sha256=hashlib.sha256((ROOT/'User/App_ThiefStrategy.c').read_bytes()).hexdigest(),
++    test_script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
++(ROOT/'Tests/results_escape_completion.json').write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8')
++print(json.dumps(dict(checks=checks,escapes=len(results),ignored=len(ignored),interceptions=interceptions),indent=2))
+--- 16U_RUN1/Tests/verify_snapshot.py
++++ 16U_RUN2/Tests/verify_snapshot.py
+@@ -54,14 +54,34 @@
+ for directory in directories:
+     assert all(p.stat().st_mtime<=axf.stat().st_mtime for p in (ROOT/directory).rglob('*')
+                if p.suffix in ['.c','.h']),'source newer than firmware'
++escape_result=json.loads((ROOT/'Tests/results_escape_completion.json').read_text())
++assert escape_result['failures']==0 and escape_result['firmware_sha256']==sha(axf)
++assert escape_result['app_source_sha256']==sha(ROOT/'User/App_ThiefStrategy.c')
++assert escape_result['test_script_sha256']==sha(ROOT/'Tests/test_escape_completion.py')
++assert len(escape_result['escapes'])==36 and len(escape_result['ignored'])==4
++assert len(escape_result['interceptions'])==4
++assert 'UARTCH4_16U_RUN2' in app
++before=ROOT/'Tests/before_documents11'
++before_hashes=json.loads((before/'source_sha256.json').read_text())
++fix_sources=[rel for rel,value in before_hashes.items() if sha(ROOT/rel)!=value]
++assert fix_sources==['User/App_ThiefStrategy.c'],fix_sources
++assert 'MAP_REQUIRED_BRANCH_NOT_SEEN' in (before/'regression_before.txt').read_text(encoding='utf-8-sig')
++fix_diff=[]
++fix_files=['User/App_ThiefStrategy.c','Tests/test_app_runtime.py','Tests/test_escape_completion.py',
++           'Tests/verify_snapshot.py','README.md']
++for rel in fix_files:
++    old=before/rel;current=ROOT/rel
++    fix_diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
++        current.read_text(encoding='utf-8').splitlines(True),fromfile='16U_RUN1/'+rel,tofile='16U_RUN2/'+rel))
++(ROOT/'DOCUMENTS11_CHANGESET.patch').write_text(''.join(fix_diff),encoding='utf-8')
+ old_project=OLD/'MDK-ARM'/(OLD.name+'.uvprojx')
+ assert (ROOT/(ROOT.name+'.ioc')).read_text(encoding='utf-8')==\
+     (OLD/(OLD.name+'.ioc')).read_text(encoding='utf-8').replace(OLD.name,ROOT.name), 'CubeMX settings changed'
+ diff.extend(difflib.unified_diff(old_project.read_text(encoding='utf-8').splitlines(True),
+     project.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/project.uvprojx',tofile='16U/project.uvprojx'))
+-for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py']:
++for rel in ['README.md','.gitignore','Tests/test_16m.c','Tests/test_app_runtime.py','Tests/verify_snapshot.py','Tests/test_escape_completion.py']:
+     p=ROOT/rel;old=OLD/rel
+-    diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True),
++    diff.extend(difflib.unified_diff(old.read_text(encoding='utf-8').splitlines(True) if old.exists() else [],
+         p.read_text(encoding='utf-8').splitlines(True),fromfile='baseline/'+rel,tofile='16U/'+rel))
+     changed.append(rel)
+ (ROOT/'SOURCE_CHANGESET.patch').write_text(''.join(diff),encoding='utf-8')
+@@ -74,9 +94,14 @@
+  unchanged_source_count=len(equal),unchanged_hardware_core=True,project_file_count=len(paths),
+  duplicate_sources=0,compile_errors=0,compile_warnings=0,hex_sha256=sha(hexfile),
+  algorithm_checks=result['test_checks'],application_checks=app_result['checks'],
+- hardware_tested=False,flashed=False,
++ hardware_tested=False,flashed=False,firmware='UARTCH4_16U_RUN2',
++ documents11_fix_source_files=fix_sources,documents11_fix_files=fix_files,
++ documents11_backup=str(before),escape_completion_checks=escape_result['checks'],
++ escape_completion_cases=len(escape_result['escapes']),ignored_no_road_cases=len(escape_result['ignored']),
++ interception_completion_cases=len(escape_result['interceptions']),
+  generated_evidence=['build_16U.log','Tests/results_16m.json','Tests/results_app_runtime.json',
+- 'Tests/Documents10_evidence.json','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
+- notes='Only the new copy was edited; original source hashes recorded for future comparison.')
++ 'Tests/Documents10_evidence.json','Tests/results_escape_completion.json',
++ 'Tests/before_documents11/regression_before.txt','DOCUMENTS11_CHANGESET.patch','SOURCE_CHANGESET.patch','VALIDATION_16U.json'],
++ notes='16U RUN2 is an in-place Documents11 fix in the user-specified Desktop project. Before-fix files/AXF and source hashes are saved in Tests/before_documents11. No hardware execution.')
+ (ROOT/'VALIDATION_16U.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+ print(json.dumps({k:v for k,v in report.items() if k!='baseline_sha256_at_verification'},indent=2,ensure_ascii=False))
+--- 16U_RUN1/README.md
++++ 16U_RUN2/README.md
+@@ -1,27 +1,52 @@
+-# 16U：700 mm 单帧快速避障与节点换线
++# 16U RUN2：修复 Documents11 中逃跑重规划后的误停车
+ 
+-本工程从已验证的 16T 独立复制，针对 Documents10 中“倒车后停止、不换线路”和“避障触发不及时”进行最小修改；16T 原工程未改动。
++本次直接修改用户指定的桌面 `Thief16U_UARTCh4_ImmediateRetreat700_Test` 工程。启动标识为 **`UARTCH4_16U_RUN2`**，策略标识仍为 `ALGO=16U`，触发中心距离仍为 **700 mm**。
+ 
+-## 日志结论
++## 停车原因
+ 
+-Documents10 中 N038 出发时多次在 `MM=0` 被新激光帧打断；后续 N004 的真实倒车已经回到节点并重新规划，经 N003、N002 继续行驶。最后一次停止是独立的 `FRONT_NO_LINE` 灰度丢线故障，不是倒车后未规划。因此本版不削弱灰度安全检查，只修正激光触发速度和拦截后的换线策略。
++Documents11.txt 第 2008 行记录 N063 触发逃跑；第 2124–2125 行记录回到 N078，灰度 `DF4`，`CENTERED=0`；第 2143 行附近显示 `NODE_BRANCH_REUSE N=78 ABS=2 ENTRY=2 PORTS=1`。重新规划的首段是 N078→N077，车身朝南，需要向右转往西，但保留的灰度支路证据只有东侧。第 2167 行因此触发 `MAP_REQUIRED_BRANCH_NOT_SEEN`，进入 FAULT。
+ 
+-## 修改
++这次支路证据没有丢失，而是只观测到了另一侧。确认到达路口不等于灰度板同时看到了所有支路。不能用“没读到所选支路”否定已确认节点上、地图校验通过的重新出发。
+ 
+-- 四路激光触发中心距离由 600 mm 增加到 700 mm；各传感器安装偏移换算保持不变。
+-- 当前帧同时满足距离、置信度、地图道路投影、场地边界和时效检查时，单帧立即触发，不再等待第二帧。
+-- 前方或左右侧出现威胁时立即制动，确认停车后沿原路倒回最近的已确认节点，再重新规划并启动。
+-- 仅后方出现威胁时不倒向后车，而是继续远离，在下一确认节点停车并重新规划。
+-- 保留 350 ms 反向冷却，避免连续帧造成方向来回切换；冷却期间仍会在下一节点换线。
+-- 固件标识更新为 `UARTCH4_16U_RUN1` / `ALGO=16U`。
++## 修改范围
+ 
+-## 验证
++- 只改一个固件源文件：`User/App_ThiefStrategy.c`。删除已确认节点重新出发时的重复支路否决条件，更新 RUN2 标识。
++- 起步仍须通过运行时地图路线校验、当前确认节点匹配以及新鲜 YAW 检查；转弯之后仍须满足出口灰度稳定、YAW 方向与角度对齐，才正式进入下一路段。
++- 继续使用已有 180 ms 入路口延时；已居中的藏点跳过重复前进。保留途中普通路口的支路确认、手动停止、持续失线恢复和电机/陀螺仪故障处理。
++- 五个藏点及停车轴向不变：N011/N038/N035 横向，N026/N063 纵向。700 mm 触发、原有效测距范围、地图外及无道路过滤不变。
++- 不修改引脚、时钟、CubeMX 配置或电机底层；未烧录，未连接串口，未驱动电机。
+ 
+-- ARMCC5 算法与定位仿真：272703 项检查通过，0 项失败。
+-- 实际链接 16U AXF 的应用仿真：4980 项检查通过，0 项失败；覆盖单帧制动、确认停车后倒车、回到确认节点、重新规划及再次启动。
+-- Keil ARMCC5 完整重编译：0 errors、0 warnings。
+-- 未烧录、未驱动电机、未占用串口。
++## 验证证据
+ 
+-打开 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test.uvprojx`。启动串口应显示 `UARTCH4_16U_RUN1` 与 `TRIGGER_CENTER_MM=700`。
++- 原固件在新增 Documents11 回归中复现 `N078: MAP_REQUIRED_BRANCH_NOT_SEEN`，记录位于 `Tests/before_documents11/regression_before.txt`。
++- 修复后同一回归能执行右转并到达 N077。
++- 通过五藏点 × 两种合法停车朝向 × 四路激光的 40 组合检查：36 个方向有道路，真实激光判定和规划器均触发，并在合成灰度/YAW/编码器输入下完成整条路线、到达下一藏点且轴向正确；4 个方向没有地图道路，维持忽略，不伪造为小车。
++- 四路激光的再次拦截完成测试：前后激光在已行驶路段触发；左右激光在路口起步、尚未位移时触发。覆盖制动、回撤或继续远离、停稳重规划、再启动及最终到达藏点。
++- 无效起点、路段中途冒充节点、地图不存在的边仍被拒绝。
++- 原有 4980 项应用检查、272703 项算法检查通过；包括 508 种根节点转弯与 128 种支路缓存组合。
++- 对本工程执行 Keil ARMCC5 全量重编译：**0 Error(s), 0 Warning(s)**。日志 `build_16U.log`；完整校验及固件散列 `VALIDATION_16U.json`。
+ 
+-仅编译通过，尚未完成硬件验证
++应用测试运行实际链接的 ARM 固件，硬件接口被替代为合成输入；没有验证实车打滑、灰度板安装偏差、真实电机响应或激光误判。**仅编译通过，尚未完成硬件验证**。不能据此承诺任何硬件状况下都一定成功逃跑。
++
++## 文件与复核
++
++打开 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test.uvprojx`。本次生成的 HEX 与 AXF 位于 `MDK-ARM/Thief16U_UARTCh4_ImmediateRetreat700_Test/`。
++
++- `Tests/test_escape_completion.py`：Documents11 回归、40 组合检查和完整逃跑路线测试。
++- `Tests/results_escape_completion.json`：每个起点、朝向、激光、目标藏点、途中确认节点及测试固件散列。
++- `Tests/test_app_runtime.py` / `Tests/results_app_runtime.json`：原应用回归，已更新已确认节点起步的预期行为。
++- `Tests/run_16m.py` / `Tests/results_16m.json`：算法回归。
++- `Tests/verify_snapshot.py`：源码、工程引用、测试固件一致性和文件改动审计。
++- `DOCUMENTS11_CHANGESET.patch`：这次 RUN1→RUN2 的改动；`SOURCE_CHANGESET.patch`：相对 16T 的累计改动。
++- `Tests/before_documents11/`：本次修改前文件、原 AXF、原串口日志与源码散列。保留原版本便于对比和回退。
++
++在此工程目录依次运行：
++
++```powershell
++E:/Python/python.exe Tests/run_16m.py
++E:/Python/python.exe Tests/test_app_runtime.py
++E:/Python/python.exe Tests/test_escape_completion.py
++E:/Python/python.exe Tests/verify_snapshot.py
++```
++
++请先在 Keil 编译本工程，再运行上述应用测试。新增测试可附加 `--documents11-only` 仅验证日志对应的起步问题。

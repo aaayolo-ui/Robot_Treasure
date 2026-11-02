@@ -1,0 +1,256 @@
+--- MONITOR7/User/App_ThiefStrategy.c
++++ MONITOR8/User/App_ThiefStrategy.c
+@@ -213,8 +213,6 @@
+ static int16_t last_leading_error;
+ static uint8_t last_leading_mode;
+ static uint32_t restart_log_tick;
+-static uint8_t treasure_turn_align_active;
+-static RoadHeadingControl_t treasure_turn_heading;
+ static uint32_t yaw_reference_since,yaw_reference_last,yaw_reference_apply;
+ static int32_t yaw_reference_mm;
+ static int16_t yaw_reference_sample;
+@@ -1007,10 +1005,10 @@
+   int32_t delta = (int32_t)Route_TurnAngleDeltaX100(current_angle_x100,
+                                                     turn_start_angle_x100);
+ 
+-  /* Fast rotation for the large angle, then brake and pulse-trim the final
+-   *15degrees. The map axis includes skew already present before this turn. */
++  /* Treasure exits must not dwell for a stationary fine trim. Reach the
++   * actual outgoing road axis within10degrees, then hand directly to gray. */
+   if((node==4U || node==6U) && thief_localization.yaw_cw_sign &&
+-      Route_TurnExitContext(&error,&yaw))return (uint8_t)(error>=-1500 && error<=1500);
++      Route_TurnExitContext(&error,&yaw))return (uint8_t)(error>=-1000 && error<=1000);
+ 
+   if (delta < 0L)
+   {
+@@ -1051,7 +1049,7 @@
+                              int32_t seed_base_rpm_x10,
+                              uint8_t dual_on_first_valid_rear)
+ {
+-  if (keep_speed_loop != 0U)
++  if ((keep_speed_loop != 0U) && ChassisSpeedControl_IsEnabled())
+   {
+     LineFollowPID_Reset(&line_follow_pid);
+     follow_smoothing.base_rpm_x10 = seed_base_rpm_x10;
+@@ -1097,18 +1095,6 @@
+   UartDebug_Printf("TURN_DONE=%s START=%d CURRENT=%d DELTA=%d\r\n",
+                    finish_reason, (int)turn_start_angle_x100,
+                    (int)current_angle_x100, (int)delta);
+-  {
+-    const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+-    uint16_t node=step?(departure_turn?step->from_node:step->to_node):0U;
+-    treasure_turn_align_active=(uint8_t)(node==4U || node==6U);
+-    if(treasure_turn_align_active) {
+-      /* The legacy45degree spin is coarse acquisition only here. No forward
+-       * burst or gray PID until the outgoing map axis is physically aligned. */
+-      Route_BrakeControl();RoadHeading_Reset(&treasure_turn_heading,now);
+-      UartDebug_Printf("TURN_AXIS_BEGIN N=%u COARSE_DELTA=%d\r\n",(unsigned)node,(int)delta);
+-      return;
+-    }
+-  }
+   Route_DriveStraight(elapsed_ms);
+ }
+ 
+@@ -1271,37 +1257,6 @@
+ }
+ 
+ /* Filtered side pixels are a steering cue, never an observed road exit/node. */
+-static void Route_AlignTreasureTurn(uint32_t now,uint32_t elapsed_ms)
+-{
+-  RoadHeadingInput_t in;RoadHeadingOutput_t out;ThiefLocYaw_t yaw;int16_t error;
+-  Chassis_UpdateFeedback(elapsed_ms);
+-  if(!Route_TurnExitContext(&error,&yaw)) {
+-    /* Wait under the existing gyro freshness deadline, without accepting gray
+-     * as a substitute for the remaining physical turn. */
+-    Route_BrakeControl();
+-    if((uint32_t)(now-JY61P_GetLastUpdateMs())>ROUTE_GYRO_RECOVERY_MS)
+-      Route_StopFault("JY61P_STALE");
+-    return;
+-  }
+-  in.cw_error_x100=error;in.yaw_tick=yaw.stamp_ms;
+-  in.stopped=Route_AllWheelsStopped();in.direction_known=1U;
+-  RoadHeading_UpdatePulse(&treasure_turn_heading,&in,now,200,&out);
+-  if(out.brake)Route_BrakeControl();
+-  else {
+-    int32_t pwm=out.turn_x10>0?ROUTE_TURN_EQUAL_PWM:-ROUTE_TURN_EQUAL_PWM;
+-    Chassis_Enable();
+-    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_LEFT,pwm);
+-    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_RIGHT,-pwm);
+-    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_LEFT,pwm);
+-    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_RIGHT,-pwm);
+-  }
+-  if(out.ready) {
+-    treasure_turn_align_active=0U;route_state_tick=now;
+-    UartDebug_Printf("TURN_AXIS_READY YAW_ERR=%d\r\n",(int)error);
+-    /* The next actual board read still decides whether to follow or search. */
+-  }
+-}
+-
+ static uint8_t Route_SideLineHint(uint16_t raw)
+ {
+   return (uint8_t)(raw && (!(raw&0x00FFU) || !(raw&0x0FF0U)));
+@@ -2114,7 +2069,7 @@
+   uint8_t turn_delta=0U;
+ 
+   map_distance_warned=0U;retreat_far_pending=0U;route_identity_phase=0U;
+-  treasure_turn_align_active=0U;yaw_reference_since=0U;yaw_reference_last=0U;
++  yaw_reference_since=0U;yaw_reference_last=0U;
+   map_leg_started_tick=SystemTime_GetMs();
+   restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+@@ -2491,7 +2446,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR7 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR8 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2514,7 +2469,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR7 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR8 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2564,7 +2519,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR7 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR8 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -3250,9 +3205,6 @@
+       break;
+ 
+     case ROUTE_STATE_AFTER_TURN_FORWARD:
+-      if(treasure_turn_align_active) {
+-        Route_AlignTreasureTurn(now,elapsed_ms);break;
+-      }
+       if ((uint32_t)(now - route_state_tick) >=
+           ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS)
+       {
+--- MONITOR7/Tests/test_turn_resume.py
++++ MONITOR8/Tests/test_turn_resume.py
+@@ -0,0 +1,53 @@
++"""025736: real speed PI/enable state, synthetic hardware feedback and PWM sinks."""
++from pathlib import Path
++import sys,json,hashlib
++src=Path(__file__).with_name('test_documents15.py').read_text(encoding='utf-8').split('parking_pwm=[]')[0]
++src=src.replace('Tests/before_documents15/original.axf','Tests/before_turn_resume/original.axf')
++exec(compile(src,str(Path(__file__).with_name('test_documents15.py')),'exec'))
++for n in ['Route_ResetControl','Route_BrakeControl','ChassisSpeedControl_Enable',
++          'ChassisSpeedControl_Disable','ChassisSpeedControl_Brake','ChassisSpeedControl_Update',
++          'ChassisSpeedControl_ResetPiState','TravelFrame_SetWheelTargets']:
++    if n in hooks:u.hook_del(hooks.pop(n))
++ret('Chassis_Init')
++event('Chassis_Disable')
++pwm=[]
++def capture():
++    value=u.reg_read(UC_ARM_REG_R1)
++    pwm.append((u.reg_read(UC_ARM_REG_R0),value-2**32 if value>=2**31 else value));return 0
++hook('Chassis_SetWheelLogicalPwm',capture)
++
++def resume_after_brake():
++    for mode in [0,1]:
++        fresh(37,2*mode);setstep(37,20,0,mode,600);call('Route_Start')
++        call('ChassisSpeedControl_Init');call('ChassisSpeedControl_Enable')
++        call('Route_BrakeControl')
++        check(not call('ChassisSpeedControl_IsEnabled'),'actual brake disables PI')
++        call('Route_EnterFollow',clock,1,800,1)
++        check(call('ChassisSpeedControl_IsEnabled'),'keep-loop request must restore an actually disabled speed loop')
++        pwm.clear();call('TravelFrame_SetWheelTargets',800,800,800,800)
++        call('ChassisSpeedControl_Update',20)
++        check(len(pwm)==4 and all(v!=0 for _,v in pwm),'all four actual PI controllers reach PWM output after brake')
++        check(not call('ChassisSpeedControl_HasStall'),'resume is not reported as a stall')
++    return 2
++
++def continuous_loop_kept():
++    fresh(37,0);setstep(37,20,0,0,600);call('Route_Start')
++    call('ChassisSpeedControl_Init');call('ChassisSpeedControl_Enable')
++    call('TravelFrame_SetWheelTargets',800,800,800,800);call('ChassisSpeedControl_Update',20)
++    # An already-running loop must retain the actual wheel targets/PI state.
++    controller=call('ChassisSpeedControl_GetController',0)
++    prior=bytes(u.mem_read(controller,size(types['WheelSpeedPi_t'])))
++    call('Route_EnterFollow',clock,1,800,1)
++    check(bytes(u.mem_read(controller,size(types['WheelSpeedPi_t'])))==prior,'continuous transfer retains active wheel PI')
++    return 1
++
++failures=[];cases={}
++for fn in [resume_after_brake,continuous_loop_kept]:
++    try:cases[fn.__name__]=fn()
++    except Exception as e:failures.append(dict(case=fn.__name__,error=str(e)))
++axf=ROOT/'MDK-ARM'/ROOT.name/(ROOT.name+'.axf')
++if '--before' in sys.argv:axf=ROOT/'Tests/before_turn_resume/original.axf'
++r=dict(cases=cases,failures=failures,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),
++       test_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),hardware_tested=False)
++out=ROOT/('Tests/before_turn_resume/regression_before.json' if '--before' in sys.argv else 'Tests/results_turn_resume.json')
++out.write_text(json.dumps(r,indent=2),encoding='utf-8');print(json.dumps(r,indent=2));sys.exit(bool(failures))
+--- MONITOR7/Tests/test_yaw_reference.py
++++ MONITOR8/Tests/test_yaw_reference.py
+@@ -55,17 +55,10 @@
+         gray_raw=0x60;gray_state=1;rear_valid=1;targets.clear();events.clear()
+         if 'Route_HasReachedTurnAngle' in symbols:
+             check(call('Route_HasReachedTurnAngle',call('TravelFrame_Yaw',yaw))==0,'46.57degree rotation still has a large map-axis error')
++        yaw=(-sign*8800+18000)%36000-18000
+         call('Route_EnterAfterTurnForward',clock,20,0x2000ce00,yaw)
+-        check('treasure_turn_align_active' in symbols and var('treasure_turn_align_active'),'N004/N006 46.57deg cannot hand off to PID')
+-        check('Route_DriveStraight' not in events,'no translational burst before heading alignment')
+-        ret('Route_AllWheelsStopped',0)
+-        yaw=(-sign*9000+18000)%36000-18000
+-        for _ in range(6):clock+=20;call('Route_AlignTreasureTurn',clock,20)
+-        check(var('treasure_turn_align_active'),'aligned angle without measured stop cannot hand off')
+-        ret('Route_AllWheelsStopped',1)
+-        for _ in range(20):clock+=20;call('Route_AlignTreasureTurn',clock,20)
+-        check(not var('treasure_turn_align_active'),f'fresh stable stopped axis releases gray acquisition node={node} mode={mode} sign={sign} phase={member("thief_localization","phase")} arrived={member("map_nav","arrived")} error={member("thief_localization","error")} stable={member("treasure_turn_heading","stable_count")}')
+-        check(member('thief_localization','phase')==2,'alignment alone never confirms outgoing leg')
++        check('Route_DriveStraight' in events,'aligned treasure exit starts moving without stationary fine trim')
++        check(member('thief_localization','phase')==2,'starting motion alone never confirms outgoing leg')
+     return 8
+ 
+ def reference_wrap_reverse():
+--- MONITOR7/README.md
++++ MONITOR8/README.md
+@@ -1,3 +1,15 @@
++# 16U MONITOR8：宝藏口直接巡线、恢复真实轮速控制
++
++当前UARTCH4_16U_MONITOR8。用户实测025736显示TURN_AXIS_READY YAW_ERR=43后已进入FOLLOW，随后四路编码器持续不变：制动关闭轮速PI，而原keep_speed_loop分支未重新使能。进入巡线现在只在真实轮速控制仍启用时保留PI，否则复用原ResetControl(1)恢复控制。
++
++- 按用户最新要求，取消MONITOR7的N004/N006原地±2度脉冲微调、三帧停稳等待及其状态。已学习陀螺仪方向时转到地图出口±10度内就直接进入原前进/灰度巡线流程，小偏差由PID修正。没有新增宝藏口停车微调。
++- 保留MONITOR7普通可靠直道的渐进地图航向校准、原始YAW、原正常速度、路线/候选定位与激光阈值。一般失线恢复、藏点纠偏和停车确认不是本次取消范围。
++- Tests/test_turn_resume.py执行真实制动/使能/轮速PI和PWM计算，仅替代硬件反馈与PWM落点；验证原版漏启用失败、新版正反向四轮都有非零PWM，已开启的PI状态仍连续。Tests/test_yaw_reference.py按本次取消微调要求更新交接断言，旧脚本与MONITOR7 AXF/源码/025736日志保存Tests/before_turn_resume。
++
++验收VALIDATION_MONITOR8.json，差异TURN_RESUME_CHANGESET.patch。仅编译通过，尚未完成硬件验证。
++
++以下MONITOR7及更早内容为历史。
++
+ # 16U MONITOR7：直道航向基准校准与宝藏口转向
+ 
+ 当前UARTCH4_16U_MONITOR7，工程名不变。MONITOR6源码/AXF/规范及013314日志在Tests/before_yaw_reference；验收VALIDATION_MONITOR7.json，增量YAW_REFERENCE_CHANGESET.patch。
+--- MONITOR7/AGENTS.md
++++ MONITOR8/AGENTS.md
+@@ -1,4 +1,6 @@
+ # 本工程修改前必读
++
++最新MONITOR8覆盖下文MONITOR7的宝藏口微调：取消N004/N006原地±2度/三帧停稳等待，已知方向时出口±10度直接接原前进/灰度。保留直道航向基准学习。进入巡线仅在轮速控制真实启用时允许keep_speed_loop，否则重新启用。新增测试必须执行真实PI使能与PWM计算，不能只看目标/状态打印。基线Tests/before_turn_resume，验收VALIDATION_MONITOR8.json。
+ 
+ 最新MONITOR7见规范最前章节：普通可靠长直道缓慢更新地图YAW基准，保留原始传感器YAW；宝藏文字区、定位不确定/恢复/折返不学习。N004/N006转弯以地图出口轴为准，大角度转向后测量停稳和新鲜±2度细调再交灰度，不能再在45度后立即直行。正常道路速度、MONITOR6路线评分/消歧及激光阈值保持。基线Tests/before_yaw_reference，验收VALIDATION_MONITOR7.json。下文版本为历史。
+ 
+--- MONITOR7/Docs/修改规范与回归清单.md
++++ MONITOR8/Docs/修改规范与回归清单.md
+@@ -1,4 +1,10 @@
+ # 修改规范与回归清单
++
++## 当前MONITOR8：取消宝藏口原地微调，修复制动后巡线使能
++
++用户025736实测在宝藏口已基本摆正，不允许在易被抓位置继续原地±2度微调。删除N004/N006该阶段；已学习陀螺仪方向时转到出口地图轴±10度直接进入原前进/灰度流程。其他道路恢复/藏点纠偏不改变，直道基准学习保留。
++025736的TURN_AXIS_READY误差0.43度后进入FOLLOW但编码器静止，原因是ChassisSpeedControl_Brake关闭PI，而Route_EnterFollow(keep=1)未重启。keep只有在ChassisSpeedControl_IsEnabled为真时保留，否则复用ResetControl(1)。测试必须跑真实制动/使能/PI及PWM计算，以免模拟接口掩盖控制层断开。不能把FOLLOW打印或目标非零当成实际输出证明。
++基线Tests/before_turn_resume，新增test_turn_resume.py；test_yaw_reference.py交接预期按取消微调更新，旧脚本保留。验收VALIDATION_MONITOR8.json，增量TURN_RESUME_CHANGESET.patch。原速度、左右800/前后1000、路线评分、候选消歧和双板无线2秒保持。仅编译通过，尚未完成硬件验证。
+ 
+ ## 当前MONITOR7：长直道学习与N004/N006陀螺仪转向
+ 

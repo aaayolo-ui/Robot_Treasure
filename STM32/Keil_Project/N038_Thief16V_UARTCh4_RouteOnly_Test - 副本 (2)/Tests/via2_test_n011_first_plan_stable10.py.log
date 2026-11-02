@@ -1,0 +1,11 @@
+{
+  "checks": 4490,
+  "cases": {
+    "body_world_first_result": 16,
+    "noisy_full_transfers": 6,
+    "manual_stop": 1
+  },
+  "failures": [],
+  "axf_sha256": "f01c11374cf2269925057380e6d5081949a6b4dda0b40061568b778af57e3357",
+  "hardware_tested": false
+}

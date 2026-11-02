@@ -1,0 +1,9 @@
+{
+  "checks": 12,
+  "failures": [
+    "logged early F00 must not become N002 in normal follow"
+  ],
+  "axf_sha256": "ca24227bf7f73000e27677e436c0ffab84d8b816a49385cd9c66f39a01002fe4",
+  "hardware_tested": false,
+  "before": true
+}

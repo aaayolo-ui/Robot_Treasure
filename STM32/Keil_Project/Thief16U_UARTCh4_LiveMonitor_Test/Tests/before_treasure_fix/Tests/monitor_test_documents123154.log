@@ -1,0 +1,310 @@
+trailing_return_matrix: PASS
+return_requires_real_evidence: PASS
+raw1000_four_channels: PASS
+opposite_departure: PASS
+{
+  "checks": 4456,
+  "failures": [],
+  "cases": {
+    "trailing_return_matrix": {
+      "combinations": 40,
+      "completed": [
+        {
+          "start": 2,
+          "mode": 0,
+          "completion": {
+            "frames": 330,
+            "node": 11,
+            "body": 3,
+            "fixes": [
+              1,
+              10,
+              11
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              6,
+              7,
+              9,
+              13
+            ],
+            "intercepted": false
+          }
+        },
+        {
+          "start": 2,
+          "mode": 1,
+          "completion": {
+            "frames": 333,
+            "node": 11,
+            "body": 1,
+            "fixes": [
+              3,
+              13,
+              12,
+              11
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        },
+        {
+          "start": 38,
+          "mode": 0,
+          "completion": {
+            "frames": 363,
+            "node": 11,
+            "body": 3,
+            "fixes": [
+              37,
+              20,
+              10,
+              11
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        },
+        {
+          "start": 38,
+          "mode": 1,
+          "completion": {
+            "frames": 605,
+            "node": 11,
+            "body": 3,
+            "fixes": [
+              39,
+              57,
+              56,
+              55,
+              37,
+              20,
+              10,
+              11
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        },
+        {
+          "start": 39,
+          "mode": 0,
+          "completion": {
+            "frames": 396,
+            "node": 11,
+            "body": 3,
+            "fixes": [
+              38,
+              37,
+              20,
+              10,
+              11
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        },
+        {
+          "start": 39,
+          "mode": 1,
+          "completion": {
+            "frames": 835,
+            "node": 11,
+            "body": 1,
+            "fixes": [
+              40,
+              46,
+              58,
+              59,
+              60,
+              69,
+              70,
+              61,
+              49,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              13,
+              12,
+              11
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        },
+        {
+          "start": 58,
+          "mode": 0,
+          "completion": {
+            "frames": 469,
+            "node": 11,
+            "body": 3,
+            "fixes": [
+              46,
+              40,
+              39,
+              38,
+              37,
+              20,
+              10,
+              11
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        },
+        {
+          "start": 58,
+          "mode": 1,
+          "completion": {
+            "frames": 788,
+            "node": 11,
+            "body": 1,
+            "fixes": [
+              68,
+              84,
+              85,
+              76,
+              70,
+              61,
+              49,
+              33,
+              25,
+              15,
+              6,
+              4,
+              3,
+              13,
+              12,
+              11
+            ],
+            "states": [
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              9,
+              11,
+              13
+            ],
+            "intercepted": false
+          }
+        }
+      ]
+    },
+    "return_requires_real_evidence": 1,
+    "raw1000_four_channels": {
+      "channels": 4,
+      "max_raw_mm": 1000,
+      "front_rear_center_at_limit": 1150
+    },
+    "opposite_departure": [
+      {
+        "mask": 1,
+        "first": 56
+      },
+      {
+        "mask": 2,
+        "first": 37
+      },
+      {
+        "mask": 4,
+        "first": 21
+      },
+      {
+        "mask": 8,
+        "first": 39
+      }
+    ]
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "b2205b6197523eae5ef83b4e801688401aeb493d9ce64ae3cd6e49a62ea675ba",
+  "app_source_sha256": "1d75bad867788f130a2c813174637e536601e1c48911a2ea06c686355851dfbc",
+  "source_sha256": {
+    "User/App_ThiefStrategy.c": "1d75bad867788f130a2c813174637e536601e1c48911a2ea06c686355851dfbc",
+    "Algorithm/ThiefStrategy/FrontLaserGate.c": "9cfdc5389898625b3530fb642c3229a0408205ddb6347b14a2bcb114115cbada",
+    "Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "165be53b356153a733f5593a154e207aa3c0a581d3c56a440c4841479b3dfb8c",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "1e9121503655838ae8a373cbcb2f35c2fcfe16d9f262c9850bb8c50daa237fe5",
+    "Hardware/LaserRx.c": "ab2fc31e1837d7f0460e699d27985c3ebc963f8f8e19a8846b14c176c032c68f",
+    "Control/TravelFrame.c": "2cc628783e07ee5c572d26f2231d11542d02b12ec520ad0bd1d117a8472f5b9a",
+    "Control/TravelFrame.h": "17b87d53bc8bf266cfd7598dca04a037905c5261261a8d92cd6bd047371159b5"
+  },
+  "test_script_sha256": "2333b1ad07213daf6b05e104e76033e935851f359a84713a10a5599c4352720a",
+  "helper_sha256": {
+    "test_documents15.py": "956fedafa7ea99b584c1721a9b430c36e9a707161ebf37fb69d28abcbfe957b5",
+    "test_app_runtime.py": "d2d3dcd4503a0d14561fdea52540df7904ee0982e9930b785283f96cd042994a",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "a80cb0e4dec3b143d96eab7bb1509b748bb882fd62685d7435e6ba52e460976a"
+  }
+}

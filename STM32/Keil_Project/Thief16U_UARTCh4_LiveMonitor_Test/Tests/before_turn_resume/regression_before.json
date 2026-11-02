@@ -1,0 +1,14 @@
+{
+  "cases": {
+    "continuous_loop_kept": 1
+  },
+  "failures": [
+    {
+      "case": "resume_after_brake",
+      "error": "keep-loop request must restore an actually disabled speed loop"
+    }
+  ],
+  "axf_sha256": "c41ed3c8bf3a1fb5f19ba45853206748afa5c623676a1704ecfe09e6e6c12480",
+  "test_sha256": "6f1424e97f96592e3c441502659b03fb3cff77552fe50df650b04dc90fb78acc",
+  "hardware_tested": false
+}

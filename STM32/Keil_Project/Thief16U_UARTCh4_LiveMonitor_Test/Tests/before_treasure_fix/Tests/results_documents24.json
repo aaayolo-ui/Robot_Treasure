@@ -1,0 +1,21 @@
+{
+  "checks": 356,
+  "failures": [],
+  "cases": {
+    "slow_correction": 4,
+    "deadline_line": 1,
+    "no_progress": 1,
+    "stalled_small_error": 1,
+    "n010_log_replay": 1
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "b2205b6197523eae5ef83b4e801688401aeb493d9ce64ae3cd6e49a62ea675ba",
+  "app_source_sha256": "1d75bad867788f130a2c813174637e536601e1c48911a2ea06c686355851dfbc",
+  "test_script_sha256": "624f44c9ed30a8d4bbd62064c823a4c38c66776481e8b1e575cedf2b4621118e",
+  "helper_sha256": {
+    "test_documents15.py": "956fedafa7ea99b584c1721a9b430c36e9a707161ebf37fb69d28abcbfe957b5",
+    "test_app_runtime.py": "d2d3dcd4503a0d14561fdea52540df7904ee0982e9930b785283f96cd042994a",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "a80cb0e4dec3b143d96eab7bb1509b748bb882fd62685d7435e6ba52e460976a"
+  }
+}

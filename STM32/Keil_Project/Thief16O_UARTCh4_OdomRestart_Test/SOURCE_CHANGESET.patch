@@ -1,0 +1,111 @@
+--- baseline/User/App_ThiefStrategy.c
++++ 16O/User/App_ThiefStrategy.c
+@@ -49,7 +49,8 @@
+ #define ROUTE_JUNCTION_WATCH_PERIOD_MS        5U /* PID period is in LineFollowPID.h. */
+ #define MAP_ROUTE_PASS_TIMEOUT_MS         1800U
+ #define MAP_ROUTE_ALIGN_TIMEOUT_MS        2500U
+-#define ROUTE_RESTART_FIND_LINE_MS          300U /* Low-speed departure from a confirmed node. */
++#define ROUTE_RESTART_BLIND_MM              180L
++#define ROUTE_RESTART_TRAILING_LINE_MM      300L
+ #define ROUTE_FRONT_RECOVERY_MS             200U /* Brake and retry a transient front-gray fault. */
+ #define ROUTE_FRONT_RECOVERY_VALID_SAMPLES    2U
+ #define ROUTE_GYRO_RECOVERY_MS              600U /* Brake while waiting for fresh YAW. */
+@@ -167,6 +168,7 @@
+ static uint8_t node_centered;
+ static uint8_t departure_centered;
+ static uint8_t departure_reacquire;
++static uint8_t departure_trailing_seen;
+ static uint8_t replan_after_leg;
+ static uint8_t retreat_active;
+ static uint8_t intercept_pending;
+@@ -1182,6 +1184,7 @@
+   uint32_t now;
+   uint8_t turn_delta=0U;
+ 
++  departure_trailing_seen=0U;
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+       thief_localization.phase==THIEF_LOC_AT_NODE &&
+       thief_localization.confirmed_node==thief_plan.route.start_node);
+@@ -1463,7 +1466,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16M_RUN1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16O_RUN1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1486,7 +1489,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16M_RUN1 ALGO=16N UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16O_RUN1 ALGO=16O UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1535,7 +1538,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16M_RUN1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16O_RUN1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -1837,10 +1840,20 @@
+       }
+       else if (front_state==ROUTE_GRAY_NO_LINE && departure_reacquire)
+       {
+-        /* A stopped junction may sit between the gray boards. Move along the
+-         * planned edge briefly instead of locking on one empty sample. */
+-        if ((uint32_t)(now-route_state_tick)>=ROUTE_RESTART_FIND_LINE_MS) {
+-          Route_StopFault("RESTART_LINE_NOT_FOUND");
++        const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++        int32_t limit;
++        /* Leading/trailing are travel-relative, also when reversing. A recent
++         * trailing line permits crossing the gap between the two boards.
++         * Use real odometry, not a 300 ms deadline, and stay before next node. */
++        rear_state=Route_ReadRear(&sample);
++        if (rear_state==ROUTE_GRAY_VALID) departure_trailing_seen=1U;
++        limit=departure_trailing_seen?ROUTE_RESTART_TRAILING_LINE_MM:ROUTE_RESTART_BLIND_MM;
++        if (limit>(int32_t)step->length_mm-50L) limit=(int32_t)step->length_mm-50L;
++        if (Route_LegProgress()>=limit) {
++          UartDebug_Printf("RESTART_SEARCH_END MM=%ld LIMIT=%ld TRAILING_SEEN=%u RAW=%03X,%03X\r\n",
++              (long)Route_LegProgress(),(long)limit,(unsigned)departure_trailing_seen,
++              (unsigned)sample.front_raw12,(unsigned)sample.rear_raw12);
++          Route_StopFault("RESTART_SEARCH_DISTANCE");
+         } else {
+           leave_target_rpm_x10=ROUTE_TURN_APPROACH_RPM_X10;
+           Route_DriveTurnApproach(elapsed_ms);
+--- baseline/project.uvprojx
++++ 16O/project.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Thief16N_UARTCh4_RestartRecovery_Test</TargetName>
++      <TargetName>Thief16O_UARTCh4_OdomRestart_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Thief16N_UARTCh4_RestartRecovery_Test\</OutputDirectory>
+-          <OutputName>Thief16N_UARTCh4_RestartRecovery_Test</OutputName>
++          <OutputDirectory>Thief16O_UARTCh4_OdomRestart_Test\</OutputDirectory>
++          <OutputName>Thief16O_UARTCh4_OdomRestart_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -955,7 +955,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
+         <targetInfos>
+-          <targetInfo name="Thief16N_UARTCh4_RestartRecovery_Test"/>
++          <targetInfo name="Thief16O_UARTCh4_OdomRestart_Test"/>
+         </targetInfos>
+       </component>
+     </components>

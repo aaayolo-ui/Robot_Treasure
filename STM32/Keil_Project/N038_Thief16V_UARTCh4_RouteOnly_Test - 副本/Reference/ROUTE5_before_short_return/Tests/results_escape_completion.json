@@ -1,0 +1,1089 @@
+{
+  "checks": 26701,
+  "failures": 0,
+  "log_regression": {
+    "frames": 45,
+    "node": 77,
+    "body": 3,
+    "fixes": [],
+    "states": [
+      2,
+      5,
+      7,
+      9
+    ],
+    "intercepted": false
+  },
+  "escapes": [
+    {
+      "start": 11,
+      "start_body": 1,
+      "laser": "FRONT",
+      "goal": 63,
+      "frames": 802,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        10
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 11,
+      "start_body": 1,
+      "laser": "LEFT",
+      "goal": 63,
+      "frames": 802,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        10
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 11,
+      "start_body": 1,
+      "laser": "RIGHT",
+      "goal": 63,
+      "frames": 682,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        12,
+        13
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 11,
+      "start_body": 1,
+      "laser": "REAR",
+      "goal": 63,
+      "frames": 563,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        12
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 11,
+      "start_body": 3,
+      "laser": "FRONT",
+      "goal": 63,
+      "frames": 563,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        12
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 11,
+      "start_body": 3,
+      "laser": "LEFT",
+      "goal": 63,
+      "frames": 682,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        12,
+        13
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 11,
+      "start_body": 3,
+      "laser": "RIGHT",
+      "goal": 63,
+      "frames": 802,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        10
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 11,
+      "start_body": 3,
+      "laser": "REAR",
+      "goal": 63,
+      "frames": 802,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        10
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 38,
+      "start_body": 0,
+      "laser": "FRONT",
+      "goal": 63,
+      "frames": 646,
+      "node": 63,
+      "body": 0,
+      "fixes": [],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 38,
+      "start_body": 0,
+      "laser": "LEFT",
+      "goal": 63,
+      "frames": 829,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        21
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 38,
+      "start_body": 0,
+      "laser": "RIGHT",
+      "goal": 63,
+      "frames": 829,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        21
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 38,
+      "start_body": 0,
+      "laser": "REAR",
+      "goal": 26,
+      "frames": 748,
+      "node": 26,
+      "body": 0,
+      "fixes": [],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 38,
+      "start_body": 2,
+      "laser": "FRONT",
+      "goal": 26,
+      "frames": 748,
+      "node": 26,
+      "body": 0,
+      "fixes": [],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 38,
+      "start_body": 2,
+      "laser": "LEFT",
+      "goal": 63,
+      "frames": 829,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        21
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 38,
+      "start_body": 2,
+      "laser": "RIGHT",
+      "goal": 63,
+      "frames": 829,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        21
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 38,
+      "start_body": 2,
+      "laser": "REAR",
+      "goal": 63,
+      "frames": 646,
+      "node": 63,
+      "body": 0,
+      "fixes": [],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 26,
+      "start_body": 0,
+      "laser": "FRONT",
+      "goal": 38,
+      "frames": 1198,
+      "node": 38,
+      "body": 0,
+      "fixes": [
+        35
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 26,
+      "start_body": 0,
+      "laser": "LEFT",
+      "goal": 38,
+      "frames": 580,
+      "node": 38,
+      "body": 2,
+      "fixes": [
+        17,
+        7
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 26,
+      "start_body": 0,
+      "laser": "RIGHT",
+      "goal": 38,
+      "frames": 580,
+      "node": 38,
+      "body": 2,
+      "fixes": [
+        17,
+        7
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 26,
+      "start_body": 0,
+      "laser": "REAR",
+      "goal": 11,
+      "frames": 493,
+      "node": 11,
+      "body": 1,
+      "fixes": [
+        17,
+        7
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 26,
+      "start_body": 2,
+      "laser": "FRONT",
+      "goal": 11,
+      "frames": 493,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        17,
+        7
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 26,
+      "start_body": 2,
+      "laser": "LEFT",
+      "goal": 38,
+      "frames": 580,
+      "node": 38,
+      "body": 0,
+      "fixes": [
+        17,
+        7
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 26,
+      "start_body": 2,
+      "laser": "RIGHT",
+      "goal": 38,
+      "frames": 580,
+      "node": 38,
+      "body": 0,
+      "fixes": [
+        17,
+        7
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 26,
+      "start_body": 2,
+      "laser": "REAR",
+      "goal": 63,
+      "frames": 325,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        35
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 35,
+      "start_body": 1,
+      "laser": "FRONT",
+      "goal": 11,
+      "frames": 913,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        34,
+        33
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 35,
+      "start_body": 1,
+      "laser": "LEFT",
+      "goal": 63,
+      "frames": 271,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        36
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 35,
+      "start_body": 1,
+      "laser": "RIGHT",
+      "goal": 11,
+      "frames": 427,
+      "node": 11,
+      "body": 1,
+      "fixes": [
+        34,
+        33
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 35,
+      "start_body": 1,
+      "laser": "REAR",
+      "goal": 63,
+      "frames": 271,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        36
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 35,
+      "start_body": 3,
+      "laser": "FRONT",
+      "goal": 63,
+      "frames": 271,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        36
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 35,
+      "start_body": 3,
+      "laser": "LEFT",
+      "goal": 11,
+      "frames": 418,
+      "node": 11,
+      "body": 3,
+      "fixes": [],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 35,
+      "start_body": 3,
+      "laser": "RIGHT",
+      "goal": 38,
+      "frames": 934,
+      "node": 38,
+      "body": 2,
+      "fixes": [
+        34,
+        33
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 35,
+      "start_body": 3,
+      "laser": "REAR",
+      "goal": 11,
+      "frames": 913,
+      "node": 11,
+      "body": 1,
+      "fixes": [
+        34,
+        33
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 63,
+      "start_body": 0,
+      "laser": "FRONT",
+      "goal": 11,
+      "frames": 802,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        78
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 63,
+      "start_body": 0,
+      "laser": "LEFT",
+      "goal": 78,
+      "frames": 76,
+      "node": 78,
+      "body": 0,
+      "fixes": [
+        78
+      ],
+      "states": [
+        1,
+        2,
+        9,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 63,
+      "start_body": 0,
+      "laser": "RIGHT",
+      "goal": 11,
+      "frames": 568,
+      "node": 11,
+      "body": 3,
+      "fixes": [],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 63,
+      "start_body": 0,
+      "laser": "REAR",
+      "goal": 35,
+      "frames": 271,
+      "node": 35,
+      "body": 3,
+      "fixes": [
+        52
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 63,
+      "start_body": 2,
+      "laser": "FRONT",
+      "goal": 35,
+      "frames": 271,
+      "node": 35,
+      "body": 1,
+      "fixes": [
+        52
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 63,
+      "start_body": 2,
+      "laser": "LEFT",
+      "goal": 11,
+      "frames": 568,
+      "node": 11,
+      "body": 3,
+      "fixes": [],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 63,
+      "start_body": 2,
+      "laser": "RIGHT",
+      "goal": 78,
+      "frames": 76,
+      "node": 78,
+      "body": 2,
+      "fixes": [
+        78
+      ],
+      "states": [
+        1,
+        2,
+        9,
+        13
+      ],
+      "intercepted": false
+    },
+    {
+      "start": 63,
+      "start_body": 2,
+      "laser": "REAR",
+      "goal": 11,
+      "frames": 802,
+      "node": 11,
+      "body": 1,
+      "fixes": [
+        78
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": false
+    }
+  ],
+  "ignored": [],
+  "interceptions": [
+    {
+      "laser": "FRONT",
+      "frames": 44,
+      "node": 38,
+      "body": 1,
+      "fixes": [
+        38
+      ],
+      "states": [
+        1,
+        2,
+        9,
+        12,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "REAR",
+      "frames": 631,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        39,
+        40
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "LEFT",
+      "trigger": "departure before translation",
+      "frames": 631,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        39,
+        40
+      ],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "RIGHT",
+      "trigger": "departure before translation",
+      "frames": 631,
+      "node": 63,
+      "body": 0,
+      "fixes": [
+        39,
+        40
+      ],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": true
+    }
+  ],
+  "scope": "Linked ARM firmware task + real planner, synthetic gray/yaw/encoder; no physical motion proof",
+  "firmware_sha256": "84d1eb0745bc4d7730745c61f8e39e3ed237f773cef11375dca29fb4d6bf4d53",
+  "app_source_sha256": "51977ae00e16d3a22b6303816bc0b987b4a0d41f31c9e16bc62a38e65b8f3371",
+  "test_script_sha256": "5fd46d514513623be911e6031833ef07951be4a888e534669a83417d4c52e435"
+}

@@ -1,0 +1,15 @@
+{
+  "active_firmware": "UARTCH4_16V_STABLE4",
+  "production_sources_match_saved_stable4": true,
+  "rebuilt_errors": 0,
+  "rebuilt_warnings": 0,
+  "rebuilt_hex_matches_saved_stable4": true,
+  "restored_axf_sha256": "e3f3ba49beecf48cbe028fd1fd89543f5aaf53d6f9da2f544247e4dc40fd3935",
+  "rebuilt_axf_before_restoring_debug_image": "1cb460c9c945942719c3c1efff75d5b42544790d2d25218f51a052cf877ff70b",
+  "hex_sha256": "6dce1e15ce1136d1a96fb6ed0382e20c5caf31f2f98f18457c49ce4ccc55f122",
+  "validation": "Original eight STABLE4 offline reports restored with their exact tested AXF; not newly rerun",
+  "discarded_active_changes": "STABLE5 turn-line/weak-gray changes removed from active firmware",
+  "previous_snapshot": "E:\\Downloads\\Robot_Treasure-main\\Robot_Treasure-main\\STM32\\Keil_Project\\Thief16V_UARTCh4_StableBase_Test\\Reference\\STABLE5_before_rollback_20261029",
+  "hardware_tested": false,
+  "flashed": false
+}

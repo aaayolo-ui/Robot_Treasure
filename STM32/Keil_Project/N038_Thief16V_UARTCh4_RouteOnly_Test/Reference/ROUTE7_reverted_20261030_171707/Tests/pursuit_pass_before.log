@@ -1,0 +1,61 @@
+pursued: FAIL confirmed rotating rear pursuit extends the hide before reaching N063
+no_pursuit: PASS
+{
+  "checks": 1070,
+  "failures": [
+    {
+      "case": "pursued",
+      "error": "confirmed rotating rear pursuit extends the hide before reaching N063"
+    }
+  ],
+  "cases": [
+    {
+      "case": "quiet",
+      "result": {
+        "frames": 46,
+        "node": 63,
+        "body": 2,
+        "fixes": [],
+        "states": [
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "one_frame",
+      "result": {
+        "frames": 46,
+        "node": 63,
+        "body": 2,
+        "fixes": [],
+        "states": [
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "expired",
+      "result": {
+        "frames": 46,
+        "node": 63,
+        "body": 2,
+        "fixes": [],
+        "states": [
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      }
+    }
+  ],
+  "axf_sha256": "ecd12b86f558d6ca6453ca2d8abe0b7a5cf9442714a2ac64da43cb925a11c739",
+  "test_sha256": "16c1c5f10fedae791a738f68065ce1cc009e92df2a1dd5aec866b647e1d47d76",
+  "hardware_tested": false
+}

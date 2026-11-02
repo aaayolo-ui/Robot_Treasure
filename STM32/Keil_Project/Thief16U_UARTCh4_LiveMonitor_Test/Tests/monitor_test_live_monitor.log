@@ -1,0 +1,7 @@
+{
+  "checks": 21,
+  "failures": 0,
+  "axf": "E:\\Downloads\\Robot_Treasure-main\\Robot_Treasure-main\\STM32\\Keil_Project\\Thief16U_UARTCh4_LiveMonitor_Test\\MDK-ARM\\Thief16U_UARTCh4_LiveMonitor_Test\\Thief16U_UARTCh4_LiveMonitor_Test.axf",
+  "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "hardware_tested": false
+}

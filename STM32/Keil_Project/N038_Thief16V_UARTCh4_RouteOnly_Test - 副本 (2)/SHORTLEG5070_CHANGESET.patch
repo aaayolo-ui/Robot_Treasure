@@ -1,0 +1,155 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -1364,13 +1364,20 @@
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+   if(map_nav.runtime && !route_trail.returning && !retreat_active) {
+-    /* 50-70% is a reference band, not an upper arrival limit.
+-     * N011 -> N002 must expose the planned right exit. Opposite-side
+-     * fragments on this leg stay line-follow input, not a node arrival. */
+-    if(step->from_node==11U && step->to_node==2U &&
+-        step->action==MAP_ACTION_RIGHT)
+-      return ((raw12&3U)==3U &&
+-          Route_LegProgress()>=(int32_t)step->length_mm*5L/10L)?1U:0U;
++    /* One grid cell: encoder travel rejects the old junction; real gray
++     * and map exits confirm the next one. 70% is not an upper limit. */
++    if(step->length_mm==300U) {
++      if(Route_LegProgress()<150L)return 0U;
++      if(step->action==MAP_ACTION_LEFT)return ((raw12&0xC00U)==0xC00U)?1U:0U;
++      if(step->action==MAP_ACTION_RIGHT)return ((raw12&3U)==3U)?1U:0U;
++      if(step->action==MAP_ACTION_STRAIGHT) {
++        return (((raw12&0xC00U)==0xC00U && ThiefMapPlanner_HasRoad(
++            step->to_node,(uint8_t)((step->heading+3U)%4U),NULL,NULL)) ||
++            ((raw12&3U)==3U && ThiefMapPlanner_HasRoad(
++            step->to_node,(uint8_t)((step->heading+1U)%4U),NULL,NULL)))?1U:0U;
++      }
++      return 1U;
++    }
+     return (Route_LegProgress()>=(int32_t)step->length_mm*4L/10L)?1U:0U;
+   }
+   return MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress());
+@@ -1922,7 +1929,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_N002_REF5070_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_SHORTLEG5070_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1948,7 +1955,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N002_REF5070_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_SHORTLEG5070_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1997,7 +2004,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_N002_REF5070_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_SHORTLEG5070_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,17 @@
++# SHORTLEG5070_SL1：所有正常一格路段采用50%至70%参考（本段优先）
++
++当前FW=UARTCH4_16V_SHORTLEG5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_REF5070_before_shortlegs。
++
++用户授权推广至所有一格短路段。当前运行的动态路线中，length_mm=300的普通行驶段统一要求编码器累计至少150mm才可认下一节点；150至210mm仅为预计参考，超过210mm仍继续巡线且允许真实路口确认，不设70%硬上限。左转要求灰度左侧最外两路识黑，右转要求右侧；直行通过路口要求看到的至少一个侧支路在目标节点地图上确实存在，方向按当前行进方向换算。停止及换向目标仍保留原灰度候选条件及新的150mm下限。距离本身不能触发到点。
++
++返回记录路线、半途短回撤绕过新普通短段规则，沿用原入口；非300mm普通段仍40%下限，静态导航不改。不会因错误侧支路先入点停车，正常巡线控制保持。N011/N038/N063主旋转50°、微调350、路线策略、激光、速度PID与其他控制文件保持；不宣称解决全部灰度漏读。之前N061至N006全局北上不绕路约束尚未另加，本轮不改规划器。
++
++ARMCC5全量编译0错误0警告。通过Tests/test_shortleg5070.py专项129项、test_n002_branch.py及完整藏点与短回撤恢复ARM离线回归，结果绑定当前AXF。输入为合成灰度/轮速，未证明实物定位效果。专项先纠正了误用600mm地图边的fixture，再对真实300mm边验证。生产只改App判断和三处FW标识。
++
++证据SHORTLEG5070_FILES.json、SHORTLEG5070_CHANGESET.patch、build_shortleg5070.log及本轮四份报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方只针对N011至N002的50%规则为历史。
++
++---
++
+ # N002_REF5070_SL1：N011至N002编码器50%至70%参考范围（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N002_REF5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_ENCODER60_before_reference50_70，保存的是上一轮未定稿60%中间版本；之前已定稿PARK50在Reference/PARK50_before_n002_encoder60中。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,17 @@
++# SHORTLEG5070_SL1：所有正常一格路段采用50%至70%参考（本段优先）
++
++当前FW=UARTCH4_16V_SHORTLEG5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_REF5070_before_shortlegs。
++
++用户授权推广至所有一格短路段。当前运行的动态路线中，length_mm=300的普通行驶段统一要求编码器累计至少150mm才可认下一节点；150至210mm仅为预计参考，超过210mm仍继续巡线且允许真实路口确认，不设70%硬上限。左转要求灰度左侧最外两路识黑，右转要求右侧；直行通过路口要求看到的至少一个侧支路在目标节点地图上确实存在，方向按当前行进方向换算。停止及换向目标仍保留原灰度候选条件及新的150mm下限。距离本身不能触发到点。
++
++返回记录路线、半途短回撤绕过新普通短段规则，沿用原入口；非300mm普通段仍40%下限，静态导航不改。不会因错误侧支路先入点停车，正常巡线控制保持。N011/N038/N063主旋转50°、微调350、路线策略、激光、速度PID与其他控制文件保持；不宣称解决全部灰度漏读。之前N061至N006全局北上不绕路约束尚未另加，本轮不改规划器。
++
++ARMCC5全量编译0错误0警告。通过Tests/test_shortleg5070.py专项129项、test_n002_branch.py及完整藏点与短回撤恢复ARM离线回归，结果绑定当前AXF。输入为合成灰度/轮速，未证明实物定位效果。专项先纠正了误用600mm地图边的fixture，再对真实300mm边验证。生产只改App判断和三处FW标识。
++
++证据SHORTLEG5070_FILES.json、SHORTLEG5070_CHANGESET.patch、build_shortleg5070.log及本轮四份报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方只针对N011至N002的50%规则为历史。
++
++---
++
+ # N002_REF5070_SL1：N011至N002编码器50%至70%参考范围（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N002_REF5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_ENCODER60_before_reference50_70，保存的是上一轮未定稿60%中间版本；之前已定稿PARK50在Reference/PARK50_before_n002_encoder60中。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,17 @@
++# SHORTLEG5070_SL1：所有正常一格路段采用50%至70%参考（本段优先）
++
++当前FW=UARTCH4_16V_SHORTLEG5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_REF5070_before_shortlegs。
++
++用户授权推广至所有一格短路段。当前运行的动态路线中，length_mm=300的普通行驶段统一要求编码器累计至少150mm才可认下一节点；150至210mm仅为预计参考，超过210mm仍继续巡线且允许真实路口确认，不设70%硬上限。左转要求灰度左侧最外两路识黑，右转要求右侧；直行通过路口要求看到的至少一个侧支路在目标节点地图上确实存在，方向按当前行进方向换算。停止及换向目标仍保留原灰度候选条件及新的150mm下限。距离本身不能触发到点。
++
++返回记录路线、半途短回撤绕过新普通短段规则，沿用原入口；非300mm普通段仍40%下限，静态导航不改。不会因错误侧支路先入点停车，正常巡线控制保持。N011/N038/N063主旋转50°、微调350、路线策略、激光、速度PID与其他控制文件保持；不宣称解决全部灰度漏读。之前N061至N006全局北上不绕路约束尚未另加，本轮不改规划器。
++
++ARMCC5全量编译0错误0警告。通过Tests/test_shortleg5070.py专项129项、test_n002_branch.py及完整藏点与短回撤恢复ARM离线回归，结果绑定当前AXF。输入为合成灰度/轮速，未证明实物定位效果。专项先纠正了误用600mm地图边的fixture，再对真实300mm边验证。生产只改App判断和三处FW标识。
++
++证据SHORTLEG5070_FILES.json、SHORTLEG5070_CHANGESET.patch、build_shortleg5070.log及本轮四份报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方只针对N011至N002的50%规则为历史。
++
++---
++
+ # N002_REF5070_SL1：N011至N002编码器50%至70%参考范围（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N002_REF5070_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N002_ENCODER60_before_reference50_70，保存的是上一轮未定稿60%中间版本；之前已定稿PARK50在Reference/PARK50_before_n002_encoder60中。
+--- /dev/null
++++ after/Tests/test_shortleg5070.py
+@@ -0,0 +1,35 @@
++from pathlib import Path
++import json,hashlib
++ROOT=Path(__file__).absolute().parents[1]
++setup=(ROOT/'Tests/test_n068_recovery.py').read_text(encoding='utf-8').split('failures=[]')[0]
++exec(compile(setup,str(ROOT/'Tests/test_n068_recovery.py'),'exec'))
++failures=[];cases=[]
++def setup_leg(a,b,h,length=300,action=2):
++ fresh(a,h);setstep(a,b,h,0,length);call('MapRouteNavigator_StartRuntime',nav,route,steps)
++ check(not member('map_nav','fault'),'real connected test leg validates')
++ record(steps,'MapRouteStep_t',dict(action=action))
++try:
++ for a,b,h,action in [(11,2,0,1),(54,53,3,1),(44,36,0,-1),(26,17,0,0),(21,22,1,0),(39,38,3,2)]:
++  setup_leg(a,b,h,action=action)
++  for distance in [149,150,210,211,300,1000]:
++   odom=distance
++   for raw in [0xC40,0x07F,0xFFF]:
++    left=bool(raw&0xC00==0xC00);right=bool(raw&3==3)
++    if action==-1:shape=left
++    elif action==1:shape=right
++    elif action==0:
++     shape=(left and call('ThiefMapPlanner_HasRoad',b,(h+3)%4,0,0)) or (right and call('ThiefMapPlanner_HasRoad',b,(h+1)%4,0,0))
++    else:shape=True
++    expected=bool(distance>=150 and shape)
++    check(bool(call('Route_ArrivalPlausible',raw))==expected,f'{a}->{b} action {action} raw {raw:X} distance {distance}')
++  cases.append(dict(start=a,end=b,action=action))
++ setup_leg(63,78,2,600);odom=240
++ check(call('Route_ArrivalPlausible',0xC40)==1,'600mm normal leg retains original 40-percent floor')
++ # Returning and partial retreat retain original arrival-window behavior.
++ for returning,retreat in [(1,0),(0,1)]:
++  setup_leg(11,2,0,action=1);record(trail,'ThiefRouteTrail',dict(returning=returning));var('retreat_active',retreat);odom=80
++  check(call('Route_ArrivalPlausible',0xC40)==call('MapRouteNavigator_InArrivalWindow',nav,odom),'short-return rules bypass new ordinary-leg floor and port rule')
++except Exception as e:failures.append(str(e))
++out=dict(checks=checks,failures=failures,cases=cases,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False)
++(ROOT/'Tests/results_shortleg5070.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(out,indent=2));assert not failures,failures

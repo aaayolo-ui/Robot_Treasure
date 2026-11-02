@@ -1,0 +1,94 @@
+{
+  "checks": 41,
+  "failures": [],
+  "cases": [
+    {
+      "case": "route",
+      "nodes": [
+        53,
+        44,
+        36,
+        35,
+        26,
+        17,
+        7,
+        6,
+        4,
+        3,
+        2,
+        11
+      ]
+    },
+    {
+      "case": "coin",
+      "raw": 96,
+      "entry_rpm_x10": 1200,
+      "commands": [
+        [
+          "drive",
+          1200,
+          1200
+        ],
+        [
+          "drive",
+          1200,
+          1200
+        ],
+        [
+          "drive",
+          1200,
+          1200
+        ]
+      ]
+    },
+    {
+      "case": "coin",
+      "raw": 48,
+      "entry_rpm_x10": 2200,
+      "commands": [
+        [
+          "drive",
+          2100,
+          2300
+        ],
+        [
+          "drive",
+          2100,
+          2300
+        ],
+        [
+          "drive",
+          2100,
+          2300
+        ]
+      ]
+    },
+    {
+      "case": "coin",
+      "raw": 192,
+      "entry_rpm_x10": 2600,
+      "commands": [
+        [
+          "drive",
+          2700,
+          2500
+        ],
+        [
+          "drive",
+          2700,
+          2500
+        ],
+        [
+          "drive",
+          2700,
+          2500
+        ]
+      ]
+    },
+    {
+      "case": "distance_and_white_limits"
+    }
+  ],
+  "axf_sha256": "95bb2965990470b53a3bdebfc75dac1857de1f28a113996e984e148635e656c6",
+  "hardware_tested": false
+}

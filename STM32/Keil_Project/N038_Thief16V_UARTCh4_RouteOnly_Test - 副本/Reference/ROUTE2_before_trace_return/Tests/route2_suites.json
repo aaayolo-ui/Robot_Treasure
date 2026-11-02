@@ -1,0 +1,34 @@
+[
+  {
+    "test": "test_strategy_stable2.py",
+    "exit_code": 0
+  },
+  {
+    "test": "test_temp78_stable3.py",
+    "exit_code": 0
+  },
+  {
+    "test": "test_n011_first_plan_stable10.py",
+    "exit_code": 0
+  },
+  {
+    "test": "test_hide_routes_stable4.py",
+    "exit_code": 0
+  },
+  {
+    "test": "test_escape_completion.py",
+    "exit_code": 0
+  },
+  {
+    "test": "test_turn_resume.py",
+    "exit_code": 0
+  },
+  {
+    "test": "test_left800.py",
+    "exit_code": 0
+  },
+  {
+    "test": "test_live_monitor.py",
+    "exit_code": 0
+  }
+]

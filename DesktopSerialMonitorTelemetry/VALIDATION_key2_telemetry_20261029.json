@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-29",
+  "exe_sha256": "82cbc7bc1f1a78f282412361d000581f3e189e54891c9318c0889e6b49b29f86",
+  "desktop_copy_sha256": "82cbc7bc1f1a78f282412361d000581f3e189e54891c9318c0889e6b49b29f86",
+  "python_checks": 28,
+  "build": "passed",
+  "archive_source_match": true,
+  "serial_opened_by_update": false,
+  "serial_bytes_sent": 0,
+  "motor_or_flash_test": false,
+  "key2_hardware_test": false,
+  "round_rule": "first accepted KEY2 START through next RESET, includes stops and replans; 180 seconds advisory",
+  "live_gray_requires_firmware_stream": true,
+  "frontend_checks": "angle wrap, four orbit positions, 24 gray bits, stale handling",
+  "runtime": "Telemetry-v2",
+  "port": 8767,
+  "public_feature_removed": true,
+  "native_ui": "manual backend start/stop and disconnected sensor layout verified; final compact styles included",
+  "old_backend_round_not_mislabelled": true,
+  "original_com9_connection_preserved": true
+}

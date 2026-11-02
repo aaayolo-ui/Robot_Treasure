@@ -1,0 +1,29 @@
+{
+  "modified": [
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c",
+    "User/App_ThiefStrategy.c",
+    "Tests/test_hide_routes_stable4.py",
+    "Tests/test_app_runtime.py",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "backup": "Reference/TOP7_before_initial38/SNAPSHOT_SHA256.json",
+  "axf_sha256": "cb168090130c7a2ea61a2f6bc2791f1e08f406e1282bdf32296342f7849a87dc",
+  "hashes": {
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "a213a5767ae4e8dc07321b81bd613f48a35ddf08685dce7e1a9c3fd64faff283",
+    "User/App_ThiefStrategy.c": "5bc85c7b976418063abaa6bbabab151db3c57193fc5607c3e8d9604129091521",
+    "Tests/test_hide_routes_stable4.py": "e9961c2678fc6e325eb62dbae76fb62427cc6b67d694477ed377c93c6fd9a9ff",
+    "Tests/test_app_runtime.py": "0e2ea88a8267d5793e8fb6ac8c4b9b274f6d5866a7ac49a2f66729e371972e85",
+    "README.md": "9c472b627d39482b2ce49ea05c84cda4006f264af353a8a19123db7cdf371f74",
+    "AGENTS.md": "65e4442131e7794ba6697eed7485a06169f56743018f0b87accfddb22a2e6844",
+    "Docs/修改规范与回归清单.md": "24f4c2da58e7c3ec2a70c058adee6a408dcdbeaaa78351dc8ec5813c1f51ac64"
+  },
+  "reports": [
+    "results_hide_routes_stable4.json",
+    "results_strategy_stable2.json",
+    "results_n011_first_plan_stable10.json"
+  ],
+  "hardware_tested": false,
+  "flashed": false
+}

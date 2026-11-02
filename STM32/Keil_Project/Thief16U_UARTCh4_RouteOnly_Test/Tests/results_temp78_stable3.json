@@ -1,0 +1,115 @@
+{
+  "firmware": "UARTCH4_16U_ROUTE1_RUN8",
+  "checks": 62,
+  "failures": [],
+  "lifecycles": [
+    {
+      "threat_heading": 0,
+      "wait": {
+        "frames": 76,
+        "node": 78,
+        "body": 0,
+        "fixes": [
+          78
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      },
+      "escape": {
+        "frames": 769,
+        "node": 11,
+        "body": 1,
+        "fixes": [
+          77,
+          76,
+          75,
+          59,
+          58,
+          46,
+          40,
+          39,
+          38,
+          37,
+          20,
+          10,
+          11
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "threat_heading": 3,
+      "wait": {
+        "frames": 76,
+        "node": 78,
+        "body": 0,
+        "fixes": [
+          78
+        ],
+        "states": [
+          1,
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      },
+      "escape": {
+        "frames": 769,
+        "node": 11,
+        "body": 3,
+        "fixes": [
+          63,
+          52,
+          53,
+          44,
+          36,
+          35,
+          34,
+          33,
+          25,
+          15,
+          6,
+          4,
+          3,
+          13,
+          12,
+          11
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    }
+  ],
+  "expected_before_failure": false,
+  "axf_sha256": "8e619f1a5826cfdfa04c84c18c2e8ddce980b416cb499df2b5971e1e2fccee9f",
+  "test_sha256": "5bb3cbe3ac517ce0aa06d0a97871b0082ac7c553dea08dc4dced91c4d378b4ae",
+  "hardware_tested": false
+}

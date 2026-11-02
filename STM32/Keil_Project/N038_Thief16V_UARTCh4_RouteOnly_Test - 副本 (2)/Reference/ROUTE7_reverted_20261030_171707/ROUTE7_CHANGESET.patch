@@ -1,0 +1,317 @@
+--- ROUTE6_SL1/Algorithm/ThiefStrategy/ThiefPursuit.c
++++ ROUTE7/Algorithm/ThiefStrategy/ThiefPursuit.c
+@@ -0,0 +1,105 @@
++#include "ThiefPursuit.h"
++#include "ThiefStrategyConfig.h"
++#include "FrontLaserGate.h"
++#include <string.h>
++
++/* Q15 sine at 5-degree intervals; interpolation avoids floating point and
++ * represents the actual rotating ray rather than its old cardinal channel. */
++static int32_t Sin(int32_t angle)
++{
++  static const int16_t table[]={0,2856,5690,8481,11207,13848,16384,18794,
++      21063,23170,25102,26841,28378,29698,30792,31650,32270,32642,32767};
++  int32_t sign=1,index,remainder;
++  angle%=36000L;if(angle<0L)angle+=36000L;
++  if(angle>18000L){angle-=18000L;sign=-1;}
++  if(angle>9000L)angle=18000L-angle;
++  index=angle/500L;remainder=angle%500L;
++  return sign*(table[index]+(index<18L?
++      (table[index+1L]-table[index])*remainder/500L:0L));
++}
++static int32_t Along(int32_t dx,int32_t dy,uint8_t heading)
++{
++  return heading==0U?-dy:heading==1U?dx:heading==2U?dy:-dx;
++}
++static uint8_t NearRoad(int32_t x,int32_t y)
++{
++  uint16_t i;
++  for(i=0U;i<MAP_ROUTE_SEGMENT_COUNT;i++) {
++    const MapRouteSegment_t *s=&map_route_segments[i];
++    const MapRouteNode_t *a=ThiefMapPlanner_Node(s->start),*b=ThiefMapPlanner_Node(s->end);
++    int32_t ax=a->x_half*150L,ay=a->y_half*150L,bx=b->x_half*150L,by=b->y_half*150L;
++    int32_t px=x,py=y,dx,dy;
++    if(px<(ax<bx?ax:bx))px=ax<bx?ax:bx;
++    if(px>(ax>bx?ax:bx))px=ax>bx?ax:bx;
++    if(py<(ay<by?ay:by))py=ay<by?ay:by;
++    if(py>(ay>by?ay:by))py=ay>by?ay:by;
++    dx=x-px;dy=y-py;if(dx*dx+dy*dy<=10000L)return 1U;
++  }
++  return 0U;
++}
++void ThiefPursuit_Reset(ThiefPursuit *p){memset(p,0,sizeof(*p));}
++void ThiefPursuit_Observe(ThiefPursuit *p,uint8_t channel,uint16_t raw,
++    uint8_t confidence,const ThiefPursuitPose *pose,uint32_t tick)
++{
++  static const uint8_t offset[]={0U,3U,1U,2U};
++  ThiefPursuitRay *r;
++  int32_t angle,distance,x,y,dx,dy;
++  if(channel>=4U)return;
++  r=&p->rays[channel];
++  if(raw<50U || raw>THIEF_LASER_CHANNEL_MAX_MM(channel) || confidence<THIEF_NEAR_CONFIDENCE) {
++    r->count=0U;return;
++  }
++  angle=pose->body_cw_x100+offset[channel]*9000L;
++  distance=FrontLaserGate_CenterDistanceMm(raw,channel);
++  x=pose->x+distance*Sin(angle)/32767L;
++  y=pose->y-distance*Sin(angle+9000L)/32767L;
++  /* A confirmed pursuer must be inside the map, behind the intended motion,
++   * and near a real road. Neither a blank map gap nor an outward wall counts. */
++  if(x<0L || x>3300L || y<0L || y>2700L ||
++      Along(x-pose->x,y-pose->y,pose->travel_heading)>-100L || !NearRoad(x,y)) {
++    r->count=0U;return;
++  }
++  if(r->count && (uint32_t)(tick-r->last)<10U)return; /* No duplicate frames. */
++  dx=x-r->x;dy=y-r->y;
++  if(!r->count || (uint32_t)(tick-r->last)>100U || dx*dx+dy*dy>14400L) {
++    r->count=1U;r->first=tick;
++  } else if(r->count<3U)r->count++;
++  r->x=(int16_t)x;r->y=(int16_t)y;r->last=tick;
++  if(r->count>=3U && (uint32_t)(tick-r->first)>=30U) {
++    p->x=(int16_t)x;p->y=(int16_t)y;p->stamp=tick;
++  }
++}
++uint8_t ThiefPursuit_GoalMask(const ThiefPursuit *p,const MapRouteStep_t *goal,uint32_t now)
++{
++  const MapRouteNode_t *n=ThiefMapPlanner_Node(goal->to_node);
++  int32_t dx=p->x-n->x_half*150L,dy=p->y-n->y_half*150L;
++  int32_t ax=dx<0L?-dx:dx,ay=dy<0L?-dy:dy;
++  uint8_t heading;
++  if(!p->stamp || (uint32_t)(now-p->stamp)>1500U ||
++      Along(dx,dy,goal->heading)>-(int32_t)THIEF_CONTACT_MM)return 0U;
++  heading=ax>ay?(dx>0L?1U:3U):(dy>0L?2U:0U);
++  return (uint8_t)(1U<<heading);
++}
++uint8_t ThiefPursuit_Append(ThiefRoutePlan_t *plan,const ThiefRoutePlan_t *tail)
++{
++  uint16_t count=plan->route.count,i;
++  uint8_t delta,mode;
++  MapRouteStep_t *last;
++  if(!plan->valid || !tail->valid || !count || !tail->route.count ||
++      count+tail->route.count>THIEF_ROUTE_MAX_STEPS ||
++      tail->route.start_node!=plan->goal_node || tail->goal_node==plan->goal_node)return 0U;
++  last=&plan->steps[count-1U];
++  delta=(uint8_t)((tail->steps[0].heading+4U-last->heading)%4U);
++  mode=(uint8_t)(last->drive_mode^(delta==2U));
++  last->action=delta==3U?MAP_ACTION_LEFT:(delta==2U?MAP_ACTION_REVERSE:(int8_t)delta);
++  for(i=0U;i<tail->route.count;i++) {
++    MapRouteStep_t *s=&plan->steps[count+i];
++    *s=tail->steps[i];s->drive_mode=mode;
++    if(s->action==MAP_ACTION_REVERSE)mode^=1U;
++  }
++  plan->route.count=(uint16_t)(count+tail->route.count);plan->goal_node=tail->goal_node;
++  last=&plan->steps[plan->route.count-1U];
++  plan->final_body_heading=(uint8_t)((last->heading+2U*last->drive_mode)%4U);
++  if(plan->goal_node==63U && plan->final_body_heading%2U)plan->final_body_heading=0U;
++  return 1U;
++}
+--- ROUTE6_SL1/Algorithm/ThiefStrategy/ThiefPursuit.h
++++ ROUTE7/Algorithm/ThiefStrategy/ThiefPursuit.h
+@@ -0,0 +1,26 @@
++#ifndef THIEF_PURSUIT_H
++#define THIEF_PURSUIT_H
++#include "ThiefMapPlanner.h"
++
++typedef struct {
++  int16_t x,y;
++  uint32_t first,last;
++  uint8_t count;
++} ThiefPursuitRay;
++typedef struct {
++  ThiefPursuitRay rays[4];
++  int16_t x,y;
++  uint32_t stamp;
++} ThiefPursuit;
++typedef struct {
++  int16_t x,y;
++  int32_t body_cw_x100;
++  uint8_t travel_heading;
++} ThiefPursuitPose;
++void ThiefPursuit_Reset(ThiefPursuit *p);
++void ThiefPursuit_Observe(ThiefPursuit *p,uint8_t channel,uint16_t raw,
++    uint8_t confidence,const ThiefPursuitPose *pose,uint32_t tick);
++uint8_t ThiefPursuit_GoalMask(const ThiefPursuit *p,const MapRouteStep_t *goal,
++    uint32_t now);
++uint8_t ThiefPursuit_Append(ThiefRoutePlan_t *plan,const ThiefRoutePlan_t *tail);
++#endif
+--- ROUTE6_SL1/MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx
++++ ROUTE7/MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx
+@@ -881,6 +881,16 @@
+               <FilePath>../Algorithm/ThiefStrategy/ThiefInterceptPolicy.c</FilePath>
+             </File>
+             <File>
++              <FileName>ThiefPursuit.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>../Algorithm/ThiefStrategy/ThiefPursuit.c</FilePath>
++            </File>
++            <File>
++              <FileName>ThiefPursuit.h</FileName>
++              <FileType>5</FileType>
++              <FilePath>../Algorithm/ThiefStrategy/ThiefPursuit.h</FilePath>
++            </File>
++            <File>
+               <FileName>ThiefRouteTrail.c</FileName>
+               <FileType>1</FileType>
+               <FilePath>../Algorithm/ThiefStrategy/ThiefRouteTrail.c</FilePath>
+--- ROUTE6_SL1/User/App_ThiefStrategy.c
++++ ROUTE7/User/App_ThiefStrategy.c
+@@ -23,6 +23,7 @@
+ #include "FrontLaserGate.h"
+ #include "ThiefMapPlanner.h"
+ #include "ThiefRouteTrail.h"
++#include "ThiefPursuit.h"
+ #include "ThiefStrategyConfig.h"
+ #include "ThiefLocalization.h"
+ #include "TreasureLaserStart.h"
+@@ -148,6 +149,9 @@
+ static uint32_t hide_align_tick,hide_log_tick;
+ static RoadHeadingControl_t hide_heading;
+ static RestartLineSearch gray_search;
++static ThiefPursuit pursuit;
++static ThiefRoutePlan_t pursuit_tail;
++static uint16_t pursuit_attempt_goal;
+ static uint8_t gray_missing_active;
+ static uint32_t gray_missing_tick,gray_log_tick;
+ static int16_t gray_entry_yaw;
+@@ -343,6 +347,60 @@
+   }
+   thief_laser_active_mask=next;
+ }
++/* Read-only turn observation: do not enable the old cardinal threat gate
++ * while the chassis rotates, and never change a turn from a UART callback. */
++static void Thief_RecordPursuit(uint8_t channel,uint16_t distance,uint8_t confidence,uint32_t tick)
++{
++  const MapRouteStep_t *s=MapRouteNavigator_Current(&map_nav),*last;
++  ThiefPursuitPose pose;ThiefLocYaw_t yaw;
++  uint32_t now=SystemTime_GetMs();
++  if(!route_active || !thief_treasure_passed || !s ||
++      map_nav.step+2U<map_nav.route->count ||
++      (uint32_t)(now-tick)>THIEF_LASER_MOVING_FRAME_MAX_MS ||
++      (int32_t)(tick-thief_laser_pose_since)<0L)return;
++  if(route_state!=ROUTE_STATE_TURN_STOP && route_state!=ROUTE_STATE_TURN_LEFT &&
++      route_state!=ROUTE_STATE_TURN_RIGHT && route_state!=ROUTE_STATE_AFTER_TURN_FORWARD &&
++      route_state!=ROUTE_STATE_FOLLOW && route_state!=ROUTE_STATE_LEAVE_START)return;
++  Thief_LocalYaw(&yaw);
++  if(!yaw.valid || (uint32_t)(now-yaw.stamp_ms)>50U ||
++      (thief_localization.yaw_cw_sign!=1 && thief_localization.yaw_cw_sign!=-1))return;
++  if(map_nav.arrived || departure_turn) {
++    const MapRouteNode_t *node=ThiefMapPlanner_Node(departure_turn?map_nav.route->start_node:s->to_node);
++    pose.x=(int16_t)(node->x_half*150);pose.y=(int16_t)(node->y_half*150);
++  } else {
++    if(!thief_pose.valid)return;
++    pose.x=thief_pose.x_mm;pose.y=thief_pose.y_mm;
++  }
++  last=&map_nav.steps[map_nav.route->count-1U];pose.travel_heading=last->heading;
++  pose.body_cw_x100=thief_localization.origin_heading*9000L+
++      ((int32_t)yaw.yaw_x100-thief_localization.origin_yaw_x100)*thief_localization.yaw_cw_sign;
++  ThiefPursuit_Observe(&pursuit,channel,distance,confidence,&pose,tick);
++}
++static void Thief_ExtendPursuedHide(uint32_t now)
++{
++  const MapRouteStep_t *s=MapRouteNavigator_Current(&map_nav),*last;
++  uint16_t old_goal,count;uint8_t mask,body,heading;
++  /* Search only after rotation/line acquisition, while normally following.
++   * At least the final leg remains: the old hide STOP has not begun. */
++  if(!route_active || !s || map_nav.arrived || departure_turn || intercept_pending ||
++      replan_after_leg || (route_state!=ROUTE_STATE_FOLLOW && route_state!=ROUTE_STATE_LEAVE_START) ||
++      map_nav.step+2U<map_nav.route->count)return;
++  old_goal=thief_plan.goal_node;
++  if(pursuit_attempt_goal==old_goal || !ThiefIntercept_HideAxis(old_goal))return;
++  count=thief_plan.route.count;last=&thief_plan.steps[count-1U];
++  mask=ThiefPursuit_GoalMask(&pursuit,last,now);if(!mask)return;
++  pursuit_attempt_goal=old_goal;
++  body=(uint8_t)((last->heading+2U*last->drive_mode)%4U);
++  for(heading=0U;heading<4U;heading++)if(mask&(1U<<heading))break;
++  ThiefThreatModel_Record(heading,pursuit.x,pursuit.y,pursuit.stamp);
++  if(!ThiefMapPlanner_PlanEscape(old_goal,body,mask,thief_current_node,now,&pursuit_tail))return;
++  if(route_trail.enabled && !route_trail.returning &&
++      route_trail.count+count-map_nav.step+pursuit_tail.route.count>THIEF_TRAIL_CAPACITY)return;
++  if(!ThiefPursuit_Append(&thief_plan,&pursuit_tail))return;
++  UartDebug_Printf("PURSUIT_PASS AT=N%03u NEXT=N%03u GOAL=N%03u MASK=%u AGE=%lu\r\n",
++      (unsigned)old_goal,(unsigned)thief_plan.steps[count].to_node,(unsigned)thief_plan.goal_node,
++      (unsigned)mask,(unsigned long)(now-pursuit.stamp));
++}
+ static void Thief_OnLaserFrame(LaserDirection_t direction,uint16_t distance,
+                                uint8_t confidence,uint16_t firmware,uint32_t tick)
+ {
+@@ -350,6 +408,7 @@
+   uint8_t i=(uint8_t)direction;
+   uint8_t allow;
+   if(i>=LASER_COUNT) return;
++  Thief_RecordPursuit(i,distance,confidence,tick);
+   if((n011_escape_locked || route_trail.returning) && route_active &&
+       (uint8_t)((route_body_heading+laser_heading_offset[i])%4U)!=
+           MapRouteNavigator_Current(&map_nav)->heading)return;
+@@ -504,6 +563,12 @@
+   if(ThiefRouteTrail_Commit(&route_trail))
+     UartDebug_Printf("TRACE_COMMIT N=%u COUNT=%u RETURN_LEFT=%u\r\n",
+         (unsigned)step->from_node,(unsigned)route_trail.count,(unsigned)route_trail.return_left);
++  if(route_trail.returning && !route_trail.return_left &&
++      step->from_node==route_trail.home && thief_plan.goal_node!=route_trail.home) {
++    /* The old home was passed, not parked at. Start recording the actual
++     * appended legs without reusing an exhausted reverse-history cursor. */
++    route_trail.returning=0U;route_trail.expected_return_node=0U;
++  }
+   observer_ok=ThiefLocalization_BeginStep(&thief_localization,step,&yaw,now);
+   route_body_heading=(uint8_t)((step->heading+2U*step->drive_mode)%4U);
+   Route_MapContext();
+@@ -617,6 +682,7 @@
+   uint32_t last_yaw_tick;
+ 
+   Thief_UpdatePose();
++  ThiefPursuit_Reset(&pursuit);pursuit_attempt_goal=0U;
+   n011_first_mask=0U;n011_escape_locked=0U;
+   route_trail.enabled=0U;route_trail.returning=0U;
+   TreasureWheelLog_Event(TREASURE_WHEEL_BEFORE_FAULT,SystemTime_GetMs(),(uint8_t)fault_from);
+@@ -1465,6 +1531,7 @@
+   RouteGraySample_t sample;
+   uint32_t now;
+   uint8_t turn_delta=0U;
++  ThiefPursuit_Reset(&pursuit);pursuit_attempt_goal=0U;
+   trace_pass_pending=0U;
+   if(!replan_after_leg && thief_strategy_state==THIEF_STRATEGY_HIDING &&
+       thief_current_node==thief_plan.route.start_node && ThiefIntercept_HideAxis(thief_current_node)) {
+@@ -1784,6 +1851,7 @@
+ 
+ void App_ThiefStrategy_Init(void)
+ {
++  ThiefPursuit_Reset(&pursuit);pursuit_attempt_goal=0U;
+   hide_alignment_pending=0U;hide_escape_mask=0U;park_turn_pending=0U;
+   TravelFrame_SetReverse(0U);
+   reverse_pending = 0U;
+@@ -1834,7 +1902,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE7_PASS_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1860,7 +1928,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE7_PASS_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1909,7 +1977,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ROUTE7_PASS_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2693,6 +2761,7 @@
+   if(thief_treasure_passed && thief_strategy_state!=THIEF_STRATEGY_FAULT)
+     LaserRx_Poll(Thief_OnLaserFrame);
+   Thief_InterceptReact(SystemTime_GetMs());
++  Thief_ExtendPursuedHide(SystemTime_GetMs());
+   Thief_LaserLog(SystemTime_GetMs());
+   Thief_LocalizationLog(SystemTime_GetMs());
+ }

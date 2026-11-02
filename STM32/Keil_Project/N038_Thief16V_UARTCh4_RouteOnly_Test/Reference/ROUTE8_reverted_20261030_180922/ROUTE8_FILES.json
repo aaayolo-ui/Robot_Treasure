@@ -1,0 +1,32 @@
+{
+  "firmware": "UARTCH4_16V_ROUTE8_N063_SL1",
+  "files": {
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "16b69ed14b8f2f28a4772ac1e2783edadc42a0db430c8e9b8f58bfe0ea113753",
+    "Algorithm/ThiefStrategy/ThiefThreatModel.c": "829a332df98ee98286a40eb9f7f0218f5004ec98856be8d7d689d32c77e7e90e",
+    "Algorithm/ThiefStrategy/ThiefThreatModel.h": "39c2f4d218014f7933923e9f9f9a49aab5331427da94d4b900e2f55556e297eb",
+    "User/App_ThiefStrategy.c": "e9031e56dbbf9c964a95437521a931b2776c4eb33bab060187f4ebb3b5baedd0",
+    "README.md": "082d53216d0774ba5cc013d2cefb8eb8d9fc25a9ed4e855452faad27ed072ddb",
+    "AGENTS.md": "1249110ffaa385700957a42e6ebb4f7fd7660a3b04513c388d2a50d444b55873",
+    "Docs/\u4fee\u6539\u89c4\u8303\u4e0e\u56de\u5f52\u6e05\u5355.md": "47a948388278deb9f7922f503643703c9313c06b92638106a572d7d75d7d5ce2",
+    "Docs/ROUTE8_N063\u8fd1\u8fdc\u5206\u6d41.md": "10f3b0b3c19b01ed4ae2673b3b5f3a87f96c1bb40a0c893eb0417e3477bd61c9",
+    "Tests/test_n063_near_route.py": "f89936f795bf8b6918fe93871521954c1be21af78786780488f0e513ae10d912",
+    "Tests/run_route8.py": "476d1f1354098742c7d7aaa892c874d4dc536e6fcd25c3418365930b4775a501",
+    "Tests/validate_route8.py": "5b6c0fd1fc1c8f88295d023a2826120b0a4f2a6be4b970f42f579ca3bf3adb9d",
+    "Tests/route8_inputs.json": "19e55fe867dd55b614decabe5e15eaadf31c1e87c4a30e2d6cbc190bf12cd669",
+    "Tests/route8_suites.json": "99ac904a6404978c23bc1dcf8bdd05babba9b0e2bb27ec92bf79872e8f8ffd94",
+    "Tests/n063_near_before.json": "a7d0d9ecd26177dff53102d295d83d5175acb9b1ad92a8b700bf625643771faf",
+    "Tests/results_n063_near.json": "49b8d62cf9b49345757cf788501932cb6bbde573aaf0fc83fb2ff75c78ab54df",
+    "VALIDATION_ROUTE8.json": "47cad58fee114f2bd41731351ef26407aab0d7508e64757df8f7fd2dfd002fc0",
+    "ROUTE8_CHANGESET.patch": "4cd3eaeb699a76246ed62cb81caa9db6a938bf07f32126b26ad65a428f7d9741",
+    "build_route8.log": "f4ea815c4ec1a2d7a28f10ef4dae0059e12b03f7f4ca58efd4d3b5dd0bb6b455",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx": "a874eb04c941875036d2ce6a3f8766e7f6642b62936a5e80bdb5122e969b9933",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.axf": "1913257b6017221bb7861f14f7b4ad2d4e5fa362d93c640e2f2a8d07c858a511",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.hex": "0917c9be46f73899291a4419f5350c3eb1e32b5688aff55bb75e6ed87f62d215",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.map": "f139f423d3860153dbeef0f048a3f1af93edb52b080c470825f58c57c3f22e9e",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.htm": "9edab55c540c82963448a0f771cddba8454c54ca1469aec87927066e1f944a95"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "physical_motors_run": false
+}

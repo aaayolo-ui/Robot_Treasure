@@ -1,0 +1,312 @@
+--- SL1/AGENTS.md
++++ FIRST11/AGENTS.md
+@@ -1,3 +1,19 @@
++# FIRST11_NORTH31_SL1：首次N011与北侧逃跑改道（本段优先）
++
++当前FW=`UARTCH4_16V_FIRST11_NORTH31_SL1`，只修改用户指定的E盘本工程，桌面同名工程未写入。原基线是现有ROUTE6_SHORT_RETURN_SL1，修改前快照Reference/SL1_before_first11_north31，共288项散列。
++
++每次修改前仍必须读本README、AGENTS、Docs/修改规范与回归清单。用户本轮最新策略优先：
++1. 首次取宝路线到N004保持，之后N004→N003→N013→N012→N011，N011横停。
++2. N011首次确认北侧来车，固定N011→N012→N023→N031→N032→N048→N049→N061→N062→N063，到N063按原到点动作竖停。N023/N049/N062都是真实路口，不能省略。
++3. N011其他方向沿现有规则：西侧同上述N063路线，东侧仍走N010→N020→N037→N038→N039→N040，南侧仍经N012→N013→N003去东侧。首次方向锁与行进前方遇阻原路回退例外保留。
++4. 本次只改ThiefMapPlanner的首次路线和北侧规则、App三个固件标识。App控制流程逐字保持；原PID、速度、100RPM/180ms、转弯、四路前后1000/左右900mm、PA3声光保持。没有移入此前已经不在本目录中的BRANCH1、TREASURE26或LR1控制补丁，不能把旧聊天的修复当作本版已有功能。
++
++ARMCC5全量编译0错误0警告；当前15组ARM离线回归通过（旧北侧路线断言及前方激光夹具已按新路线同步，保留初次失败和重跑记录）。ROM68152、RAM44888字节（RAM不增加），剩4264字节；含3KB预留栈，已知最大920字节，实物栈水位未测。证据VALIDATION_FIRST11.json、FIRST11_FILES.json、FIRST11_CHANGESET.patch及Tests/first11_inputs.json、Tests/first11_suites.json。下方旧版本结论为历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # ROUTE6_SHORT_RETURN_SL1：PA3上电持续声光提示（本段优先）
+ 
+ 2026-10-30用户在旁支聊天授权：在最新版本加入声光模块，VCC接3.3V、GND共地、IN接PA3；通电持续亮灯和鸣叫，实际断电后停止。当前FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1，底层行驶/策略仍为下方ROUTE6。
+--- SL1/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ FIRST11/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -158,18 +158,18 @@
+ 
+ uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan)
+ {
+-  uint16_t departure_count,i,count;
+-  uint8_t first_mode;
++  uint16_t i,count;
++  static const uint16_t first_hide_path[]={3U,13U,12U,11U};
+   const uint16_t prefix_count=(uint16_t)(sizeof(initial_treasure_path)/sizeof(initial_treasure_path[0]));
+   if(plan==NULL) return 0U;
+   plan->valid=0U;
+-  /* Preserve the exact user-selected treasure prefix, then optimize the hide. */
+-  if(!ThiefRiskSearch_Select(4U,3U,0U,0U,0U,5U,0U,0UL,
+-      departure,&departure_count,&first_mode,&decision)) return 0U;
+-  if(prefix_count+departure_count-1U>MAP_ROUTE_NODE_COUNT) return 0U;
++  /* Keep the treasure approach, then take the first refuge at N011. */
++  memset(&decision,0,sizeof(decision));
++  decision.goal_node=11U;decision.parking_heading=3U;
+   count=0U;
+   for(i=0U;i<prefix_count;i++) combined[count++]=initial_treasure_path[i];
+-  for(i=1U;i<departure_count;i++) combined[count++]=departure[i];
++  for(i=0U;i<sizeof(first_hide_path)/sizeof(first_hide_path[0]);i++)
++    combined[count++]=first_hide_path[i];
+   if(!BuildRoute(combined,count,0U,INITIAL_ID,plan)) return 0U;
+   /* Initial telemetry reports the entire fixed-prefix + hide route, not only
+    * the N004-to-hide suffix used by the hide selector. */
+@@ -194,7 +194,7 @@
+   uint16_t count;uint8_t mode,pass,found=0U,allowed,preferred;
+   if(!plan || body_heading>3U)return 0U;
+   plan->valid=0U;allowed=current_node==11U?10U:15U;
+-  if(current_node==11U && (threat_mask&8U) && !(threat_mask&3U)) {
++  if(current_node==11U && ((threat_mask&1U) || ((threat_mask&8U) && !(threat_mask&3U)))) {
+     static const uint16_t fixed_path[]={11U,12U,23U,31U,32U,48U,49U,61U,62U,63U};
+     uint16_t i;
+     mode=(uint8_t)(body_heading==3U);
+--- SL1/Docs/FIRST11_首次藏点与北侧路线.md
++++ FIRST11/Docs/FIRST11_首次藏点与北侧路线.md
+@@ -0,0 +1,24 @@
++# FIRST11_NORTH31_SL1
++
++只修改E盘Thief16V_UARTCh4_RouteOnly_Test。用户明确要求桌面工程不要动；本轮对桌面仅作版本读取，未写入。E盘恢复后的当前基线为ROUTE6_SHORT_RETURN_SL1，并非此前聊天中的TREASURE26。完整修改前快照Reference/SL1_before_first11_north31，288项散列。
++
++首次取宝到N004之前的路径不变。N004之后固定经过N003、N013、N012，到N011横停；没有把N005当成灰度路口或独立取宝传感器。
++
++N011首次确认地图北侧来车，与原西侧分支共用固定通道：11→12→23→31→32→48→49→61→62→63。N063为东侧藏点，先居中停稳，复用原90°停车动作竖停。东侧来车仍走10→20→37→38→39→40；南侧来车仍走12→13→3→4→5→6→7及后续搜索。首次方向锁到藏点解除；原行进前方遇阻回退例外保留。没有新增每次转弯航向微调。
++
++生产改动仅Algorithm/ThiefStrategy/ThiefMapPlanner.c及User/App_ThiefStrategy.c三处FW字符串。App除FW外逐字不变，Control/Hardware/Core/System/Drivers、Keil和全部其他算法不变。现有激光前后1000mm、左右900mm，PA3上电持续声光保留。
++
++旧test_hide_routes_stable4.py和test_strategy_stable2.py仍断言北侧必须走N010，本轮按用户的新路线修改预期；初始藏点预期从N038改N011，原完整任务到点和停车轴检查保留。test_n011_first_plan_stable10.py覆盖四种车头方向×四种地图敌车方向、首次锁存、完整逃跑、到点解锁与下一轮触发；北侧按新N031通道检查。test_trace_front_probe.py原固定后激光CH4作为前路，但新路线改向东且正向行驶后实际行进前方是CH1，改成按当前TravelFrame选择前探头；保留“锁定路线仍能前方遇阻回退并返回N011”的断言。
++
++初次15组中13组直接通过；上述两个旧预期/夹具测试失败。同步夹具后只重跑两项，均通过，生产映像不变。失败码与重跑说明保存在first11_suites.json，未用跳过测试或删除断言掩盖失败。
++
++ARMCC5全量构建0错误0警告。ROM68152字节、RAM44888字节，RAM较基线不增加，48KB剩4264字节；含3KB预留栈。链接器已知最大920字节，实物栈水位未测。当前15组离线报告绑定最终AXF，证据VALIDATION_FIRST11.json、FIRST11_CHANGESET.patch、FIRST11_FILES.json。所有传感器和电机反馈均为模拟，不是实车通过。
++
++本轮没有移入BRANCH1支路误停补丁、TREASURE26硬币遮挡辅助或LR1重定位。现有SL1本身的保护和灰度行为保持，后续如需改控制应另立明确范围，不能在纯策略改动中混入。
++
++修改文件：上述2个生产文件，README.md、AGENTS.md、Docs/修改规范与回归清单.md；4个既有测试：test_strategy_stable2.py、test_hide_routes_stable4.py、test_n011_first_plan_stable10.py、test_trace_front_probe.py。新增本说明、Tests/run_first11.py、Tests/validate_first11.py及构建/散列/报告/差异文件。完整相对路径和散列见FIRST11_FILES.json。
++
++复核命令：先ARMCC5全量构建，再Tests/run_first11.py，最后Tests/validate_first11.py。历史run_route6和声光身份验收脚本保留历史，不应用其旧身份断言替代当前验收。
++
++仅编译通过，尚未完成硬件验证；未烧录、未占串口、未运行实物电机、未提交推送。实测核对BOOT标识FIRST11_NORTH31_SL1及真实首次N011、北侧触发首出口N012，不能只用网页轨迹判断实物。
++
+--- SL1/Docs/修改规范与回归清单.md
++++ FIRST11/Docs/修改规范与回归清单.md
+@@ -1,3 +1,19 @@
++# FIRST11_NORTH31_SL1：首次N011与北侧逃跑改道（本段优先）
++
++当前FW=`UARTCH4_16V_FIRST11_NORTH31_SL1`，只修改用户指定的E盘本工程，桌面同名工程未写入。原基线是现有ROUTE6_SHORT_RETURN_SL1，修改前快照Reference/SL1_before_first11_north31，共288项散列。
++
++每次修改前仍必须读本README、AGENTS、Docs/修改规范与回归清单。用户本轮最新策略优先：
++1. 首次取宝路线到N004保持，之后N004→N003→N013→N012→N011，N011横停。
++2. N011首次确认北侧来车，固定N011→N012→N023→N031→N032→N048→N049→N061→N062→N063，到N063按原到点动作竖停。N023/N049/N062都是真实路口，不能省略。
++3. N011其他方向沿现有规则：西侧同上述N063路线，东侧仍走N010→N020→N037→N038→N039→N040，南侧仍经N012→N013→N003去东侧。首次方向锁与行进前方遇阻原路回退例外保留。
++4. 本次只改ThiefMapPlanner的首次路线和北侧规则、App三个固件标识。App控制流程逐字保持；原PID、速度、100RPM/180ms、转弯、四路前后1000/左右900mm、PA3声光保持。没有移入此前已经不在本目录中的BRANCH1、TREASURE26或LR1控制补丁，不能把旧聊天的修复当作本版已有功能。
++
++ARMCC5全量编译0错误0警告；当前15组ARM离线回归通过（旧北侧路线断言及前方激光夹具已按新路线同步，保留初次失败和重跑记录）。ROM68152、RAM44888字节（RAM不增加），剩4264字节；含3KB预留栈，已知最大920字节，实物栈水位未测。证据VALIDATION_FIRST11.json、FIRST11_FILES.json、FIRST11_CHANGESET.patch及Tests/first11_inputs.json、Tests/first11_suites.json。下方旧版本结论为历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # ROUTE6_SHORT_RETURN_SL1：PA3上电持续声光提示（本段优先）
+ 
+ 2026-10-30用户在旁支聊天授权：在最新版本加入声光模块，VCC接3.3V、GND共地、IN接PA3；通电持续亮灯和鸣叫，实际断电后停止。当前FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1，底层行驶/策略仍为下方ROUTE6。
+--- SL1/README.md
++++ FIRST11/README.md
+@@ -1,3 +1,19 @@
++# FIRST11_NORTH31_SL1：首次N011与北侧逃跑改道（本段优先）
++
++当前FW=`UARTCH4_16V_FIRST11_NORTH31_SL1`，只修改用户指定的E盘本工程，桌面同名工程未写入。原基线是现有ROUTE6_SHORT_RETURN_SL1，修改前快照Reference/SL1_before_first11_north31，共288项散列。
++
++每次修改前仍必须读本README、AGENTS、Docs/修改规范与回归清单。用户本轮最新策略优先：
++1. 首次取宝路线到N004保持，之后N004→N003→N013→N012→N011，N011横停。
++2. N011首次确认北侧来车，固定N011→N012→N023→N031→N032→N048→N049→N061→N062→N063，到N063按原到点动作竖停。N023/N049/N062都是真实路口，不能省略。
++3. N011其他方向沿现有规则：西侧同上述N063路线，东侧仍走N010→N020→N037→N038→N039→N040，南侧仍经N012→N013→N003去东侧。首次方向锁与行进前方遇阻原路回退例外保留。
++4. 本次只改ThiefMapPlanner的首次路线和北侧规则、App三个固件标识。App控制流程逐字保持；原PID、速度、100RPM/180ms、转弯、四路前后1000/左右900mm、PA3声光保持。没有移入此前已经不在本目录中的BRANCH1、TREASURE26或LR1控制补丁，不能把旧聊天的修复当作本版已有功能。
++
++ARMCC5全量编译0错误0警告；当前15组ARM离线回归通过（旧北侧路线断言及前方激光夹具已按新路线同步，保留初次失败和重跑记录）。ROM68152、RAM44888字节（RAM不增加），剩4264字节；含3KB预留栈，已知最大920字节，实物栈水位未测。证据VALIDATION_FIRST11.json、FIRST11_FILES.json、FIRST11_CHANGESET.patch及Tests/first11_inputs.json、Tests/first11_suites.json。下方旧版本结论为历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # ROUTE6_SHORT_RETURN_SL1：PA3上电持续声光提示（本段优先）
+ 
+ 2026-10-30用户在旁支聊天授权：在最新版本加入声光模块，VCC接3.3V、GND共地、IN接PA3；通电持续亮灯和鸣叫，实际断电后停止。当前FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1，底层行驶/策略仍为下方ROUTE6。
+--- SL1/Tests/run_first11.py
++++ FIRST11/Tests/run_first11.py
+@@ -0,0 +1,23 @@
++"""Actual linked firmware, simulated peripherals only. No serial/flash/motors."""
++from pathlib import Path
++import sys,subprocess,concurrent.futures,json,hashlib
++r=Path(__file__).resolve().parents[1];sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
++image=r/'MDK-ARM'/r.name/(r.name+'.axf')
++inputs={p.relative_to(r).as_posix():sha(p) for folder in ['User','Control','Algorithm','Hardware','Core','System','Drivers','MDK-ARM'] for p in (r/folder).rglob('*') if p.is_file() and p.suffix.lower() in ['.c','.h','.s','.uvprojx']}
++test_inputs={p.relative_to(r).as_posix():sha(p) for p in (r/'Tests').glob('*.py')}
++(r/'Tests/first11_inputs.json').write_text(json.dumps(dict(production=inputs,test_sources=test_inputs,axf_sha256=sha(image)),indent=2),encoding='utf-8')
++tests=['test_strategy_stable2.py','test_temp78_stable3.py','test_n011_first_plan_stable10.py','test_hide_routes_stable4.py','test_escape_completion.py','test_turn_resume.py','test_left800.py','test_live_monitor.py','test_west63.py','test_trace_front_probe.py','test_trace_return.py','test_trace_recovery.py','test_n068_recovery.py','test_rear_retrace.py','test_short_return.py']
++def run(n):
++    with (r/'Tests'/('first11_'+n+'.log')).open('w',encoding='utf-8') as f:
++        p=subprocess.run([sys.executable,'-X','utf8',str(r/'Tests'/n)],stdout=f,stderr=subprocess.STDOUT)
++    return dict(test=n,exit_code=p.returncode)
++results=[]
++with concurrent.futures.ThreadPoolExecutor(max_workers=6) as ex:
++    for f in concurrent.futures.as_completed([ex.submit(run,n) for n in tests]):
++        result=f.result();results.append(result);print(result,flush=True)
++        if result['exit_code']:print((r/'Tests'/('first11_'+result['test']+'.log')).read_text(encoding='utf-8')[-3000:],flush=True)
++(r/'Tests/first11_suites.json').write_text(json.dumps(results,indent=2),encoding='utf-8')
++assert all(x['exit_code']==0 for x in results),results
++assert all(sha(r/p)==h for p,h in inputs.items()),'production changed during tests'
++assert all(sha(r/p)==h for p,h in test_inputs.items()),'test source changed during tests'
++
+--- SL1/Tests/test_hide_routes_stable4.py
++++ FIRST11/Tests/test_hide_routes_stable4.py
+@@ -29,7 +29,7 @@
+         expect(ok,'N011 requested route exists')
+         if ok:
+             if mask==1:
+-                expect(path()[:6]==[10,20,37,38,39,40],'north pursuer uses N010-N037-N040 corridor')
++                expect(path()==west63,'north pursuer uses N012-N023-N031 corridor to N063')
+                 expect(member('thief_plan','goal_node') in [26,35,63],'north pursuer ends at eastern refuge')
+             else:
+                 expect(path()==west63 if mask==8 else path()[:6]==fixed,f'authorized south/west route: body={body} mask={mask} {path()}')
+@@ -51,11 +51,11 @@
+ expect(ok,'initial treasure route still builds')
+ if ok:
+     expect(path()[:10]==[53,44,36,35,34,33,25,15,6,4],'initial treasure prefix unchanged')
+-    expect(member('thief_plan','goal_node')==38 and member('thief_plan','final_body_heading') in [0,2],
+-           'first N038 hide is now reached vertically')
+-    if member('thief_plan','final_body_heading') in [0,2]:
++    expect(member('thief_plan','goal_node')==11 and member('thief_plan','final_body_heading') in [1,3],
++           'first requested N011 hide is reached horizontally')
++    if member('thief_plan','final_body_heading') in [1,3]:
+         call('Route_Start');result=complete_route()
+-        expect(result['node']==38 and result['body'] in [0,2],'actual initial task ends vertically at N038')
++        expect(result['node']==11 and result['body'] in [1,3],'actual initial task ends horizontally at N011')
+         lifecycles.append(dict(kind='initial',result=result))
+ 
+ # Actual laser -> specified complete route -> measured stop -> parking turn.
+@@ -67,7 +67,7 @@
+     for _ in range(3):
+         clock+=20;call('Thief_OnLaserFrame',channel,150,100,1,clock)
+     tick()
+-    expected_route=(path()[:6]==[10,20,37,38,39,40]) if heading in [0,1] else (path()==west63 if heading==3 else path()[:6]==fixed)
++    expected_route=(path()==west63) if heading in [0,3] else ((path()[:6]==[10,20,37,38,39,40]) if heading==1 else path()[:6]==fixed)
+     expect(expected_route,f'actual gate selects authorized corridor, body={body} gyro={sign} heading={heading}')
+     if not expected_route:continue
+     goal=member('thief_plan','goal_node');park_body=member('thief_plan','final_body_heading')
+--- SL1/Tests/test_n011_first_plan_stable10.py
++++ FIRST11/Tests/test_n011_first_plan_stable10.py
+@@ -22,9 +22,9 @@
+     global clock
+     for _ in range(n):clock+=20;call('Thief_OnLaserFrame',ch,150,100,1,clock)
+ def verify_route(world):
+-    expected=[12,23,31,32,48,49,61,62,63] if world==3 else (west if world in [0,1] else east)
++    expected=[12,23,31,32,48,49,61,62,63] if world in [0,3] else (west if world==1 else east)
+     expect(path()[:len(expected)]==expected,f'world direction {world} selects requested corridor: {path()}')
+-    if world==3:expect(member('thief_plan','goal_node')==63 and member('thief_plan','final_body_heading')==0,'west threat ends north parked at N063')
++    if world in [0,3]:expect(member('thief_plan','goal_node')==63 and member('thief_plan','final_body_heading')==0,'west threat ends north parked at N063')
+     expect(member('thief_plan','goal_node') in [26,35,63],'destination is an eastern refuge')
+ 
+ for body in range(4):
+--- SL1/Tests/test_strategy_stable2.py
++++ FIRST11/Tests/test_strategy_stable2.py
+@@ -52,7 +52,7 @@
+     expect(ok, 'N011 north route exists')
+     if ok:
+         path=nodes_in_plan()
+-        expect(path[:6]==[10,20,37,38,39,40] and member('thief_plan','goal_node') in [26,35,63], f'N011 north uses requested corridor: {path}')
++        expect(path==[12,23,31,32,48,49,61,62,63] and member('thief_plan','goal_node') in [26,35,63], f'N011 north uses requested corridor: {path}')
+         expect(not set(path)&{55,56,57}, f'N011 avoids the closed lower pocket: {path}')
+ 
+ # Exercise actual reaction with repeated side/rear reports for >350ms.
+--- SL1/Tests/test_trace_front_probe.py
++++ FIRST11/Tests/test_trace_front_probe.py
+@@ -8,8 +8,9 @@
+ for _ in range(3):clock+=20;call('Thief_OnLaserFrame',1,150,100,1,clock)
+ tick();odom=120
+ call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
++front_channel=3 if call('TravelFrame_IsReverse') else 0
+ for _ in range(3):
+-    clock+=20;call('Thief_OnLaserFrame',3,150,100,1,clock)
++    clock+=20;call('Thief_OnLaserFrame',front_channel,150,100,1,clock)
+ call('Thief_InterceptReact',clock)
+ failures=[]
+ if var('route_state')!=12:failures.append('locked N011 transfer ignores confirmed travel-front interception')
+--- SL1/Tests/validate_first11.py
++++ FIRST11/Tests/validate_first11.py
+@@ -0,0 +1,50 @@
++"""Bind first-hide/north-route evidence to E-drive project and current AXF."""
++from pathlib import Path
++import json,hashlib,re,difflib,xml.etree.ElementTree as ET
++r=Path(__file__).resolve().parents[1];b=r/'Reference/SL1_before_first11_north31'
++sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
++read=lambda p:p.read_text(encoding='utf-8')
++load=lambda p:json.loads(read(p))
++assert str(r).lower().startswith('e:')
++image=r/'MDK-ARM'/r.name/(r.name+'.axf');ah=sha(image)
++z=load(r/'Tests/first11_inputs.json');assert ah==z['axf_sha256']
++assert all(sha(r/n)==h for n,h in z['production'].items())
++assert all(sha(r/n)==h for n,h in z['test_sources'].items())
++snapshot=load(b/'SNAPSHOT_SHA256.json');assert len(snapshot)==288 and all(sha(b/n)==h for n,h in snapshot.items())
++delta={n for n in z['production'] if sha(b/n)!=sha(r/n)}
++assert delta=={'User/App_ThiefStrategy.c','Algorithm/ThiefStrategy/ThiefMapPlanner.c'}
++app=read(r/'User/App_ThiefStrategy.c');old=read(b/'User/App_ThiefStrategy.c')
++assert app.count('UARTCH4_16V_FIRST11_NORTH31_SL1')==3
++assert app.replace('UARTCH4_16V_FIRST11_NORTH31_SL1','UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1')==old
++planner='Algorithm/ThiefStrategy/ThiefMapPlanner.c';new=read(r/planner);old=read(b/planner)
++def remove_initial(s):
++    i=s.index('uint8_t ThiefMapPlanner_PlanInitial(');j=s.index('uint8_t ThiefMapPlanner_PlanEscape(',i)
++    return s[:i]+s[j:]
++assert remove_initial(new).replace('((threat_mask&1U) || ((threat_mask&8U) && !(threat_mask&3U)))','(threat_mask&8U) && !(threat_mask&3U)')==remove_initial(old)
++assert b'UARTCH4_16V_FIRST11_NORTH31_SL1' in image.read_bytes()
++suites=load(r/'Tests/first11_suites.json');assert len(suites)==15 and all(s['exit_code']==0 for s in suites)
++reports={}
++for n in ['results_strategy_stable2.json','results_temp78_stable3.json','results_n011_first_plan_stable10.json','results_hide_routes_stable4.json','results_escape_completion.json','results_turn_resume.json','results_left800.json','results_live_monitor.json','west63_after.json','trace_front_after.json','results_trace_return.json','results_trace_recovery.json','results_n068_recovery.json','results_rear_retrace.json','results_short_return.json']:
++    p=r/'Tests'/n;q=load(p);assert not q.get('failures') and not q.get('failure'),n
++    assert q.get('axf_sha256',q.get('firmware_sha256'))==ah,n
++    reports[n]=dict(checks=q.get('checks'),sha256=sha(p))
++hide=load(r/'Tests/results_hide_routes_stable4.json')
++initial=next(x for x in hide['lifecycles'] if x['kind']=='initial')
++assert initial['result']['node']==11 and initial['result']['body'] in [1,3]
++north=[x for x in hide['lifecycles'] if x.get('world_heading')==0]
++assert len(north)==4 and all(x['result']['node']==63 and x['result']['body']==0 for x in north)
++proj=r/'MDK-ARM'/(r.name+'.uvprojx');paths=ET.parse(proj).findall('.//FilePath')
++assert len(paths)==len({n.text.lower() for n in paths}) and all((proj.parent/n.text.replace('\\','/')).exists() for n in paths)
++assert '0 Error(s), 0 Warning(s)' in read(r/'build_first11.log')
++mp=read(image.with_suffix('.map'));htm=read(image.with_suffix('.htm'))
++rom=int(re.search(r'Total ROM Size[^\n]+?\)\s+(\d+)',mp)[1]);ram=int(re.search(r'Total RW\s+Size[^\n]+?\)\s+(\d+)',mp)[1]);stack=int(re.search(r'Maximum Stack Usage =\s*(\d+)',htm)[1])
++assert (rom,ram,stack)==(68152,44888,920)
++changed=[n for n,h in snapshot.items() if n.endswith(('.c','.h','.s','.md','.py','.ioc','.uvprojx','.uvoptx')) and sha(r/n)!=h]
++added=['Tests/run_first11.py','Tests/validate_first11.py','Docs/FIRST11_\u9996\u6b21\u85cf\u70b9\u4e0e\u5317\u4fa7\u8def\u7ebf.md']
++patch=''.join(''.join(difflib.unified_diff(read(b/n).splitlines(True) if (b/n).exists() else [],read(r/n).splitlines(True),fromfile='SL1/'+n,tofile='FIRST11/'+n)) for n in sorted(changed+added))
++(r/'FIRST11_CHANGESET.patch').write_text(patch,encoding='utf-8')
++artifacts=changed+added+['FIRST11_CHANGESET.patch','build_first11.log','Tests/first11_inputs.json','Tests/first11_suites.json']+['Tests/'+n for n in reports]+[p.relative_to(r).as_posix() for p in (r/'Tests').glob('first11_*.log')]+[image.with_suffix(s).relative_to(r).as_posix() for s in ('.axf','.hex','.map','.htm')]
++(r/'FIRST11_FILES.json').write_text(json.dumps(dict(modified=changed,added=added,hashes={n:sha(r/n) for n in sorted(set(artifacts))},generated_manifests=['FIRST11_FILES.json','VALIDATION_FIRST11.json']),ensure_ascii=False,indent=2),encoding='utf-8')
++out=dict(firmware='UARTCH4_16V_FIRST11_NORTH31_SL1',project=str(r),axf_sha256=ah,hex_sha256=sha(image.with_suffix('.hex')),production_changed=sorted(delta),app_control_unchanged=True,other_planner_functions_unchanged=True,source_hashes=z['production'],test_source_hashes=z['test_sources'],validator_sha256=sha(Path(__file__)),suites=suites,reports=reports,baseline_files_checked=288,rom_bytes=rom,ram_bytes=ram,ram_added_bytes=0,ram_remaining_bytes=48*1024-ram,reserved_stack_bytes=3072,linker_known_stack_bytes=stack,hardware_stack_watermark_measured=False,desktop_project_written=False,hardware_tested=False,flashed=False,serial_opened=False,motors_run=False)
++(r/'VALIDATION_FIRST11.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(dict(firmware=out['firmware'],suites=len(suites),initial_hide=11,north_goal=63,ram_bytes=ram,axf_sha256=ah,hardware_tested=False),indent=2))
+--- SL1/User/App_ThiefStrategy.c
++++ FIRST11/User/App_ThiefStrategy.c
+@@ -1834,7 +1834,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_FIRST11_NORTH31_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1860,7 +1860,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_FIRST11_NORTH31_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1909,7 +1909,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_FIRST11_NORTH31_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,

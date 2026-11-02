@@ -1,0 +1,199 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -241,6 +241,7 @@
+ static ThiefLocalization_t thief_localization;
+ static void Route_StopFault(const char *reason);
+ static uint8_t Route_IsJunctionCandidate(RouteGrayState_t state);
++static uint8_t Route_ArrivalPlausible(void);
+ static uint8_t Route_RunFollow(RouteGraySample_t *sample,uint32_t elapsed_ms);
+ static void Route_HideAlign(uint32_t now,uint32_t elapsed_ms);
+ static void Route_DriveHideApproach(uint32_t elapsed_ms);
+@@ -1357,6 +1358,16 @@
+ 
+ 
+ 
++/* Gray confirms the junction; travel only rejects an implausibly early
++ * repeat of the previous junction. Short retreat keeps its seeded progress. */
++static uint8_t Route_ArrivalPlausible(void)
++{
++  const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++  if(map_nav.runtime && !route_trail.returning && !retreat_active)
++    return (Route_LegProgress()>=(int32_t)step->length_mm*4L/10L)?1U:0U;
++  return MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress());
++}
++
+ static uint8_t Route_IsJunctionCandidate(RouteGrayState_t state)
+ {
+   return ((state == ROUTE_GRAY_LEFT_BLACK) ||
+@@ -1434,6 +1445,8 @@
+                                  RouteGrayState_t branch, uint16_t raw12)
+ {
+   MapRouteAction_t action;
++  if(map_nav.runtime && !route_trail.returning && !retreat_active &&
++      !Route_ArrivalPlausible())return;
+   if(route_trail.returning) {
+     const MapRouteStep_t *expected=MapRouteNavigator_Current(&map_nav);
+     int32_t progress=Route_LegProgress();
+@@ -1901,7 +1914,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_N038_MAIN60_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ARRIVAL_GATE_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1927,7 +1940,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N038_MAIN60_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ARRIVAL_GATE_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1976,7 +1989,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_N038_MAIN60_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ARRIVAL_GATE_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2243,7 +2256,7 @@
+     }
+     if ((map_nav.arrived == 0U) && (Route_IsJunctionCandidate(front_state) != 0U) &&
+         (junction_armed != 0U) &&
+-        MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress()) &&
++        Route_ArrivalPlausible() &&
+         (junction_latched == 0U) &&
+         (front_was_valid != 0U))
+     {
+@@ -2338,7 +2351,7 @@
+       if(Route_TreasureRearBridge(&sample,elapsed_ms))break;
+       if (!departure_turn && (map_nav.arrived == 0U) && (Route_IsJunctionCandidate(front_state) != 0U) &&
+           (junction_armed != 0U) &&
+-        MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress()) &&
++        Route_ArrivalPlausible() &&
+           (junction_latched == 0U) &&
+           (front_was_valid != 0U))
+       {
+@@ -2641,7 +2654,8 @@
+           if(!gray_missing_active){gray_missing_active=1U;gray_missing_tick=now;}
+           if((uint32_t)(now-gray_missing_tick)>=2000U){Route_StopFault("GRAY_BOTH_NO_LINE");break;}
+         } else gray_missing_active=0U;
+-        if(!map_nav.arrived && Route_IsJunctionCandidate(front_state) && junction_armed && !junction_latched) {
++        if(!map_nav.arrived && Route_IsJunctionCandidate(front_state) && junction_armed && !junction_latched &&
++            (route_trail.returning || retreat_active || Route_ArrivalPlausible())) {
+           if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
+           Route_HandleJunction(now,elapsed_ms,front_state,sample.front_raw12);break;
+         }
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,19 @@
++# ARRIVAL_GATE_SL1：修复N011至N002提前认点（本段优先）
++
++当前FW=UARTCH4_16V_ARRIVAL_GATE_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/MAIN60_before_arrival_gate。
++
++依据184236日志：19399ms开始11至2路段，19499ms将F00记为N002，随后MAP_REQUIRED_BRANCH_NOT_SEEN。修复正常动态路线的提前到点判断，并让快速轮询、普通巡线、找线恢复及公共到点处理使用一致条件。正常动态路线至少走过本段地图长度40%后，灰度路口候选才可确认下一节点：300mm段为120mm，600mm段为240mm。该下限只排除过早重复读数，不凭里程自动认点；不设置动态路线里程上限停车。过早偏侧读数仍交原巡线控制，不提前刹车或转弯。原路返回、半途短回撤保留原有入口和累计里程处理，不套用新的正常前进下限。
++
++这不是完整定位修复：超过下限后的干扰仍需灰度及原支路确认区分；阈值未获实车校准。原静态路线判断不变。N038主旋转60°、其他停车70°、用户微调350、既有路线策略、激光、速度和PID全部保留。生产仅改User/App_ThiefStrategy.c。
++
++ARMCC5全量编译0错误0警告。ARM离线专项69项、完整藏点路线151项、N038主旋转75项、短回撤恢复1224项检查通过，共1519项。旧AXF同一测试复现提前认点失败，新AXF通过；传感器和电机响应为仿真，不代表硬件已验证。结果均绑定当前AXF。test_arrival_gate.py --before预期失败，其报告不可当作新版失败。历史测试报告firmware字符串可能是旧标签，以AXF散列和当前版本标识为准。
++
++证据ARRIVAL_GATE_FILES.json、ARRIVAL_GATE_CHANGESET.patch、build_arrival_gate.log、Tests/results_arrival_gate.json、Tests/results_arrival_gate_before.json及本轮回归报告。
++
++仅编译通过，尚未完成硬件验证。未自动烧录、未运行实物电机、未占串口、未提交推送。
++
++---
++
+ # N038_MAIN60_SL1：N038主旋转60°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N038_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,19 @@
++# ARRIVAL_GATE_SL1：修复N011至N002提前认点（本段优先）
++
++当前FW=UARTCH4_16V_ARRIVAL_GATE_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/MAIN60_before_arrival_gate。
++
++依据184236日志：19399ms开始11至2路段，19499ms将F00记为N002，随后MAP_REQUIRED_BRANCH_NOT_SEEN。修复正常动态路线的提前到点判断，并让快速轮询、普通巡线、找线恢复及公共到点处理使用一致条件。正常动态路线至少走过本段地图长度40%后，灰度路口候选才可确认下一节点：300mm段为120mm，600mm段为240mm。该下限只排除过早重复读数，不凭里程自动认点；不设置动态路线里程上限停车。过早偏侧读数仍交原巡线控制，不提前刹车或转弯。原路返回、半途短回撤保留原有入口和累计里程处理，不套用新的正常前进下限。
++
++这不是完整定位修复：超过下限后的干扰仍需灰度及原支路确认区分；阈值未获实车校准。原静态路线判断不变。N038主旋转60°、其他停车70°、用户微调350、既有路线策略、激光、速度和PID全部保留。生产仅改User/App_ThiefStrategy.c。
++
++ARMCC5全量编译0错误0警告。ARM离线专项69项、完整藏点路线151项、N038主旋转75项、短回撤恢复1224项检查通过，共1519项。旧AXF同一测试复现提前认点失败，新AXF通过；传感器和电机响应为仿真，不代表硬件已验证。结果均绑定当前AXF。test_arrival_gate.py --before预期失败，其报告不可当作新版失败。历史测试报告firmware字符串可能是旧标签，以AXF散列和当前版本标识为准。
++
++证据ARRIVAL_GATE_FILES.json、ARRIVAL_GATE_CHANGESET.patch、build_arrival_gate.log、Tests/results_arrival_gate.json、Tests/results_arrival_gate_before.json及本轮回归报告。
++
++仅编译通过，尚未完成硬件验证。未自动烧录、未运行实物电机、未占串口、未提交推送。
++
++---
++
+ # N038_MAIN60_SL1：N038主旋转60°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N038_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,19 @@
++# ARRIVAL_GATE_SL1：修复N011至N002提前认点（本段优先）
++
++当前FW=UARTCH4_16V_ARRIVAL_GATE_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前备份Reference/MAIN60_before_arrival_gate。
++
++依据184236日志：19399ms开始11至2路段，19499ms将F00记为N002，随后MAP_REQUIRED_BRANCH_NOT_SEEN。修复正常动态路线的提前到点判断，并让快速轮询、普通巡线、找线恢复及公共到点处理使用一致条件。正常动态路线至少走过本段地图长度40%后，灰度路口候选才可确认下一节点：300mm段为120mm，600mm段为240mm。该下限只排除过早重复读数，不凭里程自动认点；不设置动态路线里程上限停车。过早偏侧读数仍交原巡线控制，不提前刹车或转弯。原路返回、半途短回撤保留原有入口和累计里程处理，不套用新的正常前进下限。
++
++这不是完整定位修复：超过下限后的干扰仍需灰度及原支路确认区分；阈值未获实车校准。原静态路线判断不变。N038主旋转60°、其他停车70°、用户微调350、既有路线策略、激光、速度和PID全部保留。生产仅改User/App_ThiefStrategy.c。
++
++ARMCC5全量编译0错误0警告。ARM离线专项69项、完整藏点路线151项、N038主旋转75项、短回撤恢复1224项检查通过，共1519项。旧AXF同一测试复现提前认点失败，新AXF通过；传感器和电机响应为仿真，不代表硬件已验证。结果均绑定当前AXF。test_arrival_gate.py --before预期失败，其报告不可当作新版失败。历史测试报告firmware字符串可能是旧标签，以AXF散列和当前版本标识为准。
++
++证据ARRIVAL_GATE_FILES.json、ARRIVAL_GATE_CHANGESET.patch、build_arrival_gate.log、Tests/results_arrival_gate.json、Tests/results_arrival_gate_before.json及本轮回归报告。
++
++仅编译通过，尚未完成硬件验证。未自动烧录、未运行实物电机、未占串口、未提交推送。
++
++---
++
+ # N038_MAIN60_SL1：N038主旋转60°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N038_MAIN60_SL1。仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍须阅读README、AGENTS、Docs/修改规范与回归清单。
+--- /dev/null
++++ after/Tests/test_arrival_gate.py
+@@ -0,0 +1,39 @@
++from pathlib import Path
++import json,hashlib,sys
++ROOT=Path(__file__).absolute().parents[1]
++setup=(ROOT/'Tests/test_n068_recovery.py').read_text(encoding='utf-8').split('failures=[]')[0]
++if '--before' in sys.argv:
++ setup=setup.replace('exec(compile(runtime,', "runtime=runtime.replace(\"axf=ROOT/'MDK-ARM'\", \"axf=ROOT/'Reference/MAIN60_before_arrival_gate/MDK-ARM'\")\nexec(compile(runtime,")
++exec(compile(setup,str(ROOT/'Tests/test_n068_recovery.py'),'exec'))
++failures=[]
++def begin():
++ global front_raw,back_raw,physical_rpm
++ fresh(11,0);setstep(11,2,0,0,300,1);setstep(2,3,1,0,600,2,1)
++ record(route,'MapRoute_t',dict(id=1601,count=2,start_node=11,heading=0,drive_mode=0))
++ front_raw=back_raw=0x60;physical_rpm=0;cache(0);commands.clear();call('Route_Start')
++ for _ in range(8):tick()
++ check(var('route_state')==2 and var('junction_armed'),'centered line arms departure normally')
++try:
++ begin();odom=80;front_raw=0xF00;tick()
++ check(not member('map_nav','arrived') and var('thief_current_node')==11,'logged early F00 must not become N002 in normal follow')
++ check(var('route_state')==2 and any(x[0]=='drive' for x in commands),'early edge keeps actual line-follow control running')
++ begin();odom=80;front_raw=0;tick()
++ check(var('route_state')==8,'temporary leading-line loss enters real recovery path')
++ front_raw=0xF00;tick()
++ check(not member('map_nav','arrived') and var('thief_current_node')==11,'recovery cannot bypass early-node gate with F00')
++ begin();odom=80;call('Route_HandleJunction',clock,20,4,0xF00)
++ check(not member('map_nav','arrived') and var('junction_count')==0,'shared handler rejects early candidate without mutating node or count')
++ for distance,expected in [(119,0),(120,1),(1000,1)]:
++  odom=distance;check(call('Route_ArrivalPlausible')==expected,f'300mm edge arrival gate at {distance}mm')
++ begin();odom=300;front_raw=0x60;tick()
++ check(not member('map_nav','arrived'),'distance alone never confirms a node')
++ front_raw=0x07F;tick()
++ check(member('map_nav','arrived') and var('route_state')==3,'real later right branch starts N002 entry normally')
++ check(member('map_nav','seen_ports') & 2,'real right branch evidence retained for turn confirmation')
++ begin();odom=80;front_raw=0;tick();odom=180;front_raw=0x07F;tick()
++ check(member('map_nav','arrived') and var('route_state')==3,'recovery still accepts a later plausible real branch')
++except Exception as e:failures.append(str(e))
++out=dict(checks=checks,failures=failures,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False,before='--before' in sys.argv)
++name='results_arrival_gate_before.json' if out['before'] else 'results_arrival_gate.json'
++(ROOT/'Tests'/name).write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(out,indent=2));assert not failures,failures

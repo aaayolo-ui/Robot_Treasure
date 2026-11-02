@@ -1,0 +1,191 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR4",
+  "firmware_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9",
+  "hex_sha256": "1804bf4ff65cf7286bce18378af8878fc02d623f89742c107f27eedb2e83cc64",
+  "limits_raw_mm": {
+    "front": 1000,
+    "left": 800,
+    "right": 800,
+    "rear": 1000
+  },
+  "new_checks": 1798,
+  "boundary_checks": 442,
+  "pure_checks": 366181,
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "25cf0544b2edf39fd8bc6b0affc0654a67052e8b622f401432c4b551c86b8b9b",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "bdc43c2187f1f9c3ab571e5424e2428ceb19eb02ddea61b225f1d30ef7964b87",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "2e32432f8fa2d379b696b6b22dc0bd5a049935ee44da65fcea81ef1e150bad7a",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "cbfa34baa7de729db8f82e1095367a330ecc307afafef774f4e1300f926a7215",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "1df578722b405ee574787cfbee6319e0e9fc589694235daae67f2043e816e5a7",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "959404b6410ef84fa7fe9325e6868f87dd101b774be84a8d114524b9529077f2",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "04da639583a84c20c127bfdcc89d0c26cdb435020f5e55082b12bc28e84089b9",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "91f8fb58b48707ae4f093e78018e630c9b57b092359b1dc5626424177664807e",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "bc6ea7f85ff499af9895a0ca1abf1e14a85319c5eba97b790b5bdcee6c74530a",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "27eaa2394f9c7d6fa2d29930cda1e95c5599def640e61b07a1be1180eadb56c3",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "c12b00de00edeb31219d403120ae6326fc849b269b0ed670f88d3256f770a4a2",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "72d2ac6e585d27c14cdbe0e8d1004559fa71241446bfff1f5490702ab98c9ca6",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "f4772a98619371627e5d4ec7c0cb327f32c7790bff4d8404a24739ff60df39aa",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "0b19ec32d20716a4706766d2892c149a982f9f7e60544fc0e68fa5d6150d5dbf",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "1f1098ad9a29fff07f48b85c4c14985c0f0a4f1d7c76961adab2ed2660626c3b",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "86e242436aad3fd8f5bee4c02aa84f7822e889196e94eb7d8e43629303ebcaee",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "3081f7b5502d95c6ea51282152fde59ee030d3abc32d1a79e3d1e232c38bfba2",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "7917d7821bcb68e24c90b0978eb095420a4f156c00b9bacd91c9d8c5c4106bfe",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "b60358a011bf87add8f30444ca8287aef156107b359e970e07c268f3a192639c",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "efe2907f082d8880c3e65676b41f275b2d5e685722df88f742d99ed93f2d8fe4",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "47e8efecc73f7fc366cda00b58e1d583a6f696294c91e08b860f6db8000ba464",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "172687c36f5019254b7d8bbd94d854b47c7370541148edce83360d0c8aa15140",
+      "axf_sha256": "c43c2194effaff90747b707f78c178aad2a5000cf16e730c3d173c70badd72f9"
+    }
+  ],
+  "before_failures": [
+    {
+      "case": "supported_exit",
+      "error": "2.77degree residual must promptly enter search without waiting2500ms"
+    },
+    {
+      "case": "missing_probe",
+      "error": "both missing must briefly probe likely mapped line"
+    },
+    {
+      "case": "road_probe_and_cap",
+      "error": "mapped road loss probes rather than spinning only"
+    }
+  ],
+  "files": {
+    "User/App_ThiefStrategy.c": "67ff4a92047dde14fe954af690bd180701ee9d96864fe4061495d08e46e0b409",
+    "Control/RestartLineSearch.c": "ccdef66dd57ca309a58791a5944180bfb899dcee5e2f541668f961c8f9856b73",
+    "Control/RestartLineSearch.h": "4bf1a0966335a23db69d4fad34aa4693ac0ce68192db119177a29e865b17f76b",
+    "Tests/test_documents13.py": "2e00498ecf25d44cb903ae325b6869bc40e07ae6b73011315319f342e3a3f27b",
+    "Tests/test_documents20.py": "fca457fef8eadec46a0dea413af339f191ca20706721cb7d1d8dfe5b53f56539",
+    "Tests/test_documents22.py": "d5f93bd3eb438d92596a38cfd375b88f5e5a608f12cb667e7da0ce42fc65da74",
+    "Tests/test_documents24.py": "59437cbd46e9e63ddd89e5e72b8423def201a1ad33de7ffac9a9af0313503777",
+    "Tests/test_documents31.py": "ca2f2ea4adc20831e06e7268f34da81f671f4f1d024902e3e2978ab127d60b06",
+    "Tests/run_monitor_suite.py": "f3d30a03ac2585cc8564fb10f1368c79bde9eb1417f5c45ffe9763b747cdd502",
+    "Tests/test_road_probe.py": "261fa41ed3ca0acb9476454f0ce998c0c076e27224cef7fafffc207a9492f66e",
+    "README.md": "6c512eb3005427e9a73576bcfd597cc4a76134d42b61da4ea3199c8771cda1ac",
+    "AGENTS.md": "8b785f656243f535d9462139f7674b6223dce56ec2c323b9a2900b45b7fca022",
+    "Docs/修改规范与回归清单.md": "0a84fd08d25a27e26a3f729f799a309e89b8315e0f5420997c5b1505448ad23f",
+    "Tests/validate_monitor4.py": "a3542110c3edceed9384fc8fbd1b8c442ba016a1d1f98c465f4245363a302d59",
+    "ROAD_PROBE_CHANGESET.patch": "febe7d490f364d56291d574dc9ca0e982497ff964471a77983a1e5288924ceff",
+    "build_monitor4.log": "7bd2ada2e6e59e39e2a82b12e33b869896cdca74551676a36377ac9046d405bb",
+    "Tests/results_road_probe.json": "a811ba3abd9b8dd30dd13765a22ac386283a7367038b12ba2e4ff7f287092ecd",
+    "Tests/results_left800.json": "b380e693dd03d79b025b84359308f3f7d77b9335b98cb89252bf9cebb6b2b87d",
+    "Tests/results_monitor_suite.json": "fa650dd2d2f73c5bf49f5e2b57aa4be0833d1933befee8db721ee53e998bfb22",
+    "Tests/results_16m.json": "6cce53a4e137a0760effda83cee01d69db4114ecb81ec459b3ba5a690198d789"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "Local recovery on known topology; similar junctions are not uniquely identifiable from gray alone.",
+    "Synthetic gray/yaw/encoder feedback validates software state and outputs, not physical traction or successful line acquisition."
+  ]
+}

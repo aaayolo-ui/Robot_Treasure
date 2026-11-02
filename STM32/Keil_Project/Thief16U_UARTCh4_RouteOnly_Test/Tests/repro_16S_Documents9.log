@@ -1,0 +1,13 @@
+Failed to find real location of D:\python\python.exe
+Traceback (most recent call last):
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16T_UARTCh4_EntryFrameRestore_Test\Tests\test_app_runtime.py", line 275, in <module>
+    entry_frame_checks=documents9_cases()
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16T_UARTCh4_EntryFrameRestore_Test\Tests\test_app_runtime.py", line 250, in documents9_cases
+    check(call('TravelFrame_IsReverse')==arrival_mode,
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+          'Documents9 cancellation restores the physical arrival frame')
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ROG\Desktop\jiezhezuo\Robot_Treasure-main\Robot_Treasure-main\STM32\Keil_Project\Thief16T_UARTCh4_EntryFrameRestore_Test\Tests\test_app_runtime.py", line 117, in check
+    assert x,message
+           ^
+AssertionError: Documents9 cancellation restores the physical arrival frame

@@ -1,0 +1,116 @@
+edge_line: PASS
+brake_feedback: PASS
+{
+  "checks": 1228,
+  "failures": [],
+  "cases": [
+    {
+      "case": "edge_line",
+      "mode": 0,
+      "raw": 7,
+      "motion_commands": 11,
+      "return_home": {
+        "frames": 236,
+        "node": 38,
+        "body": 0,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "edge_line",
+      "mode": 0,
+      "raw": 3584,
+      "motion_commands": 11,
+      "return_home": {
+        "frames": 236,
+        "node": 38,
+        "body": 0,
+        "fixes": [
+          58,
+          46,
+          40
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "edge_line",
+      "mode": 1,
+      "raw": 7,
+      "motion_commands": 11,
+      "return_home": {
+        "frames": 236,
+        "node": 38,
+        "body": 0,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "edge_line",
+      "mode": 1,
+      "raw": 3584,
+      "motion_commands": 11,
+      "return_home": {
+        "frames": 236,
+        "node": 38,
+        "body": 0,
+        "fixes": [
+          58,
+          46,
+          40
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "brake_feedback",
+      "refreshes": 26
+    }
+  ],
+  "axf_sha256": "daffa48b1f25a153a407b1d1c0609b3b0b793d4a46187df9f3f27ebc95f83801",
+  "real_gray_classification": true,
+  "real_stopped_predicate": true,
+  "hardware_tested": false
+}

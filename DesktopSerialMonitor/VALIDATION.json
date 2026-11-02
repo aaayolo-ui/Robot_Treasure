@@ -1,0 +1,92 @@
+{
+  "date": "2026-10-27",
+  "original_sha256": "cfc5135693d22409e0943370ebc40ae4f2c2d94ea4c8844273fac8fd44c37a90",
+  "backup_sha256": "cfc5135693d22409e0943370ebc40ae4f2c2d94ea4c8844273fac8fd44c37a90",
+  "original_unchanged": true,
+  "reused_modules": {
+    "laser_live_server.py": true,
+    "live_projection.py": true,
+    "full_map_route.json": true,
+    "cloud_bridge.py": true
+  },
+  "lifecycle": {
+    "ok": true,
+    "checks": [
+      "start",
+      "default_disconnected",
+      "console_api",
+      "ports",
+      "disconnect",
+      "stop"
+    ]
+  },
+  "checks": {
+    "serial_offline": {
+      "exit_code": 0,
+      "output": "test_configuration_validation_does_not_open_port (__main__.SharedConsoleTests) ... ok\ntest_http_private_send_is_not_exposed_to_web_or_cloud (__main__.SharedConsoleTests) ... ok\ntest_one_serial_read_feeds_both_views_and_send_uses_same_handle (__main__.SharedConsoleTests) ... ok\ntest_ring_buffer_cursor_and_binary_integrity (__main__.SharedConsoleTests) ... ok\n\n----------------------------------------------------------------------\nRan 4 tests in 0.593s\n\nOK\n"
+    },
+    "ui_protocol": {
+      "exit_code": 0,
+      "output": "UI workflow, UTF-8, HEX, CRLF and periodic-stop checks passed.\n"
+    }
+  },
+  "packaged": [
+    "app.js",
+    "cloud_bridge.py",
+    "console_server.py",
+    "embedded.css",
+    "full_map_route.json",
+    "host.py",
+    "index.html",
+    "laser_live_server.py",
+    "laser_live.html",
+    "live_projection.py",
+    "Microsoft.Web.WebView2.Core.dll",
+    "Microsoft.Web.WebView2.WinForms.dll",
+    "style.css",
+    "WebView2Loader.dll"
+  ],
+  "real_serial_opened": false,
+  "hardware_tested": false,
+  "public_network_verified": false,
+  "files": {
+    "app.manifest": "43b61d1eaab4c9fa8c5854a9f75cd722f28e3c3cf7a71d1d4456ba07f9440a5c",
+    "build.ps1": "a7090c16fbaf128d5b511cea981f0d1448c5755169bd4512bc79b68ce86c0b08",
+    "Program.cs": "00468f33cff89f1d19b5f0f01fea16077fe3d8e270c200ed2ee2c0448de38c58",
+    "test_shared_console.py": "927a163de5dc4693df674ce62cfb1c50d67948ee93a6f29eaf6c3adc480fb7de",
+    "test_ui.js": "23a830e870d5ad6526f2819c92e83c884f07a5110a876813d75a6d4eaa37c587",
+    "validate.py": "df67571ae4cf340c42925d57e386443289012f792c161aa40a429ba9643db096",
+    "小车串口监控一体助手.exe": "bf04030f7ce6b5b6ab09f1b7ba616caf0c7d036eb3eb192adc0deeb885a39031",
+    "assets\\app.js": "6a6302222990c75dbb075fc926cdaea90c1342d756d863db77eeef164510c9dc",
+    "assets\\cloud_bridge.py": "060f3e9ce664080fc83af9d13549e20f9b692e79050dd71f0b5c4ccc4f742677",
+    "assets\\console_server.py": "c9db05a26acd1bbcc933d996ceabb8c25ae4de20f2894095e552da46909a5a62",
+    "assets\\embedded.css": "4021a575538195c9d6f1cd352b0be7313555886d1a457da3dea4205b868de1e7",
+    "assets\\host.py": "2b671e3757dd061f43468e1c56e9568143659da539df49af655bdd6a53e930a6",
+    "assets\\index.html": "528e52a851c42d1bc78e19db29af5d21a7a26b57e47acbe14a091fc909eaa23b",
+    "assets\\laser_live.html": "ed97f792c9363d32ac1c83da9bb964befcd1dc4dbf232946b0a2313d76d5ccff",
+    "assets\\laser_live_server.py": "ec87e78e1ce07891e1a7a066f05e40158fe131ba964c516f5468834a209f5770",
+    "assets\\live_projection.py": "b17a813ebf4050a9707cfab485c5b29ff60c37b9b88993ff1720eaa122d69979",
+    "assets\\style.css": "378223ec10ffdeec4e48ee7212846997b5c08b259e49e42d501ab49c048f2a3c"
+  },
+  "right_buttons_update": {
+    "date": "2026-10-27",
+    "right_tabs_font_px": 15,
+    "receive_action_min_height_px": 36,
+    "send_action_min_height_px": 44,
+    "left_layout_unchanged": true,
+    "compile": "passed",
+    "actual_window_checked": true,
+    "ui_resource_delivery": "host serves only index.html, style.css and app.js",
+    "existing_background_preserved": true,
+    "serial_opened_by_update": false
+  },
+  "pause_color_update": {
+    "date": "2026-10-27",
+    "active": "blue / pause display",
+    "paused": "orange / resume display",
+    "visible_pause_status": true,
+    "compiled": true,
+    "native_window_checked": true,
+    "serial_opened_by_update": false
+  }
+}

@@ -1,0 +1,348 @@
+--- MONITOR6/User/App_ThiefStrategy.c
++++ MONITOR7/User/App_ThiefStrategy.c
+@@ -213,6 +213,12 @@
+ static int16_t last_leading_error;
+ static uint8_t last_leading_mode;
+ static uint32_t restart_log_tick;
++static uint8_t treasure_turn_align_active;
++static RoadHeadingControl_t treasure_turn_heading;
++static uint32_t yaw_reference_since,yaw_reference_last,yaw_reference_apply;
++static int32_t yaw_reference_mm;
++static int16_t yaw_reference_sample;
++static uint16_t yaw_reference_from,yaw_reference_to;
+ static uint8_t replan_after_leg;
+ static uint8_t retreat_active;
+ static uint8_t map_distance_warned;
+@@ -995,8 +1001,16 @@
+ 
+ static uint8_t Route_HasReachedTurnAngle(int16_t current_angle_x100)
+ {
++  const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++  uint16_t node=step?(departure_turn?step->from_node:step->to_node):0U;
++  ThiefLocYaw_t yaw;int16_t error;
+   int32_t delta = (int32_t)Route_TurnAngleDeltaX100(current_angle_x100,
+                                                     turn_start_angle_x100);
++
++  /* Fast rotation for the large angle, then brake and pulse-trim the final
++   *15degrees. The map axis includes skew already present before this turn. */
++  if((node==4U || node==6U) && thief_localization.yaw_cw_sign &&
++      Route_TurnExitContext(&error,&yaw))return (uint8_t)(error>=-1500 && error<=1500);
+ 
+   if (delta < 0L)
+   {
+@@ -1083,6 +1097,18 @@
+   UartDebug_Printf("TURN_DONE=%s START=%d CURRENT=%d DELTA=%d\r\n",
+                    finish_reason, (int)turn_start_angle_x100,
+                    (int)current_angle_x100, (int)delta);
++  {
++    const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++    uint16_t node=step?(departure_turn?step->from_node:step->to_node):0U;
++    treasure_turn_align_active=(uint8_t)(node==4U || node==6U);
++    if(treasure_turn_align_active) {
++      /* The legacy45degree spin is coarse acquisition only here. No forward
++       * burst or gray PID until the outgoing map axis is physically aligned. */
++      Route_BrakeControl();RoadHeading_Reset(&treasure_turn_heading,now);
++      UartDebug_Printf("TURN_AXIS_BEGIN N=%u COARSE_DELTA=%d\r\n",(unsigned)node,(int)delta);
++      return;
++    }
++  }
+   Route_DriveStraight(elapsed_ms);
+ }
+ 
+@@ -1245,6 +1271,37 @@
+ }
+ 
+ /* Filtered side pixels are a steering cue, never an observed road exit/node. */
++static void Route_AlignTreasureTurn(uint32_t now,uint32_t elapsed_ms)
++{
++  RoadHeadingInput_t in;RoadHeadingOutput_t out;ThiefLocYaw_t yaw;int16_t error;
++  Chassis_UpdateFeedback(elapsed_ms);
++  if(!Route_TurnExitContext(&error,&yaw)) {
++    /* Wait under the existing gyro freshness deadline, without accepting gray
++     * as a substitute for the remaining physical turn. */
++    Route_BrakeControl();
++    if((uint32_t)(now-JY61P_GetLastUpdateMs())>ROUTE_GYRO_RECOVERY_MS)
++      Route_StopFault("JY61P_STALE");
++    return;
++  }
++  in.cw_error_x100=error;in.yaw_tick=yaw.stamp_ms;
++  in.stopped=Route_AllWheelsStopped();in.direction_known=1U;
++  RoadHeading_UpdatePulse(&treasure_turn_heading,&in,now,200,&out);
++  if(out.brake)Route_BrakeControl();
++  else {
++    int32_t pwm=out.turn_x10>0?ROUTE_TURN_EQUAL_PWM:-ROUTE_TURN_EQUAL_PWM;
++    Chassis_Enable();
++    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_LEFT,pwm);
++    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_FRONT_RIGHT,-pwm);
++    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_LEFT,pwm);
++    Chassis_SetWheelLogicalPwm(CHASSIS_WHEEL_REAR_RIGHT,-pwm);
++  }
++  if(out.ready) {
++    treasure_turn_align_active=0U;route_state_tick=now;
++    UartDebug_Printf("TURN_AXIS_READY YAW_ERR=%d\r\n",(int)error);
++    /* The next actual board read still decides whether to follow or search. */
++  }
++}
++
+ static uint8_t Route_SideLineHint(uint16_t raw)
+ {
+   return (uint8_t)(raw && (!(raw&0x00FFU) || !(raw&0x0FF0U)));
+@@ -1542,6 +1599,60 @@
+   }
+ }
+ 
++/* Learn only from a corroborated, centered straight road, never from the
++ * treasure lettering, a pending node, a turn, recovery or PID saturation. */
++static void Route_UpdateYawReference(const RouteGraySample_t *sample,int32_t correction)
++{
++  const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++  ThiefLocYaw_t yaw;int16_t error,change,adjust;int32_t mm=Route_LegProgress();
++  uint32_t now=SystemTime_GetMs();
++  Thief_LocalYaw(&yaw);
++  if(!step || !route_active || route_state!=ROUTE_STATE_FOLLOW || departure_turn ||
++      map_nav.arrived || route_identity_phase || retreat_active ||
++      thief_localization.phase!=THIEF_LOC_ON_LEG || !thief_localization.pose.valid ||
++      !thief_localization.yaw_cw_sign || !yaw.valid ||
++      (uint32_t)(now-yaw.stamp_ms)>THIEF_LOC_GYRO_STALE_MS ||
++      (step->from_node>=3U && step->from_node<=7U) ||
++      (step->to_node>=3U && step->to_node<=7U) ||
++      mm<100L || mm>(int32_t)step->length_mm-100L ||
++      front_state!=ROUTE_GRAY_VALID || rear_state!=ROUTE_GRAY_VALID ||
++      !sample->front_raw12 || !sample->rear_raw12 ||
++      (sample->front_raw12&~0x00F0U) || (sample->rear_raw12&~0x00F0U) ||
++      sample->front_error_x100< -75 || sample->front_error_x100>75 ||
++      sample->rear_error_x100< -75 || sample->rear_error_x100>75 ||
++      sample->front_error_x100-sample->rear_error_x100< -50 ||
++      sample->front_error_x100-sample->rear_error_x100>50 ||
++      correction< -150L || correction>150L) {yaw_reference_since=0U;return;}
++  error=RoadHeading_AxisError(thief_localization.origin_yaw_x100,
++      thief_localization.origin_heading,thief_localization.body_heading,
++      thief_localization.yaw_cw_sign,yaw.yaw_x100);
++  if(error< -1000 || error>1000) {yaw_reference_since=0U;return;}
++  if(yaw.stamp_ms==yaw_reference_last)return;
++  change=Route_TurnAngleDeltaX100(yaw.yaw_x100,yaw_reference_sample);
++  if(!yaw_reference_since || (uint32_t)(yaw.stamp_ms-yaw_reference_last)>200U ||
++      yaw_reference_from!=step->from_node || yaw_reference_to!=step->to_node ||
++      change< -100 || change>100) {
++    yaw_reference_since=now;yaw_reference_mm=mm;yaw_reference_apply=now;
++    yaw_reference_from=step->from_node;yaw_reference_to=step->to_node;
++  }
++  yaw_reference_last=yaw.stamp_ms;yaw_reference_sample=yaw.yaw_x100;
++  if((uint32_t)(now-yaw_reference_since)<500U || mm-yaw_reference_mm<100L ||
++      (uint32_t)(now-yaw_reference_apply)<100U)return;
++  yaw_reference_apply=now;adjust=(int16_t)(error/32);
++  if(adjust>10)adjust=10;if(adjust< -10)adjust=-10;
++  if(!adjust)return;
++  thief_localization.origin_yaw_x100=Route_TurnAngleDeltaX100(
++      (int16_t)(thief_localization.origin_yaw_x100+adjust),0);
++  thief_localization.heading_error_x100=(int16_t)(error-adjust);
++  {
++    char line[110];
++    (void)snprintf(line,sizeof(line),"YAW_REF STEP=N%03u-N%03u ADJUST=%d ORIGIN=%d RAW_YAW=%d\r\n",
++        (unsigned)step->from_node,(unsigned)step->to_node,(int)adjust,
++        (int)thief_localization.origin_yaw_x100,(int)yaw.yaw_x100);
++    (void)UartDebug_TrySendString(line);
++  }
++}
++
+ static uint8_t Route_RunFollow(RouteGraySample_t *sample,
+                                uint32_t elapsed_ms)
+ {
+@@ -1579,6 +1690,7 @@
+                                  control.final_correction_rpm_x10;
+   FollowSmoothing_Apply(&follow_smoothing, sample->position_error_x100,
+                          elapsed_ms, &control);
++  Route_UpdateYawReference(sample,control.final_correction_rpm_x10);
+   TravelFrame_SetWheelTargets(control.left_target_rpm_x10,
+                                       control.right_target_rpm_x10,
+                                       control.left_target_rpm_x10,
+@@ -2002,6 +2114,7 @@
+   uint8_t turn_delta=0U;
+ 
+   map_distance_warned=0U;retreat_far_pending=0U;route_identity_phase=0U;
++  treasure_turn_align_active=0U;yaw_reference_since=0U;yaw_reference_last=0U;
+   map_leg_started_tick=SystemTime_GetMs();
+   restart_search_active=0U;map_gray_active=0U;turn_exit_active=0U;hide_alignment_pending=0U;Thief_ClearLatchedThreat();
+   departure_reacquire=(uint8_t)(thief_localization.initialized &&
+@@ -2378,7 +2491,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR6 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR7 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2401,7 +2514,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR6 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR7 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2451,7 +2564,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR6 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR7 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -3137,6 +3250,9 @@
+       break;
+ 
+     case ROUTE_STATE_AFTER_TURN_FORWARD:
++      if(treasure_turn_align_active) {
++        Route_AlignTreasureTurn(now,elapsed_ms);break;
++      }
+       if ((uint32_t)(now - route_state_tick) >=
+           ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS)
+       {
+--- MONITOR6/Tests/test_yaw_reference.py
++++ MONITOR7/Tests/test_yaw_reference.py
+@@ -0,0 +1,100 @@
++"""013314 incomplete turn and straight-road yaw reference; synthetic hardware."""
++from pathlib import Path
++import sys,json,hashlib
++src=Path(__file__).with_name('test_documents15.py').read_text(encoding='utf-8').split('parking_pwm=[]')[0]
++src=src.replace('Tests/before_documents15/original.axf','Tests/before_yaw_reference/original.axf')
++exec(compile(src,str(Path(__file__).with_name('test_documents15.py')),'exec'))
++def signed16(v):return v-65536 if v>=32768 else v
++
++def straight_reference():
++    global clock,yaw,odom
++    check('Route_UpdateYawReference' in symbols,'straight reference learning exists')
++    fresh(37,0);setstep(37,20,0,0,600);call('Route_Start');tick()
++    sample=allocate('RouteGraySample_t',0x2000cd00)
++    record(sample,'RouteGraySample_t',dict(front_raw12=0x60,rear_raw12=0x60))
++    var('front_state',1);var('rear_state',1);var('route_state',2)
++    yaw=589;odom=150
++    for i in range(20):
++        clock+=100;odom=150+i*8;call('Route_UpdateYawReference',sample,0)
++    learned=signed16(member('thief_localization','origin_yaw_x100'))
++    check(0<learned<589,'gradual reference correction, never snap current yaw to zero')
++    check(yaw==589 and member('thief_localization','confirmed_node')==37,'raw yaw and node untouched')
++    for case in ['text','side','skew','saturation','identity','stale']:
++        old=member('thief_localization','origin_yaw_x100')
++        if case=='text':record(steps,'MapRouteStep_t',dict(from_node=4,to_node=6))
++        if case=='side':record(sample,'RouteGraySample_t',dict(front_raw12=0xc60))
++        if case=='skew':record(sample,'RouteGraySample_t',dict(rear_error_x100=150))
++        if case=='identity':var('route_identity_phase',1)
++        if case=='stale':hook('JY61P_GetLastUpdateMs',lambda:clock-500)
++        for _ in range(12):
++            clock+=100;call('Route_UpdateYawReference',sample,800 if case=='saturation' else 0)
++        check(member('thief_localization','origin_yaw_x100')==old,'no learning during '+case)
++        record(steps,'MapRouteStep_t',dict(from_node=37,to_node=20))
++        record(sample,'RouteGraySample_t',dict(front_raw12=0x60,rear_error_x100=0))
++        var('route_identity_phase',0);hook('JY61P_GetLastUpdateMs',lambda:clock)
++    return learned
++
++def treasure_turn_handoff():
++    global clock,yaw,gray_raw,gray_state,rear_valid
++    for node,source,incoming,outgoing,target in [(6,15,0,3,4),(4,14,0,3,3)]:
++      for mode in [0,1]:
++       for sign in [-1,1]:
++        body=(incoming+2*mode)%4
++        fresh(source,body);member('thief_localization','yaw_cw_sign',sign)
++        setstep(source,node,incoming,mode,300,action=-1)
++        setstep(node,target,outgoing,mode,300,index=1);record(route,'MapRoute_t',dict(count=2))
++        if node==6:record(steps+16,'MapRouteStep_t',dict(segment_count=2))
++        call('Route_Start');odom_save=300
++        check(var('route_active'),'valid physical map route starts: '+reason())
++        # Real arrival anchors the turn; no fabricated outgoing leg.
++        globals()['odom']=odom_save;clock+=500
++        call('Route_HandleJunction',clock,20,4,0xc60)
++        # An incoming5.89degree skew must not become the new turn target.
++        var('turn_start_angle_x100',((589+(18000 if mode else 0)+18000)%36000)-18000)
++        yaw=(589-sign*4657+18000)%36000-18000
++        gray_raw=0x60;gray_state=1;rear_valid=1;targets.clear();events.clear()
++        if 'Route_HasReachedTurnAngle' in symbols:
++            check(call('Route_HasReachedTurnAngle',call('TravelFrame_Yaw',yaw))==0,'46.57degree rotation still has a large map-axis error')
++        call('Route_EnterAfterTurnForward',clock,20,0x2000ce00,yaw)
++        check('treasure_turn_align_active' in symbols and var('treasure_turn_align_active'),'N004/N006 46.57deg cannot hand off to PID')
++        check('Route_DriveStraight' not in events,'no translational burst before heading alignment')
++        ret('Route_AllWheelsStopped',0)
++        yaw=(-sign*9000+18000)%36000-18000
++        for _ in range(6):clock+=20;call('Route_AlignTreasureTurn',clock,20)
++        check(var('treasure_turn_align_active'),'aligned angle without measured stop cannot hand off')
++        ret('Route_AllWheelsStopped',1)
++        for _ in range(20):clock+=20;call('Route_AlignTreasureTurn',clock,20)
++        check(not var('treasure_turn_align_active'),f'fresh stable stopped axis releases gray acquisition node={node} mode={mode} sign={sign} phase={member("thief_localization","phase")} arrived={member("map_nav","arrived")} error={member("thief_localization","error")} stable={member("treasure_turn_heading","stable_count")}')
++        check(member('thief_localization','phase')==2,'alignment alone never confirms outgoing leg')
++    return 8
++
++def reference_wrap_reverse():
++    global clock,yaw,odom
++    check('Route_UpdateYawReference' in symbols,'reference learner exists')
++    for mode in [0,1]:
++      for sign in [-1,1]:
++        fresh(37,2*mode);member('thief_localization','yaw_cw_sign',sign)
++        setstep(37,20,0,mode,600);call('Route_Start');tick()
++        sample=allocate('RouteGraySample_t',0x2000cd00)
++        record(sample,'RouteGraySample_t',dict(front_raw12=0x60,rear_raw12=0x60))
++        var('front_state',1);var('rear_state',1);var('route_state',2)
++        member('thief_localization','origin_yaw_x100',17950);yaw=-17800
++        for i in range(30):
++            clock+=100;odom=150+i*8;call('Route_UpdateYawReference',sample,0)
++        learned=signed16(member('thief_localization','origin_yaw_x100'))
++        error=(yaw-learned+18000)%36000-18000
++        check(0<error<250,'wrapped yaw and reverse frame learn the small physical drift')
++        check(yaw==-17800 and member('thief_localization','body_heading')==2*mode,'no yaw rewrite or frame flip')
++    return 4
++
++failures=[];cases={}
++for fn in [straight_reference,treasure_turn_handoff,reference_wrap_reverse]:
++    try:cases[fn.__name__]=fn()
++    except Exception as e:failures.append(dict(case=fn.__name__,error=str(e)))
++firmware=ROOT/'MDK-ARM'/ROOT.name/(ROOT.name+'.axf')
++if '--before' in sys.argv:firmware=ROOT/'Tests/before_yaw_reference/original.axf'
++report=dict(cases=cases,failures=failures,axf_sha256=hashlib.sha256(firmware.read_bytes()).hexdigest(),
++            test_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),hardware_tested=False)
++dest=ROOT/('Tests/before_yaw_reference/regression_before.json' if '--before' in sys.argv else 'Tests/results_yaw_reference.json')
++dest.write_text(json.dumps(report,indent=2),encoding='utf-8');print(json.dumps(report,indent=2))
++sys.exit(bool(failures))
+--- MONITOR6/README.md
++++ MONITOR7/README.md
+@@ -1,3 +1,16 @@
++# 16U MONITOR7：直道航向基准校准与宝藏口转向
++
++当前UARTCH4_16U_MONITOR7，工程名不变。MONITOR6源码/AXF/规范及013314日志在Tests/before_yaw_reference；验收VALIDATION_MONITOR7.json，增量YAW_REFERENCE_CHANGESET.patch。
++
++- N004、N006真实转弯优先陀螺仪出口轴。已知陀螺仪方向时，原大角度PWM持续转至地图出口±15度内，然后制动并以现有550PWM/20ms脉冲细调至±2度；测得停稳且连续3帧新鲜YAW稳定后才允许进入原灰度找线/巡线。未学习陀螺仪方向时保留原45度粗转后推断方向。灰度看到线不再提前交接；不要求第一次看到线就绝对居中。其他节点的原转向参数保持。
++- 普通已确认道路上，前后板都在中心四像素范围、位置偏差各≤75、两板差≤50、巡线修正≤15RPM、YAW新鲜且帧间变化≤1度，连续500ms且前进至少100mm后，缓慢校准地图origin_yaw，每100ms最多0.1度，误差取1/32。仅当距路段两端均≥100mm、原航向误差≤10度时允许学习。宝藏区N003—N007及与其相连路段、候选定位、折返、转弯和恢复阶段不学习。保留原始YAW，不改节点、不向传感器发送清零命令。
++- TURN_AXIS_BEGIN/READY区分粗转与真正转好；YAW_REF记录基准调整与原始YAW。正常巡线速度、MONITOR6路线评分与候选消歧、左右800mm前后1000mm、文字侧屏蔽和原连续双板无线2秒规则保持。旋转阶段不把扫过白底计作道路行驶失线；完成转向后仍由真实灰度决定找线或巡线。
++
++Tests/test_yaw_reference.py覆盖入弯5.89度偏斜、N004/N006两种行驶帧和两种陀螺仪符号、未停稳不得交接、渐进学习及排除干扰。本次不更改网页/助手，原始YAW显示继续保留。
++仅编译通过，尚未完成硬件验证。需要实测地面摩擦、转向惯性、灰度安装误差和校准收敛效果。
++
++以下MONITOR6及更早内容为历史。
++
+ # 16U MONITOR6：完整路线评分与候选路口消歧
+ 
+ 当前UARTCH4_16U_MONITOR6，工程名不变。MONITOR5的AXF/源码/规范与001220日志保存在Tests/before_route_identity；验收VALIDATION_MONITOR6.json，增量ROUTE_IDENTITY_CHANGESET.patch。
+--- MONITOR6/AGENTS.md
++++ MONITOR7/AGENTS.md
+@@ -1,4 +1,6 @@
+ # 本工程修改前必读
++
++最新MONITOR7见规范最前章节：普通可靠长直道缓慢更新地图YAW基准，保留原始传感器YAW；宝藏文字区、定位不确定/恢复/折返不学习。N004/N006转弯以地图出口轴为准，大角度转向后测量停稳和新鲜±2度细调再交灰度，不能再在45度后立即直行。正常道路速度、MONITOR6路线评分/消歧及激光阈值保持。基线Tests/before_yaw_reference，验收VALIDATION_MONITOR7.json。下文版本为历史。
+ 
+ 最新MONITOR6以规范最前章节为准：全路线评分覆盖固定反向/固定车尾出发；折返同形路口保留候选，真实后续观测与居中停稳后重锚，不能凭里程认节点或重启LOC_DISTANCE硬停。基线Tests/before_route_identity，验收VALIDATION_MONITOR6.json；以下版本为历史。
+ 
+--- MONITOR6/Docs/修改规范与回归清单.md
++++ MONITOR7/Docs/修改规范与回归清单.md
+@@ -1,4 +1,11 @@
+ # 修改规范与回归清单
++
++## 当前MONITOR7：长直道学习与N004/N006陀螺仪转向
++
++用户批准利用可靠长直道校准地图航向，禁止把原始YAW或车身歪斜直接清零。普通已确认ON_LEG/FOLLOW、距两端≥100mm、双板中心四像素且各偏差≤75/两板差≤50、巡线修正≤150RPMx10、帧间YAW≤1度且新鲜、原误差≤10度，500ms与100mm连续支持后更新origin_yaw。每100ms按误差1/32且最多0.1度，原始YAW与确认节点不变。宝藏N003—N007及相连路段、折返/恢复/转弯/候选定位/过期帧不得学习。
++N004/N006真实转弯用出口地图轴（含入弯偏角）作为目标，已知方向时大角度PWM转至±15度后制动，550PWM/20ms细调至±2度；实际停稳及3帧新鲜YAW后才能交灰度。方向未知时原45度仅作粗转，再由真实转角推断，不能立即前进。灰度只在转好后决定找线/巡线，未要求瞬间绝对居中。转弯扫过白底不启动道路双板无线计时；原道路连续2秒无线、激光阈值、正常速度及MONITOR6规划消歧保持。
++基线Tests/before_yaw_reference，新增Tests/test_yaw_reference.py；验收VALIDATION_MONITOR7.json，增量YAW_REFERENCE_CHANGESET.patch。013314实物出线原因仍需复测，软件回归不得宣称已无摆动或无出线。
++仅编译通过，尚未完成硬件验证。
+ 
+ ## 当前MONITOR6：整路风险评分、局部候选身份
+ 

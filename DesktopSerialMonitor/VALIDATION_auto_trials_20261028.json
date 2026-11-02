@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-28",
+  "target": "C:/Users/Administrator/Desktop/小车串口监控一体助手_定位提示版.exe",
+  "original_sha256": "2ef1d07044901d62f139c9cccb1a1c024637421f839c0ffe7f7f7cc5432064b3",
+  "built_sha256": "5fe0cae5949b844911effe1681f606b8f00f836cb4a0290741dccd2a4f24ea68",
+  "compile": "passed",
+  "python_tests": 16,
+  "new_trial_and_role_cases": 8,
+  "frontend_actual_html_generation_and_role_tests": "passed",
+  "dashboard_javascript_syntax": "passed",
+  "manual_role_select_removed": true,
+  "roles": {
+    "thief": "orange",
+    "police": "blue",
+    "unknown": "neutral"
+  },
+  "replanning_preserves_current_trial": true,
+  "trial_cursor_reloads_origin": true,
+  "native_window_checked": true,
+  "backend_restart_required": true,
+  "existing_backend_not_restarted": true,
+  "serial_opened_by_this_update": false,
+  "hardware_drive_test": false,
+  "files": {
+    "assets\\console_server.py": "26792de509c64ee8eda0cd43a0260541e2c82a0c9a9e997b2176c96449c405a5",
+    "assets\\drive_timer.py": "e110e1ce937c90d2748b88165ede2b401f26c70129203d8180e6ac7037de83f8",
+    "assets\\laser_live.html": "c5b250070e4838a240ab3a08e0a2dbb38d65b4958b93cfedcbcf44ec8b81c1b0",
+    "assets\\embedded.css": "f0e4d2f05c976fc96aff626063b87fcf73508ecfbc82d38094fb51a32d983ed6",
+    "test_auto_trials.py": "8c82280e07723e62d63c231aa9494d1c6b1189a5028291979d9b0afc6dce8c7a",
+    "test_trial_view.js": "520f287b1fd543cddd6a09367bc272d58e4eb2d9095fab71e23e71f3211481dc"
+  }
+}

@@ -1,0 +1,429 @@
+--- MONITOR3/User/App_ThiefStrategy.c
++++ MONITOR4/User/App_ThiefStrategy.c
+@@ -1244,6 +1244,13 @@
+     if(front_state!=ROUTE_GRAY_I2C_ERROR && Route_TryGrayRetreat(now))return;
+     turn_exit_active=0U;Route_StopFault("TURN_EXIT_LINE_NOT_CONFIRMED");return;
+   }
++  rear_state=Route_ReadRear(sample);
++  if(front_state==ROUTE_GRAY_NO_LINE && rear_state==ROUTE_GRAY_NO_LINE) {
++    if(!map_gray_missing_active) {map_gray_missing_active=1U;map_gray_missing_tick=now;}
++    if((uint32_t)(now-map_gray_missing_tick)>=2000U) {
++      turn_exit_active=0U;Route_StopFault("GRAY_BOTH_NO_LINE");return;
++    }
++  } else map_gray_missing_active=0U;
+   Route_UpdateJunctionArm(front_state);
+   magnitude=(int16_t)(error<0?-(int32_t)error:error);
+   visible_exit=(uint8_t)(front_state==ROUTE_GRAY_VALID &&
+@@ -1281,10 +1288,8 @@
+     RestartLineSearch_BeginScan(&turn_exit_line,last_leading_error);
+     Route_BrakeControl();turn_exit_drive_enabled=0U;return;
+   }
+-  if(!visible_exit && (uint32_t)(now-turn_exit_tick)>=MAP_ROUTE_ALIGN_TIMEOUT_MS) {
+-    if(front_state!=ROUTE_GRAY_I2C_ERROR && Route_TryGrayRetreat(now))return;
+-    turn_exit_active=0U;Route_StopFault("TURN_EXIT_LINE_NOT_CONFIRMED");return;
+-  }
++  /* Total trim/search duration is auxiliary. Either real board may keep the
++   * recovery alive; only continuous loss on BOTH boards expires above. */
+   Chassis_UpdateFeedback(elapsed_ms);
+   /* A real leading line already on the outgoing axis can be followed now.
+    * ExitReady still gates the real leg commit; no synthetic node/gray fix.
+@@ -1308,9 +1313,7 @@
+     /* Recovered gray accepts the user's10degree range even after trim began.
+      * UpdateTurn still measures standstill and a fresh yaw before translation. */
+     RoadHeading_UpdateTurn(&turn_exit_heading,&in,now,
+-        (!visible_exit && thief_localization.phase==THIEF_LOC_AT_JUNCTION &&
+-         (thief_localization.step.action==MAP_ACTION_LEFT ||
+-          thief_localization.step.action==MAP_ACTION_RIGHT))?200:ROUTE_MAP_GRAY_YAW_TOL_X100,&heading);
++        ROUTE_MAP_GRAY_YAW_TOL_X100,&heading);
+     if(heading.brake) {Route_BrakeControl();turn_exit_drive_enabled=0U;}
+     else {
+       turn_exit_trim_started=1U;
+@@ -1323,8 +1326,9 @@
+     turn_exit_line_phase=1U;turn_exit_tick=now;turn_exit_line_counts=MapRoutePosition_ForwardCounts();
+     RestartLineSearch_Reset(&turn_exit_line,last_leading_error);
+   }
+-  if(turn_exit_line_phase==1U && front_state!=ROUTE_GRAY_VALID &&
+-      MapRoutePosition_DistanceMm(turn_exit_line_counts)>=100L) {
++  if(turn_exit_line_phase==1U && front_state!=ROUTE_GRAY_VALID && rear_state==ROUTE_GRAY_NO_LINE &&
++      (MapRoutePosition_DistanceMm(turn_exit_line_counts)>=100L ||
++       MapRoutePosition_DistanceMm(turn_exit_line_counts)<= -100L)) {
+     /* Keep the translational limit. Stop here and sweep the leading board
+      * across the outgoing road; the trailing board may still see the old cross. */
+     int16_t bias=last_leading_mode==TravelFrame_IsReverse()?last_leading_error:(int16_t)-last_leading_error;
+@@ -1337,15 +1341,17 @@
+         (unsigned)TravelFrame_IsReverse());
+     return;
+   }
+-  rear_state=Route_ReadRear(sample);
+   line.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID);
+-  line.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID && turn_exit_line_phase!=2U);
++  line.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
+   line.leading_error=sample->front_error_x100;line.trailing_error=sample->rear_error_x100;
+   line.yaw_known=1U;line.yaw_cw_x100=error;line.stopped=Route_AllWheelsStopped();
+-  RestartLineSearch_Update(&turn_exit_line,&line,&motion);
++  RestartLineSearch_Probe(&turn_exit_line,&line,
++      (uint8_t)(turn_exit_line_phase==1U && rear_state!=ROUTE_GRAY_I2C_ERROR &&
++       MapRoutePosition_DistanceMm(turn_exit_line_counts)> -100L &&
++       MapRoutePosition_DistanceMm(turn_exit_line_counts)<100L),&motion);
+   if(motion.failed) {
+-    if(Route_TryGrayRetreat(now))return;
+-    turn_exit_active=0U;Route_StopFault("TURN_EXIT_SCAN_NO_LINE");return;
++    RestartLineSearch_BeginScan(&turn_exit_line,last_leading_error);
++    Route_BrakeControl();turn_exit_drive_enabled=0U;return;
+   }
+   if(motion.brake) {Route_BrakeControl();turn_exit_drive_enabled=0U;return;}
+   if(!turn_exit_drive_enabled) {Route_ResetControl(1U);turn_exit_drive_enabled=1U;}
+@@ -1380,6 +1386,7 @@
+   front_resume_base_rpm_x10 = follow_smoothing.base_rpm_x10;
+   front_recovery_valid_count = 0U;
+   map_gray_active=0U;turn_exit_active=0U;
++  map_gray_missing_active=0U;
+   if(cause==ROUTE_GRAY_NO_LINE &&
+       (route_state==ROUTE_STATE_FOLLOW || route_state==ROUTE_STATE_MAP_PASS ||
+        route_state==ROUTE_STATE_LEAVE_START || route_state==ROUTE_STATE_AFTER_TURN_FORWARD) &&
+@@ -1399,7 +1406,7 @@
+     /* A confirmed road exit can be reacquired in place; further down the
+      * road the actual trailing board must corroborate continued tracking. */
+     /* A mapped road permits a measured-stop scan even in its middle.
+-     * RestartLineSearch never translates when both boards are missing. */
++     * Probe travel remains limited to100mm without real gray support. */
+     {
+       int16_t bias=last_leading_error;
+       if(last_leading_mode!=TravelFrame_IsReverse()) bias=(int16_t)-bias;
+@@ -1570,10 +1577,8 @@
+         (int)thief_localization.heading_error_x100,(long)mm,(long)(mm-map_gray_start_mm),
+         (unsigned long)(now-map_gray_tick));return;
+   }
+-  /* Distance is auxiliary: return on observed history when that is supported,
+-   * but do not latch a fault merely because rear-supported search used80mm. */
+-  if(front_state!=ROUTE_GRAY_VALID && mm-map_gray_start_mm>=80L &&
+-      Route_TryGrayRetreat(now))return;
++  /* A real trailing line guides continued travel. Do not reverse merely
++   * because search odometry passed80mm; the observed node remains primary. */
+   /* A real branch in its distance window is an observed arrival, never a
+    * synthesized front-line sample. Preserve the normal gray/node checks. */
+   Route_UpdateJunctionArm(front_state);
+@@ -1589,7 +1594,8 @@
+   input.yaw_known=1U;
+   input.yaw_cw_x100=(int16_t)(thief_localization.heading_error_x100*thief_localization.yaw_cw_sign);
+   input.stopped=Route_AllWheelsStopped();
+-  RestartLineSearch_Update(&map_gray_search,&input,&output);
++  RestartLineSearch_Probe(&map_gray_search,&input,
++      (uint8_t)(mm-map_gray_start_mm> -100L && mm-map_gray_start_mm<100L),&output);
+   if((uint32_t)(now-map_gray_log_tick)>=100U) {
+     char line[200];map_gray_log_tick=now;
+     (void)snprintf(line,sizeof(line),
+@@ -2183,7 +2189,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR3 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16U_MONITOR4 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -2206,7 +2212,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR3 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16U_UARTCh4_LiveMonitor_Test FW=UARTCH4_16U_MONITOR4 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -2256,7 +2262,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16U_MONITOR3 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16U_MONITOR4 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- MONITOR3/Control/RestartLineSearch.c
++++ MONITOR4/Control/RestartLineSearch.c
+@@ -75,3 +75,24 @@
+   }
+   out->left_x10=(int16_t)(500+turn);out->right_x10=(int16_t)(500-turn);
+ }
++
++void RestartLineSearch_Probe(RestartLineSearch *s,
++    const RestartLineInput *in,uint8_t allow_translate,RestartLineOutput *out)
++{
++  if(in->yaw_known && !in->leading_valid && !in->trailing_valid &&
++      allow_translate && s->phase==TRACK &&
++      in->yaw_cw_x100>=-1000 && in->yaw_cw_x100<=1000) {
++    int16_t turn=Clamp(((int32_t)s->bias*400-in->yaw_cw_x100)/2,200);
++    s->line_count=0U;
++    out->left_x10=(int16_t)(500+turn);out->right_x10=(int16_t)(500-turn);
++    out->brake=0U;out->ready=0U;out->failed=0U;return;
++  }
++  RestartLineSearch_Update(s,in,out);
++  /* Recovery sweeps must overcome breakaway load at small angular errors.
++   * Stop/visibility and the original +/-4degree sweep targets still apply. */
++  if(!out->brake && out->left_x10==-out->right_x10 && out->left_x10) {
++    if(out->left_x10>0 && out->left_x10<200)out->left_x10=200;
++    if(out->left_x10<0 && out->left_x10> -200)out->left_x10=-200;
++    out->right_x10=(int16_t)-out->left_x10;
++  }
++}
+--- MONITOR3/Control/RestartLineSearch.h
++++ MONITOR4/Control/RestartLineSearch.h
+@@ -23,4 +23,8 @@
+ void RestartLineSearch_BeginScan(RestartLineSearch *s,int16_t last_error);
+ void RestartLineSearch_Update(RestartLineSearch *s,
+     const RestartLineInput *in, RestartLineOutput *out);
++/* Caller bounds blind travel by measured distance and continuous loss time.
++ * Ordinary startup retains the original controller above. */
++void RestartLineSearch_Probe(RestartLineSearch *s,
++    const RestartLineInput *in,uint8_t allow_translate,RestartLineOutput *out);
+ #endif
+--- MONITOR3/Tests/test_documents13.py
++++ MONITOR4/Tests/test_documents13.py
+@@ -53,9 +53,9 @@
+ def both_missing_scan():
+     global odom,gray_raw,gray_state,rear_valid
+     start();odom=8;rear_valid=2;gray_raw=0;gray_state=2;events.clear();targets.clear()
+-    tick();check('Route_BrakeControl' in events and not targets,'both boards missing must brake, not move blind')
++    tick();check(targets and sum(targets[-1][:2])>0,'MONITOR4 mapped short loss permits bounded forward probing')
+     for _ in range(3):tick()
+-    check(targets and sum(targets[-1][:2])==0,'confirmed exit uses stationary scan with zero translation')
++    check(targets and all(0<sum(t[:2])<=1000 for t in targets),'blind probe remains at50RPM mean before100mm cap')
+     gray_raw=0x60;gray_state=1
+     for _ in range(7):tick()
+     check(var('route_state')==2,'real front readings end stationary scan and restore follow')
+@@ -67,7 +67,10 @@
+         rear_valid=2 if case=='mid_no_rear' else 1
+         if case=='unknown_yaw':member('thief_localization','yaw_cw_sign',0)
+         gray_raw=0;gray_state=7 if case=='i2c' else 2;events.clear()
+-        tick();check('Route_BrakeControl' in events,case+' cannot rely on uncorroborated coordinates')
++        tick()
++        if case=='mid_no_rear':
++            check(var('map_gray_active') and targets and sum(targets[-1][:2])>0,'MONITOR4 known road permits brief middle-of-road probing without inventing nodes')
++        else:check('Route_BrakeControl' in events,case+' cannot rely on uncorroborated coordinates')
+ 
+ def bounded_recovery():
+     global odom,gray_raw,gray_state,clock,rear_valid
+--- MONITOR3/Tests/test_documents20.py
++++ MONITOR4/Tests/test_documents20.py
+@@ -38,9 +38,9 @@
+     global odom,clock,gray_raw,gray_state,rear_valid,yaw
+     fresh(38,1);rear_valid=1;setstep(38,39,1,0,300);call('Route_Start');tick()
+     odom=150;gray_raw=0;gray_state=2;rear_valid=2;targets.clear();events.clear()
+-    tick();check('Route_BrakeControl' in events and not targets,'two missing boards first brake in road middle')
++    tick();check(targets and sum(targets[-1][:2])>0,'MONITOR4 known middle road allows bounded blind probe')
+     for _ in range(5):tick()
+-    check(targets and all(sum(t)==0 for t in targets),'mapped middle-road loss scans after measured stop, no blind translation')
++    check(targets and all(0<sum(t[:2])<=1000 for t in targets),'mapped blind probe uses50RPM mean')
+     gray_raw=0x60;gray_state=1;rear_valid=1
+     for _ in range(9):tick()
+     check(var('route_state')==2,'actual line ends scan')
+@@ -135,7 +135,10 @@
+     if cause=="gray":
+         gray_raw=0;gray_state=2;tick()
+         check(var('map_gray_active'),'on-leg trailing-supported recovery begins')
+-        odom=181;call('App_ThiefStrategy_Task')  #80mm search budget may request known-history return; fixed1s is no longer a fault.
++        odom=181;call('App_ThiefStrategy_Task')
++        check(var('map_gray_active') and var('route_active'),'MONITOR4 rear-supported recovery does not retreat merely at80mm')
++        # Independently exercise the retained evidence-backed return helper.
++        check(call('Route_TryGrayRetreat',clock),'real rear line and observed route history still support explicit backtrack')
+     else:
+         call('Thief_UpdatePose');call('Thief_UpdateLaserMask',clock)
+         clock+=1;call('Thief_OnLaserFrame',0,150,100,1,clock);tick()
+--- MONITOR3/Tests/test_documents22.py
++++ MONITOR4/Tests/test_documents22.py
+@@ -36,7 +36,8 @@
+             yaw=(yaw+sign*round(v/5)+18000)%36000-18000
+         tick()
+     check(var('turn_exit_line_phase')==1,'observed gyro correction enters line search')
+-    check(abs((yaw-sign*q*9000+18000)%36000-18000)<=200,'missing quarter-turn exit aligns to actual global axis within2degrees')
++    check(abs((yaw-sign*q*9000+18000)%36000-18000)<=1000,'MONITOR4 missing exit may probe within user10degree road axis tolerance')
++    rear_valid=2 #100mm cap applies to blind probing, not real trailing-line guidance.
+     # User requested100mm:80/99 continue translation,100 begins measured-stop scan.
+     for distance in [80,99]:
+         odom=distance;tick()
+@@ -49,10 +50,10 @@
+     check(not targets,'scan does not turn while wheels still moving')
+     ret('Route_AllWheelsStopped',1)
+     for _ in range(5):tick()
+-    check(targets and all(sum(t)==0 for t in targets),'distance-limit recovery rotates with zero translation even with trailing line')
++    check(targets and all(sum(t)==0 for t in targets),'blind distance-limit recovery rotates with zero translation')
+     if persistent:
+         targets.clear();clock+=2501;call('App_ThiefStrategy_Task')
+-        check(not var('route_active') and reason()=='TURN_EXIT_LINE_NOT_CONFIRMED','persistent missing exit still stops after one bounded scan')
++        check(not var('route_active') and reason()=='GRAY_BOTH_NO_LINE','persistent BOTH-board loss stops after2000ms')
+         check(not targets,'expired scan cannot issue another drive command')
+         return 1
+     gray_raw=0x60;gray_state=1
+--- MONITOR3/Tests/test_documents24.py
++++ MONITOR4/Tests/test_documents24.py
+@@ -22,7 +22,7 @@
+       for sign in [-1,1]:
+         pending(mode,sign)
+         start=clock
+-        for angle in range(5739,8730,100):
++        for angle in range(5739,7730,100):
+             yaw=sign*q*angle;tick(200)
+         check(clock-start>2500 and var('route_active'),'fresh correction progress may take longer than2500ms')
+         yaw=sign*q*(9000-271);gray_raw=0x60;gray_state=1
+@@ -40,9 +40,11 @@
+     check(var('route_active') and not var('turn_exit_active'),'credible recovered line wins over elapsed deadline')
+     return 1
+ def no_progress():
+-    global clock
++    global clock,rear_valid
+     pending();clock+=2600;call('App_ThiefStrategy_Task')
+-    check(not var('route_active') and reason()=='TURN_EXIT_LINE_NOT_CONFIRMED','no line and no heading progress outside10deg still terminates')
++    check(var('route_active'),'MONITOR4 actual trailing line keeps correction alive beyond2500ms')
++    rear_valid=2;clock+=20;call('App_ThiefStrategy_Task');clock+=2000;call('App_ThiefStrategy_Task')
++    check(not var('route_active') and reason()=='GRAY_BOTH_NO_LINE','continuous BOTH-board loss terminates after2000ms')
+     return 1
+ def stalled_small_error():
+     global yaw,clock
+--- MONITOR3/Tests/test_documents31.py
++++ MONITOR4/Tests/test_documents31.py
+@@ -99,7 +99,7 @@
+         tick()
+         if var('turn_exit_line_phase')==1:break
+     check(var('turn_exit_line_phase')==1,'measured small-error correction enters translation search')
+-    odom=100;tick();check(var('turn_exit_line_phase')==2,'actual100mm translation starts stationary scan')
++    rear_valid=2;odom=100;tick();check(var('turn_exit_line_phase')==2,'actual100mm blind translation starts stationary scan')
+     targets.clear()
+     for _ in range(8):tick()
+     check(targets and any(sum(t)==0 and any(t) for t in targets),'actual scan issued rotation before next junction frame')
+--- MONITOR3/Tests/run_monitor_suite.py
++++ MONITOR4/Tests/run_monitor_suite.py
+@@ -14,7 +14,8 @@
+     (root/'Tests'/('monitor_'+name+'.log')).write_bytes(p.stdout)
+     print(name+': '+str(p.returncode),flush=True)
+     results=[item for item in results if item['name']!=name]
+-    results.append(dict(name=name,exit_code=p.returncode,log_sha256=hashlib.sha256(p.stdout).hexdigest()))
++    results.append(dict(name=name,exit_code=p.returncode,log_sha256=hashlib.sha256(p.stdout).hexdigest(),
++        axf_sha256=hashlib.sha256((root/'MDK-ARM'/root.name/(root.name+'.axf')).read_bytes()).hexdigest()))
+     if p.returncode:print(p.stdout.decode('utf-8',errors='replace')[-1600:],flush=True)
+ (root/'Tests/results_monitor_suite.json').write_text(json.dumps(results,indent=2),encoding='utf-8')
+ sys.exit(any(r['exit_code'] for r in results))
+--- MONITOR3/Tests/test_road_probe.py
++++ MONITOR4/Tests/test_road_probe.py
+@@ -0,0 +1,77 @@
++"""MCU linked recovery, actual outputs with simulated gray/yaw/encoders."""
++from pathlib import Path
++import sys,json,hashlib
++src=Path(__file__).with_name('test_documents15.py').read_text(encoding='utf-8').split('parking_pwm=[]')[0]
++src=src.replace('Tests/before_documents15/original.axf','Tests/before_road_probe/original.axf')
++exec(compile(src,str(Path(__file__).with_name('test_documents15.py')),'exec'))
++src=Path(__file__).with_name('test_documents24.py').read_text(encoding='utf-8')
++exec(src[src.index('def pending('):src.index('def slow_correction(')])
++
++def supported_exit():
++    global yaw,gray_raw,gray_state,rear_valid,clock
++    for mode in [0,1]:
++      for sign in [-1,1]:
++        pending(mode,sign)
++        yaw=sign*q*(9000-277);rear_valid=1
++        targets.clear()
++        for _ in range(20):tick()
++        check(var('turn_exit_line_phase')==1,'2.77degree residual must promptly enter search without waiting2500ms')
++        for _ in range(300):tick()
++        check(var('route_active'),'rear line must prevent2500ms exit fault: '+reason())
++        check(var('turn_exit_line_phase')==1,'2.77degree residual must enter search without waiting2degrees')
++        check(any(l+r>0 for l,r,*_ in targets),'rear-supported search must translate')
++        check(member('thief_localization','phase')==2,'rear-only line never commits outgoing edge')
++    return 4
++
++def missing_probe():
++    global yaw,gray_raw,gray_state,rear_valid,clock
++    for mode in [0,1]:
++      pending(mode,1);yaw=q*(9000-150);rear_valid=2;targets.clear()
++      for _ in range(20):tick()
++      check(var('route_active'),'short both-board gap remains recoverable')
++      check(any(l+r>0 for l,r,*_ in targets),'both missing must briefly probe likely mapped line')
++      check(member('thief_localization','phase')==2,'blind movement cannot confirm road exit')
++      for _ in range(110):
++        clock+=20;call('App_ThiefStrategy_Task')
++      check(not var('route_active') and reason()=='GRAY_BOTH_NO_LINE','both boards continuously missing2seconds stops')
++    return 2
++
++def loss_reset_and_real_exit():
++    global yaw,gray_raw,gray_state,rear_valid,clock
++    for mode in [0,1]:
++      pending(mode,1);yaw=q*(9000-150);rear_valid=2
++      for _ in range(60):tick()
++      rear_valid=1;tick();rear_valid=2
++      for _ in range(60):tick()
++      check(var('route_active'),'separate missing intervals must not accumulate')
++      gray_raw=0x60;gray_state=1
++      for _ in range(15):tick()
++      check(member('thief_localization','phase')==1,'fresh real line commits actual outgoing edge')
++      check(member('thief_localization','confirmed_node')==37,'finding line must not invent next node')
++    return 2
++
++def road_probe_and_cap():
++    global yaw,gray_raw,gray_state,rear_valid,clock,odom
++    for mode in [0,1]:
++      fresh(38,1 if mode else 3);rear_valid=2
++      setstep(38,37,3,mode,300);call('Route_Start');tick()
++      odom=20;gray_raw=0;gray_state=2;targets.clear()
++      for _ in range(5):tick()
++      check(any(l+r>0 for l,r,*_ in targets),'mapped road loss probes rather than spinning only')
++      odom=125;targets.clear()
++      for _ in range(7):tick()
++      check(all(l+r==0 for l,r,*_ in targets),'blind probe stops translating outside100mm envelope')
++      check(member('thief_localization','confirmed_node')==38,'100mm alone cannot advance node')
++      rear_valid=1
++      for _ in range(20):tick()
++      check(var('route_active'),'real trailing line permits tracking beyond blind envelope')
++    return 2
++
++failures=[];cases={}
++for fn in [supported_exit,missing_probe,loss_reset_and_real_exit,road_probe_and_cap]:
++    try:cases[fn.__name__]=fn();print(fn.__name__+': PASS',flush=True)
++    except AssertionError as exc:failures.append(dict(case=fn.__name__,error=str(exc)));print(fn.__name__+': FAIL '+str(exc),flush=True)
++result=dict(checks=checks,failures=failures,cases=cases,hardware_tested=False,
++ axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),test_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
++out=ROOT/'Tests'/('before_road_probe/regression_before.json' if '--before' in sys.argv else 'results_road_probe.json')
++out.write_text(json.dumps(result,indent=2)+'\n',encoding='utf-8');print(json.dumps(result,indent=2));sys.exit(bool(failures))
+--- MONITOR3/README.md
++++ MONITOR4/README.md
+@@ -1,3 +1,18 @@
++# 16U MONITOR4：地图方向探线与双板失线判断
++
++当前标识UARTCH4_16U_MONITOR4；工程名称不变。基线Tests/before_road_probe保留MONITOR3源码、AXF和203905/205445日志。
++
++- 找线时根据当前地图道路轴、最后灰度偏差、真实陀螺仪朝向和TravelFrame决定方向；正反行驶共用逻辑。不再坚持无线时先纠偏到2度，恢复容许范围仍为用户指定的±10度。
++- 在已知道路或待确认出口，允许平均50RPM、差速不超过20RPM的短距离探线。前后都无线时平移限制在开始位置±100mm；到界后测量停稳再原地扫线，不凭里程认节点。普通启动/正常巡航速度、转弯参数保持。
++- 转弯出口同道路恢复一样，前后连续无线2000ms才因无线终止，任一板真实看到黑线取消计时。后板有线可以引导继续，不再被2500ms出口总时限或80/100mm辅助距离单独停车/回退。失线限制只涉及恢复状态，I2C/陀螺仪/控制故障仍独立处理。
++- 找回领先板黑线后仍须真实灰度、停稳/新鲜YAW与原出口检查；当前确认节点不会因探线位移而跳到下一节点。下一路口仍检查地图支路、重武装和航向。它是沿已知拓扑局部恢复，不是仅靠灰度完成全地图绝对重定位；同形路口仍有身份歧义。
++- 激光抢占、左右800mm前后1000mm、原始四路监控、宝藏文字区屏蔽、N038地图东撤、五藏点轴向及180ms入中心均保持。没有烧录、占用串口或运行实物电机。
++
++Tests/test_road_probe.py保存相同脚本对MONITOR3的失败与本版结果；历史测试中“只能原地扫描/后板有线也超时/必须纠到2度”的断言按用户此次明确要求更新，原脚本在基线Tests子目录。最终编译、回归与散列证据见VALIDATION_MONITOR4.json。
++仅编译通过，尚未完成硬件验证。
++
++以下MONITOR3及更早章节为历史记录。
++
+ # 16U MONITOR3：左右激光CH2/CH3有效上限800mm
+ 
+ 当前标识 `UARTCH4_16U_MONITOR3`，工程文件名不变。按用户最新要求，物理左CH2和右CH3原始有效/触发上限均为800mm（800包含、801排除）；前CH1和后CH4为1000mm。50mm原下限及质量/帧龄/地图边缘判断保持。
+--- MONITOR3/AGENTS.md
++++ MONITOR4/AGENTS.md
+@@ -1,4 +1,6 @@
+ # 本工程修改前必读
++
++最新为MONITOR4地图方向探线版本，规范最前MONITOR4章节优先。基线Tests/before_road_probe，验收VALIDATION_MONITOR4.json。出口与道路恢复双板连续无线2秒终止，真实单板有线不得因2500ms/80或100mm辅助距离单独停车。盲探±100mm，真实灰度才确认路口；不可冒称全地图绝对重定位。以下MONITOR3描述为历史。
+ 
+ 当前目录为独立 `Thief16U_UARTCh4_LiveMonitor_Test` 分支，标识MONITOR3。最新左右CH2/CH3原始均800mm、前后1000mm，以规范最前MONITOR3章节为准；保留MONITOR2文字区、误认去重和N038东撤。基线Tests/before_left800，当前验收VALIDATION_MONITOR3.json。原始测距显示与策略启用必须独立，不能取消原取宝/故障/方位过滤，也不能把软件回归宣称为实车验证。
+ 
+--- MONITOR3/Docs/修改规范与回归清单.md
++++ MONITOR4/Docs/修改规范与回归清单.md
+@@ -1,4 +1,11 @@
+ # 修改规范与回归清单
++
++## 当前MONITOR4：地图轴短距离探线
++
++用户批准短距离向可能有线的方向运动，找回线后循线，并结合真实地图路口确认位置。已知道路/待确认出口采用50RPM受控探线，双板无线盲探±100mm后测量停稳扫描；不能用探线里程虚构节点。正反TravelFrame、最后灰度偏差和新鲜YAW参与方向选择。普通RestartLineSearch_Update与正常16T速度不改。
++出口恢复取消2500ms总时限停车和无线时必须±2度才进找线的门槛；用户±10度恢复范围保持。出口与道路恢复均要求连续双板无线2000ms才因无线停车，任一真实有线重置；真实后板支持可继续跟踪，不再因80/100mm辅助距离锁死或立即回退。旋转到跟踪/节点交接仍测量停稳与新鲜YAW；激光抢占、前后1000左右800、文字区、N038东撤和180ms保持。
++当前UARTCH4_16U_MONITOR4，基线Tests/before_road_probe，验收VALIDATION_MONITOR4.json。历史测试按本次规则调整并保留原件；不能把局部恢复宣称为全局唯一重定位，不能保证所有实物偏线均能找回。
++仅编译通过，尚未完成硬件验证。
+ 
+ ## 当前MONITOR3：左右CH2/CH3原始800mm
+ 

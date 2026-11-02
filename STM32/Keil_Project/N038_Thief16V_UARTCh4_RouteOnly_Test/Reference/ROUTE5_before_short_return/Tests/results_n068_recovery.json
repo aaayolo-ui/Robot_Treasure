@@ -1,0 +1,114 @@
+{
+  "checks": 1228,
+  "failures": [],
+  "cases": [
+    {
+      "case": "edge_line",
+      "mode": 0,
+      "raw": 7,
+      "motion_commands": 11,
+      "return_home": {
+        "frames": 236,
+        "node": 38,
+        "body": 0,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "edge_line",
+      "mode": 0,
+      "raw": 3584,
+      "motion_commands": 11,
+      "return_home": {
+        "frames": 236,
+        "node": 38,
+        "body": 0,
+        "fixes": [
+          58,
+          46,
+          40
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "edge_line",
+      "mode": 1,
+      "raw": 7,
+      "motion_commands": 11,
+      "return_home": {
+        "frames": 236,
+        "node": 38,
+        "body": 0,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "edge_line",
+      "mode": 1,
+      "raw": 3584,
+      "motion_commands": 11,
+      "return_home": {
+        "frames": 236,
+        "node": 38,
+        "body": 0,
+        "fixes": [
+          58,
+          46,
+          40
+        ],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "brake_feedback",
+      "refreshes": 26
+    }
+  ],
+  "axf_sha256": "84d1eb0745bc4d7730745c61f8e39e3ed237f773cef11375dca29fb4d6bf4d53",
+  "real_gray_classification": true,
+  "real_stopped_predicate": true,
+  "hardware_tested": false
+}

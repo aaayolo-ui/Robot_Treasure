@@ -1,0 +1,147 @@
+rear_only: PASS
+freeze_fault_pose: PASS
+both_white: PASS
+pending_pass: PASS
+measured_brake: PASS
+edge_not_node: PASS
+geometry: PASS
+unfinished_turn: PASS
+{
+  "checks": 1854,
+  "failures": [],
+  "cases": [
+    {
+      "case": "rear_only",
+      "mode": 0,
+      "rear": 16
+    },
+    {
+      "case": "rear_only",
+      "mode": 0,
+      "rear": 48
+    },
+    {
+      "case": "rear_only",
+      "mode": 0,
+      "rear": 128
+    },
+    {
+      "case": "rear_only",
+      "mode": 0,
+      "rear": 192
+    },
+    {
+      "case": "rear_only",
+      "mode": 1,
+      "rear": 16
+    },
+    {
+      "case": "rear_only",
+      "mode": 1,
+      "rear": 48
+    },
+    {
+      "case": "rear_only",
+      "mode": 1,
+      "rear": 128
+    },
+    {
+      "case": "rear_only",
+      "mode": 1,
+      "rear": 192
+    },
+    {
+      "case": "freeze_fault_pose"
+    },
+    {
+      "case": "both_white"
+    },
+    {
+      "case": "pending_pass",
+      "mode": 0
+    },
+    {
+      "case": "pending_pass",
+      "mode": 1
+    },
+    {
+      "case": "measured_brake"
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 0,
+      "raw": 7
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 0,
+      "raw": 3584
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 0,
+      "raw": 4095
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 1,
+      "raw": 7
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 1,
+      "raw": 3584
+    },
+    {
+      "case": "edge_not_node",
+      "mode": 1,
+      "raw": 4095
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 160,
+      "side": -1,
+      "frames": 37
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 160,
+      "side": 1,
+      "frames": 37
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 220,
+      "side": -1,
+      "frames": 55
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 220,
+      "side": 1,
+      "frames": 55
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 280,
+      "side": -1,
+      "frames": 98
+    },
+    {
+      "case": "geometry",
+      "board_span_mm": 280,
+      "side": 1,
+      "frames": 98
+    },
+    {
+      "case": "unfinished_turn",
+      "mode": 0
+    },
+    {
+      "case": "unfinished_turn",
+      "mode": 1
+    }
+  ],
+  "axf_sha256": "1913257b6017221bb7861f14f7b4ad2d4e5fa362d93c640e2f2a8d07c858a511",
+  "hardware_tested": false
+}

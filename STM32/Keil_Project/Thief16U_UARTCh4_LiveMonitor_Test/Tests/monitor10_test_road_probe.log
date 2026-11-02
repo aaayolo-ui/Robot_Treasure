@@ -1,0 +1,17 @@
+supported_exit: PASS
+missing_probe: PASS
+loss_reset_and_real_exit: PASS
+road_probe_and_cap: PASS
+{
+  "checks": 1798,
+  "failures": [],
+  "cases": {
+    "supported_exit": 4,
+    "missing_probe": 2,
+    "loss_reset_and_real_exit": 2,
+    "road_probe_and_cap": 2
+  },
+  "hardware_tested": false,
+  "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe",
+  "test_sha256": "261fa41ed3ca0acb9476454f0ce998c0c076e27224cef7fafffc207a9492f66e"
+}

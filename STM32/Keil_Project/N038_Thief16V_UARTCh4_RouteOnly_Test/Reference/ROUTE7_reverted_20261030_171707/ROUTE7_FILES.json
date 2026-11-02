@@ -1,0 +1,31 @@
+{
+  "firmware": "UARTCH4_16V_ROUTE7_PASS_SL1",
+  "files": {
+    "README.md": "85ca2cfce2cf8ca81b55d6cd80368f858f339863e32168dff64ed29fec6d30aa",
+    "AGENTS.md": "0aa35dfa84c69d87183f2279198f0da78322c41fd1fa1ff2b5a44526cdf86f4d",
+    "Docs/修改规范与回归清单.md": "bdc5f4679891041c3aadbe68c830cb332be35494eb42d6fa037ece8fd8e553de",
+    "Docs/ROUTE7_追赶连续通过藏点.md": "69323dbc8dd4520ca5fd5ec348f83ea476c791d902b4f3863296fdd0afbcc9cc",
+    "User/App_ThiefStrategy.c": "b9a6b08d60a038c94a82f3fd9ed6f801501ef220646bd84476c290ac4d8bd4c7",
+    "Algorithm/ThiefStrategy/ThiefPursuit.c": "1a6863b31fbc926f7667feb8f3bfd5587083d79a1227b91a3c52957a8d63314a",
+    "Algorithm/ThiefStrategy/ThiefPursuit.h": "bf1e77f50b687c98d72c752f1dc8a8811017f9c9791ec26ba41bd2d7310a673a",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test.uvprojx": "f4c5069fee4ec2ecb03db258df7387e2aea1531222f0426b6000f8ecacbf7cc0",
+    "Tests/test_pursuit_pass.py": "16c1c5f10fedae791a738f68065ce1cc009e92df2a1dd5aec866b647e1d47d76",
+    "Tests/test_pursuit_geometry.py": "a7a2c45e6581ebd3d09f1dec67a54860b8d9c4a085d033ee1a84d9ae5346f05a",
+    "Tests/run_route7.py": "0d07123a5b7056595ec0ff79325e1f90a9aa41ebd0ea9dfba66500483a1a8ee0",
+    "Tests/validate_route7.py": "b63bcdd3dd67e2af841625ba47144952c006ad6164c84e60d131f1fcb7f16660",
+    "Tests/route7_inputs.json": "751a13aa2f8a87ee2a3353a3087932f82a0b143f06fa8605cb9efdc55262b4bf",
+    "Tests/route7_suites.json": "2ebd4a2806877b2c9e9e32ba1802f88765b6b39f7ee231da14e38d4c35590acd",
+    "Tests/pursuit_pass_before.json": "544069b65d985d75a1cc7accf5714deec13979c3608de4e7ade9b0e751b73d10",
+    "Tests/results_pursuit_pass.json": "6d382fbf83206fb4d883c979062a1bdaff759b1ac590105dda9dd75ff42dca84",
+    "Tests/results_pursuit_geometry.json": "b5c7a82dd72b4fcb6549586c17dfe258e3c414c53c2eb17eadf8afc8cb870733",
+    "VALIDATION_ROUTE7.json": "08342fc0f42849100efd2941caa584051304b42015ff7ef178dabad770494c8d",
+    "ROUTE7_CHANGESET.patch": "5dab3ad86e80db3cd3bec462210803ed1bc0296ab0285f0c7c61c7e702ca8ff2",
+    "build_route7.log": "655192d668318b5a8ac2174df960ae0f41a71b45c12d85c91fd3288fbfc96cbc",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.axf": "a26c7892cf8f02e7264234b223b356d47359ef7490986203e58264abaeacba6d",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.hex": "773085d8ff4a41f11b29c281c08a4dbf87b4551e7f5db960dc4ac4f8ace8d540",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.map": "147b0b4fc8aebdfb1c2ce3caf35aac52b716429a7ec082941be37dcc1b91eb4d",
+    "MDK-ARM/Thief16V_UARTCh4_RouteOnly_Test/Thief16V_UARTCh4_RouteOnly_Test.htm": "b22e8a8bf6c8b002982ee3840043b0fd6361710f43e16458382d0068ac6fcdd9"
+  },
+  "hardware_tested": false,
+  "flashed": false
+}

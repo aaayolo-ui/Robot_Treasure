@@ -1,0 +1,97 @@
+n038_east_first: PASS
+exit_distance_scan: PASS
+scan_matrix: PASS
+east_obstacle_override: PASS
+{
+  "checks": 2615,
+  "failures": [],
+  "passed": [
+    "n038_east_first",
+    "exit_distance_scan",
+    "scan_matrix",
+    "east_obstacle_override"
+  ],
+  "cases": {
+    "n038_east_first": [
+      {
+        "frames": 664,
+        "node": 35,
+        "body": 1,
+        "fixes": [
+          39,
+          40,
+          46,
+          58,
+          59,
+          60,
+          69,
+          70,
+          61,
+          49,
+          33,
+          34,
+          35
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      },
+      {
+        "frames": 664,
+        "node": 35,
+        "body": 3,
+        "fixes": [
+          39,
+          40,
+          46,
+          58,
+          59,
+          60,
+          69,
+          70,
+          61,
+          49,
+          33,
+          34,
+          35
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    ],
+    "exit_distance_scan": 1,
+    "scan_matrix": 12,
+    "east_obstacle_override": 4
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba",
+  "app_source_sha256": "d592fed2639bdd9761f5ad7001d86c89f1581242434fd331597edd143960be29",
+  "test_script_sha256": "e11359c696f4e6843627939b93703727b4f7f74936bc6afe791c2927275a5a3b",
+  "helper_sha256": {
+    "test_documents15.py": "28e614c82371b3412925b31de9ce53f3a1fd4a657ce3aadcfbf6e3f5e6ac7c37",
+    "test_app_runtime.py": "273b16e252931e987056675af52836936c3e7c66f21cf007732549c8a1dce41a",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "2e00498ecf25d44cb903ae325b6869bc40e07ae6b73011315319f342e3a3f27b"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR3",
+  "limits_raw_mm": {
+    "front": 1000,
+    "left": 800,
+    "right": 800,
+    "rear": 1000
+  },
+  "firmware_sha256": "9f381b9bfc5542c56a70b6fa6d1f36e565dd0d252b3ff1c989e914a500885bb7",
+  "hex_sha256": "273aa920f44bbec1871a3f11e0e36de2b3e1b1b36117b7d3a37106cd436b8f39",
+  "new_checks": 442,
+  "pure_checks": 366181,
+  "freshly_rerun_scripts": [
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "4c36c4512ea137862542e89379eaa479abf3190543c5f0c758c8c0554ab8e458"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "e2c30d41919f0c0d0c36a5d037b6a7c82a29bf0d0999de6229a9234800c5a9cd"
+    },
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "4df879c045d647ecb3b39b09c7cad8cba923aeba2c742a9ba151215f0e637cfb"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "905c0efd607e7c39e353d35fd5e5e8fa01c188c64628abc0c3ee392f4982d626"
+    }
+  ],
+  "remaining_old_suite_not_rerun": 18,
+  "files": {
+    "Algorithm/ThiefStrategy/ThiefStrategyConfig.h": "3de825f2e03658417e77d613599cb6ee5fb5cf505bcf7d85a804b8fbe3ff1f19",
+    "User/App_ThiefStrategy.c": "1072760fa697505fd17b09e70e75886772a9b10287d3ac364531fb42dba66684",
+    "Tests/test_left800.py": "09ff1e4bb49313145f3858517e6ad4d45d471715c65eba175ba36fb5b6d25f0b",
+    "Tests/test_right900.py": "acb297d49d08b3f136098b491de0b6470dfe99fecfaf102d2f1fc5c2fc783976",
+    "Tests/test_documents123154.py": "a4781b03b2f7cf2bdcdb5dfad0a849a8207b2e7a68663321c72e0a57a0dfbe34",
+    "Tests/test_16m.c": "d0fca5453f2f3ca5840965f78c89965da8b0581dd5f911d854715c4fdeb33fdd",
+    "Tests/validate_monitor3.py": "b4e8a60f0066d055b575d66308a6e7f2900ca939c5920e9332cddcfced047d64",
+    "README.md": "8e6da58809c1dc11d12d46797f93f7617aa1b8d49616c22c637b51afe8fdc1bb",
+    "AGENTS.md": "73664da61dacef1824538a41151a1b7dd322722090d07c9a3a849c86b87ea30e",
+    "Docs/修改规范与回归清单.md": "6ff733a8baf67b15dc6a184814c6de69aa31369ee1665b8587f2703e12637a8b",
+    "LEFT800_CHANGESET.patch": "d19190356ec6e66f5c64fd7bb1e8328857aa1f63815fcda4ed0a5cbb6a87bf7c",
+    "build_monitor3.log": "628cc7255b88407d007dbfcb7f7b66f4d4d19d4c09554ecf9e21b3e9d21d2f99"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false
+}

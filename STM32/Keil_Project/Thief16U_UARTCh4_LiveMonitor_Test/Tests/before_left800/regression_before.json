@@ -1,0 +1,10 @@
+{
+  "expected_before_failure": true,
+  "failures": [
+    "CH2 still accepts raw801",
+    "CH3 still accepts raw801"
+  ],
+  "axf_sha256": "51aef090e1b578d7490351b21ed670ae519b5bfaa02c0e3bf39ae25f18f3a489",
+  "test_sha256": "09ff1e4bb49313145f3858517e6ad4d45d471715c65eba175ba36fb5b6d25f0b",
+  "hardware_tested": false
+}

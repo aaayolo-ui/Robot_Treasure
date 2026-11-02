@@ -1,0 +1,202 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR10",
+  "firmware_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe",
+  "hex_sha256": "0337b22863764cfe8f3d1d53d119e657ec616d95c86b9a36cd3ee182ab3560a6",
+  "before_failures": [
+    {
+      "case": "overshoot_axis",
+      "error": "saved MONITOR7 axis trim restored"
+    }
+  ],
+  "new_cases": {
+    "overshoot_axis": 4
+  },
+  "extra": {
+    "yaw_reference": {
+      "straight_reference": 70,
+      "treasure_turn_handoff": 8,
+      "reference_wrap_reverse": 4
+    },
+    "turn_resume": {
+      "resume_after_brake": 2,
+      "continuous_loop_kept": 1
+    }
+  },
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "8b718237283e373ef28cca465a744cad76ed0ef9ac3209fc9e3a338cb3be6ddd",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "865ba2ae95528859cec278f7a1ff913a7fe1d3b1edd23ccf25234062e74b7dc2",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "b257ea1f1575a504ea5d949cdc103f61b1e5cffee7932e9d0e45777c1f31cf3e",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "ea7ffcc1bbd8fd801b9dbc78af7884a427139250ed8172d2779845c93a348583",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "b466fa2c6afc045d878b51646cb20a6462b6da7d0277dbc252034867cbaa9ce8",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "7c6f290707cf94fb6037885be3e76c5c3ecbc7c9919389422a09a34e569f3352",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "8bba340081e96dac3ae96a71c1c8cf39aa71c4f52f96120aff3cd8c7be10318d",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "9b8c5a273624847eb88e68ce39ffa8cc28b0a648dc9e4bd8830efb90a08800a7",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "497635b54bda3ec3b0134c5277ff684c060a19926aa85bbd56c3541c5d3942c3",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "172eae20b9b7c2a8a0ca3ff87dd69d9b9837fcae0c97c1ceb723043f01ba1b7f",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "ebc6a0ce9ff297981c4ac577ba0dd8a7f3d0e6738804ccc09ab0ecb748ba646d",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "2c2060ae042446d41e9b17fcd407c95b33d2df225bef938da84ca5ed868ae6e8",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "718aa8abeaccd3901ca006d4f1f865c592a526a12a5bae696a50252eea91212f",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "7c88e013f4880fd9ce4113e78a7a024d5b9a4c7fa109e1fdd1e5e653acd03054",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "dc7465f753a2f71b61c45d9e27f90f7c21e942a4dcb30641f5437c9dbc73cef4",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "800fa0b603be1af0f26a419048a2198ba953b3515164358cb14c66674c6c18ab",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "ee50f35100f85b954c11c10bd7c1b1c11e3ad40deace0df83db0098d2979e72c",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "5a9beb55ba6482a9a5080fae81721c815af4b2a3c6313a90860f871044d2fc41",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "a0da429096d52d3a912ffcff119bc4cee31536b7b410ad8955ce77e0cf320924",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "98e5f2c490efff131d9113dbbcbc4be6186c713c462c097100f1d90f4d49d012",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "d4d6fac8607a091d843c6b85cbeb24082d9f21b290df8887698f4c66c7b44800",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "d91e3deece0f5fa4dd4680cfbd26489457fb805c38637a845436bdbb85a673e5",
+      "axf_sha256": "d3ad4f8c277bacd7435337da687d7d95629d6cf21442e44ae0bcaf723733befe"
+    }
+  ],
+  "supplemental": {
+    "route_identity": 92,
+    "exit_stall": 988,
+    "road_probe": 1798,
+    "left800": 442
+  },
+  "saved_monitor7_source_sha256": "9a234975ecb117e20e2882da539d90004a69d880e5d48594d85860a05a265deb",
+  "exact_monitor7_functions": {
+    "Route_DriveLeftTurn": "1e343429ed147c7b465b8f563f2d5549e26757bf5fc32e214105aa7ea52a966e",
+    "Route_DriveRightTurn": "8aaf292f00c362b9910ee391b58a47aa346030704eae9d2aae2b48f184e28474",
+    "Route_HasReachedTurnAngle": "e48c8f48b118efe3847c10bf314c83a32267b8ce9fdcb4ccbd92d4a6b8c18cc0",
+    "Route_EnterAfterTurnForward": "3bfa3318eedbf4fe3b9e94cd52a070f7ad2a5c4450007c1150ca73b8c3f70da3",
+    "Route_AlignTreasureTurn": "e75cc01d6d09814cb00d6eddb16f9f1aecb3d8e1acce747fc831213fddaa8aa3",
+    "Route_UpdateYawReference": "31df790a0eed253b9b28c0fb0fac617a8d5e0e67c0f28c6974bbcf16fb77855f"
+  },
+  "files": {
+    "User/App_ThiefStrategy.c": "69f1f063175abe6209345f2a005cd9d4da7abcd912eb94bc51c29caed1e3eada",
+    "Tests/test_monitor7_restore.py": "d3be5f5f3ad244dc6b9a3987f847ec049989950f646d55a997ff76275b10e417",
+    "Tests/test_yaw_reference.py": "c1398149ebcce35c0be6c5a4866a571b8d14324d585841483f3d65a244246443",
+    "Tests/restore_monitor7.py": "a6e5f118832920f410bd471c7b5f0a8f4e06d3954009fbdf9bbead737ee122da",
+    "README.md": "ae7d62259db98e7928dbc55454f960f079452ae21029114741dd82249d2c5ce1",
+    "AGENTS.md": "2ddbc0461a23a95a95b1920326787fb794d2b0c91b84982c842735ad657db7cf",
+    "Docs/修改规范与回归清单.md": "81a4296f07d5ab567a653c0ba5f392602ff4dff7806350761d375a9aa08e06ff",
+    "Tests/validate_monitor10.py": "4cd616b435ff041629f964a80c351d59e062833d56b0ed9137daad91270993b3",
+    "MONITOR7_RESTORE_CHANGESET.patch": "1047355424a7000ad287f04a4e5c615348460be97282dc3dee754aa4117079cf",
+    "build_monitor10.log": "09496f8acdcf3951ef6888545147c72c3ccfc508fa36ea977658fe5b76f44b58",
+    "Tests/results_monitor7_restore.json": "1f27bbcf94e9835a38b74d6c52a41afbc47bf14abfd694740b24ff1e8076d13b",
+    "Tests/results_yaw_reference.json": "14bbe723187370b7797bdf6ebd19258a3979a9f6f000ef2863c877d1b7e4e9d4",
+    "Tests/results_turn_resume.json": "987312c63390e14bd255b1a60bef3a6c2a4c236c3249ef9bf2186759bbb914c9",
+    "Tests/results_monitor_suite.json": "e58c4aee3278d88a785d46ee61fac681dbb7c21b9122c2e3c2bf13d06b127452",
+    "Tests/results_route_identity.json": "5bce4eea99b80a55f8540677eef50a8fa34cd8d3a1891d9ba060f6eeeb404549",
+    "Tests/results_exit_stall.json": "cbeebd0c98caaf62b37d1909961b0029ce1613c59d172c967bf30d7aff744003",
+    "Tests/results_road_probe.json": "6dd3755993898f379775c243658539a9319c93ad86b53b57cbbe6ae47742d8ae",
+    "Tests/results_left800.json": "ee848443904676b10872043654641b409650469d75fc4ace6cd44cfc08a5e999"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "Saved MONITOR7 turn/trim functions restored exactly; the current combined firmware still needs physical validation.",
+    "Known-axis over110degree recovery is limited to N004/N006 with learned gyro direction.",
+    "Physical traction, gyro delay, centering and actual escape performance remain unverified."
+  ]
+}

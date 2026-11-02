@@ -1,0 +1,222 @@
+--- STABLE1/User/App_ThiefStrategy.c
++++ STABLE2/User/App_ThiefStrategy.c
+@@ -187,16 +187,15 @@
+ static uint8_t node_stop_counts_valid;
+ static uint32_t node_approach_ms=ROUTE_TURN_APPROACH_DELAY_MS;
+ static uint32_t departure_approach_ms;
+-static uint16_t departure_known_clearance[4];
+ static uint8_t departure_branch_headings;
+ static uint8_t departure_reacquire;
+ static int16_t last_leading_error;
+ static uint8_t last_leading_mode;
+ static uint8_t replan_after_leg;
++static uint8_t intercept_escape_mask;
++static uint32_t intercept_threat_tick;
+ static uint8_t retreat_active;
+ static uint8_t intercept_pending;
+-static uint8_t intercept_has_reversed;
+-static uint32_t intercept_reverse_tick;
+ static uint32_t intercept_reversals,intercept_continues;
+ static int32_t Route_LegProgress(void)
+ {
+@@ -1479,8 +1478,7 @@
+  * before braking. Return to a real gray-confirmed junction before replanning. */
+ static void Thief_InterceptReact(uint32_t now)
+ {
+-  uint8_t mask,i;
+-  uint16_t clearance[4]={0U,0U,0U,0U};
++  uint8_t mask;
+   const MapRouteStep_t *s=MapRouteNavigator_Current(&map_nav);
+   if(!intercept_pending || !route_active || !thief_pose.valid || !s ||
+       departure_turn || map_nav.arrived ||
+@@ -1491,34 +1489,21 @@
+   mask=Thief_ThreatMask(now);
+   intercept_pending=0U;
+   if(!mask) return;
+-  for(i=0U;i<LASER_COUNT;i++) if(thief_laser[i].status==FRONT_LASER_OPPONENT &&
+-      thief_laser_seen[i] && (uint32_t)(now-thief_last_laser_tick[i])<=250UL)
+-    clearance[(thief_pose.body_heading+laser_heading_offset[i])%4U]=
+-        FrontLaserGate_CenterDistanceMm(thief_laser[i].distance_mm,i);
+-  /* The planner already chose an exit around these side/rear hits. Do not
+-   * cancel that same departure at zero displacement. A new direction or a
+-   * substantially closer hit remains an immediate interception. */
+-  if(map_nav.step==0U && !retreat_active && Route_LegProgress()<100L &&
+-      (uint32_t)(now-run_start_tick)<500U) {
+-    for(i=0U;i<4U;i++) if(i!=s->heading && departure_known_clearance[i] &&
+-        (int32_t)clearance[i]+100L>=departure_known_clearance[i]) mask&=(uint8_t)~(1U<<i);
+-  }
+-  /* A target only behind the travel direction is being left behind. Keep the
+-   * chosen refuge route rather than braking again at every junction. */
+-  if(!mask || !(mask&(uint8_t)~(1U<<((s->heading+2U)%4U)))) return;
+-  replan_after_leg=1U;
+-  if(ThiefIntercept_ShouldReverse(s->heading,mask,clearance,
+-      (uint8_t)(intercept_has_reversed &&
+-       (uint32_t)(now-intercept_reverse_tick)<THIEF_INTERCEPT_COOLDOWN_MS))) {
++  if(ThiefIntercept_ShouldReverse(s->heading,mask,0,0U)) {
++    replan_after_leg=1U;intercept_escape_mask=mask;intercept_threat_tick=now;
+     Route_BrakeControl();
+     intercept_reversals++;
+     ThiefIntercept_BlockLeg(s->from_node,s->to_node,now);
+     route_state=ROUTE_STATE_INTERCEPT_STOP;route_state_tick=now;
+     turn_stop_stable_count=0U;last_control_tick=now;
+-  } else {
++  } else if(!retreat_active && !replan_after_leg &&
++      map_nav.step+1U<map_nav.route->count &&
++      (mask&(1U<<map_nav.steps[map_nav.step+1U].heading))) {
++    /* Keep following this clear leg. Only stop at its real junction if the
++     * next planned exit would turn TOWARD a seen car. Side/rear sightings
++     * otherwise preserve the committed route, even after 350ms or a node. */
++    replan_after_leg=1U;intercept_escape_mask=mask;intercept_threat_tick=now;
+     intercept_continues++;
+-    /* A new front/side hit during reversal cooldown is handled at the next
+-     * confirmed node; rear-only pursuit returned above without truncation. */
+     thief_plan.steps[map_nav.step].action=MAP_ACTION_STOP;
+     thief_plan.route.count=(uint16_t)(map_nav.step+1U);
+     thief_localization.step.action=MAP_ACTION_STOP;
+@@ -1583,8 +1568,7 @@
+   map_progress_offset_mm=(int32_t)back.length_mm-progress;
+   thief_body_heading=route_body_heading;
+   thief_laser_pose_since=now;Thief_ResetLaserEvidence();
+-  intercept_pending=0U;retreat_active=1U;intercept_has_reversed=1U;
+-  intercept_reverse_tick=now;
++  intercept_pending=0U;retreat_active=1U;
+   junction_armed=0U;junction_latched=0U;front_was_valid=0U;rearm_valid_count=0U;
+   rear_valid_count=0U;follow_mode=ROUTE_FOLLOW_FRONT_ONLY;
+   route_state_tick=now;last_front_watch_tick=now;
+@@ -1610,12 +1594,11 @@
+   TravelFrame_SetReverse(0U);
+   reverse_pending = 0U;
+   map_progress_offset_mm=0L;departure_turn=0U;replan_after_leg=0U;
+-  retreat_active=0U;intercept_pending=0U;intercept_has_reversed=0U;
++  retreat_active=0U;intercept_pending=0U;
+   node_centered=0U;departure_centered=0U;branch_node=0U;branch_headings=0U;
+   departure_branch_headings=0U;node_stop_counts_valid=0U;
+   node_approach_ms=ROUTE_TURN_APPROACH_DELAY_MS;
+-  departure_known_clearance[0]=0U;departure_known_clearance[1]=0U;
+-  departure_known_clearance[2]=0U;departure_known_clearance[3]=0U;
++  intercept_escape_mask=0U;intercept_threat_tick=0U;
+   MapTimingLog_Init();
+   TreasureWheelLog_Init();
+   TreasureMotorSnapshot_Init();
+@@ -1657,7 +1640,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_STABLE1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_STABLE2 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1680,7 +1663,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16V_STABLE1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_StableBase_Test FW=UARTCH4_16V_STABLE2 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1729,7 +1712,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_STABLE1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_STABLE2 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -1879,6 +1862,8 @@
+     uint16_t old_hide = thief_current_node;
+     uint32_t planning_started = SystemTime_GetMs();
+     uint8_t threat_mask = (uint8_t)(Thief_ThreatMask(now)|hide_escape_mask);
++    if(replan_after_leg && (uint32_t)(now-intercept_threat_tick)<=THIEF_THREAT_MEMORY_MS)
++      threat_mask|=intercept_escape_mask;
+     UartDebug_Printf("INTERCEPT_REPLAN NODE=N%03u RETREAT=%u REVERSALS=%lu CONTINUES=%lu\r\n",
+         (unsigned)thief_current_node,(unsigned)replan_after_leg,
+         (unsigned long)intercept_reversals,(unsigned long)intercept_continues);
+@@ -1894,14 +1879,6 @@
+           (unsigned)thief_current_node, (unsigned)thief_body_heading);
+       goto task_end;
+     }
+-    {
+-      uint8_t i;
+-      for(i=0U;i<4U;i++) departure_known_clearance[i]=0U;
+-      for(i=0U;i<LASER_COUNT;i++) if(thief_laser[i].status==FRONT_LASER_OPPONENT &&
+-          thief_laser_seen[i] && (uint32_t)(now-thief_last_laser_tick[i])<=250U)
+-        departure_known_clearance[(thief_body_heading+laser_heading_offset[i])%4U]=
+-            FrontLaserGate_CenterDistanceMm(thief_laser[i].distance_mm,i);
+-    }
+     thief_previous_hide_node = old_hide;
+     if ((uint32_t)(SystemTime_GetMs()-planning_started)>THIEF_PLAN_BUDGET_MS) {
+       /* Search is bounded and the chassis is already braked. A slow but
+@@ -1913,6 +1890,9 @@
+         laser_name[thief_trigger_direction], (unsigned)threat_mask,
+         (unsigned)thief_laser[thief_trigger_direction].distance_mm, (unsigned)thief_laser[thief_trigger_direction].confidence,
+         (unsigned)thief_current_node, (unsigned)thief_plan.goal_node);
++    UartDebug_Printf("ESCAPE_EXIT FROM=N%03u NEXT=N%03u HEADING=%u WORLD_MASK=%u\r\n",
++        (unsigned)thief_current_node,(unsigned)thief_plan.steps[0].to_node,
++        (unsigned)thief_plan.steps[0].heading,(unsigned)threat_mask);
+     {
+       const ThiefDecision_t *d=ThiefMapPlanner_Decision();
+       UartDebug_Printf("PLAN_V3 GOAL=N%03u T_MS=%lu MARGIN_MS=%ld STATES=%u THREATS=%u DEGRADED=%u REUSED=%u COMPUTE_MS=%lu\r\n",
+--- STABLE1/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ STABLE2/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -197,6 +197,13 @@
+   if(current_node==11U) {
+     if(threat_mask&4U)preferred=2U;
+     else if(threat_mask&1U)preferred=8U;
++  } else if(current_node==38U && threat_mask) {
++    /* World N/E/S/W, independent of chassis forward/reverse mounting.
++     * East pursuer: north to N021. West/north/south: east N039-N040.
++     * Keep this exit in emergency selection too; do not fall back west
++     * and circle around the lower loop while deciding on a distant hide. */
++    allowed=(uint8_t)((threat_mask&2U)?1U:2U);
++    preferred=allowed;
+   }
+   for(pass=0U;pass<3U && !found;pass++) {
+     ThiefRiskSearch_SetEmergency((uint8_t)(pass==2U));
+--- STABLE1/Algorithm/ThiefStrategy/ThiefRiskSearch.c
++++ STABLE2/Algorithm/ThiefStrategy/ThiefRiskSearch.c
+@@ -160,6 +160,11 @@
+       if(e->start==from) {to=e->end;out=e->heading;}
+       else if(e->end==from) {to=e->start;out=(uint8_t)((e->heading+2U)%4U);}
+       if(!to || to==blocked || to==start) continue;
++      /* N055-N056-N057 is a closed lower loop returning to the same
++       * N037-N038-N039 road. Do not enter it to evade a pursuer who can
++       * cut across the upper road. A car already inside may still exit. */
++      if(axis_only && ((from==37U && to==55U) ||
++          (from==38U && to==56U) || (from==39U && to==57U))) continue;
+       /* A committed hide transfer must not bounce immediately over its last
+        * edge. Starting in reverse remains allowed at the root. */
+       if(parent[pick]!=NO_STATE && to==StateNode(parent[pick])) continue;
+@@ -168,6 +173,7 @@
+       if(!emergency && ThiefIntercept_EdgeBlocked(from,to,now)) continue;
+       if(pick==root && !(departure_mask&(1U<<out)))continue;
+       if(start==11U && parent[pick]==root && from==12U && out!=1U)continue;
++      if(start==38U && parent[pick]==root && from==39U && out!=1U)continue;
+       if(pick==root && !emergency && (threat_mask&(1U<<out))) continue;
+       next_mode=(uint8_t)((pick&1U)^((delta==2U)?1U:0U));
+       turn=(delta==1U || delta==3U)?1U:0U;
+--- STABLE1/Algorithm/ThiefStrategy/ThiefInterceptPolicy.c
++++ STABLE2/Algorithm/ThiefStrategy/ThiefInterceptPolicy.c
+@@ -14,15 +14,11 @@
+ uint8_t ThiefIntercept_ShouldReverse(uint8_t travel,uint8_t mask,
+     const uint16_t clearance[4],uint8_t cooldown)
+ {
+-  uint8_t back;
+-  (void)clearance;
+-  if(travel>3U || !mask || cooldown) return 0U;
+-  back=(uint8_t)((travel+2U)%4U);
+-  /* Rear-only detection means continue away, not reverse into the pursuer.
+-   * Any front or side threat reverses immediately; route selection happens
+-   * only after the car has returned to a confirmed node. */
+-  if(!(mask & (uint8_t)~(1U<<back))) return 0U;
+-  return 1U;
++  (void)clearance;(void)cooldown;
++  /* A single pursuer on a parallel/side road is not blocking this leg.
++   * Reverse only for a hit ahead of TRAVEL, including when driving backwards.
++   * A cooldown must not authorize driving into a newly blocked forward road. */
++  return (uint8_t)(travel<4U && (mask&(1U<<travel))!=0U);
+ }
+ void ThiefIntercept_Reset(void) {memset(blocks,0,sizeof(blocks));write_index=0U;}
+ void ThiefIntercept_BlockLeg(uint16_t from,uint16_t to,uint32_t now)

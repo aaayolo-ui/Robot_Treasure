@@ -1,0 +1,193 @@
+--- STABLE4/User/App_ThiefStrategy.c
++++ STABLE5/User/App_ThiefStrategy.c
+@@ -138,6 +138,8 @@
+ static uint8_t park_turn_pending;
+ static int8_t park_turn_quarter;
+ static int16_t park_start_yaw;
++static uint8_t turn_line_count;
++static int8_t turn_line_scan;
+ static int32_t hide_approach_counts,hide_approach_mm;
+ static uint32_t hide_align_tick,hide_log_tick;
+ static RoadHeadingControl_t hide_heading;
+@@ -273,6 +275,7 @@
+   } else ThiefMapPlanner_PoseAtNode(thief_current_node,thief_body_heading,&thief_pose);
+   if(route_state==ROUTE_STATE_TURN_APPROACH || route_state==ROUTE_STATE_TURN_STOP ||
+       route_state==ROUTE_STATE_TURN_LEFT || route_state==ROUTE_STATE_TURN_RIGHT ||
++      route_state==ROUTE_STATE_AFTER_TURN_FORWARD ||
+       route_state==ROUTE_STATE_HIDE_APPROACH || park_turn_pending>=2U ||
+       thief_strategy_state==THIEF_STRATEGY_FAULT)thief_pose.valid=0U;
+ }
+@@ -943,6 +946,7 @@
+                                         const char *finish_reason,
+                                         int16_t current_angle_x100)
+ {
++  (void)elapsed_ms;
+   int16_t delta = Route_TurnAngleDeltaX100(current_angle_x100,
+                                             turn_start_angle_x100);
+ 
+@@ -963,12 +967,10 @@
+   UartDebug_Printf("TURN_DONE=%s START=%d CURRENT=%d DELTA=%d\r\n",
+                    finish_reason, (int)turn_start_angle_x100,
+                    (int)current_angle_x100, (int)delta);
+-  {
+-    RouteGraySample_t sample;Route_ResetSample(&sample);
+-    front_state=Route_ReadFront(&sample);
+-    if(front_state==ROUTE_GRAY_NO_LINE || front_state==ROUTE_GRAY_I2C_ERROR)Route_BrakeControl();
+-    else Route_DriveStraight(elapsed_ms);
+-  }
++  /* The 45-degree main spin is not proof of a completed road turn. Do not
++   * translate on the first text/edge hit before acquiring the real exit. */
++  turn_line_count=0U;turn_line_scan=0;gray_missing_active=0U;gray_log_tick=now;
++  Route_BrakeControl();
+ }
+ 
+ static void Route_EnterTurnStop(uint32_t now);
+@@ -1135,6 +1137,72 @@
+     thief_laser_pose_since=now;Thief_ResetLaserEvidence();
+     ThiefMapPlanner_PoseAtNode(thief_current_node,0U,&thief_pose);
+     UartDebug_Printf("PARK_TURN_END N=63 TARGET=90 DELTA=%d AXIS=NS\r\n",(int)delta);
++  }
++}
++
++static uint8_t Route_CompactLine(uint16_t raw)
++{
++  /* A compact inner-board group may be a line. An isolated P1/P12 or a
++   * disconnected word-like pattern must not authorize forward recovery. */
++  if(!(raw&0x03FCU) || (raw&0x0C03U))return 0U;
++  while(!(raw&1U))raw>>=1U;
++  return (uint8_t)(raw<=15U && !(raw&(uint16_t)(raw+1U)));
++}
++
++static void Route_AcquireTurnLine(uint32_t now,uint32_t elapsed_ms)
++{
++  RouteGraySample_t sample;ThiefLocYaw_t yaw;
++  int8_t quarter=turn_target_state==ROUTE_STATE_TURN_LEFT?-1:1;
++  int16_t delta,turn;int32_t progress,error,target,heading_difference;
++  uint8_t paired;
++  Route_ResetSample(&sample);front_state=Route_ReadFront(&sample);
++  rear_state=Route_ReadRear(&sample);Thief_LocalYaw(&yaw);
++  if(front_state==ROUTE_GRAY_I2C_ERROR || rear_state==ROUTE_GRAY_I2C_ERROR) {
++    Route_BrakeControl();turn_line_count=0U;
++    if(gray_missing_active!=2U){gray_missing_active=2U;gray_missing_tick=now;}
++    if((uint32_t)(now-gray_missing_tick)>=ROUTE_FRONT_RECOVERY_MS)Route_StopFault("GRAY_I2C");
++    return;
++  }
++  if(!sample.front_raw12 && !sample.rear_raw12) {
++    if(gray_missing_active!=1U){gray_missing_active=1U;gray_missing_tick=now;}
++    if((uint32_t)(now-gray_missing_tick)>=2000U){Route_StopFault("GRAY_BOTH_NO_LINE");return;}
++  } else gray_missing_active=0U;
++  delta=Route_TurnAngleDeltaX100(TravelFrame_Yaw(yaw.yaw_x100),turn_start_angle_x100);
++  progress=(int32_t)delta*thief_localization.yaw_cw_sign*quarter;
++  heading_difference=(int32_t)sample.front_error_x100-sample.rear_error_x100;
++  /* Confirm compatible line traces, not an artificial zero lateral error.
++   * The unchanged PID must still correct a real, consistently offset line. */
++  paired=(uint8_t)(progress>=8000L && progress<=10000L &&
++      front_state==ROUTE_GRAY_VALID && rear_state==ROUTE_GRAY_VALID &&
++      Route_CompactLine(sample.front_raw12) && Route_CompactLine(sample.rear_raw12) &&
++      heading_difference>=-200L && heading_difference<=200L);
++  if(paired){if(turn_line_count<3U)turn_line_count++;}else turn_line_count=0U;
++  if(turn_line_count>=3U) {
++    UartDebug_Printf("TURN_LINE_READY DELTA=%ld RAW=%03X,%03X MODE=%u\r\n",
++        (long)progress,(unsigned)sample.front_raw12,(unsigned)sample.rear_raw12,
++        (unsigned)TravelFrame_IsReverse());
++    Route_EnterFollow(now,1U,leave_target_rpm_x10,1U);
++    (void)Route_RunFollow(&sample,elapsed_ms);return;
++  }
++  /* Complete the turn without driving off the junction. If the nominal
++   * 90-degree exit has no paired line, sweep locally from 80 to 100 degrees.
++   * No global map-heading veto, blind translation or timed-position success. */
++  target=9000L+(int32_t)turn_line_scan*1000L;
++  error=progress-target;
++  if(!paired && error>= -300L && error<=300L) {
++    turn_line_scan=turn_line_scan==1?-1:1;
++    target=9000L+(int32_t)turn_line_scan*1000L;error=progress-target;
++  }
++  turn=RoadHeading_Correction((int16_t)(error*quarter),300);
++  if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
++  TravelFrame_SetWheelTargets(turn,-turn,turn,-turn);
++  ChassisSpeedControl_Update(elapsed_ms);
++  if(ChassisSpeedControl_HasStall()){Route_StopFault("STALL");return;}
++  if((uint32_t)(now-gray_log_tick)>=200U) {
++    gray_log_tick=now;
++    UartDebug_Printf("TURN_LINE_WAIT DELTA=%ld RAW=%03X,%03X COUNT=%u\r\n",
++        (long)progress,(unsigned)sample.front_raw12,(unsigned)sample.rear_raw12,
++        (unsigned)turn_line_count);
+   }
+ }
+ 
+@@ -1714,7 +1782,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_STABLE4 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_STABLE5 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1737,7 +1805,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_StableBase_Test FW=UARTCH4_16V_STABLE4 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_StableBase_Test FW=UARTCH4_16V_STABLE5 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1786,7 +1854,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_STABLE4 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_STABLE5 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2387,33 +2455,7 @@
+       break;
+ 
+     case ROUTE_STATE_AFTER_TURN_FORWARD:
+-      if ((uint32_t)(now - route_state_tick) >=
+-          ROUTE_AFTER_TURN_FORWARD_TIMEOUT_MS)
+-      {
+-        Route_EnterFrontRecovery(now,ROUTE_GRAY_NO_LINE);
+-        break;
+-      }
+-      Route_ResetSample(&sample);
+-      front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
+-      if (front_state == ROUTE_GRAY_I2C_ERROR)
+-      {
+-        Route_EnterFrontRecovery(now, front_state);
+-      }
+-      else if ((front_state == ROUTE_GRAY_VALID) ||
+-               (front_state == ROUTE_GRAY_LEFT_BLACK) ||
+-               (front_state == ROUTE_GRAY_RIGHT_BLACK))
+-      {
+-        Route_EnterFollow(now, 1U, leave_target_rpm_x10, 1U);
+-        (void)Route_RunFollow(&sample, elapsed_ms);
+-      }
+-      else
+-      {
+-        Route_DriveStraight(elapsed_ms);
+-        if (ChassisSpeedControl_HasStall() != 0U)
+-        {
+-          Route_StopFault("STALL");
+-        }
+-      }
++      Route_AcquireTurnLine(now,elapsed_ms);
+       break;
+ 
+ 
+@@ -2435,9 +2477,10 @@
+           if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
+           Route_HandleJunction(now,elapsed_ms,front_state,sample.front_raw12);break;
+         }
+-        input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID ||
+-            front_state==ROUTE_GRAY_LEFT_BLACK || front_state==ROUTE_GRAY_RIGHT_BLACK);
+-        input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
++        input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID &&
++            Route_CompactLine(sample.front_raw12));
++        input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID &&
++            Route_CompactLine(sample.rear_raw12));
+         if(input.leading_valid) {
+           if(++front_recovery_valid_count>=ROUTE_FRONT_RECOVERY_VALID_SAMPLES) {
+             Route_EnterFollow(now,1U,front_resume_base_rpm_x10,0U);

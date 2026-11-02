@@ -1,0 +1,24 @@
+log_replay: PASS
+heading_sweep: PASS
+recovery_limit: PASS
+original_rejections: PASS
+{
+  "checks": 390,
+  "failures": [],
+  "passed": [
+    "log_replay",
+    "heading_sweep",
+    "recovery_limit",
+    "original_rejections"
+  ],
+  "heading_sweep_cases": 44,
+  "firmware_sha256": "8e619f1a5826cfdfa04c84c18c2e8ddce980b416cb499df2b5971e1e2fccee9f",
+  "hardware_tested": false,
+  "app_source_sha256": "da8cf7b1904ae9f06b1a088fe9ceeee3bf78a0b1db128c224e13ef255f57507a",
+  "test_script_sha256": "14b919226065e5c38372f43f7ef20f2ff90c5a6d5fe624ba417bb42886e1de0a",
+  "helper_sha256": {
+    "test_app_runtime.py": "0aed8aa532491558e6da158bf0a699e94cfc5db2c7df5aa4c1ed87cb5a414203",
+    "test_escape_completion.py": "d9dc487e93a51d7506b145df7f2373bd43929540df12c3f026b6246503e485aa",
+    "test_documents13.py": "1bac297603ebe91518075f530493365ebc5a0389bbf9e5ee7c9de8545d7af994"
+  }
+}

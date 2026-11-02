@@ -1,0 +1,154 @@
+--- before/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ after/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -159,20 +159,20 @@
+ uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan)
+ {
+   uint16_t i,count;
+-  static const uint16_t first_hide_path[]={3U,2U,11U};
++  static const uint16_t first_hide_path[]={3U,2U,1U,10U,20U,37U,38U};
+   const uint16_t prefix_count=(uint16_t)(sizeof(initial_treasure_path)/sizeof(initial_treasure_path[0]));
+   if(plan==NULL) return 0U;
+   plan->valid=0U;
+-  /* Keep the treasure approach, then take the first refuge at N011. */
++  /* Keep the treasure approach, then take the first refuge at N038. */
+   memset(&decision,0,sizeof(decision));
+-  decision.goal_node=11U;decision.parking_heading=3U;
++  decision.goal_node=38U;decision.parking_heading=0U;
+   count=0U;
+   for(i=0U;i<prefix_count;i++) combined[count++]=initial_treasure_path[i];
+   for(i=0U;i<sizeof(first_hide_path)/sizeof(first_hide_path[0]);i++)
+     combined[count++]=first_hide_path[i];
+   if(!BuildRoute(combined,count,0U,INITIAL_ID,plan)) return 0U;
+-  /* Arrival from N002 is southbound; park west after measured standstill. */
+-  plan->final_body_heading=3U;
++  /* Arrival at N038 is eastbound; park north after measured standstill. */
++  plan->final_body_heading=0U;
+   /* Initial telemetry reports the entire fixed-prefix + hide route, not only
+    * the N004-to-hide suffix used by the hide selector. */
+   decision.travel_ms=THIEF_STARTUP_MS;
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -1349,9 +1349,9 @@
+     UartDebug_Printf("N011_PLAN_UNLOCK AT=N%03u\r\n",(unsigned)node);
+   }
+   park_target_heading=returning_home?route_trail.home_body:
+-      (node==11U && map_nav.route->id==1600U && thief_plan.goal_node==11U?3U:0U);
++      0U;
+   park_turn_pending=(uint8_t)((returning_home && body%2U!=park_target_heading%2U) ||
+-      (node==11U && map_nav.route->id==1600U && thief_plan.goal_node==11U && body%2U==0U) ||
++      (node==38U && map_nav.route->id==1600U && thief_plan.goal_node==38U && body%2U==1U) ||
+       (node==63U && (body%2U)==1U && thief_plan.goal_node==63U &&
+        thief_plan.final_body_heading==0U));
+   hide_alignment_pending=(uint8_t)(route_state==ROUTE_STATE_HIDE_APPROACH && centered);
+@@ -1867,7 +1867,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_TOP7_SPEED_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_FIRST38_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1893,7 +1893,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_TOP7_SPEED_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_FIRST38_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1942,7 +1942,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_TOP7_SPEED_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_FIRST38_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- before/Tests/test_hide_routes_stable4.py
++++ after/Tests/test_hide_routes_stable4.py
+@@ -51,12 +51,12 @@
+ expect(ok,'initial treasure route still builds')
+ if ok:
+     expect(path()[:9]==[53,44,36,35,26,17,7,6,4],'initial treasure route uses N035-N026-N017-N007')
+-    expect(path()[-3:]==[3,2,11],'first hide enters N011 by turning at N002')
+-    expect(member('thief_plan','goal_node')==11 and member('thief_plan','final_body_heading') in [1,3],
+-           'first requested N011 hide is reached horizontally')
+-    if member('thief_plan','final_body_heading') in [1,3]:
++    expect(path()[-7:]==[3,2,1,10,20,37,38],'first hide goes through N001 and N037 to N038')
++    expect(member('thief_plan','goal_node')==38 and member('thief_plan','final_body_heading') in [0,2],
++           'first N038 hide is reached vertically')
++    if member('thief_plan','final_body_heading') in [0,2]:
+         call('Route_Start');result=complete_route()
+-        expect(result['node']==11 and result['body'] in [1,3],'actual initial task ends horizontally at N011')
++        expect(result['node']==38 and result['body'] in [0,2],'actual initial task ends vertically at N038')
+         lifecycles.append(dict(kind='initial',result=result))
+ 
+ # Actual laser -> specified complete route -> measured stop -> parking turn.
+--- before/Tests/test_app_runtime.py
++++ after/Tests/test_app_runtime.py
+@@ -9,7 +9,7 @@
+ from elftools.dwarf.dwarf_expr import DWARFExprParser
+ from unicorn import Uc,UC_ARCH_ARM,UC_MODE_THUMB,UC_MODE_MCLASS,UC_HOOK_CODE
+ from unicorn.arm_const import *
+-axf=ROOT/'MDK-ARM'/ROOT.name/(ROOT.name+'.axf')
++axf=ROOT/'MDK-ARM'/'Thief16V_UARTCh4_RouteOnly_Test'/'Thief16V_UARTCh4_RouteOnly_Test.axf'
+ if '--baseline-16p' in sys.argv:
+     baseline=ROOT.parent/'Thief16P_UARTCh4_ClosedLoopRestart_Test'
+     axf=baseline/'MDK-ARM'/baseline.name/(baseline.name+'.axf')
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,15 @@
++# FIRST38_SL1：首次经N001、N037到N038（本段优先）
++
++当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。
++
++取宝前路径保持；从N004起依次经N003→N002→N001→N010→N020→N037→N038。N038依用户此前确认的竖向停车，到点居中、实测四轮停稳后复用原停车转向朝北。首次路线独立1600目标38才触发，原N063和返回藏点停车行为保留。
++
++本轮生产只改ThiefMapPlanner初始路线与目标、App首次N038停车和FW标识。正常巡线、短遮挡原速辅助、四路激光和后续逃跑策略保持。测试fixture因副本目录名称包含“ - 副本”，改为读取Keil工程目标的实际输出目录。
++
++ARMCC5编译0错误0警告；完整首次取宝到N038竖停离线测试、策略测试、N011方向锁测试通过。记录FIRST38_FILES.json及FIRST38_CHANGESET.patch；下方历史版本说明不是当前版本。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # TOP7_SPEED_SL1：硬币短遮挡保持原速（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_TOP7_SPEED_SL1`。仅E盘本工程，桌面未写入。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_coin_speed，298项散列。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,15 @@
++# FIRST38_SL1：首次经N001、N037到N038（本段优先）
++
++当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。
++
++取宝前路径保持；从N004起依次经N003→N002→N001→N010→N020→N037→N038。N038依用户此前确认的竖向停车，到点居中、实测四轮停稳后复用原停车转向朝北。首次路线独立1600目标38才触发，原N063和返回藏点停车行为保留。
++
++本轮生产只改ThiefMapPlanner初始路线与目标、App首次N038停车和FW标识。正常巡线、短遮挡原速辅助、四路激光和后续逃跑策略保持。测试fixture因副本目录名称包含“ - 副本”，改为读取Keil工程目标的实际输出目录。
++
++ARMCC5编译0错误0警告；完整首次取宝到N038竖停离线测试、策略测试、N011方向锁测试通过。记录FIRST38_FILES.json及FIRST38_CHANGESET.patch；下方历史版本说明不是当前版本。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # TOP7_SPEED_SL1：硬币短遮挡保持原速（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_TOP7_SPEED_SL1`。仅E盘本工程，桌面未写入。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_coin_speed，298项散列。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,15 @@
++# FIRST38_SL1：首次经N001、N037到N038（本段优先）
++
++当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。
++
++取宝前路径保持；从N004起依次经N003→N002→N001→N010→N020→N037→N038。N038依用户此前确认的竖向停车，到点居中、实测四轮停稳后复用原停车转向朝北。首次路线独立1600目标38才触发，原N063和返回藏点停车行为保留。
++
++本轮生产只改ThiefMapPlanner初始路线与目标、App首次N038停车和FW标识。正常巡线、短遮挡原速辅助、四路激光和后续逃跑策略保持。测试fixture因副本目录名称包含“ - 副本”，改为读取Keil工程目标的实际输出目录。
++
++ARMCC5编译0错误0警告；完整首次取宝到N038竖停离线测试、策略测试、N011方向锁测试通过。记录FIRST38_FILES.json及FIRST38_CHANGESET.patch；下方历史版本说明不是当前版本。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # TOP7_SPEED_SL1：硬币短遮挡保持原速（本段优先）
+ 
+ 当前FW=`UARTCH4_16V_TOP7_SPEED_SL1`。仅E盘本工程，桌面未写入。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_coin_speed，298项散列。

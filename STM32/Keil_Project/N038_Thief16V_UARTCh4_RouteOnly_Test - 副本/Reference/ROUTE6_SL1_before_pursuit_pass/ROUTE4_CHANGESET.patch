@@ -1,0 +1,87 @@
+--- ROUTE3/User/App_ThiefStrategy.c
++++ ROUTE4/User/App_ThiefStrategy.c
+@@ -1832,7 +1832,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE3_TRACE STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE4_RECOVER STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1858,7 +1858,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE3_TRACE ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE4_RECOVER ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1907,7 +1907,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE3_TRACE T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ROUTE4_RECOVER T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2554,6 +2554,7 @@
+         RestartLineInput input;RestartLineOutput output;ThiefLocYaw_t yaw;
+         Route_ResetSample(&sample);front_state=Route_ReadLeadingOnce(&sample,&leading_cache);
+         rear_state=Route_ReadRear(&sample);Thief_LocalYaw(&yaw);
++        now=SystemTime_GetMs();
+         if(front_state==ROUTE_GRAY_I2C_ERROR || rear_state==ROUTE_GRAY_I2C_ERROR) {
+           Route_BrakeControl();
+           if((uint32_t)(now-route_state_tick)>=ROUTE_FRONT_RECOVERY_MS)Route_StopFault("GRAY_I2C");
+@@ -2571,14 +2572,23 @@
+             front_state==ROUTE_GRAY_LEFT_BLACK || front_state==ROUTE_GRAY_RIGHT_BLACK);
+         input.trailing_valid=(uint8_t)(rear_state==ROUTE_GRAY_VALID);
+         if(route_trail.returning) {
+-          input.leading_valid=(uint8_t)(front_state==ROUTE_GRAY_VALID &&
++          /* After a confirmed straight junction, a compact stripe at the
++           * board edge still supports gray recovery. It is not exit proof. */
++          input.leading_valid=(uint8_t)((front_state==ROUTE_GRAY_VALID ||
++              (front_resume_state==ROUTE_STATE_MAP_PASS &&
++               (front_state==ROUTE_GRAY_LEFT_BLACK || front_state==ROUTE_GRAY_RIGHT_BLACK))) &&
+               ThiefRouteTrail_TrackLine(sample.front_raw12));
+           input.trailing_valid=(uint8_t)(input.trailing_valid && ThiefRouteTrail_TrackLine(sample.rear_raw12));
+           if(front_resume_state==ROUTE_STATE_AFTER_TURN_FORWARD)input.trailing_valid=0U;
+         }
+-        if(input.leading_valid) {
++        if(input.leading_valid && (!route_trail.returning || front_state==ROUTE_GRAY_VALID)) {
+           if(++front_recovery_valid_count>=ROUTE_FRONT_RECOVERY_VALID_SAMPLES) {
+             Route_EnterFollow(now,1U,front_resume_base_rpm_x10,0U);
++            if(route_trail.returning && front_resume_state==ROUTE_STATE_MAP_PASS) {
++              /* The straight-pass owner must confirm and commit this node;
++               * retain its first-detection encoder anchor through recovery. */
++              route_state=ROUTE_STATE_MAP_PASS;map_pass_valid_count=0U;
++            }
+             (void)Route_RunFollow(&sample,elapsed_ms);break;
+           }
+         } else front_recovery_valid_count=0U;
+@@ -2589,6 +2599,9 @@
+         RestartLineSearch_Update(&gray_search,&input,&output);
+         if(output.brake || output.failed) {
+           Route_BrakeControl();
++          /* Refresh stopped-wheel evidence for the next search cycle. Drive
++           * cycles sample inside the speed loop; never drain encoders twice. */
++          Chassis_UpdateFeedback(elapsed_ms);
+           if(output.failed)RestartLineSearch_Reset(&gray_search,last_leading_mode==TravelFrame_IsReverse()?last_leading_error:(int16_t)-last_leading_error);
+         } else {
+           if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
+@@ -2597,10 +2610,11 @@
+         }
+         if((uint32_t)(now-gray_log_tick)>=200U) {
+           gray_log_tick=now;
+-          UartDebug_Printf("GRAY_RECOVER RAW=%03X,%03X LR=%d,%d LOST_MS=%lu\r\n",
++          UartDebug_Printf("GRAY_RECOVER RAW=%03X,%03X LR=%d,%d LOST_MS=%lu PH=%u STOP=%u YAW_OK=%u\r\n",
+               (unsigned)sample.front_raw12,(unsigned)sample.rear_raw12,
+               (int)output.left_x10,(int)output.right_x10,
+-              (unsigned long)(gray_missing_active?now-gray_missing_tick:0U));
++              (unsigned long)(gray_missing_active?now-gray_missing_tick:0U),
++              (unsigned)gray_search.phase,(unsigned)input.stopped,(unsigned)input.yaw_known);
+         }
+         if(ChassisSpeedControl_HasStall())Route_StopFault("STALL");
+       }

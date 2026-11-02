@@ -1,0 +1,130 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -1182,7 +1182,7 @@
+   Thief_LocalYaw(&yaw);
+   delta=Route_TurnAngleDeltaX100(yaw.yaw_x100,park_start_yaw);
+   progress=(int32_t)delta*thief_localization.yaw_cw_sign*park_turn_quarter;
+-  if(park_turn_pending==2U && progress<((thief_current_node==11U || thief_current_node==38U || thief_current_node==63U)?5500L:7000L)) {
++  if(park_turn_pending==2U && progress<((thief_current_node==11U || thief_current_node==38U || thief_current_node==63U)?5000L:7000L)) {
+     if((uint32_t)(now-hide_log_tick)>=100U) {
+       hide_log_tick=now;UartDebug_Printf("PARK_MAIN N=%u DEG_X100=%ld AGE=%lu\r\n",
+           (unsigned)thief_current_node,(long)progress,(unsigned long)(now-yaw.stamp_ms));
+@@ -1919,7 +1919,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_PARK55_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_PARK50_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1945,7 +1945,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_PARK55_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_PARK50_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1994,7 +1994,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_PARK55_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_PARK50_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- before/Tests/test_n038_main60.py
++++ after/Tests/test_n038_main60.py
+@@ -4,7 +4,7 @@
+ setup=(ROOT/'Tests/test_quick350.py').read_text(encoding='utf-8').split('try:')[0]
+ exec(compile(setup,str(ROOT/'Tests/test_quick350.py'),'exec'))
+ try:
+- for node,threshold in [(38,5500),(63,5500),(11,5500),(35,7000)]:
++ for node,threshold in [(38,5000),(63,5000),(11,5000),(35,7000)]:
+   for quarter in [-1,1]:
+    for sign in [-1,1]:
+     for progress in [threshold-100,threshold]:
+@@ -18,9 +18,9 @@
+      check(var('park_turn_pending')!=0,'incoming stripe cannot prematurely finish at main cutoff')
+  fresh(38,0);member('thief_localization','yaw_cw_sign',1)
+  var('park_start_yaw',0);var('park_turn_quarter',1);var('park_turn_pending',2);var('park_target_heading',1)
+- front_raw=back_raw=0x60;physical_rpm=0;cache(0);commands.clear();yaw=5500;clock+=20
++ front_raw=back_raw=0x60;physical_rpm=0;cache(0);commands.clear();yaw=5000;clock+=20
+  call('Route_RunParkingTurn',clock,20)
+- check(var('park_turn_pending')==3,'N038 enters fine phase at 55 degrees')
++ check(var('park_turn_pending')==3,'N038 enters fine phase at 50 degrees')
+  yaw=8200
+  for _ in range(18):
+   clock+=20;call('Route_RunParkingTurn',clock,20)
+--- before/Tests/test_hide_routes_stable4.py
++++ after/Tests/test_hide_routes_stable4.py
+@@ -107,9 +107,9 @@
+         call('Thief_UpdatePose');expect(member('thief_pose','valid')==0,'rotating pose cannot project laser directions')
+         start=var('park_start_yaw');start=start-65536 if start>=32768 else start
+         quarter=-1 if body==1 else 1
+-        yaw=(start+sign*quarter*5499+18000)%36000-18000;tick()
+-        expect(var('park_turn_pending')==2,'parking main phase remains active below authorized 55-degree cutoff')
+-        yaw=(start+sign*quarter*5700+18000)%36000-18000;turn_targets.clear();tick()
++        yaw=(start+sign*quarter*4999+18000)%36000-18000;tick()
++        expect(var('park_turn_pending')==2,'parking main phase remains active below authorized 50-degree cutoff')
++        yaw=(start+sign*quarter*5200+18000)%36000-18000;turn_targets.clear();tick()
+         expect(var('park_turn_pending')==3,'continuous wheel finish begins after main rotation')
+         expect(turn_targets and all(a+b+c+d==0 and a==c and b==d for a,b,c,d in turn_targets),
+                'parking commands rotate in place, never translate')
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,15 @@
++# PARK50_SL1：N011、N038、N063停车主旋转50°（本段优先）
++
++当前FW=UARTCH4_16V_PARK50_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/PARK55_before_three_main50。
++
++按用户要求将N011、N038、N063停车主旋转切换点从55°统一改50°，后续低速YAW和灰度对齐、最终90°停车目标保持。其他停车仍70°，用户350、80°至100°灰度窗口、路线、普通转弯、速度和N002修复均未改。生产仅变更App角度及三处FW标识。
++
++ARMCC5全量编译0错误0警告；角度专项99项、完整藏点任务151项ARM离线检查通过，共250项，结果绑定当前AXF。测试文件名保留main60，内容已同步50°；其他点70°仍覆盖。证据PARK50_FILES.json、PARK50_CHANGESET.patch、build_park50.log及本轮两份结果。仿真不代表实物过冲已解决。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方55°/60°描述为历史。
++
++---
++
+ # PARK55_SL1：N011、N038、N063停车主旋转55°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_PARK55_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N011_MAIN60_before_three_main55。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,15 @@
++# PARK50_SL1：N011、N038、N063停车主旋转50°（本段优先）
++
++当前FW=UARTCH4_16V_PARK50_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/PARK55_before_three_main50。
++
++按用户要求将N011、N038、N063停车主旋转切换点从55°统一改50°，后续低速YAW和灰度对齐、最终90°停车目标保持。其他停车仍70°，用户350、80°至100°灰度窗口、路线、普通转弯、速度和N002修复均未改。生产仅变更App角度及三处FW标识。
++
++ARMCC5全量编译0错误0警告；角度专项99项、完整藏点任务151项ARM离线检查通过，共250项，结果绑定当前AXF。测试文件名保留main60，内容已同步50°；其他点70°仍覆盖。证据PARK50_FILES.json、PARK50_CHANGESET.patch、build_park50.log及本轮两份结果。仿真不代表实物过冲已解决。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方55°/60°描述为历史。
++
++---
++
+ # PARK55_SL1：N011、N038、N063停车主旋转55°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_PARK55_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N011_MAIN60_before_three_main55。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,15 @@
++# PARK50_SL1：N011、N038、N063停车主旋转50°（本段优先）
++
++当前FW=UARTCH4_16V_PARK50_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/PARK55_before_three_main50。
++
++按用户要求将N011、N038、N063停车主旋转切换点从55°统一改50°，后续低速YAW和灰度对齐、最终90°停车目标保持。其他停车仍70°，用户350、80°至100°灰度窗口、路线、普通转弯、速度和N002修复均未改。生产仅变更App角度及三处FW标识。
++
++ARMCC5全量编译0错误0警告；角度专项99项、完整藏点任务151项ARM离线检查通过，共250项，结果绑定当前AXF。测试文件名保留main60，内容已同步50°；其他点70°仍覆盖。证据PARK50_FILES.json、PARK50_CHANGESET.patch、build_park50.log及本轮两份结果。仿真不代表实物过冲已解决。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。下方55°/60°描述为历史。
++
++---
++
+ # PARK55_SL1：N011、N038、N063停车主旋转55°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_PARK55_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N011_MAIN60_before_three_main55。

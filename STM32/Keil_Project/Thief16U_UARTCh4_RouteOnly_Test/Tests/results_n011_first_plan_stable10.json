@@ -1,0 +1,175 @@
+{
+  "checks": 3870,
+  "cases": {
+    "body_world_first_result": 16,
+    "noisy_full_transfers": 4,
+    "manual_stop": 1
+  },
+  "failures": [],
+  "lifecycles": [
+    {
+      "body": 1,
+      "gyro_sign": 1,
+      "world": 0,
+      "injected_frames": 324,
+      "result": {
+        "frames": 848,
+        "node": 63,
+        "body": 2,
+        "fixes": [
+          10,
+          20,
+          37,
+          38,
+          39,
+          40,
+          46,
+          58,
+          59,
+          75,
+          76,
+          77,
+          78,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "body": 3,
+      "gyro_sign": -1,
+      "world": 0,
+      "injected_frames": 324,
+      "result": {
+        "frames": 848,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          10,
+          20,
+          37,
+          38,
+          39,
+          40,
+          46,
+          58,
+          59,
+          75,
+          76,
+          77,
+          78,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "body": 1,
+      "gyro_sign": -1,
+      "world": 2,
+      "injected_frames": 276,
+      "result": {
+        "frames": 703,
+        "node": 63,
+        "body": 2,
+        "fixes": [
+          12,
+          13,
+          3,
+          4,
+          6,
+          7,
+          17,
+          26,
+          35,
+          36,
+          44,
+          53,
+          52,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "body": 3,
+      "gyro_sign": 1,
+      "world": 2,
+      "injected_frames": 276,
+      "result": {
+        "frames": 703,
+        "node": 63,
+        "body": 0,
+        "fixes": [
+          12,
+          13,
+          3,
+          4,
+          6,
+          7,
+          17,
+          26,
+          35,
+          36,
+          44,
+          53,
+          52,
+          63
+        ],
+        "states": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    }
+  ],
+  "expected_before_failure": false,
+  "axf_sha256": "8e619f1a5826cfdfa04c84c18c2e8ddce980b416cb499df2b5971e1e2fccee9f",
+  "test_sha256": "389228344e723839a7e1df1ca89fe9649a4cd6c97b8caf549c1e534f49f00416",
+  "hardware_tested": false
+}

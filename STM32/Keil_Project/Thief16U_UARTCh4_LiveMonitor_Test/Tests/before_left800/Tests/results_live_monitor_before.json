@@ -1,0 +1,8 @@
+{
+  "expected_failure": true,
+  "reason": "RUN21 disables receiver and hides raw ranges outside strategy gate",
+  "axf_sha256": "c1376cdba40333b780732d8b779c3ff718c1a65f8746282d4167c821d26baeb7",
+  "observed": [
+    "LASER DIR=FRONT D=0 C=0 STATUS=WAIT_TREASURE AGE=0 BAD=0 DROP=0 ERR=0 STATE=READY FAULT=NONE\r\n"
+  ]
+}

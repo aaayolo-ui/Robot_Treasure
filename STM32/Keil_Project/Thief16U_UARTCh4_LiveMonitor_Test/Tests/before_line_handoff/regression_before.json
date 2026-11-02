@@ -1,0 +1,25 @@
+{
+  "checks": 18,
+  "cases": {},
+  "failures": [
+    {
+      "case": "five_degree_handoff",
+      "error": "5degree residual must hand to real gray rather than stationary2degree trim"
+    },
+    {
+      "case": "rear_width_follow",
+      "error": "wide rear branch must not become dual-board heading error"
+    },
+    {
+      "case": "rear_width_recovery",
+      "error": "wide rear cannot steer recovery; narrow rear can"
+    },
+    {
+      "case": "first_unknown_sign_turn",
+      "error": "removing fine trim must not leave the first unknown-sign turn at45degrees"
+    }
+  ],
+  "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba",
+  "test_sha256": "74f26ed98add4b9c2b20b72035dce008d692659b620ca869356f8f33e3848870",
+  "hardware_tested": false
+}

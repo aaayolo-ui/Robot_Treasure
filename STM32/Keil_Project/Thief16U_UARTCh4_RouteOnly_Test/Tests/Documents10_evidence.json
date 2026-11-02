@@ -1,0 +1,18 @@
+{
+  "input": "C:/Users/ROG/Desktop/调试工程/Documents10.txt",
+  "input_sha256": "5EB6469D472ED4DE3F00E05832E359DACBB5A2FDBBC5492DBCD3ECBF8190849E",
+  "diagnosis": {
+    "repeated_departure_interrupt": "At N038, laser interception repeatedly occurred at MM=0 before the third plan departed.",
+    "reverse_replan_observed": "At N004, reverse return R1602 completed, then the firmware replanned and continued through N003 and N002.",
+    "final_stop": "The later stop was ROUTE_FAULT=FRONT_NO_LINE, not a missing post-retreat replan.",
+    "uart_config_failure": "The initial UARTCH4_CONFIG_FAILED belongs to a separate boot; the later run initialized successfully."
+  },
+  "software_reproduction": "The linked 16T AXF rejected one valid high-confidence frame inside the requested 700 mm range; the updated 16U AXF accepts it immediately.",
+  "policy": {
+    "trigger_center_mm": 700,
+    "high_quality_confirmation_frames": 1,
+    "front_or_side": "brake, reverse to the last confirmed node, replan and restart",
+    "rear_only": "continue away, stop and replan at the next confirmed node"
+  },
+  "hardware_tested": false
+}

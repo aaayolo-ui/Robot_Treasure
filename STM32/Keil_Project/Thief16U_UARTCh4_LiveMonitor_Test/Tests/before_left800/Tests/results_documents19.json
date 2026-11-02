@@ -1,0 +1,151 @@
+{
+  "checks": 11740,
+  "failures": [],
+  "passed": [
+    "ordinary_turn",
+    "reverse_first_follow",
+    "approach_corridor",
+    "reverse_junction_transient",
+    "ordinary_turn_matrix",
+    "dual_gray_frame_symmetry"
+  ],
+  "cases": {
+    "ordinary_turn": 1,
+    "reverse_first_follow": 1,
+    "approach_corridor": [
+      [
+        39,
+        40,
+        46,
+        58,
+        59,
+        60,
+        69,
+        70,
+        61,
+        49,
+        33,
+        34,
+        35
+      ],
+      [
+        39,
+        40,
+        46,
+        58,
+        59,
+        60,
+        69,
+        70,
+        61,
+        49,
+        33,
+        34,
+        35
+      ]
+    ],
+    "reverse_junction_transient": 1,
+    "ordinary_turn_matrix": 448,
+    "dual_gray_frame_symmetry": {
+      "samples": 14,
+      "forward": [
+        [
+          2120,
+          2120,
+          2120,
+          2120
+        ],
+        [
+          2024,
+          2456,
+          2024,
+          2456
+        ],
+        [
+          1842,
+          2658,
+          1842,
+          2658
+        ],
+        [
+          2212,
+          2528,
+          2212,
+          2528
+        ],
+        [
+          2582,
+          2398,
+          2582,
+          2398
+        ],
+        [
+          2712,
+          2028,
+          2712,
+          2028
+        ],
+        [
+          2582,
+          2398,
+          2582,
+          2398
+        ]
+      ],
+      "reverse": [
+        [
+          -2120,
+          -2120,
+          -2120,
+          -2120
+        ],
+        [
+          -2456,
+          -2024,
+          -2456,
+          -2024
+        ],
+        [
+          -2658,
+          -1842,
+          -2658,
+          -1842
+        ],
+        [
+          -2528,
+          -2212,
+          -2528,
+          -2212
+        ],
+        [
+          -2398,
+          -2582,
+          -2398,
+          -2582
+        ],
+        [
+          -2028,
+          -2712,
+          -2028,
+          -2712
+        ],
+        [
+          -2398,
+          -2582,
+          -2398,
+          -2582
+        ]
+      ]
+    }
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "51aef090e1b578d7490351b21ed670ae519b5bfaa02c0e3bf39ae25f18f3a489",
+  "app_source_sha256": "2acbc6a6fc02a6adc24ce2755dab5c013ac455236e039de2dc34d0cf9be75d33",
+  "test_script_sha256": "68750d15681aff562dc8fc5251b5958689ccd69c0ea683becab8746ebf58cfb9",
+  "helper_sha256": {
+    "test_documents15.py": "956fedafa7ea99b584c1721a9b430c36e9a707161ebf37fb69d28abcbfe957b5",
+    "test_app_runtime.py": "d2d3dcd4503a0d14561fdea52540df7904ee0982e9930b785283f96cd042994a",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "a80cb0e4dec3b143d96eab7bb1509b748bb882fd62685d7435e6ba52e460976a"
+  }
+}

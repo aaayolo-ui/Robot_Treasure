@@ -1,0 +1,27 @@
+{
+  "checks": 180,
+  "failures": [
+    {
+      "case": "plateau",
+      "error": "no latched fault at N038: HIDE_HEADING_NOT_ALIGNED"
+    },
+    {
+      "case": "threat_matrix",
+      "error": "real connected laser ray must be active during parking trim"
+    }
+  ],
+  "passed": [
+    "noise_and_boundary"
+  ],
+  "matrix": {},
+  "hardware_tested": false,
+  "firmware_sha256": "a5767b7e2de68640326a9595d1ff8b85ac94ca0e7be3337e589411f81b26aba2",
+  "app_source_sha256": "2ce4ffccca6d27b16efb04007081c4f7d68c621e66235daac561f5e29faa6472",
+  "test_script_sha256": "8abeb28c9f61aa2c5aaf38481781c95954b184ae2161f733f3b46013f4999bdb",
+  "helper_sha256": {
+    "test_documents15.py": "4efa258b3f8055fac7e8b7181e777166e9fe647d2fddbe4669fc9107b7f58caf",
+    "test_app_runtime.py": "0aed8aa532491558e6da158bf0a699e94cfc5db2c7df5aa4c1ed87cb5a414203",
+    "test_escape_completion.py": "01e21ac4f1cc7ec209652dba825fe3e2a6eefd7d7488bd5ac303e43ac785ce9e",
+    "test_documents13.py": "1bac297603ebe91518075f530493365ebc5a0389bbf9e5ee7c9de8545d7af994"
+  }
+}

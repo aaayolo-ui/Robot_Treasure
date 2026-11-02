@@ -1,0 +1,11 @@
+{
+  "cases": {
+    "terminal_pwm": 8,
+    "measured_brake_handoff": 8,
+    "road_heading_context": 4
+  },
+  "failures": [],
+  "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8",
+  "test_sha256": "b4c41f9c11907163861807e2a0adc2ed5826ff3eacbe86d45830efe8923c80e3",
+  "hardware_tested": false
+}

@@ -1,0 +1,306 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR11",
+  "firmware_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba",
+  "hex_sha256": "1e58044db8fab35cb1ac4c906971e946c0ae1c70b26b3209ac6088acb1fb76ae",
+  "before_failures": [
+    {
+      "case": "all_map_quarter_turns",
+      "error": "one shared axis stage exists for all mapped turns"
+    },
+    {
+      "case": "n078_original_log",
+      "error": "N078 shared axis stage"
+    },
+    {
+      "case": "n011_exit_policy",
+      "error": "N011 world-direction priority selects correct first exit"
+    }
+  ],
+  "general": {
+    "all_map_quarter_turns": {
+      "combinations": 1016,
+      "nodes": [
+        1,
+        2,
+        3,
+        4,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        42,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        51,
+        52,
+        53,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        82,
+        83,
+        84,
+        85,
+        88
+      ]
+    },
+    "n078_original_log": 4,
+    "n011_exit_policy": {
+      "body_directions": 4,
+      "world_threats": 2,
+      "blocked_cases": 3
+    }
+  },
+  "general_checks": 6176,
+  "root_turn_cases": 34,
+  "extra": {
+    "yaw_reference": {
+      "straight_reference": 70,
+      "treasure_turn_handoff": 8,
+      "reference_wrap_reverse": 4
+    },
+    "turn_resume": {
+      "resume_after_brake": 2,
+      "continuous_loop_kept": 1
+    },
+    "monitor7_restore": {
+      "overshoot_axis": 4
+    }
+  },
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "28792ca9094ed66923d5db937665a36e1aca2de5e14a07d433c3d9c2310d80d6",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "210cd0b26cb0c5c38f4ceadcfb046bd735a894626a143fb6ff3ce23abe004515",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "fe7f0fab4188f3a2af5509ad6c88c52de4bb8e70a14423915140e4fed7f5386f",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "4a762aecc7d0f1114ea39ab79464163b72877077faea476a0347dd3476cd514f",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "96d3bb0efa87e02921be30badc181c8662e372df1a0d1a3b9aeeccd0b80096ce",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "40964a9c4f4746860816b544462137ba143bf90f64fc0acd60c35408eb9654b7",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "e52a449878ca9729ad3bfffdd2cbcfd6fe92ffd61b75eae5b86adf22ee184f89",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "cf585d8bd00d9e67fa0c40a7b266cbd9a386ca3c66767352c4a2f3ca773f4add",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "756520620b9abd59918f18b3d0471b68284275f05b3b106ef6e24eb423c34b91",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "d6b6e20b739a8a975c2a7726fee098b2140691ce9ee269ccfd3448fbd0c8ed22",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "33022a0201888fcbd6cbb66d02d9df22264cc29fccbb1f3ab4cefc0430a3f57c",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "af37e217477b2c34e98317e5bfa323f4e58473170cadb154d453bd8d8cd32ba9",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "1e427a5181007ef9334066219261dbce08378c9f13cc10b43623c916f53beff5",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "5b9d9531e1b8b480d9da4b321f33bf89d1d277743e3e0429984e3951d3db1567",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "28ca124b3222c324bb5aaea6fe19456e1fdf5e6a6dbdff404ae2771234c3e6bf",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "459a382c9b8bd00e05c7dcd1784c7874ae5859f4d4a27503a8321b7b597e550b",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "c6a5e8c13796112958b5c4b65f44f7bd98d61bba870437d252d6ad49c87cb5ee",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "3277c6e6710c5799b9a686b53656fc24461596909eb6860f31158909027ac744",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "6bc54c96d62de29569059c48ae38097f1d41e8411c8b781de8dc8120ff531242",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "bb03babeaabc9ba1a6a12e947d54f107dd5e0dbf1e50470ded9155854a7cbbb9",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "aad3af0cc35b2c6cfc17363fddbcf4884bbd5c681d3a32f3fa908d6d58db3866",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "cf1be83f49742de9429e2422f02d1b7d2e791c3e737790d605016aaf94780f7b",
+      "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba"
+    }
+  ],
+  "supplemental": {
+    "route_identity": 92,
+    "exit_stall": 1140,
+    "road_probe": 1862,
+    "left800": 442
+  },
+  "pure_checks": 366155,
+  "pure_cases": 378,
+  "executed_fixture_prefix_sha256": {
+    "test_app_runtime.py": "3e28d0969dad020903180d8af7be4f600b0de1a76e899870af4aae807cacc657",
+    "test_documents15.py": "d237d7590029261eec1cfbce82757e979d75e1ecf0413b40cd981821f8a24955"
+  },
+  "files": {
+    "User/App_ThiefStrategy.c": "d592fed2639bdd9761f5ad7001d86c89f1581242434fd331597edd143960be29",
+    "Algorithm/ThiefStrategy/ThiefMapPlanner.c": "d12ab24f3a6d4adb47de43469102c383fa1526a4e7d2ef8117ddf9a29371c871",
+    "Tests/test_general_turns.py": "1a07c50a61cc07a3d655f70c553c15905d868ca2a4a28ee5f750793b73fa4d20",
+    "Tests/test_yaw_reference.py": "90f23bcd6136f9696a870a177d6954c5031e5113ee6630f5e24f954bca87195d",
+    "Tests/test_monitor7_restore.py": "8ed67a45eb5990eabbcadc7fa3936fd29169a3101817fa7db0fed5bf7860da7d",
+    "Tests/test_documents24.py": "dfb91802ba70aaaeb6800e838060b7ac2ae560f2ecac1c7440d899f04d6249d8",
+    "Tests/test_app_runtime.py": "ee4d70293122a766d5f4b7fff277ea94cca760bc1cee6420c870182996261fc4",
+    "Tests/test_documents15.py": "28e614c82371b3412925b31de9ce53f3a1fd4a657ce3aadcfbf6e3f5e6ac7c37",
+    "Tests/test_documents22.py": "e11359c696f4e6843627939b93703727b4f7f74936bc6afe791c2927275a5a3b",
+    "Tests/test_speed16t.py": "37193041fb7867952d77dd6744186896fc72e7093c9921b201fb30d8769c166d",
+    "README.md": "449e31a7d1b82b632320dd8719e2b806ac43148143a67c4df7279da57077a5e1",
+    "AGENTS.md": "b48173df717de4cc7bd8e96ed8a5c8da8ea5af6bdfcb6e3a3d64b3195f95a759",
+    "Docs/修改规范与回归清单.md": "c3f1045dd05ccdb418e9f3776fca2839b68dcb0edeea98b4e70f3d538db4f8d5",
+    "Tests/validate_monitor11.py": "9134c09657d155aa73dac1acc7a22dcf54ddd476cab8721e4c7dbde8d4a29b6c",
+    "GENERAL_TURNS_CHANGESET.patch": "23ed9ddc46d3f89f477fc3cb43b3dc7d182f59b9d1542304231a5049b7ba494f",
+    "build_monitor11.log": "0ab62a26b1c630d6ef449cf8bdfcead36ddb946de148b5b1dde7951097e8f859",
+    "Tests/results_general_turns.json": "2ea615dda2f0da70981ae668fc375da931589f0979a014b1bf9c9ad562c068c7",
+    "Tests/results_16m.json": "471b95b14b0dae4238eda43eafa740fa3d26ed8c31cc0a4c6b6d781774198181",
+    "Tests/results_monitor_suite.json": "19f9a83f46cf032536e44093cdeda213f18bc188724540e86fbb5fd7878ca0b5",
+    "Tests/results_documents15.json": "ef7ebb8f7b23d6845928163f24123fbddc9a17460192d9807648b6bfe39056db",
+    "Tests/results_documents24.json": "c5ff110b44954737410ee3e24a0e0ce645dfac91f436f585c23a75f645c2f95b",
+    "Tests/results_yaw_reference.json": "cf27de51ca4b4607d4b5a5824abba88898905786ca2efd717a2b8cb3af39a689",
+    "Tests/results_turn_resume.json": "645165d323b4e8bc93e112da3accff7e2c213d90186418902692d9b0490fd73e",
+    "Tests/results_monitor7_restore.json": "a9e9044d8e966143d30a13785c91bcee9a1b3e02d4bdc9e1b0d4bae7c50992be",
+    "Tests/results_route_identity.json": "a57cd6945978dc4c9dcfc47258927572e0443285250407f173abe4c34973caa0",
+    "Tests/results_exit_stall.json": "e3a35937ceaea891f7fa69024a20d991a63e9b4a5e8afcc4a146f3c8ef10a6c8",
+    "Tests/results_road_probe.json": "c796ca8e328a55cd12eb74f5bd962b633f5c585a53daea757c2b73aadc9fdc3a",
+    "Tests/results_left800.json": "6959e887c99c33e697a32f2e16b601efd559ba5d2f745f660cc6d297feedfaae"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "1016 map-turn combinations use synthetic wheel/gray/gyro feedback; physical coverage, traction and settling still require vehicle tests.",
+    "N011 corridors are preferences with real blocked/observed-exit fallback, not a guarantee against moving opponents.",
+    "Legacy recovery fixtures now actually complete the common turn stage before injecting a disturbed exit; old scripts are preserved."
+  ]
+}

@@ -1,0 +1,21 @@
+stagnant_yaw: PASS
+side_guidance: PASS
+boost_stop_and_fresh_yaw: PASS
+failed_probe_return: PASS
+return_origin_bound: PASS
+continuous_loss_still_stops: PASS
+{
+  "checks": 1140,
+  "failures": [],
+  "cases": {
+    "stagnant_yaw": 4,
+    "side_guidance": 8,
+    "boost_stop_and_fresh_yaw": 1,
+    "failed_probe_return": 4,
+    "return_origin_bound": 1,
+    "continuous_loss_still_stops": 1
+  },
+  "hardware_tested": false,
+  "axf_sha256": "d6bc1e3b74e805c3d83c866603d0e292aae6f64fad47a6b343125a6b465b56ba",
+  "test_sha256": "29df2554bf0aee3b5ce2fc70d30f61cdc5835dbe5479694af4598dc5367863ee"
+}

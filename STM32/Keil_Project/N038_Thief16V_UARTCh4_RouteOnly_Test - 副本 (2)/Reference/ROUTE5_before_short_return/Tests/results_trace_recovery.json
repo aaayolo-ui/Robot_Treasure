@@ -1,0 +1,46 @@
+{
+  "checks": 1086,
+  "failures": [],
+  "cases": [
+    {
+      "case": "wrong_branch_and_missing_exit",
+      "result": {
+        "frames": 133,
+        "node": 11,
+        "body": 1,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "new_return_front",
+      "fallback_route": 1602
+    },
+    {
+      "case": "manual_stop"
+    },
+    {
+      "case": "two_seconds_both_white",
+      "reason": "GRAY_BOTH_NO_LINE"
+    },
+    {
+      "case": "zero_displacement"
+    },
+    {
+      "case": "straight_return_distance_credit",
+      "credit_mm": 60
+    }
+  ],
+  "axf_sha256": "84d1eb0745bc4d7730745c61f8e39e3ed237f773cef11375dca29fb4d6bf4d53",
+  "hardware_tested": false
+}

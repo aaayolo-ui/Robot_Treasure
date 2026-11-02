@@ -1,0 +1,186 @@
+--- prior-web/laser_live_server.py
++++ updated-web/laser_live_server.py
+@@ -25,6 +25,12 @@
+ HEX_LINE = re.compile(r"HEX=([0-9A-Fa-f ]+)")
+ STRATEGY_LASER = re.compile(
+     r"LASER DIR=(FRONT|LEFT|RIGHT|REAR) D=(\d+) C=(\d+) STATUS=([A-Z_]+)"
++)
++RANGE_STATS = re.compile(
++    r"^RANGE DIR=(?P<direction>FRONT|LEFT|RIGHT|REAR) N=(?P<n>\d+) "
++    r"MEAN_MM=(?P<mean>\d+) MIN_MM=(?P<min>\d+) MAX_MM=(?P<max>\d+) "
++    r"REJECT=(?P<rejected>\d+) FW=(?P<firmware>\d+) REF_MM=(?P<reference>\d+)"
++    r"(?: FRAMES=(?P<frames>\d+) WINDOW_MS=(?P<window>\d+) HZ_X10=(?P<hz>\d+))?$"
+ )
+ STRATEGY_STATE = re.compile(r"\bSTATE=([A-Z_]+) FAULT=([A-Z0-9_]+)")
+ BOOT_STATE = re.compile(r"^BOOT_STATUS .*\bSTATE=([A-Z_]+).*\bREASON=([A-Z0-9_]+)")
+@@ -96,6 +102,7 @@
+         self.error = ""
+         self.last_receive_ms = 0
+         self.valid_frames = 0
++        self.range_stats = {}
+         self.vehicle_state = None
+         self.fault_reason = None
+         self.status_time_ms = 0
+@@ -149,6 +156,7 @@
+             self.error = "正在切换串口"
+             self.last_receive_ms = 0
+             self.valid_frames = 0
++            self.range_stats = {}
+             self.vehicle_state = None
+             self.fault_reason = None
+             self.fault_from = None
+@@ -194,6 +202,7 @@
+                 "error": self.error,
+                 "last_receive_ms": self.last_receive_ms,
+                 "valid_frames": self.valid_frames,
++                "range_stats": {ch: value.copy() for ch, value in self.range_stats.items()},
+                 "vehicle_state": self.vehicle_state,
+                 "fault_reason": self.fault_reason,
+                 "status_time_ms": self.status_time_ms,
+@@ -388,6 +397,7 @@
+                                    int(match.group("run")), None, None)
+ 
+     def parse_line(self, line: str) -> None:
++        line = line.strip()
+         loc_diag = LOC_DIAG.search(line)
+         if loc_diag:
+             with self.lock:
+@@ -426,6 +436,31 @@
+             return
+         if line.startswith("LOC NODE="):
+             self._parse_location(line)
++            return
++        if line.startswith("BOOT FW=LASER_RANGE_CAL_"):
++            with self.lock:
++                self.range_stats.clear()
++                for channel in self.channels.values():
++                    channel.update(mm=None, confidence=None, time_ms=0, status=None)
++            return
++        stats = RANGE_STATS.fullmatch(line)
++        if stats:
++            channel = {"FRONT": "1", "LEFT": "2", "RIGHT": "3", "REAR": "4"}[stats["direction"]]
++            count = int(stats["n"])
++            with self.lock:
++                self.range_stats[channel] = {
++                    "n": count,
++                    "mean_mm": int(stats["mean"]) if count else None,
++                    "min_mm": int(stats["min"]) if count else None,
++                    "max_mm": int(stats["max"]) if count else None,
++                    "rejected": int(stats["rejected"]),
++                    "firmware": int(stats["firmware"]),
++                    "reference_mm": int(stats["reference"]) or None,
++                    "frames": int(stats["frames"]) if stats["frames"] else None,
++                    "window_ms": int(stats["window"]) if stats["window"] else None,
++                    "hz": int(stats["hz"]) / 10 if stats["hz"] and int(stats["window"]) > 0 else None,
++                    "time_ms": int(time.time() * 1000),
++                }
+             return
+         strategy_laser = STRATEGY_LASER.search(line)
+         if strategy_laser:
+--- prior-web/laser_live.html
++++ updated-web/laser_live.html
+@@ -19,6 +19,7 @@
+ @media(max-width:560px){.app{padding:17px 12px}.top{gap:12px;padding-bottom:18px;margin-bottom:16px}.brand{gap:9px}.brand-mark{width:34px;height:34px;border-radius:10px}.brand-mark svg{width:19px}.eyebrow{font-size:8px;letter-spacing:.1em}.title h1{font-size:18px}.connect .clock{display:none}.status{max-width:133px;font-size:10px;gap:6px}.workspace,.sidebar{gap:14px}.map-head{padding:17px 16px}.section-title h2{font-size:16px}.role-control{gap:7px}.role-control select{padding-left:10px;min-width:80px}.map-summary{margin:0 12px 12px;grid-template-columns:1.15fr 1fr}.metric{padding:11px 12px}.metric strong{font-size:11px}.metric.position strong{font-size:16px}.metric.vehicle{grid-column:1/-1;border-left:0;border-top:1px solid #293442;padding:9px 12px;display:flex;gap:12px;align-items:center}.metric.vehicle small{margin:0}.metric.vehicle span{font-size:11px}.map-stage{margin:0 8px}.map-svg{min-height:260px;padding:30px 0 8px}.stage-label{left:13px;font-size:8px}.north{right:13px}.map-toolbar{padding:12px 16px;gap:13px}.map-legend{width:100%;justify-content:space-between;font-size:9px}.map-controls{width:100%;justify-content:space-between;font-size:11px}.source-details summary{padding:12px 16px}.map-details{padding-left:16px;padding-right:16px;gap:12px}.map-note{padding-left:16px;padding-right:16px;font-size:10px}.sidebar{grid-template-columns:1fr}.sensor-grid{grid-template-columns:1fr 1fr}.panel-heading{padding:17px 16px}.panel-heading h2{font-size:16px}.card{padding:16px}.sensor-name{font-size:12px}.sensor-name i{display:none}.tag{font-size:9px}.reading{font-size:30px;margin:14px 0}.reading small{font-size:10px}.meta{flex-direction:row;align-items:center;gap:4px;font-size:9px}.confidence-bar{gap:3px;height:6px}.visual{padding:16px}.car-svg{height:280px;max-width:300px}.footer{font-size:9px;padding-top:14px}.footer-left{gap:8px}}
+ @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+ 
++.range-cal{margin-top:12px;padding-top:10px;border-top:1px solid #2b3748;font-size:10px;color:#90a3ba;line-height:1.8}.range-cal strong{color:#dce8f5;font-weight:550;font-variant-numeric:tabular-nums}.range-cal label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:5px;white-space:nowrap;margin-top:7px}.range-cal input{width:100%;min-width:0;background:#0e151f;color:#e9eef6;border:1px solid #42526a;border-radius:4px;padding:4px;font-size:11px}.range-error{margin-top:5px}.range-note{padding:12px 20px;color:#8ea0b6;font-size:10px;line-height:1.7;border-top:1px solid #293442}
+ </style>
+ </head>
+ <body>
+@@ -280,8 +281,9 @@
+   }catch(error){document.querySelector('#map-state').textContent=`起点更新失败：${error.message}`;label.textContent='回到初始位置';}
+   finally{button.disabled=false;setTimeout(()=>{label.textContent='回到初始位置';},1800);}
+ });
+-function updateChannel(ch,mm,confidence,timeMs){
+-  const s=state[ch];s.distance=mm;s.confidence=confidence;s.time=timeMs;
++const rangeStatusNames={RAW:'原始测距',WAIT_TREASURE:'等待策略启用',WAIT_DATA:'等待测距帧',STALE:'测距帧已过期',BAD_DATA:'测距无效',LINK_ERROR:'扩展板连接失败',RX_OFF:'采集未启用',EDGE_OFF:'边缘方向忽略'};
++function updateChannel(ch,mm,confidence,timeMs,status){
++  const s=state[ch];s.distance=mm;s.confidence=confidence;s.time=timeMs;s.status=status;
+   const d=document.querySelector(`#distance-${ch}`),c=document.querySelector(`#confidence-${ch}`),u=document.querySelector(`#updated-${ch}`);
+   d.innerHTML=mm===null?'— <small>mm</small>':`${mm.toLocaleString('zh-CN')} <small>mm</small>`;
+   d.style.opacity=mm!==null&&confidence>=20?'1':'.55';
+@@ -292,7 +294,7 @@
+   meter.setAttribute('aria-valuetext',`${level}%`);
+   meter.classList.remove('stale');
+   meter.querySelectorAll('span').forEach((segment,index)=>segment.classList.toggle('filled',index<Math.ceil(level/10)));
+-  u.textContent=s.time?new Date(s.time).toLocaleTimeString('zh-CN',{hour12:false}):'等待数据';
++  u.textContent=rangeStatusNames[status]||(s.time?new Date(s.time).toLocaleTimeString('zh-CN',{hour12:false}):'等待数据');
+   drawSensor(ch);
+ }
+ function drawSensor(ch){
+@@ -327,6 +329,27 @@
+   document.querySelector('#gyro-time').textContent=gyro?new Date(gyro.time_ms).toLocaleTimeString('zh-CN',{hour12:false}):'—';
+ }
+ let pollInFlight=false;
++let latestRangeStats={};
++// User's three-grid observations (900 mm from vehicle centre), not sensor scale calibration.
++const mountingReference={2:{offset:100,threeGrid:800},3:{offset:100,threeGrid:800},4:{offset:150,threeGrid:750}};
++function renderRangeStats(){
++  for(let ch=1;ch<=4;ch++){
++    const stats=latestRangeStats[String(ch)],fresh=stats&&Date.now()-stats.time_ms<2500;
++    const put=(key,text)=>document.querySelector(`#range-${key}-${ch}`).textContent=text;
++    put('hz',fresh&&stats.hz!==null?`${stats.hz.toFixed(1)} Hz`:'—');
++    put('mean',fresh&&stats.mean_mm!==null?`${stats.mean_mm} mm`:'—');
++    put('span',fresh&&stats.n?`${stats.min_mm}–${stats.max_mm} mm`:'—');
++    put('count',fresh?`有效 ${stats.n} / 排除 ${stats.rejected}`:'等待统计');
++    const mounting=mountingReference[ch];
++    put('center',!mounting?'前方未标定':fresh&&stats.mean_mm!==null?`≈${stats.mean_mm+mounting.offset} mm ±50`:'—');
++    const input=document.querySelector(`#range-ref-${ch}`);
++    const entered=input.value.trim(),reference=Number(entered);
++    const validReference=entered!==''&&Number.isFinite(reference)&&reference>0&&reference<=10000;
++    const error=fresh&&stats.mean_mm!==null&&validReference?stats.mean_mm-reference:null;
++    put('error',error===null?'—':`${error>0?'+':''}${error.toFixed(1)} mm`);
++    document.querySelector(`#range-hz-${ch}`).title=fresh&&stats.window_ms!==null?`主控收到 ${stats.frames} 帧 / ${stats.window_ms} ms；包括零置信度帧`:'需新版测试固件上报实际帧率';
++  }
++}
+ async function poll(){
+   if(pollInFlight)return;
+   pollInFlight=true;
+@@ -347,6 +370,8 @@
+     mapMatch=data.map_match;
+     latestProjection=trackGeneration===data.track_generation?data.projection||null:null;
+     updateOnboard(data);
++    latestRangeStats=data.range_stats||{};
++    renderRangeStats();
+     renderMapPose();
+     const mapState=document.querySelector('#map-state');
+     const vehicleStatus=document.querySelector('#vehicle-status');
+@@ -366,25 +391,35 @@
+     for(let ch=1;ch<=4;ch++){
+       const value=data.channels[String(ch)];
+       if(value&&value.time_ms!==state[ch].time)
+-        updateChannel(ch,value.mm,value.confidence,value.time_ms);
++        updateChannel(ch,value.mm,value.confidence,value.time_ms,value.status);
+     }
+   }catch(error){setStatus('采集服务离线','error',error.message);}
+   finally{pollInFlight=false;}
+ }
+ for(let ch=1;ch<=4;ch++){
++  const card=document.querySelector(`#distance-${ch}`).closest('.card');
++  card.insertAdjacentHTML('beforeend',`<div class="range-cal"><div>接收帧率 <strong id="range-hz-${ch}">—</strong></div><div>周期均值 <strong id="range-mean-${ch}">—</strong></div><div>最小–最大 <strong id="range-span-${ch}">—</strong></div><div id="range-count-${ch}">等待统计</div><div>中心估距 <strong id="range-center-${ch}">—</strong></div><div>${mountingReference[ch]?`三格参考：${mountingReference[ch].threeGrid} ±50 mm`:'前方需单独实测'}</div><label for="range-ref-${ch}"><span>尺量值</span><input id="range-ref-${ch}" type="number" min="1" max="10000" step="any" placeholder="mm" aria-label="${['','前方','左侧','右侧','后方'][ch]}尺量实际距离，毫米"><span>mm</span></label><div class="range-error">均值偏差 <strong id="range-error-${ch}">—</strong></div></div>`);
++  const referenceInput=document.querySelector(`#range-ref-${ch}`);
++  try{referenceInput.value=localStorage.getItem(`laser-ruler-${ch}`)||'';}catch{}
++  referenceInput.addEventListener('input',()=>{
++    try{localStorage.setItem(`laser-ruler-${ch}`,referenceInput.value);}catch{}
++    renderRangeStats();
++  });
+   const meter=document.querySelector(`#confidence-bar-${ch}`);
+   for(let segment=0;segment<10;segment++)meter.append(document.createElement('span'));
+   drawSensor(ch);
+   document.querySelector(`#line-${ch}`).setAttribute('opacity','.25');
+   document.querySelector(`#hit-${ch}`).setAttribute('opacity','.25');
+ }
+-loadMap();loadPorts();poll();updatePath();setInterval(poll,300);setInterval(updatePath,350);setInterval(loadPorts,3000);
++document.querySelector('.sensors-panel').insertAdjacentHTML('beforeend','<div class="range-note">测距测试：距离保留原始 mm。接收帧率由主控逐帧统计，含零置信度帧；均值仅使用距离和置信度均非零的样本。偏差 = 周期均值 − 尺量值；输入仅用于网页计算，不修改传感器。</div>');
++loadMap();loadPorts();poll();updatePath();setInterval(poll,100);setInterval(updatePath,350);setInterval(loadPorts,3000);
+ setInterval(()=>{
++  renderRangeStats();
+   const now=Date.now();document.querySelector('#clock').textContent=new Date(now).toLocaleString('zh-CN',{hour12:false});
+   for(let ch=1;ch<=4;ch++){
+     const s=state[ch],age=now-s.time;
+     if(s.time&&age>1500){document.querySelector(`#updated-${ch}`).textContent='数据超时';document.querySelector(`#updated-${ch}`).style.color='var(--muted)';document.querySelector(`#confidence-bar-${ch}`).classList.add('stale');document.querySelector(`#hit-${ch}`).setAttribute('opacity','.25');document.querySelector(`#line-${ch}`).setAttribute('opacity','.25');}
+-    else if(s.time){const strong=s.distance!==null&&s.confidence>=20;document.querySelector(`#updated-${ch}`).style.color='';document.querySelector(`#hit-${ch}`).setAttribute('opacity',strong?'1':'.25');document.querySelector(`#line-${ch}`).setAttribute('opacity',strong?'.8':'.25');}
++    else if(s.time){const strong=s.distance!==null&&s.confidence>=20&&s.status!=='STALE';document.querySelector(`#updated-${ch}`).textContent=rangeStatusNames[s.status]||new Date(s.time).toLocaleTimeString('zh-CN',{hour12:false});document.querySelector(`#updated-${ch}`).style.color='';document.querySelector(`#hit-${ch}`).setAttribute('opacity',strong?'1':'.25');document.querySelector(`#line-${ch}`).setAttribute('opacity',strong?'.8':'.25');}
+   }
+ },250);
+ </script>

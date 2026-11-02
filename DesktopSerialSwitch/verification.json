@@ -1,0 +1,1 @@
+﻿{"ok":true,"checks":["stop_existing","manual_start","default_disconnected","enumerate_ports","manual_start_cloud","manual_stop_cloud","cloud_stop_preserves_local","disconnect_api","manual_stop"]}

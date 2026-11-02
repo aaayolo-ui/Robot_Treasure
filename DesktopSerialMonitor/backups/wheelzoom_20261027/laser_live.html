@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>实车监控 · Robot Treasure</title>
+<style>
+
+:root{color-scheme:dark;--bg:#0c1016;--panel:#131a23;--line:#26313e;--text:#e9eef6;--muted:#8b9aaf;--front:#62c9ef;--left:#b39bee;--right:#efb26c;--rear:#74cbb7;--bad:#f47e88}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,"Segoe UI","Microsoft YaHei",sans-serif;min-width:320px}button,select,input{font:inherit}button,select,summary,label{touch-action:manipulation}button,select{color:inherit}button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid #91c7ef;outline-offset:4px}button{cursor:pointer}svg{display:block}.app{max-width:1540px;margin:auto;padding:28px 34px 18px}.top{display:flex;align-items:center;justify-content:space-between;gap:24px;padding-bottom:25px;margin-bottom:24px;border-bottom:1px solid #222c38}.brand{display:flex;align-items:center;gap:13px}.brand-mark{width:42px;height:42px;display:grid;place-items:center;border:1px solid #394554;border-radius:12px;background:#1a232f;color:#dbe5ef}.eyebrow{font-size:10px;letter-spacing:.18em;color:#8696ab;font-weight:600}.title h1{font-size:22px;letter-spacing:-.5px;line-height:1.3;margin:3px 0 0;font-weight:650}.connect{display:flex;align-items:center;gap:18px}.status{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#a1adbd;max-width:300px}.status:before{content:"";width:6px;height:6px;border-radius:50%;background:#778496;flex-shrink:0}.status.live{color:#a0d5c3}.status.live:before{background:#78c9ad;box-shadow:0 0 0 4px #78c9ad12}.status.error{color:var(--bad)}.status.error:before{background:var(--bad)}.serial-info{font-size:11px;letter-spacing:.03em;color:#718198;padding-left:18px;border-left:1px solid #2b3440;white-space:nowrap}.clock{font-size:11px;color:#b4c0cf;font-variant-numeric:tabular-nums;white-space:nowrap}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 334px;gap:20px;align-items:start}.map-panel,.sensors-panel,.visual{border:1px solid var(--line);border-radius:17px;background:var(--panel);overflow:hidden}.map-panel{--role-color:#ffb45f;--trail-once:#ffb45f;--trail-twice:#d37a35;--trail-many:#98512d}.map-panel[data-role="police"]{--role-color:#6ac6ff;--trail-once:#6ac6ff;--trail-twice:#348bbf;--trail-many:#285676}.map-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 24px 18px}.section-title h2,.panel-heading h2,.visual-head h2{font-size:17px;font-weight:600;letter-spacing:-.3px;margin:3px 0 0}.section-title .eyebrow,.panel-heading .eyebrow{font-size:9px;letter-spacing:.14em}.role-control{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:11px}.role-control select{appearance:none;background:#202a37 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='m3 4 3 3 3-3' fill='none' stroke='%2399a9bc' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center;border:1px solid #364354;border-radius:9px;padding:8px 31px 8px 12px;min-width:88px;color:var(--role-color);font-weight:600;cursor:pointer}.map-summary{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1.2fr);margin:0 24px 18px;border:1px solid #293442;border-radius:11px;background:#101720}.metric{padding:13px 16px;min-width:0}.metric+.metric{border-left:1px solid #293442}.metric small{display:block;color:#7e90a7;font-size:10px;margin-bottom:5px}.metric strong{font-size:13px;font-weight:550;color:#c7d3e2;display:block;overflow-wrap:anywhere}.metric.position strong{font-size:21px;font-weight:550;letter-spacing:-.5px;color:#f0f5fb;font-variant-numeric:tabular-nums}.metric.vehicle span{font-size:12px;color:#b7c4d6;overflow-wrap:anywhere}.map-stage{position:relative;margin:0 16px;background:#0e151f;border:1px solid #253242;border-radius:12px;overflow:hidden}.stage-label{position:absolute;left:17px;top:15px;display:flex;gap:8px;align-items:center;font-size:9px;font-weight:600;letter-spacing:.13em;color:#73879f;pointer-events:none}.stage-label i{width:5px;height:5px;background:var(--role-color);border-radius:50%}.north{position:absolute;right:18px;top:15px;color:#8393a8;font-size:10px;letter-spacing:.12em;pointer-events:none}.map-svg{width:100%;height:auto;max-height:650px;min-height:290px;background-image:radial-gradient(#34445a30 .7px,transparent .7px);background-size:18px 18px;padding:30px 10px 12px}#map-roads line{stroke:#3a4a5c;stroke-width:4;opacity:.82}#map-nodes circle{fill:#879cb3;r:2.9px}.map-node-label{font-size:8px;fill:#99acc2;paint-order:stroke;stroke:#0e151f;stroke-width:3px}.map-svg #car-marker{filter:drop-shadow(0 0 5px #0008)}.map-svg #car-marker circle,.map-svg #car-marker path{fill:var(--role-color)}.map-trail-layer{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.map-trail-layer.once{stroke:var(--trail-once)}.map-trail-layer.twice{stroke:var(--trail-twice)}.map-trail-layer.many{stroke:var(--trail-many);stroke-width:6}.map-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px}.map-legend{display:flex;gap:13px;flex-wrap:wrap;color:#8ea0b6;font-size:10px}.map-legend i{display:inline-block;width:17px;height:4px;border-radius:2px;margin-right:5px;vertical-align:middle}.map-legend .once{background:var(--trail-once)}.map-legend .twice{background:var(--trail-twice)}.map-legend .many{background:var(--trail-many)}.map-controls{display:flex;align-items:center;gap:14px;white-space:nowrap;font-size:11px;color:#9eacc0}.map-controls label{display:flex;align-items:center;gap:6px;cursor:pointer}.map-controls input{appearance:none;width:13px;height:13px;margin:0;border:1px solid #5b6b7e;border-radius:3px;background:#17202c;cursor:pointer}.map-controls input:checked{background:var(--role-color);border-color:var(--role-color);box-shadow:inset 0 0 0 3px #17202c}.map-controls button{display:flex;align-items:center;gap:6px;background:transparent;color:#a3b1c3;border:0;padding:4px 0}.map-controls button:hover{color:#f0f4fb}.map-controls button svg{width:13px;height:13px}.source-details{border-top:1px solid #26313e}.source-details summary{display:flex;justify-content:space-between;align-items:center;list-style:none;cursor:pointer;padding:13px 24px;color:#8092a9;font-size:11px}.source-details summary::-webkit-details-marker{display:none}.source-details summary:after{content:"＋";font-size:16px;line-height:1}.source-details[open] summary:after{content:"−"}.map-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:3px 24px 16px}.map-details small{display:block;color:#71849d;font-size:10px;margin-bottom:5px}.map-details span{font-size:11px;color:#b3c0d3;font-variant-numeric:tabular-nums}.map-note{margin:0;padding:0 24px 18px;color:#7e90a7;font-size:11px;line-height:1.75}.sidebar{display:grid;gap:18px}.panel-heading{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 17px}.panel-count{font-size:9px;color:#91a1b6;border:1px solid #344153;border-radius:5px;padding:3px 6px;letter-spacing:.07em}.sensor-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#293442;border-top:1px solid #293442}.card{padding:15px 15px 14px;min-width:0;background:#141c27;position:relative}.card-head{display:flex;align-items:center;justify-content:space-between;gap:6px}.sensor-name{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:550;color:#c9d5e4}.sensor-name i{width:5px;height:5px;background:var(--sensor);border-radius:50%}.direction-icon{font-size:13px;color:var(--sensor);line-height:1}.tag{font-size:8px;letter-spacing:.06em;color:#6e839c;margin-top:4px}.reading{font-size:30px;line-height:1.1;font-weight:550;letter-spacing:-1px;margin:14px 0 14px;font-variant-numeric:tabular-nums}.reading small{font-size:10px;letter-spacing:0;color:#7588a0;margin-left:3px}.meta{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:9px;color:#8091a8}.quality{font-size:10px;color:var(--sensor);font-weight:500}.confidence-bar{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px;height:5px;margin-top:7px}.confidence-bar span{background:#2b3748;border-radius:1px;transition:background .2s,opacity .2s}.confidence-bar span.filled{background:var(--sensor)}.confidence-bar.stale span.filled{opacity:.3}.visual{--car-role-color:#efb26c;padding:18px 18px 13px}.visual[data-role="police"]{--car-role-color:#62c9ef}.car-accent{stroke:var(--car-role-color)}.visual-head{display:flex;align-items:center;justify-content:space-between}.visual-head h2{font-size:14px;margin:0}.visual-head span{font-size:10px;color:#71849d}.car-svg{width:100%;height:270px;margin:4px auto 0}.sensor-label{font-size:15px;font-weight:500}.sensor-ray{transition:opacity .18s}.hint{font-size:10px;color:#74879f;text-align:center;line-height:1.7;margin:3px 4px 0}.footer{display:flex;align-items:center;justify-content:space-between;gap:16px;color:#64778e;font-size:10px;padding:17px 2px 0}.footer-left{display:flex;gap:18px;align-items:center}.footer .footer-brand{font-size:9px;letter-spacing:.12em;color:#8291a5}.footer #frames,#vehicle-status{font-variant-numeric:tabular-nums}
+
+.pose-kind{display:block;font-size:9px!important;color:#8195ae!important;margin-top:3px}.map-legend .forecast{height:0;border-top:2px dashed var(--role-color);background:none}#map-forecast{stroke:var(--role-color);stroke-width:4;stroke-dasharray:5 6;opacity:.65}#prediction-ring circle{stroke:var(--role-color);stroke-width:1;stroke-dasharray:3 4;opacity:.4}.gray-cells rect{fill:#435468;stroke:#8599ac;stroke-width:.5}.gray-cells rect.line-hit{fill:#efcb8a;stroke:#ffe8b8}.gray-cells.stale{opacity:.35}.gray-label{font-size:10px;fill:#7c93ac}.onboard-data{margin-top:9px;border-top:1px solid #293442;padding-top:11px}.gray-readouts,.gyro-readouts{display:grid;grid-template-columns:1fr 1fr;gap:14px}.gray-readouts>div{min-width:0}.gray-readouts span{font-size:10px;color:#9bb0c8;display:flex;justify-content:space-between;gap:5px}.gray-readouts code{font:10px Consolas,monospace;color:#d4dfed}.gray-readouts small{display:block;color:#71849c;font-size:9px;margin-top:3px}.onboard-data .hint{text-align:left;margin:7px 0 10px;font-size:9px}.gyro-readouts{padding-top:10px;border-top:1px solid #26313e}.gyro-readouts small{display:block;font-size:10px;color:#8195ad}.gyro-readouts strong{font-size:22px;font-weight:500;color:#d8e4f0;font-variant-numeric:tabular-nums}.gyro-readouts em{font-style:normal;font-size:12px;color:#758ba4;margin-left:2px}.onboard-status{display:flex;justify-content:space-between;gap:6px;color:#7890aa;font-size:9px;margin-top:7px}.gyro-readouts .stale{opacity:.4}
+.serial-picker{display:flex;align-items:center;gap:7px;color:#8fa1b7;font-size:11px}.serial-picker select{background:#202a37;border:1px solid #364354;border-radius:8px;padding:6px 8px;min-width:84px;max-width:105px;color:#dce8f5;cursor:pointer}.serial-picker select:disabled{opacity:.55}
+.map-head{flex-wrap:wrap}.map-head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.reset-position{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;background:#1c2b39;border:1px solid #45617a;border-radius:9px;color:#b9d8f2;font-size:11px;font-weight:550}.reset-position:hover{background:#24394c;border-color:#729abd}.reset-position:disabled{opacity:.5;cursor:wait}.reset-position svg{width:14px;height:14px}
+
+@media(min-width:1400px){.workspace{grid-template-columns:minmax(0,1fr) 360px}.car-svg{height:300px}.reading{font-size:34px}.card{padding:18px}.map-svg{max-height:700px}}
+@media(max-width:1100px){.app{padding:22px}.workspace{grid-template-columns:minmax(0,1fr) 300px;gap:16px}.connect{gap:12px}.serial-info{display:none}.map-head{padding:20px}.map-summary{margin-left:18px;margin-right:18px;grid-template-columns:1.2fr 1fr}.metric.vehicle{grid-column:1/-1;border-left:0;border-top:1px solid #293442;padding:9px 14px;display:flex;align-items:center;gap:12px}.metric.vehicle small{margin:0;flex-shrink:0}.metric{padding:12px 14px}.metric.position strong{font-size:18px}.map-toolbar{padding:12px 18px;flex-wrap:wrap}.map-legend{gap:10px}.card{padding:13px}.reading{font-size:28px}.car-svg{height:260px}.map-details{padding-left:18px;padding-right:18px;grid-template-columns:1fr 1fr}.map-note,.source-details summary{padding-left:18px;padding-right:18px}}
+@media(max-width:880px){.workspace{grid-template-columns:1fr}.sidebar{grid-template-columns:1fr 1fr;align-items:start;gap:16px}.top{align-items:flex-start}.connect{flex-direction:column;align-items:flex-end;gap:5px}.map-summary{grid-template-columns:1.3fr 1fr 1.2fr}.metric.vehicle{grid-column:auto;border-left:1px solid #293442;border-top:0;display:block;padding:12px 14px}.metric.vehicle small{margin-bottom:5px}.map-svg{max-height:620px}.car-svg{height:278px}.footer-left span:not(.footer-brand){display:none}}
+@media(max-width:560px){.app{padding:17px 12px}.top{gap:12px;padding-bottom:18px;margin-bottom:16px}.brand{gap:9px}.brand-mark{width:34px;height:34px;border-radius:10px}.brand-mark svg{width:19px}.eyebrow{font-size:8px;letter-spacing:.1em}.title h1{font-size:18px}.connect .clock{display:none}.status{max-width:133px;font-size:10px;gap:6px}.workspace,.sidebar{gap:14px}.map-head{padding:17px 16px}.section-title h2{font-size:16px}.role-control{gap:7px}.role-control select{padding-left:10px;min-width:80px}.map-summary{margin:0 12px 12px;grid-template-columns:1.15fr 1fr}.metric{padding:11px 12px}.metric strong{font-size:11px}.metric.position strong{font-size:16px}.metric.vehicle{grid-column:1/-1;border-left:0;border-top:1px solid #293442;padding:9px 12px;display:flex;gap:12px;align-items:center}.metric.vehicle small{margin:0}.metric.vehicle span{font-size:11px}.map-stage{margin:0 8px}.map-svg{min-height:260px;padding:30px 0 8px}.stage-label{left:13px;font-size:8px}.north{right:13px}.map-toolbar{padding:12px 16px;gap:13px}.map-legend{width:100%;justify-content:space-between;font-size:9px}.map-controls{width:100%;justify-content:space-between;font-size:11px}.source-details summary{padding:12px 16px}.map-details{padding-left:16px;padding-right:16px;gap:12px}.map-note{padding-left:16px;padding-right:16px;font-size:10px}.sidebar{grid-template-columns:1fr}.sensor-grid{grid-template-columns:1fr 1fr}.panel-heading{padding:17px 16px}.panel-heading h2{font-size:16px}.card{padding:16px}.sensor-name{font-size:12px}.sensor-name i{display:none}.tag{font-size:9px}.reading{font-size:30px;margin:14px 0}.reading small{font-size:10px}.meta{flex-direction:row;align-items:center;gap:4px;font-size:9px}.confidence-bar{gap:3px;height:6px}.visual{padding:16px}.car-svg{height:280px;max-width:300px}.footer{font-size:9px;padding-top:14px}.footer-left{gap:8px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.range-cal{margin-top:12px;padding-top:10px;border-top:1px solid #2b3748;font-size:10px;color:#90a3ba;line-height:1.8}.range-cal strong{color:#dce8f5;font-weight:550;font-variant-numeric:tabular-nums}.range-cal label{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:5px;white-space:nowrap;margin-top:7px}.range-cal input{width:100%;min-width:0;background:#0e151f;color:#e9eef6;border:1px solid #42526a;border-radius:4px;padding:4px;font-size:11px}.range-error{margin-top:5px}.range-note{padding:12px 20px;color:#8ea0b6;font-size:10px;line-height:1.7;border-top:1px solid #293442}
+</style>
+<link rel="stylesheet" href="/embedded.css">
+</head>
+<body>
+<main class="app">
+<header class="top">
+  <div class="brand"><div class="brand-mark" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 8V4h6M14 4h6v6M20 14v6h-6M10 20H4v-6" stroke="currentColor" stroke-width="1.5"/><path d="M8 12h8M12 8v8" stroke="#e8b16d" stroke-width="1.5"/></svg></div><div class="title"><div class="eyebrow">ROBOT TREASURE / LIVE</div><h1>实车监控</h1></div></div>
+  <div class="connect"><span id="status" class="status" role="status">正在连接采集服务</span><label class="serial-picker" for="serial-port">串口 <select id="serial-port" aria-label="选择电脑串口"><option value="">读取中</option></select></label><button id="serial-toggle" type="button" style="padding:8px 12px;border:1px solid #52687c;border-radius:7px;background:#1c2b38;color:#e7eef7;cursor:pointer;white-space:nowrap">连接串口</button><span class="serial-info" id="serial-info">115200 · 8N1</span><time id="clock" class="clock">--:--:--</time></div>
+</header>
+<div class="workspace">
+<section class="map-panel" data-role="thief" aria-label="地图实时轨迹">
+  <div class="map-head"><div class="section-title"><div class="eyebrow">01 / POSITIONING</div><h2>赛道实时轨迹</h2></div><div class="map-head-actions"><button id="reset-map-position" class="reset-position" type="button" title="清除网页轨迹并显示路线初始位置；实车需手动摆回起点"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 6a5 5 0 1 1-.2 4M3 2v4h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span>回到初始位置</span></button><label class="role-control" for="role-select">车辆角色<select id="role-select"><option value="thief">小偷</option><option value="police">警察</option></select></label></div></div>
+  <div class="map-summary"><div class="metric"><small>定位状态</small><strong id="map-state">等待地图</strong></div><div class="metric position"><small>当前位置 / m</small><strong id="map-position">—</strong><span id="map-pose-kind" class="pose-kind">等待定位</span></div><div class="metric vehicle"><small>车辆状态 / 停车原因</small><span id="vehicle-status">等待车载状态</span></div></div>
+  <div class="map-stage"><div class="stage-label"><i></i>TRACKING VIEW</div><span class="north" aria-hidden="true">N ↑</span><svg id="map-svg" class="map-svg" viewBox="-42 -42 744 624" role="img" aria-label="赛道地图和串口定位轨迹">
+        <g id="map-roads"></g><g id="map-nodes"></g><g id="map-node-labels"></g>
+        <g id="map-trail"><path class="map-trail-layer once"/><path class="map-trail-layer twice"/><path class="map-trail-layer many"/><path class="map-trail-layer once unmatched"/></g>
+        <path id="map-forecast" fill="none"/><g id="prediction-ring" style="display:none"><circle fill="none"/></g><g id="car-marker" style="display:none"><circle r="18" fill="#ffb454" fill-opacity=".16"/><path d="M0 -13 L-9 10 L0 5 L9 10 Z" fill="#ffb454" stroke="#fff1d5" stroke-width="1.5"/></g>
+      </svg></div>
+  <div class="map-toolbar"><div class="map-legend"><span><i class="once"></i>首次经过</span><span><i class="twice"></i>第 2 次</span><span><i class="many"></i>第 3 次及以上</span><span><i class="forecast"></i>时间预测</span></div><div class="map-controls"><label><input id="show-map-nodes" checked disabled type="checkbox">节点编号</label><button id="clear-map-path" type="button"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2.5 5h11M6 2.5h4M4 5l.6 8h6.8l.6-8M6.5 7.5v3M9.5 7.5v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>清除轨迹</button></div></div>
+  <details class="source-details"><summary>定位详情与使用说明</summary><div class="map-details"><div><small>定位依据</small><span id="map-source">—</span></div><div><small>最新定位时间</small><span id="map-time">—</span></div><div><small>行驶批次</small><span id="map-run">—</span></div></div><p class="map-note">按 RESET 后，网页清空旧轨迹并显示固件路线起点；实车仍需摆回该点。角色选择只改变网页颜色。轨迹依据路段、编码器与有效停车定位显示。虚线是当前路段内的时间预测，最多外推 0.7 秒，在未确认的路口前停止；转弯、停车、丢帧或遥测过期时暂停。预测不计入重复轨迹。灰度仅为最近一次路口采样，偏航角取自陀螺仪记录；地图尺度与速度仍是名义标定。</p></details>
+</section>
+<aside class="sidebar">
+  <section class="sensors-panel" aria-label="四向激光测距"><div class="panel-heading"><div><div class="eyebrow">02 / RANGE SENSORS</div><h2>四向激光</h2></div><button class="panel-count" title="展开测频和距离校准统计">统计详情</button></div><div class="sensor-grid"><article class="card" style="--sensor:var(--front)"><div class="card-head"><span class="sensor-name"><i></i>前方</span><span class="direction-icon" aria-hidden="true">↑</span></div><div class="tag">RX1 / CH1</div><div id="distance-1" class="reading">— <small>mm</small></div><div class="meta"><span>置信度 <b id="confidence-1" class="quality">—</b></span><span id="updated-1">等待数据</span></div><div id="confidence-bar-1" class="confidence-bar" role="meter" aria-label="前方传感器置信度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></article>
+<article class="card" style="--sensor:var(--left)"><div class="card-head"><span class="sensor-name"><i></i>左侧</span><span class="direction-icon" aria-hidden="true">←</span></div><div class="tag">RX2 / CH2</div><div id="distance-2" class="reading">— <small>mm</small></div><div class="meta"><span>置信度 <b id="confidence-2" class="quality">—</b></span><span id="updated-2">等待数据</span></div><div id="confidence-bar-2" class="confidence-bar" role="meter" aria-label="左侧传感器置信度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></article>
+<article class="card" style="--sensor:var(--right)"><div class="card-head"><span class="sensor-name"><i></i>右侧</span><span class="direction-icon" aria-hidden="true">→</span></div><div class="tag">RX3 / CH3</div><div id="distance-3" class="reading">— <small>mm</small></div><div class="meta"><span>置信度 <b id="confidence-3" class="quality">—</b></span><span id="updated-3">等待数据</span></div><div id="confidence-bar-3" class="confidence-bar" role="meter" aria-label="右侧传感器置信度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></article>
+<article class="card" style="--sensor:var(--rear)"><div class="card-head"><span class="sensor-name"><i></i>后方</span><span class="direction-icon" aria-hidden="true">↓</span></div><div class="tag">RX4 / CH4</div><div id="distance-4" class="reading">— <small>mm</small></div><div class="meta"><span>置信度 <b id="confidence-4" class="quality">—</b></span><span id="updated-4">等待数据</span></div><div id="confidence-bar-4" class="confidence-bar" role="meter" aria-label="后方传感器置信度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></article></div></section>
+  <section class="visual"><div class="visual-head"><h2>车体感知</h2><span>俯视 · 四向测距</span></div><svg class="car-svg" viewBox="0 0 420 440" role="img" aria-label="四轮机器人与四向激光探头实时示意">
+<defs>
+<linearGradient id="chassis" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#718296"/><stop offset=".45" stop-color="#3f5064"/><stop offset="1" stop-color="#283747"/></linearGradient>
+<linearGradient id="top-shell" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#27384b"/><stop offset="1" stop-color="#192635"/></linearGradient>
+<linearGradient id="tire" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#080c12"/><stop offset=".5" stop-color="#1b2632"/><stop offset="1" stop-color="#080c12"/></linearGradient>
+<pattern id="tread" width="5" height="8" patternUnits="userSpaceOnUse"><path d="M0 3H5" stroke="#536376" stroke-opacity=".38" stroke-width="1"/></pattern>
+<filter id="chassis-shadow" x="-40%" y="-30%" width="180%" height="180%"><feDropShadow dx="0" dy="9" stdDeviation="9" flood-color="#000" flood-opacity=".35"/></filter>
+</defs>
+<path d="M144 104H276L326 154V286L276 336H144L94 286V154Z" fill="none" stroke="#304155" stroke-opacity=".32" stroke-dasharray="2 7"/><path d="M121 148V128H141M279 128H299V148M299 292V312H279M141 312H121V292" fill="none" stroke="#4d637b" stroke-opacity=".35"/>
+<g id="ray-front" class="sensor-ray"><path id="wedge-1" d="" fill="#62c9ef" fill-opacity=".07"/><line id="line-1" x1="210" y1="130" x2="210" y2="34" stroke="#62c9ef" stroke-width="2" stroke-dasharray="5 6"/><circle id="hit-1" cx="210" cy="34" r="5" fill="#62c9ef"/><text x="210" y="18" text-anchor="middle" fill="#62c9ef" class="sensor-label">前 · RX1</text></g>
+<g id="ray-left" class="sensor-ray"><path id="wedge-2" d="" fill="#b39bee" fill-opacity=".07"/><line id="line-2" x1="146" y1="220" x2="40" y2="220" stroke="#b39bee" stroke-width="2" stroke-dasharray="5 6"/><circle id="hit-2" cx="40" cy="220" r="5" fill="#b39bee"/><text x="32" y="200" text-anchor="middle" fill="#b39bee" class="sensor-label">左 RX2</text></g>
+<g id="ray-right" class="sensor-ray"><path id="wedge-3" d="" fill="#efb26c" fill-opacity=".07"/><line id="line-3" x1="274" y1="220" x2="380" y2="220" stroke="#efb26c" stroke-width="2" stroke-dasharray="5 6"/><circle id="hit-3" cx="380" cy="220" r="5" fill="#efb26c"/><text x="388" y="200" text-anchor="middle" fill="#efb26c" class="sensor-label">右 RX3</text></g>
+<g id="ray-rear" class="sensor-ray"><path id="wedge-4" d="" fill="#74cbb7" fill-opacity=".07"/><line id="line-4" x1="210" y1="310" x2="210" y2="406" stroke="#74cbb7" stroke-width="2" stroke-dasharray="5 6"/><circle id="hit-4" cx="210" cy="406" r="5" fill="#74cbb7"/><text x="210" y="432" text-anchor="middle" fill="#74cbb7" class="sensor-label">后 · RX4</text></g>
+<g filter="url(#chassis-shadow)">
+<path d="M139 181H281M139 258H281" stroke="#55677b" stroke-width="9"/>
+<g fill="url(#tire)" stroke="#536477" stroke-width="1"><rect x="127" y="160" width="27" height="49" rx="2"/><rect x="266" y="160" width="27" height="49" rx="2"/><rect x="127" y="233" width="27" height="49" rx="2"/><rect x="266" y="233" width="27" height="49" rx="2"/></g>
+<g fill="url(#tread)"><rect x="131" y="165" width="19" height="39" rx="1"/><rect x="270" y="165" width="19" height="39" rx="1"/><rect x="131" y="238" width="19" height="39" rx="1"/><rect x="270" y="238" width="19" height="39" rx="1"/></g>
+<path d="M166 135H254L270 151V289L254 305H166L150 289V151Z" fill="url(#chassis)" stroke="#91a4b9" stroke-width="1.2"/><path d="M168 141H252L264 153V287L252 299H168L156 287V153Z" fill="url(#top-shell)" stroke="#203044"/><path d="M168 154L183 171H237L252 154M168 286L183 268H237L252 286" fill="none" stroke="#58718a" stroke-opacity=".55" stroke-width="1"/><path d="M158 184L166 192V248L158 256M262 184L254 192V248L262 256" fill="none" stroke="#506881" stroke-opacity=".6"/>
+<path d="M170 157H250M170 283H250" stroke="#6a7e94" stroke-opacity=".45"/><path class="car-accent" d="M181 148H239" fill="none" stroke-width="4"/><path d="M180 143L190 135H230L240 143" fill="#7890a8" opacity=".55"/><path d="M201 128L210 119L219 128" stroke="#b5c5d6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<path d="M182 181H238L246 189V251L238 259H182L174 251V189Z" fill="#0d1826" stroke="#456079"/><path d="M191 204V197H199M221 197H229V205M229 228V236H221M199 236H191V228" stroke="#6f879f" stroke-width="1.3" fill="none"/><path class="car-accent" d="M202 216H218M210 208V224" fill="none" stroke-width="2" stroke-linecap="round"/><path d="M210 194L232 216L210 238L188 216Z" fill="none" stroke="#334a61"/>
+<g fill="#9cafc2" opacity=".7"><circle cx="166" cy="169" r="2"/><circle cx="254" cy="169" r="2"/><circle cx="166" cy="274" r="2"/><circle cx="254" cy="274" r="2"/></g><path d="M197 271H223" stroke="#4b6076" stroke-width="3" stroke-linecap="round"/>
+</g>
+<g stroke="#d3e0ed" stroke-width="1"><rect x="200" y="127" width="20" height="8" rx="1" fill="#62c9ef"/><rect x="141" y="211" width="9" height="18" rx="1" fill="#b39bee"/><rect x="270" y="211" width="9" height="18" rx="1" fill="#efb26c"/><rect x="200" y="305" width="20" height="8" rx="1" fill="#74cbb7"/></g>
+<path d="M178 119V135M242 119V135M178 305V320M242 305V320" stroke="#55697f" stroke-width="3"/><path d="M146 106H274L278 110V117L274 121H146L142 117V110Z" fill="#101d2b" stroke="#657c92"/><path d="M146 319H274L278 323V330L274 334H146L142 330V323Z" fill="#101d2b" stroke="#657c92"/><g id="gray-front-cells" class="gray-cells"><rect x="153" y="111" width="7" height="5" data-bit="11"/><rect x="163" y="111" width="7" height="5" data-bit="10"/><rect x="173" y="111" width="7" height="5" data-bit="9"/><rect x="183" y="111" width="7" height="5" data-bit="8"/><rect x="193" y="111" width="7" height="5" data-bit="7"/><rect x="203" y="111" width="7" height="5" data-bit="6"/><rect x="213" y="111" width="7" height="5" data-bit="5"/><rect x="223" y="111" width="7" height="5" data-bit="4"/><rect x="233" y="111" width="7" height="5" data-bit="3"/><rect x="243" y="111" width="7" height="5" data-bit="2"/><rect x="253" y="111" width="7" height="5" data-bit="1"/><rect x="263" y="111" width="7" height="5" data-bit="0"/></g><g id="gray-rear-cells" class="gray-cells"><rect x="153" y="324" width="7" height="5" data-bit="0"/><rect x="163" y="324" width="7" height="5" data-bit="1"/><rect x="173" y="324" width="7" height="5" data-bit="2"/><rect x="183" y="324" width="7" height="5" data-bit="3"/><rect x="193" y="324" width="7" height="5" data-bit="4"/><rect x="203" y="324" width="7" height="5" data-bit="5"/><rect x="213" y="324" width="7" height="5" data-bit="6"/><rect x="223" y="324" width="7" height="5" data-bit="7"/><rect x="233" y="324" width="7" height="5" data-bit="8"/><rect x="243" y="324" width="7" height="5" data-bit="9"/><rect x="253" y="324" width="7" height="5" data-bit="10"/><rect x="263" y="324" width="7" height="5" data-bit="11"/></g><text x="283" y="118" class="gray-label">前灰度</text><text x="283" y="331" class="gray-label">后灰度</text><text id="car-role-label" x="210" y="355" text-anchor="middle" fill="#b1c0d2" font-size="13" font-weight="500">小偷车</text>
+</svg><div class="onboard-data"><div class="gray-readouts"><div><span>前灰度 <code id="gray-front-mask">—</code></span><small id="gray-front-time">等待路口采样</small></div><div><span>后灰度 <code id="gray-rear-mask">—</code></span><small id="gray-rear-time">等待路口采样</small></div></div><p class="hint">灰度亮格 = 识别黑线；显示最近路口的处理后采样。</p><div class="gyro-readouts"><div><small>偏航角</small><strong id="gyro-yaw">—<em>°</em></strong></div><div><small>航向误差 · 停靠更新</small><strong id="gyro-error">—<em>°</em></strong></div></div><div class="onboard-status"><span id="gyro-status">等待陀螺仪数据</span><span id="gyro-time">—</span></div></div><p class="hint">光束上限 4 m。灰度和陀螺仪旧数据会变暗。</p></section>
+</aside>
+</div>
+<footer class="footer"><div class="footer-left"><span class="footer-brand">ROBOT TREASURE</span><span>距离 mm · 坐标 m</span></div><span id="frames">测距记录：0</span></footer>
+</main>
+<script>
+const channelNames={1:'前方',2:'左侧',3:'右侧',4:'后方'};
+const colors={1:'#52c7ff',2:'#9e8cff',3:'#ffb454',4:'#48d6b0'};
+const sensors={
+  1:{x:210,y:130,angle:-90},
+  2:{x:146,y:220,angle:180},
+  3:{x:274,y:220,angle:0},
+  4:{x:210,y:310,angle:90}
+};
+const state=Array.from({length:5},()=>({distance:null,confidence:null,time:0}));
+const statusEl=document.querySelector('#status');
+const serialSelect=document.querySelector('#serial-port');
+let switchingPort=false;
+const svgNS='http://www.w3.org/2000/svg';
+let mapReady=false,trackCursor=0,trackGeneration=null,trackPoints=[],pathInFlight=false,latestMapPosition=null,latestProjection=null,mapMatch=null;
+let viewEpoch=0;
+function setStatus(text,kind='',detail=''){statusEl.textContent=text;statusEl.className='status '+kind;statusEl.title=detail;}
+async function loadPorts(){
+  if(switchingPort)return;
+  try{
+    const response=await fetch('/api/ports',{cache:'no-store'});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const data=await response.json();
+    const options=[...data.ports];
+    if(data.selected&&!options.includes(data.selected))options.unshift(data.selected);
+    if(options.join('|')!==[...serialSelect.options].map(option=>option.value).join('|')){
+      serialSelect.replaceChildren(...options.map(port=>new Option(port+(data.ports.includes(port)?'':' · 已拔出'),port)));
+    }
+    serialSelect.disabled=!options.length;
+    serialSelect.value=data.selected;
+  }catch(_error){serialSelect.disabled=true;}
+}
+const serialToggle=document.querySelector('#serial-toggle');
+let serialEnabled=false,bridgeOnline=true,commandPending=false,pendingCommandId=null;
+async function serialAction(action){
+  switchingPort=true;serialSelect.disabled=true;serialToggle.disabled=true;
+  setStatus(action==='disconnect'?'正在断开串口':action==='connect'?'正在连接串口':'正在选择串口');
+  try{
+    const response=await fetch('/api/serial',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({port:serialSelect.value,action})});
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||`HTTP ${response.status}`);
+    commandPending=Boolean(data.queued);pendingCommandId=data.commandId||null;
+    setStatus(data.queued?'指令已发送，等待电脑确认':action==='disconnect'?'串口已断开':'串口设置已更新');
+  }catch(error){setStatus('串口操作失败','error',error.message);}
+  finally{switchingPort=false;serialToggle.disabled=!bridgeOnline;await loadPorts();}
+}
+serialSelect.addEventListener('change',()=>serialAction('select'));
+serialToggle.addEventListener('click',()=>serialAction(serialEnabled?'disconnect':'connect'));
+function svgElement(tag,attributes){const node=document.createElementNS(svgNS,tag);for(const [key,value] of Object.entries(attributes))node.setAttribute(key,String(value));return node;}
+const roleSelect=document.querySelector('#role-select');
+function applyRole(role){
+  const selected=role==='police'?'police':'thief';
+  roleSelect.value=selected;
+  document.querySelector('.map-panel').dataset.role=selected;
+  document.querySelector('.visual').dataset.role=selected;
+  document.querySelector('#car-role-label').textContent=selected==='police'?'警察车':'小偷车';
+  try{localStorage.setItem('laser-live-role',selected);}catch(_error){}
+}
+try{applyRole(localStorage.getItem('laser-live-role'));}catch(_error){applyRole('thief');}
+roleSelect.addEventListener('change',event=>applyRole(event.target.value));
+async function loadMap(){
+  try{
+    const response=await fetch('/api/map',{cache:'no-store'});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const data=await response.json(),nodes=new Map(data.nodes.map(node=>[node.id,node]));
+    const roadLayer=document.querySelector('#map-roads'),nodeLayer=document.querySelector('#map-nodes'),labelLayer=document.querySelector('#map-node-labels');
+    for(const road of data.segments){
+      const a=nodes.get(road.start),b=nodes.get(road.end);if(!a||!b)continue;
+      roadLayer.append(svgElement('line',{x1:a.xy_m[0]*200,y1:a.xy_m[1]*200,x2:b.xy_m[0]*200,y2:b.xy_m[1]*200,stroke:'#42566b','stroke-width':5,'stroke-linecap':'round'}));
+    }
+    for(const node of data.nodes){
+      const [x,y]=node.xy_m.map(value=>value*200);
+      nodeLayer.append(svgElement('circle',{cx:x,cy:y,r:3.6,fill:'#a8bbcc'}));
+      const label=svgElement('text',{x:x+6,y:y-6,class:'map-node-label'});label.textContent=node.id;labelLayer.append(label);
+    }
+    labelLayer.style.display='none';
+    mapReady=true;
+    document.querySelector('#map-state').textContent='等待定位串口数据';
+    drawTrack();
+  }catch(error){document.querySelector('#map-state').textContent=`地图加载失败：${error.message}`;}
+}
+function buildTrailLayers(points){
+  const cells=new Map(),paths=['','',''],step=30;
+  let unmatched='',pass=0,lastPassKey=null;
+  for(let index=1;index<points.length;index++){
+    const a=points[index-1],b=points[index];
+    if(b.break_before){lastPassKey=null;continue;}
+    const dx=b.x_mm-a.x_mm,dy=b.y_mm-a.y_mm;
+    if(Math.hypot(dx,dy)<8)continue;
+    const axis=Math.abs(dy)<=4?'H':Math.abs(dx)<=4?'V':null;
+    if(!axis){
+      unmatched+=`M${(a.x_mm*.2).toFixed(1)} ${(a.y_mm*.2).toFixed(1)} L${(b.x_mm*.2).toFixed(1)} ${(b.y_mm*.2).toFixed(1)} `;
+      lastPassKey=null;continue;
+    }
+    const fixed=Math.round((axis==='H'?a.y_mm:a.x_mm)/10)*10;
+    const from=axis==='H'?a.x_mm:a.y_mm,to=axis==='H'?b.x_mm:b.y_mm;
+    const passKey=`${axis}:${fixed}:${Math.sign(to-from)}`;
+    if(passKey!==lastPassKey){pass++;lastPassKey=passKey;}
+    const low=Math.min(from,to),high=Math.max(from,to);
+    for(let bucket=Math.floor(low/step);bucket<=Math.floor((high-1e-6)/step);bucket++){
+      const lo=Math.max(low,bucket*step),hi=Math.min(high,(bucket+1)*step);
+      if(hi<=lo)continue;
+      const key=`${axis}:${fixed}:${bucket}`;
+      let cell=cells.get(key);
+      if(!cell){cell={axis,fixed,lo,hi,visits:0,lastPass:0};cells.set(key,cell);}
+      cell.lo=Math.min(cell.lo,lo);cell.hi=Math.max(cell.hi,hi);
+      if(cell.lastPass!==pass){cell.visits++;cell.lastPass=pass;}
+    }
+  }
+  for(const cell of cells.values()){
+    const layer=Math.min(cell.visits,3)-1;
+    if(cell.axis==='H')paths[layer]+=`M${(cell.lo*.2).toFixed(1)} ${(cell.fixed*.2).toFixed(1)} L${(cell.hi*.2).toFixed(1)} ${(cell.fixed*.2).toFixed(1)} `;
+    else paths[layer]+=`M${(cell.fixed*.2).toFixed(1)} ${(cell.lo*.2).toFixed(1)} L${(cell.fixed*.2).toFixed(1)} ${(cell.hi*.2).toFixed(1)} `;
+  }
+  return {paths,unmatched};
+}
+function clearTrail(){document.querySelectorAll('#map-trail path').forEach(path=>path.setAttribute('d',''));}
+function drawTrack(){
+  if(!mapReady)return;
+  const layers=buildTrailLayers(trackPoints);
+  const paths=document.querySelectorAll('#map-trail path');
+  layers.paths.forEach((d,index)=>paths[index].setAttribute('d',d));
+  paths[3].setAttribute('d',layers.unmatched);
+  renderMapPose();
+}
+function renderMapPose(){
+  const pose=latestProjection||latestMapPosition,marker=document.querySelector('#car-marker');
+  const forecast=document.querySelector('#map-forecast'),ring=document.querySelector('#prediction-ring');
+  if(!pose){marker.style.display='none';forecast.setAttribute('d','');ring.style.display='none';return;}
+  marker.style.display='';
+  marker.setAttribute('transform',`translate(${pose.x_mm*.2} ${pose.y_mm*.2}) rotate(${pose.heading})`);
+  const stale=latestProjection?['stale','awaiting_samples'].includes(latestProjection.mode):!['MAP_READY','VIEW_RESET'].includes(latestMapPosition.source)&&Date.now()-latestMapPosition.time_ms>2000;
+  marker.style.opacity=stale?'.4':'1';
+  document.querySelector('#map-position').textContent=`${(pose.x_mm/1000).toFixed(2)} m，${(pose.y_mm/1000).toFixed(2)} m`;
+  const labels={predicting:'时间预测',waiting_node:'等待路口确认',stale:'预测已冻结',paused:'平移已暂停',node_confirmed:'路口已校正',awaiting_samples:'等待连续采样'};
+  document.querySelector('#map-pose-kind').textContent=latestProjection?(labels[latestProjection.mode]||'路段估计'):latestMapPosition.source==='VIEW_RESET'?'手动回到起点 · 待实车摆放':latestMapPosition.source==='MAP_READY'?'固件路线起点':'串口定位记录';
+  if(latestProjection){
+    document.querySelector('#map-source').textContent=`路口／路段＋时间 · N${String(pose.from_node).padStart(3,'0')}→N${String(pose.to_node).padStart(3,'0')} · ${(pose.speed_mm_s/1000).toFixed(2)} m/s（估计）`;
+  }else{
+    document.querySelector('#map-source').textContent=pose.source==='VIEW_RESET'?'手动设置网页起点（非实测）':pose.source==='MAP_READY'?'固件路线起点（待实车摆放）':pose.source==='MT3'?'路段＋四轮编码器估计':'停车灰度／陀螺定位';
+  }
+  if(latestProjection&&pose.predicted){
+    forecast.setAttribute('d',`M${pose.anchor_x_mm*.2} ${pose.anchor_y_mm*.2} L${pose.x_mm*.2} ${pose.y_mm*.2}`);
+    forecast.style.opacity=stale?'.25':'.65';
+    ring.style.display='';ring.setAttribute('transform',`translate(${pose.x_mm*.2} ${pose.y_mm*.2})`);
+    ring.querySelector('circle').setAttribute('r',String(Math.min(25,Math.max(7,(pose.uncertainty_mm||35)*.2))));
+  }else{forecast.setAttribute('d','');ring.style.display='none';}
+}
+function showMapPosition(point){
+  latestMapPosition=point;
+  document.querySelector('#map-position').textContent=`${(point.x_mm/1000).toFixed(2)} m，${(point.y_mm/1000).toFixed(2)} m`;
+  document.querySelector('#map-source').textContent=point.source==='VIEW_RESET'?'手动设置网页起点（非实测）':point.source==='MAP_READY'?'固件路线起点（待实车摆放）':point.source==='MT3'?'路段＋四轮编码器估计':'停车灰度／陀螺定位';
+  document.querySelector('#map-time').textContent=new Date(point.time_ms).toLocaleTimeString('zh-CN',{hour12:false});
+  document.querySelector('#map-run').textContent=point.run==null?'—':`第 ${point.run} 趟 · 记录 ${point.sequence??'—'}`;
+  drawTrack();
+}
+async function updatePath(){
+  if(pathInFlight)return;
+  pathInFlight=true;
+  const epoch=viewEpoch;
+  try{
+    const response=await fetch(`/api/path?after=${trackCursor}`,{cache:'no-store'});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const data=await response.json();
+    if(epoch!==viewEpoch)return;
+    if(trackGeneration!==data.generation){
+      trackGeneration=data.generation;
+      trackPoints=[];
+      latestMapPosition=null;
+      latestProjection=null;
+      renderMapPose();
+      clearTrail();
+      document.querySelector('#car-marker').style.display='none';
+      document.querySelector('#map-position').textContent='—';
+      document.querySelector('#map-source').textContent='—';
+      document.querySelector('#map-time').textContent='—';
+      document.querySelector('#map-run').textContent='—';
+    }
+    if(data.truncated&&data.points.length) data.points[0].break_before=true;
+    if(data.points.length){
+      trackPoints.push(...data.points);
+      if(trackPoints.length>5000)trackPoints=trackPoints.slice(-5000);
+      showMapPosition(data.points[data.points.length-1]);
+    }
+    trackCursor=data.cursor;
+  }catch(error){document.querySelector('#map-state').textContent=`轨迹接收失败：${error.message}`;}
+  finally{pathInFlight=false;}
+}
+document.querySelector('#show-map-nodes').addEventListener('change',event=>{
+  document.querySelector('#map-node-labels').style.display=event.target.checked?'':'none';
+});
+document.querySelector('#clear-map-path').addEventListener('click',()=>{
+  trackPoints=[];
+  clearTrail();
+});
+document.querySelector('#reset-map-position').addEventListener('click',async event=>{
+  const button=event.currentTarget,label=button.querySelector('span');
+  button.disabled=true;label.textContent='正在更新…';viewEpoch++;
+  try{
+    const response=await fetch('/api/reset-position',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||`HTTP ${response.status}`);
+    viewEpoch++;
+    if(data.queued){label.textContent='重置请求已发送，等待电脑确认';return;}
+    trackGeneration=data.track_generation;trackCursor=data.track_cursor;
+    trackPoints=[data.position];latestProjection=null;mapMatch=data.map_match;
+    clearTrail();showMapPosition(data.position);
+    document.querySelector('#map-state').textContent='已回到起点 · 等待新一趟定位';
+    label.textContent='已回到初始位置';
+  }catch(error){document.querySelector('#map-state').textContent=`起点更新失败：${error.message}`;label.textContent='回到初始位置';}
+  finally{button.disabled=false;setTimeout(()=>{label.textContent='回到初始位置';},1800);}
+});
+const rangeStatusNames={RAW:'原始测距',WAIT_TREASURE:'等待策略启用',WAIT_DATA:'等待测距帧',STALE:'测距帧已过期',BAD_DATA:'测距无效',LINK_ERROR:'扩展板连接失败',RX_OFF:'采集未启用',EDGE_OFF:'边缘方向忽略'};
+function updateChannel(ch,mm,confidence,timeMs,status){
+  const s=state[ch];s.distance=mm;s.confidence=confidence;s.time=timeMs;s.status=status;
+  const d=document.querySelector(`#distance-${ch}`),c=document.querySelector(`#confidence-${ch}`),u=document.querySelector(`#updated-${ch}`);
+  d.innerHTML=mm===null?'— <small>mm</small>':`${mm.toLocaleString('zh-CN')} <small>mm</small>`;
+  d.style.opacity=mm!==null&&confidence>=20?'1':'.55';
+  const level=Math.max(0,Math.min(100,Number(confidence)||0));
+  c.textContent=`${level}%`;
+  const meter=document.querySelector(`#confidence-bar-${ch}`);
+  meter.setAttribute('aria-valuenow',String(level));
+  meter.setAttribute('aria-valuetext',`${level}%`);
+  meter.classList.remove('stale');
+  meter.querySelectorAll('span').forEach((segment,index)=>segment.classList.toggle('filled',index<Math.ceil(level/10)));
+  u.textContent=rangeStatusNames[status]||(s.time?new Date(s.time).toLocaleTimeString('zh-CN',{hour12:false}):'等待数据');
+  drawSensor(ch);
+}
+function drawSensor(ch){
+  const s=state[ch],g=sensors[ch],maxPx=100,range=Math.max(0,Math.min(maxPx,(s.distance??0)/4000*maxPx));
+  const a=g.angle*Math.PI/180,half=7*Math.PI/180;
+  const x2=g.x+Math.cos(a)*range,y2=g.y+Math.sin(a)*range;
+  const x1=g.x+Math.cos(a-half)*range,y1=g.y+Math.sin(a-half)*range;
+  const x3=g.x+Math.cos(a+half)*range,y3=g.y+Math.sin(a+half)*range;
+  const line=document.querySelector(`#line-${ch}`);
+  line.setAttribute('x1',g.x);line.setAttribute('y1',g.y);
+  line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+  const hit=document.querySelector(`#hit-${ch}`);hit.setAttribute('cx',x2);hit.setAttribute('cy',y2);
+  document.querySelector(`#wedge-${ch}`).setAttribute('d',range>1?`M${g.x} ${g.y} L${x1} ${y1} A${range} ${range} 0 0 1 ${x3} ${y3} Z`:'');
+}
+function updateOnboard(data){
+  for(const side of ['front','rear']){
+    const sample=data.gray?.[side],group=document.querySelector(`#gray-${side}-cells`);
+    const age=sample?Date.now()-sample.time_ms:Infinity;
+    group.classList.toggle('stale',age>1500);
+    group.querySelectorAll('rect').forEach(cell=>cell.classList.toggle('line-hit',Boolean(sample&&(sample.mask&(1<<Number(cell.dataset.bit))))));
+    document.querySelector(`#gray-${side}-mask`).textContent=sample?`0x${sample.mask.toString(16).toUpperCase().padStart(3,'0')}`:'—';
+    document.querySelector(`#gray-${side}-time`).textContent=sample?`N${String(sample.node).padStart(3,'0')} · ${new Date(sample.time_ms).toLocaleTimeString('zh-CN',{hour12:false})}`:'等待路口采样';
+  }
+  const gyro=data.gyro,diagnostic=data.localization_diagnostic;
+  const fresh=gyro&&gyro.valid&&gyro.data_age_ms<1500;
+  const yaw=document.querySelector('#gyro-yaw'),error=document.querySelector('#gyro-error');
+  yaw.innerHTML=gyro?`${gyro.yaw_deg.toFixed(1)}<em>°</em>`:'—<em>°</em>';yaw.classList.toggle('stale',!fresh);
+  const diagnosticFresh=diagnostic&&diagnostic.valid&&diagnostic.yaw_age_ms<1500&&Date.now()-diagnostic.time_ms<3000;
+  error.innerHTML=diagnostic?`${diagnostic.yaw_error_deg.toFixed(1)}<em>°</em>`:'—<em>°</em>';error.classList.toggle('stale',!diagnosticFresh);
+  error.title=diagnostic?`最近停靠记录 ${new Date(diagnostic.time_ms).toLocaleTimeString('zh-CN',{hour12:false})} · 数据龄 ${diagnostic.yaw_age_ms} ms`:'等待停车定位日志';
+  document.querySelector('#gyro-status').textContent=!gyro?'等待陀螺仪数据':!gyro.valid?'偏航角无效':fresh?`有效 · 数据龄 ${gyro.data_age_ms} ms`:'偏航角已过期';
+  document.querySelector('#gyro-time').textContent=gyro?new Date(gyro.time_ms).toLocaleTimeString('zh-CN',{hour12:false}):'—';
+}
+let pollInFlight=false;
+let latestRangeStats={};
+// User's three-grid observations (900 mm from vehicle centre), not sensor scale calibration.
+const mountingReference={2:{offset:100,threeGrid:800},3:{offset:100,threeGrid:800},4:{offset:150,threeGrid:750}};
+function renderRangeStats(){
+  for(let ch=1;ch<=4;ch++){
+    const stats=latestRangeStats[String(ch)],fresh=stats&&Date.now()-stats.time_ms<2500;
+    const put=(key,text)=>document.querySelector(`#range-${key}-${ch}`).textContent=text;
+    put('hz',fresh&&stats.hz!==null?`${stats.hz.toFixed(1)} Hz`:'—');
+    put('mean',fresh&&stats.mean_mm!==null?`${stats.mean_mm} mm`:'—');
+    put('span',fresh&&stats.n?`${stats.min_mm}–${stats.max_mm} mm`:'—');
+    put('count',fresh?`有效 ${stats.n} / 排除 ${stats.rejected}`:'等待统计');
+    const mounting=mountingReference[ch];
+    put('center',!mounting?'前方未标定':fresh&&stats.mean_mm!==null?`≈${stats.mean_mm+mounting.offset} mm ±50`:'—');
+    const input=document.querySelector(`#range-ref-${ch}`);
+    const entered=input.value.trim(),reference=Number(entered);
+    const validReference=entered!==''&&Number.isFinite(reference)&&reference>0&&reference<=10000;
+    const error=fresh&&stats.mean_mm!==null&&validReference?stats.mean_mm-reference:null;
+    put('error',error===null?'—':`${error>0?'+':''}${error.toFixed(1)} mm`);
+    document.querySelector(`#range-hz-${ch}`).title=fresh&&stats.window_ms!==null?`主控收到 ${stats.frames} 帧 / ${stats.window_ms} ms；包括零置信度帧`:'需新版测试固件上报实际帧率';
+  }
+}
+async function poll(){
+  if(pollInFlight)return;
+  pollInFlight=true;
+  const epoch=viewEpoch;
+  try{
+    const response=await fetch('/api/laser',{cache:'no-store'});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const data=await response.json();
+    if(epoch!==viewEpoch)return;
+    const age=Date.now()-data.last_receive_ms;
+    if(!switchingPort){
+      serialEnabled=Boolean(data.serial_enabled||data.connected);
+      bridgeOnline=data.bridge_online!==false;
+      serialToggle.textContent=serialEnabled?'断开串口':'连接串口';
+      serialToggle.disabled=switchingPort||commandPending||!bridgeOnline;
+      if(data.command?.id===pendingCommandId&&(data.command.acknowledged||data.command.expired))commandPending=false;
+      if(!bridgeOnline)setStatus('桥接电脑离线','error','网页正常；请在电脑启动公网桥接程序');
+      else if(commandPending)setStatus('串口指令等待电脑确认');
+      else if(!data.connected)setStatus(serialEnabled?'串口连接中':'串口已断开',serialEnabled?'error':'',data.error||'点击连接串口开始读取');
+      else if(age>1500)setStatus('已连接 · 等待数据');
+      else setStatus('串口实时接收中','live');
+    }
+    document.querySelector('#serial-info').textContent=`${data.baud} · 8N1`;
+    document.querySelector('#frames').textContent=`测距记录：${data.valid_frames}`;
+    mapMatch=data.map_match;
+    latestProjection=trackGeneration===data.track_generation?data.projection||null:null;
+    updateOnboard(data);
+    latestRangeStats=data.range_stats||{};
+    renderRangeStats();
+    renderMapPose();
+    const mapState=document.querySelector('#map-state');
+    const vehicleStatus=document.querySelector('#vehicle-status');
+    const statusFresh=data.status_time_ms&&Date.now()-data.status_time_ms<3000;
+    vehicleStatus.textContent=statusFresh?`${data.vehicle_state||'未知'}${data.fault_reason&&data.fault_reason!=='NONE'?` · ${data.fault_reason}`:''}${data.fault_from?` · 来自 ${data.fault_from}`:''}`:'等待新的车载状态';
+    if(mapMatch===false)mapState.textContent='地图签名不匹配，轨迹已暂停';
+    else if(latestMapPosition?.source==='VIEW_RESET')mapState.textContent='已回到起点 · 等待新一趟定位';
+    else if(statusFresh&&data.vehicle_state==='FAULT')mapState.textContent='车辆保护停车';
+    else if(latestProjection&&latestProjection.mode==='predicting')mapState.textContent='沿当前路段预测';
+    else if(latestProjection&&latestProjection.mode==='waiting_node')mapState.textContent='等待路口确认';
+    else if(latestProjection&&latestProjection.mode==='stale')mapState.textContent='预测暂停 · 遥测过期';
+    else if(latestProjection&&latestProjection.mode==='awaiting_samples')mapState.textContent='预测暂停 · 检测到丢帧';
+    else if(!latestMapPosition)mapState.textContent='等待定位串口数据';
+    else if(latestMapPosition.source==='MAP_READY')mapState.textContent='已回到路线起点，等待启动';
+    else if(Date.now()-latestMapPosition.time_ms>2000)mapState.textContent='定位数据已过期';
+    else mapState.textContent='位置实时更新中';
+    for(let ch=1;ch<=4;ch++){
+      const value=data.channels[String(ch)];
+      if(value&&value.time_ms!==state[ch].time)
+        updateChannel(ch,value.mm,value.confidence,value.time_ms,value.status);
+    }
+  }catch(error){setStatus('采集服务离线','error',error.message);}
+  finally{pollInFlight=false;}
+}
+for(let ch=1;ch<=4;ch++){
+  const card=document.querySelector(`#distance-${ch}`).closest('.card');
+  card.insertAdjacentHTML('beforeend',`<div class="range-cal"><div>接收帧率 <strong id="range-hz-${ch}">—</strong></div><div>周期均值 <strong id="range-mean-${ch}">—</strong></div><div>最小–最大 <strong id="range-span-${ch}">—</strong></div><div id="range-count-${ch}">等待统计</div><div>中心估距 <strong id="range-center-${ch}">—</strong></div><div>${mountingReference[ch]?`三格参考：${mountingReference[ch].threeGrid} ±50 mm`:'前方需单独实测'}</div><label for="range-ref-${ch}"><span>尺量值</span><input id="range-ref-${ch}" type="number" min="1" max="10000" step="any" placeholder="mm" aria-label="${['','前方','左侧','右侧','后方'][ch]}尺量实际距离，毫米"><span>mm</span></label><div class="range-error">均值偏差 <strong id="range-error-${ch}">—</strong></div></div>`);
+  const referenceInput=document.querySelector(`#range-ref-${ch}`);
+  try{referenceInput.value=localStorage.getItem(`laser-ruler-${ch}`)||'';}catch{}
+  referenceInput.addEventListener('input',()=>{
+    try{localStorage.setItem(`laser-ruler-${ch}`,referenceInput.value);}catch{}
+    renderRangeStats();
+  });
+  const meter=document.querySelector(`#confidence-bar-${ch}`);
+  for(let segment=0;segment<10;segment++)meter.append(document.createElement('span'));
+  drawSensor(ch);
+  document.querySelector(`#line-${ch}`).setAttribute('opacity','.25');
+  document.querySelector(`#hit-${ch}`).setAttribute('opacity','.25');
+}
+document.querySelector('.sensors-panel').insertAdjacentHTML('beforeend','<div class="range-note">测距测试：距离保留原始 mm。接收帧率由主控逐帧统计，含零置信度帧；均值仅使用距离和置信度均非零的样本。偏差 = 周期均值 − 尺量值；输入仅用于网页计算，不修改传感器。</div>');
+loadMap();loadPorts();poll();updatePath();setInterval(poll,100);setInterval(updatePath,350);setInterval(loadPorts,3000);
+setInterval(()=>{
+  renderRangeStats();
+  const now=Date.now();document.querySelector('#clock').textContent=new Date(now).toLocaleString('zh-CN',{hour12:false});
+  for(let ch=1;ch<=4;ch++){
+    const s=state[ch],age=now-s.time;
+    if(s.time&&age>1500){document.querySelector(`#updated-${ch}`).textContent='数据超时';document.querySelector(`#updated-${ch}`).style.color='var(--muted)';document.querySelector(`#confidence-bar-${ch}`).classList.add('stale');document.querySelector(`#hit-${ch}`).setAttribute('opacity','.25');document.querySelector(`#line-${ch}`).setAttribute('opacity','.25');}
+    else if(s.time){const strong=s.distance!==null&&s.confidence>=20&&s.status!=='STALE';document.querySelector(`#updated-${ch}`).textContent=rangeStatusNames[s.status]||new Date(s.time).toLocaleTimeString('zh-CN',{hour12:false});document.querySelector(`#updated-${ch}`).style.color='';document.querySelector(`#hit-${ch}`).setAttribute('opacity',strong?'1':'.25');document.querySelector(`#line-${ch}`).setAttribute('opacity',strong?'.8':'.25');}
+  }
+},250);
+</script>
+<script>document.querySelector('.panel-count').addEventListener('click',function(){document.querySelector('.sensors-panel').classList.toggle('show-stats');});</script>
+</body>
+</html>

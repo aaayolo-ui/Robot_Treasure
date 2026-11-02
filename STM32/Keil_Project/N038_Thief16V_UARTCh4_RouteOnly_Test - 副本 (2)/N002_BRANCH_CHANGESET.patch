@@ -1,0 +1,215 @@
+--- before/User/App_ThiefStrategy.c
++++ after/User/App_ThiefStrategy.c
+@@ -241,7 +241,7 @@
+ static ThiefLocalization_t thief_localization;
+ static void Route_StopFault(const char *reason);
+ static uint8_t Route_IsJunctionCandidate(RouteGrayState_t state);
+-static uint8_t Route_ArrivalPlausible(void);
++static uint8_t Route_ArrivalPlausible(uint16_t raw12);
+ static uint8_t Route_RunFollow(RouteGraySample_t *sample,uint32_t elapsed_ms);
+ static void Route_HideAlign(uint32_t now,uint32_t elapsed_ms);
+ static void Route_DriveHideApproach(uint32_t elapsed_ms);
+@@ -1360,11 +1360,16 @@
+ 
+ /* Gray confirms the junction; travel only rejects an implausibly early
+  * repeat of the previous junction. Short retreat keeps its seeded progress. */
+-static uint8_t Route_ArrivalPlausible(void)
++static uint8_t Route_ArrivalPlausible(uint16_t raw12)
+ {
+   const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
+-  if(map_nav.runtime && !route_trail.returning && !retreat_active)
++  if(map_nav.runtime && !route_trail.returning && !retreat_active) {
++    /* N011 -> N002 must expose the planned right exit. Opposite-side
++     * fragments on this leg stay line-follow input, not a node arrival. */
++    if(step->from_node==11U && step->to_node==2U &&
++        step->action==MAP_ACTION_RIGHT && (raw12&3U)!=3U)return 0U;
+     return (Route_LegProgress()>=(int32_t)step->length_mm*4L/10L)?1U:0U;
++  }
+   return MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress());
+ }
+ 
+@@ -1446,7 +1451,7 @@
+ {
+   MapRouteAction_t action;
+   if(map_nav.runtime && !route_trail.returning && !retreat_active &&
+-      !Route_ArrivalPlausible())return;
++      !Route_ArrivalPlausible(raw12))return;
+   if(route_trail.returning) {
+     const MapRouteStep_t *expected=MapRouteNavigator_Current(&map_nav);
+     int32_t progress=Route_LegProgress();
+@@ -1914,7 +1919,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_N063_MAIN60_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_N002_BRANCH_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1940,7 +1945,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N063_MAIN60_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_N002_BRANCH_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1989,7 +1994,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_N063_MAIN60_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_N002_BRANCH_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2256,7 +2261,7 @@
+     }
+     if ((map_nav.arrived == 0U) && (Route_IsJunctionCandidate(front_state) != 0U) &&
+         (junction_armed != 0U) &&
+-        Route_ArrivalPlausible() &&
++        Route_ArrivalPlausible(sample.front_raw12) &&
+         (junction_latched == 0U) &&
+         (front_was_valid != 0U))
+     {
+@@ -2351,7 +2356,7 @@
+       if(Route_TreasureRearBridge(&sample,elapsed_ms))break;
+       if (!departure_turn && (map_nav.arrived == 0U) && (Route_IsJunctionCandidate(front_state) != 0U) &&
+           (junction_armed != 0U) &&
+-        Route_ArrivalPlausible() &&
++        Route_ArrivalPlausible(sample.front_raw12) &&
+           (junction_latched == 0U) &&
+           (front_was_valid != 0U))
+       {
+@@ -2655,7 +2660,7 @@
+           if((uint32_t)(now-gray_missing_tick)>=2000U){Route_StopFault("GRAY_BOTH_NO_LINE");break;}
+         } else gray_missing_active=0U;
+         if(!map_nav.arrived && Route_IsJunctionCandidate(front_state) && junction_armed && !junction_latched &&
+-            (route_trail.returning || retreat_active || Route_ArrivalPlausible())) {
++            (route_trail.returning || retreat_active || Route_ArrivalPlausible(sample.front_raw12))) {
+           if(!ChassisSpeedControl_IsEnabled())Route_ResetControl(1U);
+           Route_HandleJunction(now,elapsed_ms,front_state,sample.front_raw12);break;
+         }
+--- before/Tests/test_arrival_gate.py
++++ after/Tests/test_arrival_gate.py
+@@ -24,7 +24,7 @@
+  begin();odom=80;call('Route_HandleJunction',clock,20,4,0xF00)
+  check(not member('map_nav','arrived') and var('junction_count')==0,'shared handler rejects early candidate without mutating node or count')
+  for distance,expected in [(119,0),(120,1),(1000,1)]:
+-  odom=distance;check(call('Route_ArrivalPlausible')==expected,f'300mm edge arrival gate at {distance}mm')
++  odom=distance;check(call('Route_ArrivalPlausible',0xFFF)==expected,f'300mm edge arrival gate at {distance}mm')
+  begin();odom=300;front_raw=0x60;tick()
+  check(not member('map_nav','arrived'),'distance alone never confirms a node')
+  front_raw=0x07F;tick()
+--- before/Tests/test_hide_routes_stable4.py
++++ after/Tests/test_hide_routes_stable4.py
+@@ -107,9 +107,9 @@
+         call('Thief_UpdatePose');expect(member('thief_pose','valid')==0,'rotating pose cannot project laser directions')
+         start=var('park_start_yaw');start=start-65536 if start>=32768 else start
+         quarter=-1 if body==1 else 1
+-        yaw=(start+sign*quarter*6999+18000)%36000-18000;tick()
+-        expect(var('park_turn_pending')==2,'ordinary 45-degree cutoff cannot end the parking quarter-turn')
+-        yaw=(start+sign*quarter*7200+18000)%36000-18000;turn_targets.clear();tick()
++        yaw=(start+sign*quarter*5999+18000)%36000-18000;tick()
++        expect(var('park_turn_pending')==2,'parking main phase remains active below authorized 60-degree cutoff')
++        yaw=(start+sign*quarter*6200+18000)%36000-18000;turn_targets.clear();tick()
+         expect(var('park_turn_pending')==3,'continuous wheel finish begins after main rotation')
+         expect(turn_targets and all(a+b+c+d==0 and a==c and b==d for a,b,c,d in turn_targets),
+                'parking commands rotate in place, never translate')
+--- before/README.md
++++ after/README.md
+@@ -1,3 +1,17 @@
++# N002_BRANCH_SL1：仅N011至N002右转前继续巡线（本段优先）
++
++当前FW=UARTCH4_16V_N002_BRANCH_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N063_MAIN60_before_n002_branch。
++
++193649日志在N011至N002用C40读数提前到点，随后因缺少右支路而锁定停车。按用户最新限定，仅正常动态前进的11→2且计划右转这一段，必须先有右侧最外两路识黑，才允许灰度候选确认到点。C40、F00等只有相反侧特征的读数继续作为原巡线输入，不更新节点、不执行入点延时停车。快速轮询、正常巡线、恢复及公共到点处理共用同一判断；保留原40%最低里程排除条件，不用里程独立定位。之后真正看到右支路，再执行原入点、实测停稳和转弯。
++
++不取消全局MAP_REQUIRED_BRANCH_NOT_SEEN，也不安排无灰度盲目前冲。短回撤、原路返回、其他路口不套此单点支路条件。此改动不能保证探头始终漏读时仍能识别真实路口，需实测。N013问题未作为全局规则修改。N038/N063主旋转60°、微调350、现有速度PID、激光与策略保持。此前用户要求N061北上经N025直达N006不绕东侧，尚未增加适用于所有动态路线的约束；原N063南侧固定路线已走直线，本轮未改规划器。
++
++ARMCC5全量编译0错误0警告。日志专项90项、提前认点回归69项、完整藏点任务151项、60°停车75项，共385项ARM离线检查通过。旧AXF专项复现提前认点失败，新AXF通过。旧完整停车测试在69.99°仍期待主旋转阶段，与先前已授权60°不符，已将测试边界同步为59.99°/62°，生产角度未因此调整。测试传感器及轮速均为仿真，结果绑定当前AXF。
++
++证据N002_BRANCH_FILES.json、N002_BRANCH_CHANGESET.patch、build_n002_branch.log、Tests/results_n002_branch.json、Tests/results_n002_branch_before.json及本轮回归报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # N063_MAIN60_SL1：N063主旋转60°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N063_MAIN60_SL1，仅修改用户指定桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/ARRIVAL_GATE_before_n063_main60。
+--- before/AGENTS.md
++++ after/AGENTS.md
+@@ -1,3 +1,17 @@
++# N002_BRANCH_SL1：仅N011至N002右转前继续巡线（本段优先）
++
++当前FW=UARTCH4_16V_N002_BRANCH_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N063_MAIN60_before_n002_branch。
++
++193649日志在N011至N002用C40读数提前到点，随后因缺少右支路而锁定停车。按用户最新限定，仅正常动态前进的11→2且计划右转这一段，必须先有右侧最外两路识黑，才允许灰度候选确认到点。C40、F00等只有相反侧特征的读数继续作为原巡线输入，不更新节点、不执行入点延时停车。快速轮询、正常巡线、恢复及公共到点处理共用同一判断；保留原40%最低里程排除条件，不用里程独立定位。之后真正看到右支路，再执行原入点、实测停稳和转弯。
++
++不取消全局MAP_REQUIRED_BRANCH_NOT_SEEN，也不安排无灰度盲目前冲。短回撤、原路返回、其他路口不套此单点支路条件。此改动不能保证探头始终漏读时仍能识别真实路口，需实测。N013问题未作为全局规则修改。N038/N063主旋转60°、微调350、现有速度PID、激光与策略保持。此前用户要求N061北上经N025直达N006不绕东侧，尚未增加适用于所有动态路线的约束；原N063南侧固定路线已走直线，本轮未改规划器。
++
++ARMCC5全量编译0错误0警告。日志专项90项、提前认点回归69项、完整藏点任务151项、60°停车75项，共385项ARM离线检查通过。旧AXF专项复现提前认点失败，新AXF通过。旧完整停车测试在69.99°仍期待主旋转阶段，与先前已授权60°不符，已将测试边界同步为59.99°/62°，生产角度未因此调整。测试传感器及轮速均为仿真，结果绑定当前AXF。
++
++证据N002_BRANCH_FILES.json、N002_BRANCH_CHANGESET.patch、build_n002_branch.log、Tests/results_n002_branch.json、Tests/results_n002_branch_before.json及本轮回归报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # N063_MAIN60_SL1：N063主旋转60°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N063_MAIN60_SL1，仅修改用户指定桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/ARRIVAL_GATE_before_n063_main60。
+--- before/Docs/修改规范与回归清单.md
++++ after/Docs/修改规范与回归清单.md
+@@ -1,3 +1,17 @@
++# N002_BRANCH_SL1：仅N011至N002右转前继续巡线（本段优先）
++
++当前FW=UARTCH4_16V_N002_BRANCH_SL1，仅修改桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/N063_MAIN60_before_n002_branch。
++
++193649日志在N011至N002用C40读数提前到点，随后因缺少右支路而锁定停车。按用户最新限定，仅正常动态前进的11→2且计划右转这一段，必须先有右侧最外两路识黑，才允许灰度候选确认到点。C40、F00等只有相反侧特征的读数继续作为原巡线输入，不更新节点、不执行入点延时停车。快速轮询、正常巡线、恢复及公共到点处理共用同一判断；保留原40%最低里程排除条件，不用里程独立定位。之后真正看到右支路，再执行原入点、实测停稳和转弯。
++
++不取消全局MAP_REQUIRED_BRANCH_NOT_SEEN，也不安排无灰度盲目前冲。短回撤、原路返回、其他路口不套此单点支路条件。此改动不能保证探头始终漏读时仍能识别真实路口，需实测。N013问题未作为全局规则修改。N038/N063主旋转60°、微调350、现有速度PID、激光与策略保持。此前用户要求N061北上经N025直达N006不绕东侧，尚未增加适用于所有动态路线的约束；原N063南侧固定路线已走直线，本轮未改规划器。
++
++ARMCC5全量编译0错误0警告。日志专项90项、提前认点回归69项、完整藏点任务151项、60°停车75项，共385项ARM离线检查通过。旧AXF专项复现提前认点失败，新AXF通过。旧完整停车测试在69.99°仍期待主旋转阶段，与先前已授权60°不符，已将测试边界同步为59.99°/62°，生产角度未因此调整。测试传感器及轮速均为仿真，结果绑定当前AXF。
++
++证据N002_BRANCH_FILES.json、N002_BRANCH_CHANGESET.patch、build_n002_branch.log、Tests/results_n002_branch.json、Tests/results_n002_branch_before.json及本轮回归报告。仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # N063_MAIN60_SL1：N063主旋转60°（本段优先）
+ 
+ 当前FW=UARTCH4_16V_N063_MAIN60_SL1，仅修改用户指定桌面 N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)。每次修改前仍读README、AGENTS、Docs/修改规范与回归清单。备份Reference/ARRIVAL_GATE_before_n063_main60。
+--- /dev/null
++++ after/Tests/test_n002_branch.py
+@@ -0,0 +1,33 @@
++from pathlib import Path
++import sys,json,hashlib
++ROOT=Path(__file__).absolute().parents[1]
++setup=(ROOT/'Tests/test_arrival_gate.py').read_text(encoding='utf-8').split('try:')[0]
++setup=setup.replace('Reference/MAIN60_before_arrival_gate/MDK-ARM','Reference/N063_MAIN60_before_n002_branch/MDK-ARM')
++exec(compile(setup,str(ROOT/'Tests/test_arrival_gate.py'),'exec'))
++try:
++ for raw in [0xC40,0xF00]:
++  begin();odom=180;front_raw=raw;commands.clear()
++  for _ in range(8):tick()
++  check(not member('map_nav','arrived') and var('junction_count')==0,'opposite-side evidence does not become N002')
++  check(var('thief_current_node')==11,'no premature node projection')
++  check(var('route_state')==2 and any(c[0]=='drive' for c in commands),'continues original line follow without entry brake')
++  odom=250;front_raw=0x07F;tick()
++  check(member('map_nav','arrived') and var('route_state')==3,'later real right exit starts original entry action')
++  check(member('map_nav','seen_ports')&2,'right-branch evidence kept')
++ begin();odom=180;front_raw=0;tick();front_raw=0xC40
++ for _ in range(3):tick()
++ check(not member('map_nav','arrived') and var('junction_count')==0,'recovery cannot bypass scoped branch requirement')
++ odom=260;front_raw=0x07F;tick()
++ check(member('map_nav','arrived'),'recovered genuine right branch still accepted')
++ begin();odom=180;call('Route_HandleJunction',clock,20,4,0xC40)
++ check(not member('map_nav','arrived') and var('junction_count')==0,'shared handler also rejects logged C40')
++ begin();odom=1000;front_raw=0xC40;tick()
++ check(not member('map_nav','arrived') and var('route_state')==2,'distance overshoot alone neither blesses C40 nor locks vehicle')
++ # Same wrong-side raw on a different map edge retains existing behavior.
++ fresh(21,0);setstep(21,38,2,0,600);call('Route_Start');odom=300
++ check(call('Route_ArrivalPlausible',0xC40)==1,'other edges retain gray arrival acceptance')
++except Exception as e:failures.append(str(e))
++out=dict(checks=checks,failures=failures,axf_sha256=hashlib.sha256(axf.read_bytes()).hexdigest(),hardware_tested=False,before='--before' in sys.argv)
++name='results_n002_branch_before.json' if out['before'] else 'results_n002_branch.json'
++(ROOT/'Tests'/name).write_text(json.dumps(out,indent=2),encoding='utf-8')
++print(json.dumps(out,indent=2));assert not failures,failures

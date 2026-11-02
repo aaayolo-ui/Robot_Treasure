@@ -1,0 +1,23 @@
+{
+  "checks": 377,
+  "failures": [
+    {
+      "case": "supported_exit",
+      "error": "2.77degree residual must promptly enter search without waiting2500ms"
+    },
+    {
+      "case": "missing_probe",
+      "error": "both missing must briefly probe likely mapped line"
+    },
+    {
+      "case": "road_probe_and_cap",
+      "error": "mapped road loss probes rather than spinning only"
+    }
+  ],
+  "cases": {
+    "loss_reset_and_real_exit": 2
+  },
+  "hardware_tested": false,
+  "axf_sha256": "9f381b9bfc5542c56a70b6fa6d1f36e565dd0d252b3ff1c989e914a500885bb7",
+  "test_sha256": "261fa41ed3ca0acb9476454f0ce998c0c076e27224cef7fafffc207a9492f66e"
+}

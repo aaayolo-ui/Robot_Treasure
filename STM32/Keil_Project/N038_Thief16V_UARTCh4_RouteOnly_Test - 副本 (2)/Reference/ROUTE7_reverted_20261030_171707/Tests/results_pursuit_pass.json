@@ -1,0 +1,218 @@
+{
+  "checks": 9087,
+  "failures": [],
+  "cases": [
+    {
+      "case": "pursued",
+      "mode": 0,
+      "gyro_sign": -1,
+      "passed_states": [
+        11,
+        11,
+        11
+      ],
+      "result": {
+        "frames": 835,
+        "node": 11,
+        "body": 1,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "pursued",
+      "mode": 0,
+      "gyro_sign": 1,
+      "passed_states": [
+        11,
+        11,
+        11
+      ],
+      "result": {
+        "frames": 835,
+        "node": 11,
+        "body": 1,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "pursued",
+      "mode": 1,
+      "gyro_sign": -1,
+      "passed_states": [
+        11,
+        11,
+        11
+      ],
+      "result": {
+        "frames": 835,
+        "node": 11,
+        "body": 3,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "pursued",
+      "mode": 1,
+      "gyro_sign": 1,
+      "passed_states": [
+        11,
+        11,
+        11
+      ],
+      "result": {
+        "frames": 835,
+        "node": 11,
+        "body": 3,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "quiet",
+      "result": {
+        "frames": 46,
+        "node": 63,
+        "body": 2,
+        "fixes": [],
+        "states": [
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "one_frame",
+      "result": {
+        "frames": 46,
+        "node": 63,
+        "body": 2,
+        "fixes": [],
+        "states": [
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "expired",
+      "result": {
+        "frames": 46,
+        "node": 63,
+        "body": 2,
+        "fixes": [],
+        "states": [
+          2,
+          9,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "return_home_pass",
+      "max_new_edges": 13,
+      "result": {
+        "frames": 835,
+        "node": 11,
+        "body": 1,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    },
+    {
+      "case": "front_priority",
+      "state": 12
+    },
+    {
+      "case": "main_spin_capture",
+      "passed_states": [
+        11,
+        11,
+        11
+      ],
+      "result": {
+        "frames": 841,
+        "node": 11,
+        "body": 1,
+        "fixes": [],
+        "states": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          11,
+          13
+        ],
+        "intercepted": false
+      }
+    }
+  ],
+  "axf_sha256": "a26c7892cf8f02e7264234b223b356d47359ef7490986203e58264abaeacba6d",
+  "test_sha256": "16c1c5f10fedae791a738f68065ce1cc009e92df2a1dd5aec866b647e1d47d76",
+  "hardware_tested": false
+}

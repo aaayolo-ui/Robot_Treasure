@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "channels": 4,
+  "raw_range_and_statistics": true,
+  "timeout_and_retry": true,
+  "display_hz": 10,
+  "actual_50_hz_traffic": true,
+  "zero_confidence_counts_for_hz": true,
+  "motor_enable_symbol_absent": true,
+  "hardware_tested": false
+}

@@ -1,0 +1,24 @@
+{
+  "firmware": "UARTCH4_16V_ARRIVAL_GATE_SL1",
+  "modified": [
+    "User/App_ThiefStrategy.c",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "added": [
+    "Tests/test_arrival_gate.py"
+  ],
+  "reports": [
+    "Tests/results_arrival_gate.json",
+    "Tests/results_hide_routes_stable4.json",
+    "Tests/results_n038_main60.json",
+    "Tests/results_n068_recovery.json"
+  ],
+  "expected_before_failure": "Tests/results_arrival_gate_before.json",
+  "axf_sha256": "1569f7c2ed23d0ada6af7c3f6523b2486354c33b5f4ba8ee192a8984f3e036de",
+  "checks": 1519,
+  "unchanged_production_files": 192,
+  "backup": "C:\\Users\\Administrator\\Desktop\\N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)\\Reference\\MAIN60_before_arrival_gate",
+  "hardware_tested": false
+}

@@ -1,0 +1,133 @@
+--- FIRST38/Algorithm/ThiefStrategy/ThiefMapPlanner.c
++++ VIA21/Algorithm/ThiefStrategy/ThiefMapPlanner.c
+@@ -159,20 +159,20 @@
+ uint8_t ThiefMapPlanner_PlanInitial(ThiefRoutePlan_t *plan)
+ {
+   uint16_t i,count;
+-  static const uint16_t first_hide_path[]={3U,2U,1U,10U,20U,37U,38U};
++  static const uint16_t first_hide_path[]={3U,2U,11U,22U,21U,38U};
+   const uint16_t prefix_count=(uint16_t)(sizeof(initial_treasure_path)/sizeof(initial_treasure_path[0]));
+   if(plan==NULL) return 0U;
+   plan->valid=0U;
+   /* Keep the treasure approach, then take the first refuge at N038. */
+   memset(&decision,0,sizeof(decision));
+-  decision.goal_node=38U;decision.parking_heading=0U;
++  decision.goal_node=38U;decision.parking_heading=2U;
+   count=0U;
+   for(i=0U;i<prefix_count;i++) combined[count++]=initial_treasure_path[i];
+   for(i=0U;i<sizeof(first_hide_path)/sizeof(first_hide_path[0]);i++)
+     combined[count++]=first_hide_path[i];
+   if(!BuildRoute(combined,count,0U,INITIAL_ID,plan)) return 0U;
+-  /* Arrival at N038 is eastbound; park north after measured standstill. */
+-  plan->final_body_heading=0U;
++  /* Arrival from N021 is southbound; keep the vertical arrival posture. */
++  plan->final_body_heading=2U;
+   /* Initial telemetry reports the entire fixed-prefix + hide route, not only
+    * the N004-to-hide suffix used by the hide selector. */
+   decision.travel_ms=THIEF_STARTUP_MS;
+--- FIRST38/User/App_ThiefStrategy.c
++++ VIA21/User/App_ThiefStrategy.c
+@@ -1867,7 +1867,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_FIRST38_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_FIRST38_VIA21_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1893,7 +1893,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_FIRST38_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_FIRST38_VIA21_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1942,7 +1942,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_FIRST38_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_FIRST38_VIA21_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+--- FIRST38/Tests/test_hide_routes_stable4.py
++++ VIA21/Tests/test_hide_routes_stable4.py
+@@ -51,12 +51,12 @@
+ expect(ok,'initial treasure route still builds')
+ if ok:
+     expect(path()[:9]==[53,44,36,35,26,17,7,6,4],'initial treasure route uses N035-N026-N017-N007')
+-    expect(path()[-7:]==[3,2,1,10,20,37,38],'first hide goes through N001 and N037 to N038')
++    expect(path()[-6:]==[3,2,11,22,21,38],'first hide goes through N002-N011-N022-N021 to N038')
+     expect(member('thief_plan','goal_node')==38 and member('thief_plan','final_body_heading') in [0,2],
+            'first N038 hide is reached vertically')
+     if member('thief_plan','final_body_heading') in [0,2]:
+         call('Route_Start');result=complete_route()
+-        expect(result['node']==38 and result['body'] in [0,2],'actual initial task ends vertically at N038')
++        expect(result['node']==38 and result['body']==2,'actual initial task ends south parked at N038')
+         lifecycles.append(dict(kind='initial',result=result))
+ 
+ # Actual laser -> specified complete route -> measured stop -> parking turn.
+--- FIRST38/README.md
++++ VIA21/README.md
+@@ -1,3 +1,17 @@
++# FIRST38_VIA21_SL1：首次经N022、N021到N038（本段优先）
++
++当前用户指定工程为桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本，FW=UARTCH4_16V_FIRST38_VIA21_SL1。修改前快照Reference/FIRST38_before_via21，301项散列。每次改代码前必须读本README、AGENTS、Docs/修改规范与回归清单。
++
++首次取宝前路线保持；从N004起N003→N002→N011→N022→N021→N038，不再经过原西侧N001/N010/N020/N037。N011是N002到N022之间的实际路口，本次只是路过，不停靠。由N021朝南进入N038，保留实际南向竖停，目标姿态同步设为南，不强行掉头朝北。此规则只改首次1600路线，后续逃跑路线不作全局西侧禁行。
++
++生产只改ThiefMapPlanner首次路径和最终姿态、App三个固件标识。App除FW外逐字不变，普通PID/速度/转弯/原速短遮挡/四路激光/PA3保持。基线散列、修改文件与当前映像见VIA21_FILES.json，统一差异VIA21_CHANGESET.patch。
++
++ARMCC5全量编译0错误0警告；test_hide_routes_stable4.py共151项检查通过，包括首次完整任务到N038且BODY=2南向竖停、原北侧逃跑及其他停车动作。测试含合成传感器和电机反馈，不能当成实车验证。报告绑定当前AXF，旧版报告只作历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST38_SL1：首次经N001、N037到N038（本段优先）
+ 
+ 当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。
+--- FIRST38/AGENTS.md
++++ VIA21/AGENTS.md
+@@ -1,3 +1,17 @@
++# FIRST38_VIA21_SL1：首次经N022、N021到N038（本段优先）
++
++当前用户指定工程为桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本，FW=UARTCH4_16V_FIRST38_VIA21_SL1。修改前快照Reference/FIRST38_before_via21，301项散列。每次改代码前必须读本README、AGENTS、Docs/修改规范与回归清单。
++
++首次取宝前路线保持；从N004起N003→N002→N011→N022→N021→N038，不再经过原西侧N001/N010/N020/N037。N011是N002到N022之间的实际路口，本次只是路过，不停靠。由N021朝南进入N038，保留实际南向竖停，目标姿态同步设为南，不强行掉头朝北。此规则只改首次1600路线，后续逃跑路线不作全局西侧禁行。
++
++生产只改ThiefMapPlanner首次路径和最终姿态、App三个固件标识。App除FW外逐字不变，普通PID/速度/转弯/原速短遮挡/四路激光/PA3保持。基线散列、修改文件与当前映像见VIA21_FILES.json，统一差异VIA21_CHANGESET.patch。
++
++ARMCC5全量编译0错误0警告；test_hide_routes_stable4.py共151项检查通过，包括首次完整任务到N038且BODY=2南向竖停、原北侧逃跑及其他停车动作。测试含合成传感器和电机反馈，不能当成实车验证。报告绑定当前AXF，旧版报告只作历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST38_SL1：首次经N001、N037到N038（本段优先）
+ 
+ 当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。
+--- FIRST38/Docs/修改规范与回归清单.md
++++ VIA21/Docs/修改规范与回归清单.md
+@@ -1,3 +1,17 @@
++# FIRST38_VIA21_SL1：首次经N022、N021到N038（本段优先）
++
++当前用户指定工程为桌面N038_Thief16V_UARTCh4_RouteOnly_Test - 副本，FW=UARTCH4_16V_FIRST38_VIA21_SL1。修改前快照Reference/FIRST38_before_via21，301项散列。每次改代码前必须读本README、AGENTS、Docs/修改规范与回归清单。
++
++首次取宝前路线保持；从N004起N003→N002→N011→N022→N021→N038，不再经过原西侧N001/N010/N020/N037。N011是N002到N022之间的实际路口，本次只是路过，不停靠。由N021朝南进入N038，保留实际南向竖停，目标姿态同步设为南，不强行掉头朝北。此规则只改首次1600路线，后续逃跑路线不作全局西侧禁行。
++
++生产只改ThiefMapPlanner首次路径和最终姿态、App三个固件标识。App除FW外逐字不变，普通PID/速度/转弯/原速短遮挡/四路激光/PA3保持。基线散列、修改文件与当前映像见VIA21_FILES.json，统一差异VIA21_CHANGESET.patch。
++
++ARMCC5全量编译0错误0警告；test_hide_routes_stable4.py共151项检查通过，包括首次完整任务到N038且BODY=2南向竖停、原北侧逃跑及其他停车动作。测试含合成传感器和电机反馈，不能当成实车验证。报告绑定当前AXF，旧版报告只作历史。
++
++仅编译通过，尚未完成硬件验证。未烧录、未占串口、未运行实物电机、未提交推送。
++
++---
++
+ # FIRST38_SL1：首次经N001、N037到N038（本段优先）
+ 
+ 当前工程为用户指定的桌面“Thief16V_UARTCh4_RouteOnly_Test - 副本”，FW=UARTCH4_16V_FIRST38_SL1。每次改代码前仍读README、AGENTS、Docs/修改规范与回归清单。修改前快照Reference/TOP7_before_initial38，共301项散列。

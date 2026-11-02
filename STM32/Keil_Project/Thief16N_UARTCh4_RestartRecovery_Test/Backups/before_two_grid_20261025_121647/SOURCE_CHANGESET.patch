@@ -1,0 +1,125 @@
+--- baseline/User/App_ThiefStrategy.c
++++ 16N/User/App_ThiefStrategy.c
+@@ -49,6 +49,7 @@
+ #define ROUTE_JUNCTION_WATCH_PERIOD_MS        5U /* PID period is in LineFollowPID.h. */
+ #define MAP_ROUTE_PASS_TIMEOUT_MS         1800U
+ #define MAP_ROUTE_ALIGN_TIMEOUT_MS        2500U
++#define ROUTE_RESTART_FIND_LINE_MS          300U /* Low-speed departure from a confirmed node. */
+ #define ROUTE_FRONT_RECOVERY_MS             200U /* Brake and retry a transient front-gray fault. */
+ #define ROUTE_FRONT_RECOVERY_VALID_SAMPLES    2U
+ #define ROUTE_GYRO_RECOVERY_MS              600U /* Brake while waiting for fresh YAW. */
+@@ -165,6 +166,7 @@
+ static uint8_t departure_entry_mode;
+ static uint8_t node_centered;
+ static uint8_t departure_centered;
++static uint8_t departure_reacquire;
+ static uint8_t replan_after_leg;
+ static uint8_t retreat_active;
+ static uint8_t intercept_pending;
+@@ -372,8 +374,8 @@
+   uint32_t bad,dropped,errors;
+   const char *status;
+   uint8_t usable;
+-  if(route_active || thief_strategy_state==THIEF_STRATEGY_SETTLING) return;
+-  if((uint32_t)(now-last)<125U) return;
++  char line[256];
++  if((uint32_t)(now-last)<25U) return;
+   last=now;
+   status=FrontLaserGate_StatusText(thief_laser[i].status);
+   usable=(uint8_t)((thief_laser_active_mask&(1U<<i))!=0U);
+@@ -381,12 +383,13 @@
+   else if(!usable) status=thief_pose.valid ? "EDGE_OFF" : "POSE_OFF";
+   else if(!thief_laser_seen[i] || (uint32_t)(now-thief_last_laser_tick[i])>250U) status="NO_DATA";
+   LaserRx_Counters((LaserDirection_t)i,&bad,&dropped,&errors);
+-  UartDebug_Printf("LASER DIR=%s D=%u C=%u STATUS=%s AGE=%lu BAD=%lu DROP=%lu ERR=%lu STATE=%s FAULT=%s\r\n",
++  (void)snprintf(line,sizeof(line),"LASER DIR=%s D=%u C=%u STATUS=%s AGE=%lu BAD=%lu DROP=%lu ERR=%lu STATE=%s FAULT=%s\r\n",
+     laser_name[i],(unsigned)(usable?thief_laser[i].distance_mm:0U),
+     (unsigned)(usable?thief_laser[i].confidence:0U),
+     status,(unsigned long)(thief_laser_seen[i]?now-thief_last_laser_tick[i]:0U),
+     (unsigned long)bad,(unsigned long)dropped,(unsigned long)errors,
+     Thief_StrategyName(),route_fault_reason?route_fault_reason:"NONE");
++  (void)UartDebug_TrySendString(line);
+   i=(uint8_t)((i+1U)%LASER_COUNT);
+ }
+ 
+@@ -1179,6 +1182,9 @@
+   uint32_t now;
+   uint8_t turn_delta=0U;
+ 
++  departure_reacquire=(uint8_t)(thief_localization.initialized &&
++      thief_localization.phase==THIEF_LOC_AT_NODE &&
++      thief_localization.confirmed_node==thief_plan.route.start_node);
+   departure_entry_mode=TravelFrame_IsReverse();
+   departure_centered=node_centered;
+   node_centered=0U;
+@@ -1239,7 +1245,8 @@
+                    (unsigned)sample.front_raw12,
+                    (int)sample.front_error_x100);
+   if ((front_state != ROUTE_GRAY_VALID) && (front_state != ROUTE_GRAY_ALL_BLACK) &&
+-      (front_state != ROUTE_GRAY_LEFT_BLACK) && (front_state != ROUTE_GRAY_RIGHT_BLACK))
++      (front_state != ROUTE_GRAY_LEFT_BLACK) && (front_state != ROUTE_GRAY_RIGHT_BLACK) &&
++      !(departure_reacquire && front_state==ROUTE_GRAY_NO_LINE))
+   {
+     Route_StopFault("MAP_START_REQUIRES_LINE");
+     return;
+@@ -1478,7 +1485,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16M_RUN1 ALGO=16M UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16M_UARTCh4_InterceptEscape_Test FW=UARTCH4_16M_RUN1 ALGO=16N UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1824,7 +1831,20 @@
+       }
+       else if (front_state == ROUTE_GRAY_VALID)
+       {
++        departure_reacquire=0U;
+         Route_EnterFollow(now, 1U, leave_target_rpm_x10, 0U);
++      }
++      else if (front_state==ROUTE_GRAY_NO_LINE && departure_reacquire)
++      {
++        /* A stopped junction may sit between the gray boards. Move along the
++         * planned edge briefly instead of locking on one empty sample. */
++        if ((uint32_t)(now-route_state_tick)>=ROUTE_RESTART_FIND_LINE_MS) {
++          Route_StopFault("RESTART_LINE_NOT_FOUND");
++        } else {
++          leave_target_rpm_x10=ROUTE_TURN_APPROACH_RPM_X10;
++          Route_DriveTurnApproach(elapsed_ms);
++          if (ChassisSpeedControl_HasStall()) Route_StopFault("STALL");
++        }
+       }
+       else if ((front_state == ROUTE_GRAY_ALL_BLACK) ||
+                (front_state == ROUTE_GRAY_LEFT_BLACK) ||
+--- baseline/project.uvprojx
++++ 16N/project.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Thief16M_UARTCh4_InterceptEscape_Test</TargetName>
++      <TargetName>Thief16N_UARTCh4_RestartRecovery_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Thief16M_UARTCh4_InterceptEscape_Test\</OutputDirectory>
+-          <OutputName>Thief16M_UARTCh4_InterceptEscape_Test</OutputName>
++          <OutputDirectory>Thief16N_UARTCh4_RestartRecovery_Test\</OutputDirectory>
++          <OutputName>Thief16N_UARTCh4_RestartRecovery_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -955,7 +955,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
+         <targetInfos>
+-          <targetInfo name="Thief16M_UARTCh4_InterceptEscape_Test"/>
++          <targetInfo name="Thief16N_UARTCh4_RestartRecovery_Test"/>
+         </targetInfos>
+       </component>
+     </components>

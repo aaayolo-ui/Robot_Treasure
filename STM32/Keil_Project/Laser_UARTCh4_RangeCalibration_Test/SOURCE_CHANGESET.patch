@@ -1,0 +1,452 @@
+--- baseline/Core/Src/main.c
++++ test/Core/Src/main.c
+@@ -21,7 +21,7 @@
+ 
+ /* Private includes ----------------------------------------------------------*/
+ /* USER CODE BEGIN Includes */
+-#include "App_ThiefStrategy.h"
++#include "App_LaserRangeTest.h"
+ 
+ /* USER CODE END Includes */
+ 
+@@ -115,7 +115,7 @@
+   MX_UART5_Init();
+   MX_USART1_UART_Init();
+   /* USER CODE BEGIN 2 */
+-  App_ThiefStrategy_Init();
++  App_LaserRangeTest_Init();
+ 
+   /* USER CODE END 2 */
+ 
+@@ -123,7 +123,7 @@
+   /* USER CODE BEGIN WHILE */
+   while (1)
+   {
+-    App_ThiefStrategy_Task();
++    App_LaserRangeTest_Task();
+     /* USER CODE END WHILE */
+ 
+     /* USER CODE BEGIN 3 */
+--- baseline/MDK-ARM/Thief16M_UARTCh4_InterceptEscape_Test.uvprojx
++++ test/MDK-ARM/Laser_UARTCh4_RangeCalibration_Test.uvprojx
+@@ -7,7 +7,7 @@
+ 
+   <Targets>
+     <Target>
+-      <TargetName>Thief16M_UARTCh4_InterceptEscape_Test</TargetName>
++      <TargetName>Laser_UARTCh4_RangeCalibration_Test</TargetName>
+       <ToolsetNumber>0x4</ToolsetNumber>
+       <ToolsetName>ARM-ADS</ToolsetName>
+       <pCCUsed>5060528::V5.06 update 5 (build 528)::ARMCC</pCCUsed>
+@@ -48,8 +48,8 @@
+             <NotGenerated>0</NotGenerated>
+             <InvalidFlash>1</InvalidFlash>
+           </TargetStatus>
+-          <OutputDirectory>Thief16M_UARTCh4_InterceptEscape_Test\</OutputDirectory>
+-          <OutputName>Thief16M_UARTCh4_InterceptEscape_Test</OutputName>
++          <OutputDirectory>Laser_UARTCh4_RangeCalibration_Test\</OutputDirectory>
++          <OutputName>Laser_UARTCh4_RangeCalibration_Test</OutputName>
+           <CreateExecutable>1</CreateExecutable>
+           <CreateLib>0</CreateLib>
+           <CreateHexFile>1</CreateHexFile>
+@@ -721,14 +721,14 @@
+           <GroupName>User</GroupName>
+           <Files>
+             <File>
+-              <FileName>App_ThiefStrategy.c</FileName>
+-              <FileType>1</FileType>
+-              <FilePath>../User/App_ThiefStrategy.c</FilePath>
+-            </File>
+-            <File>
+-              <FileName>App_ThiefStrategy.h</FileName>
+-              <FileType>5</FileType>
+-              <FilePath>../User/App_ThiefStrategy.h</FilePath>
++              <FileName>App_LaserRangeTest.c</FileName>
++              <FileType>1</FileType>
++              <FilePath>../User/App_LaserRangeTest.c</FilePath>
++            </File>
++            <File>
++              <FileName>App_LaserRangeTest.h</FileName>
++              <FileType>5</FileType>
++              <FilePath>../User/App_LaserRangeTest.h</FilePath>
+             </File>
+             <File>
+               <FileName>LineFollowLog.c</FileName>
+@@ -955,7 +955,7 @@
+       <component Cclass="CMSIS" Cgroup="CORE" Cvendor="ARM" Cversion="4.3.0" condition="CMSIS Core">
+         <package name="CMSIS" schemaVersion="1.3" url="http://www.keil.com/pack/" vendor="ARM" version="4.5.0"/>
+         <targetInfos>
+-          <targetInfo name="Thief16M_UARTCh4_InterceptEscape_Test"/>
++          <targetInfo name="Laser_UARTCh4_RangeCalibration_Test"/>
+         </targetInfos>
+       </component>
+     </components>
+--- baseline/README.md
++++ test/README.md
+@@ -1,64 +1,49 @@
+-# 16M UART-CH4：五藏点、途中拦截回撤
++# 四路激光原始距离标定测试
+ 
+-由同级 `Thief16B_UARTCh4_MapStrategy_Test` 复制，原工程保留。
+-打开 `MDK-ARM/Thief16M_UARTCh4_InterceptEscape_Test.uvprojx`。
+-启动标识：`FW=UARTCH4_16M_RUN1 ALGO=16M`。
++从同级 Thief16M_UARTCh4_InterceptEscape_Test 复制，原工程不修改。
++打开 MDK-ARM/Laser_UARTCh4_RangeCalibration_Test.uvprojx。
+ 
+-## 策略
++上电即持续测距，无需按键、不需经过 N005；所有按键均不启动电机。应用仅调用电机初始化/关闭，不执行运动控制。
++沿用当前已接通的四路扩展板接口 PB6 TX/PB7 RX、日志 PB10 TX、115200；TFT 保持关闭。
++启动失败时保持静止，每隔3秒重新尝试初始化；初始化本身也需要等待时间。
+ 
+-- 原始测距有效上限 **1000 mm**。依据用户给出的“1000 对应实际约 900 mm”，
+-  地图投影暂用原始值乘 **0.9**；日志保留原始值。这是单点比例估计，尚非全量程实测标定。
+-- 藏点固定为 **N011 横、N038 横、N026 竖、N035 横、N063 竖**。
+-  横允许朝东/西，竖允许朝南/北；到达方向由路径搜索一并决定。
+-- 保留 N054 朝 N053 的起步方向与既有取宝前缀。通过 N005 后才启用运行检测；
+-  首藏点仍为 N038 横。
+-- 遇到物体后，优先比较路径风险等级，再优先选离最近记忆物体更远的藏点，
+-  最后比较藏点复用与包含转弯、换向、威胁惩罚的路径代价。距离按曼哈顿距离、300 mm 分档。
+-  实时搜索地图，不按固定藏点顺序循环，也不使用旧 Rollout 的预生成路线。
+-- 运动中前方/侧向出现有效检测：**优先刹车，轮速确认停稳后，沿当前线回撤**。
+-  回到上一灰度确认路口后重新规划。回撤保持车头方向，切换前后循迹和轮速映射，
+-  不把尚未到达的路口伪造成定位点。
+-- 回撤终点只是重新规划点，可以不是五个藏点之一；它不会被当作长期藏点。
+-  回撤途中再次遭拦截也可换向，350 ms 冷却避免连续来回抖动。被拦截路段记录 4 秒，
+-  有其他路时优先避开。
+-- 仅后方有物体时继续远离；前后都堵时，反向已知余量多出 200 mm 才换向，否则继续到路口选路。
+-  所有出口受威胁时，将禁行约束降为高额代价，选择风险较低的出口继续运动，
+-  用 `DEGRADED=1` 明示没有安全保证。
+-- 重新规划后可在路口侧向转弯。沿入路方向（包含倒车）执行原有 180 ms / 100 RPM 进位，
+-  刹停后切换新路线行驶模式，再完成陀螺仪与灰度确认的转向。
+-- 到五个正式藏点时，识别到路口后也沿当前行驶方向以 **100 RPM 再走 180 ms**，
+-  再刹车停稳；时间和速度直接复用转弯前的进位参数。已完成进位的藏点再次侧向出发时，
+-  不重复进位。拦截回撤的临时重新规划点仍立即刹停。
+-- 地图边缘只忽略朝场外的射线，朝场内的检测仍有效；图外或不能沿连续道路投影的返回值也忽略。
+-  此判断依据几何位置，不能识别人、墙或小车的身份。
++## 查看与实测
+ 
+-## 已精简的误停车逻辑
++烧录本工程生成的 HEX 后，使用原激光网页，选 COM9、115200。启动标识 FW=LASER_RANGE_CAL_3。
++四路顺序 FRONT/LEFT/RIGHT/REAR，分别对应 CH1/CH2/CH3/CH4。每25ms轮流输出一路，每路10次/秒；网页每100ms轮询一次。
++D 是传感器原始 mm，不套用1000mm策略上限，也不乘0.9。C 是原始置信度。
++STATUS=RAW 表示该读数非零且置信度非零；不意味着测量已标定准确。
++WAIT_DATA=未收到该路，STALE=该路超过500ms没新帧，BAD_DATA=距离或置信度为零，LINK_ERROR=初始化失败。
++网页显示的是最近一帧，精度比较请同时看原始日志里的 RANGE 行。
+ 
+-- 规划已在停车状态执行且迭代有界：超过 100 ms 只记录 `PLAN_SLOW`，不再永久退出策略。
+-- 直行过路口时一次灰度通信失败/暂时无黑线，复用 200 ms 短暂恢复流程，不再立即永久停车。
+-- 拦截回撤切换前后灰度后，首个读数偶发无效也进入同一恢复流程，持续无效才停车。
++每个 RANGE 行给出上一输出周期内的有效样本数 N、四舍五入平均值 MEAN_MM、MIN_MM、MAX_MM、排除样本数 REJECT。
++每路统计窗口至少1000ms，首轮四路错开，因此长度略有差异；WINDOW_MS 为真实统计时长。
++FRAMES 包含校验正确但距离/置信度无效的测距帧，HZ_X10 = FRAMES × 10000 / WINDOW_MS，四舍五入。
++真实帧率是主控接收端的统计值，不是网页/串口打印频率，也不代表没有扩展板或链路丢帧。
++无有效距离样本时 N=0，统计数值0表示没有统计数据；网页显示“—”。
++零距离/零置信度仍会输出，但不纳入统计；校验失败帧不会被接收驱动送入统计。
++BAD 为每路累计校验错误；DROP/ERR 是扩展板共享串口累计丢弃/错误，四路显示的是同一串口计数。
+ 
+-人工停车、换向前实际停稳、持续失线、陀螺仪失效、定位矛盾等保护仍有效。
+-“立即回撤”指有效检测确认后优先刹车，不是高速中直接反接电机。
+-高质量信号使用同一传感器连续两帧确认；低质量信号保留五帧稳定判定。
+-运动帧须在 25 ms 内且航向误差不超过 5°；转弯/路口过渡尚无有效朝向时不投影新威胁。
++用平整不透光目标板，沿各传感器测量轴，从激光测距参考面量到目标面，保持同一材质、角度和光照。
++建议分别记录100、200、300、500、700、900、1000、1500mm；每个点先稳定2秒，再保存至少5秒数据。
++每次只移动一个方向的目标板，记录方向、尺量距离、均值、最小/最大值和置信度。
++偏差 = 显示均值 - 尺量实际距离；正数是报远，负数是报近。
++不要用车中心到目标的距离代替传感器到目标的距离，否则会混入安装偏移。
+ 
+-## 验证和使用边界
++可选：在 User/App_LaserRangeTest.c 顶部 actual_mm 数组填入四路实际距离（前/左/右/后），重新编译后会增加 RANGE_ERROR。
++也可以直接在网页各路卡片填尺量实际距离，实时计算“均值偏差”，输入只保存在当前浏览器，不向小车发送命令。
++旧版 CAL_1 统计可显示均值，但没有 WINDOW_MS/FRAMES，网页不会推算Hz；须烧录新版固件才能显示准确帧率。
++0 表示未指定，不输出误差；参考值只参与计算误差，不改变原始距离。
+ 
+-接线、电机映射、编码器、陀螺仪、UART-CH4、PID 沿用父工程。KEY2 启动、KEY1 停车。
+-本次不自动烧录、不连接串口、不运行实物电机。
++## 验证
+ 
+-- `build_16M.log`：该工程 ARMCC5 全量编译记录。
+-- `Tests/results_16m.json`：实际算法/定位 C 代码的 Cortex-M3 离线检查。
+-- `Tests/results_app_runtime.json`：已链接固件中的真实应用函数测试；硬件调用用测试桩替代。
+-- `VALIDATION_16M.json`：文件差异、底层一致性、工程路径、测试与产物摘要。
+-- `SOURCE_CHANGESET.patch`：与原工程相比的文本差异。该下载目录没有 `.git`。
++用户三格参考（每格300mm）：左右原始读数800±50mm、后750±50mm。
++网页车中心估距近似为左右原始均值+100mm、后+150mm，标注±50mm；前方未标定。
++这只是单点安装偏移估计，不是全量程比例校准。原始值、尺量偏差仍按传感器参考面计算。
++本轮未修改16M策略的0.9投影换算；网页中心估距不参与主控策略。
++115200波特率和传感器主动上报设置不变，只提高主控上传频率。
+ 
+-复验：`python Tests/run_16m.py`、`python Tests/test_app_runtime.py`、
+-`python Tests/verify_snapshot.py`。依赖位于 `Tests/build/deps`。
+-
+-**仅编译通过，尚未完成硬件验证**。离线检查通过不能代替取宝、回撤、定位和对抗实测。
+-路径优劣基于地图、估计速度和观测；不保证在未知对手动作、漏检、打滑或实际包围下不被抓。
+-
+-策略参数位于 `Algorithm/ThiefStrategy/ThiefStrategyConfig.h`，五个藏点轴向位于
+-`Algorithm/ThiefStrategy/ThiefInterceptPolicy.c`。逐项修改清单见 `VALIDATION_16M.json`。
++仅编译通过，尚未完成硬件验证。未自动烧录或操作车辆。
++改动：Core/Src/main.c 的 USER CODE 应用入口；新 User/App_LaserRangeTest.c/.h；重命名并调整 Keil 工程应用源；本 README。
++底层驱动、引脚、时钟沿用16M。保留的策略源码未参与入口，不代表本固件执行策略。
++Tests/test_range.py 在 Cortex-M3 仿真中检查实际链接应用的启动、帧统计、过期、周期输出及重试；不接串口或电机。
+--- /dev/null
++++ test/User/App_LaserRangeTest.c
+@@ -0,0 +1,109 @@
++#include "App_LaserRangeTest.h"
++#include "LaserRx.h"
++#include "MotorDriver.h"
++#include "UartDebug.h"
++#include "main.h"
++#include <string.h>
++
++/* Actual ruler distances, FRONT/LEFT/RIGHT/REAR. Zero means not specified.
++ * These references only calculate error; received distances are never scaled. */
++static const uint16_t actual_mm[LASER_COUNT] = {0U, 0U, 0U, 0U};
++#define REPORT_SLOT_MS 25U /* Four channels, each uploaded every 100 ms. */
++#define STATS_PERIOD_MS 1000U
++#define STALE_MS 500U
++
++typedef struct {
++  uint16_t raw, firmware, minimum, maximum;
++  uint8_t confidence, seen;
++  uint32_t tick, count, sum, rejected, frames, window_tick;
++} RangeSample;
++static RangeSample samples[LASER_COUNT];
++static const char *const names[LASER_COUNT] = {"FRONT", "LEFT", "RIGHT", "REAR"};
++static uint8_t next_channel, running;
++static uint32_t last_report, last_retry;
++
++static void RangeFrame(LaserDirection_t direction, uint16_t distance,
++    uint8_t confidence, uint16_t firmware, uint32_t tick)
++{
++  RangeSample *s;
++  if(direction>=LASER_COUNT) return;
++  s=&samples[direction];
++  s->raw=distance;s->confidence=confidence;s->firmware=firmware;
++  s->tick=tick;s->seen=1U;
++  /* FIFO loss is reported by LaserRx as a synthetic zero frame, not a
++   * measurement. It invalidates the latest value but must not inflate Hz. */
++  if(!firmware && !distance && !confidence) return;
++  s->frames++;
++  /* Keep zero/confidence-zero readings visible, but out of the average.
++   * No strategy range threshold, road gate, or 0.9 correction is applied. */
++  if(distance==0U || confidence==0U) {s->rejected++;return;}
++  if(s->count==0U || distance<s->minimum) s->minimum=distance;
++  if(s->count==0U || distance>s->maximum) s->maximum=distance;
++  s->count++;s->sum+=distance;
++}
++
++static void StartReceiving(void)
++{
++  LaserRx_Init();
++  running=LaserRx_LinkReady() && LaserRx_SetEnabled(1U);
++  last_retry=HAL_GetTick();
++  UartDebug_Printf("RANGE_BOOT READY=%u LINK=%s FAULT=%u MOTORS=OFF RAW_SCALE=1\r\n",
++      (unsigned)running,LaserRx_LinkSource(),(unsigned)LaserRx_InitFault());
++}
++
++void App_LaserRangeTest_Init(void)
++{
++  uint8_t i;
++  MotorDriver_Init();
++  MotorDriver_Disable();
++  memset(samples,0,sizeof(samples));
++  next_channel=0U;running=0U;
++  UartDebug_SendString("BOOT FW=LASER_RANGE_CAL_3 MOTORS=OFF LOG=PB10_115200 LASER=PB6_PB7 DISPLAY_HZ=10\r\n");
++  StartReceiving();
++  last_report=HAL_GetTick();
++  for(i=0U;i<LASER_COUNT;i++) samples[i].window_tick=last_report;
++}
++
++void App_LaserRangeTest_Task(void)
++{
++  uint32_t now,age,bad=0U,drop=0U,errors=0U,mean,window,hz_x10;
++  const char *status;
++  RangeSample *s;
++  UartDebug_Task();
++  now=HAL_GetTick();
++  if(!running) {
++    LaserRx_BootLogTask();
++    /* Parked retry also recovers an expansion board powered after the MCU. */
++    if((uint32_t)(now-last_retry)>=3000U) StartReceiving();
++  } else LaserRx_Poll(RangeFrame);
++  now=HAL_GetTick();
++  if((uint32_t)(now-last_report)<REPORT_SLOT_MS) return;
++  last_report=now;s=&samples[next_channel];
++  age=s->seen ? (uint32_t)(now-s->tick) : 0U;
++  if(!running) status="LINK_ERROR";
++  else if(!s->seen) status="WAIT_DATA";
++  else if(age>STALE_MS) status="STALE";
++  else if(!s->raw || !s->confidence) status="BAD_DATA";
++  else status="RAW";
++  LaserRx_Counters((LaserDirection_t)next_channel,&bad,&drop,&errors);
++  /* Existing web dashboard accepts this line without firmware-specific gates. */
++  UartDebug_Printf("LASER DIR=%s D=%u C=%u STATUS=%s AGE=%lu BAD=%lu DROP=%lu ERR=%lu STATE=RANGE_TEST FAULT=%s\r\n",
++      names[next_channel],(unsigned)s->raw,(unsigned)s->confidence,status,
++      (unsigned long)age,(unsigned long)bad,(unsigned long)drop,(unsigned long)errors,
++      running?"NONE":"UARTCH4_CONFIG_FAILED");
++  window=(uint32_t)(now-s->window_tick);
++  if(window>=STATS_PERIOD_MS) {
++    mean=s->count ? (s->sum+s->count/2U)/s->count : 0U;
++    hz_x10=(s->frames*10000U+window/2U)/window;
++    UartDebug_Printf("RANGE DIR=%s N=%lu MEAN_MM=%lu MIN_MM=%u MAX_MM=%u REJECT=%lu FW=%u REF_MM=%u FRAMES=%lu WINDOW_MS=%lu HZ_X10=%lu\r\n",
++      names[next_channel],(unsigned long)s->count,(unsigned long)mean,
++      (unsigned)(s->count?s->minimum:0U),(unsigned)(s->count?s->maximum:0U),
++      (unsigned long)s->rejected,(unsigned)s->firmware,(unsigned)actual_mm[next_channel],
++      (unsigned long)s->frames,(unsigned long)window,(unsigned long)hz_x10);
++    if(actual_mm[next_channel] && s->count)
++      UartDebug_Printf("RANGE_ERROR DIR=%s ERROR_MM=%ld\r\n",names[next_channel],
++        (long)mean-(long)actual_mm[next_channel]);
++    s->count=0U;s->sum=0U;s->rejected=0U;s->frames=0U;s->window_tick=now;
++  }
++  next_channel=(uint8_t)((next_channel+1U)%LASER_COUNT);
++}
+--- /dev/null
++++ test/User/App_LaserRangeTest.h
+@@ -0,0 +1,7 @@
++#ifndef APP_LASER_RANGE_TEST_H
++#define APP_LASER_RANGE_TEST_H
++
++void App_LaserRangeTest_Init(void);
++void App_LaserRangeTest_Task(void);
++
++#endif
+--- /dev/null
++++ test/Tests/test_range.py
+@@ -0,0 +1,138 @@
++"""Run the linked ARMCC5 test application with hardware stubbed; no serial IO."""
++from pathlib import Path
++import sys, json
++ROOT = Path(__file__).absolute().parents[1]
++sys.path.insert(0, str(ROOT.parent/'Thief16M_UARTCh4_InterceptEscape_Test/Tests/build/deps'))
++from elftools.elf.elffile import ELFFile
++from unicorn import Uc, UC_ARCH_ARM, UC_MODE_THUMB, UC_MODE_MCLASS, UC_HOOK_CODE
++from unicorn.arm_const import *
++
++with (ROOT/'MDK-ARM'/ROOT.name/(ROOT.name+'.axf')).open('rb') as source:
++    elf = ELFFile(source)
++    symbols = {s.name:s['st_value'] for s in elf.get_section_by_name('.symtab').iter_symbols()}
++    u = Uc(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS)
++    u.ctl_set_cpu_model(UC_CPU_ARM_CORTEX_M3)
++    u.mem_map(0x08000000, 0x100000)
++    u.mem_map(0x20000000, 0x10000)
++    for section in elf.iter_sections():
++        if section['sh_flags'] & 2 and section['sh_type'] != 'SHT_NOBITS' and section['sh_size']:
++            u.mem_write(section['sh_addr'], section.data())
++    sample_type = None
++    for cu in elf.get_dwarf_info().iter_CUs():
++        for die in cu.iter_DIEs():
++            if die.tag == 'DW_TAG_typedef' and die.attributes.get('DW_AT_name') and die.attributes['DW_AT_name'].value == b'RangeSample':
++                sample_type = die.get_DIE_from_attribute('DW_AT_type')
++    stride = sample_type.attributes['DW_AT_byte_size'].value
++    fields = {}
++    for member in sample_type.iter_children():
++        if member.tag == 'DW_TAG_member':
++            offset = member.attributes['DW_AT_data_member_location'].value
++            if not isinstance(offset, int): offset = offset[-1]  # ARMCC DW_OP_plus_uconst, small offsets
++            typ = member.get_DIE_from_attribute('DW_AT_type')
++            while typ.tag in ('DW_TAG_typedef', 'DW_TAG_const_type'):
++                typ = typ.get_DIE_from_attribute('DW_AT_type')
++            fields[member.attributes['DW_AT_name'].value.decode()] = (offset, typ.attributes['DW_AT_byte_size'].value)
++
++def get(addr, size=4): return int.from_bytes(u.mem_read(addr, size), 'little')
++def value(channel, field):
++    offset, size = fields[field]
++    return get(symbols['samples']+channel*stride+offset, size)
++def string(addr):
++    result = bytearray()
++    while True:
++        b = get(addr, 1); addr += 1
++        if not b: return result.decode()
++        result.append(b)
++clock = 1000
++ready = 1
++calls = []
++lines = []
++statistics = []
++handles = []
++def hook(name, fn):
++    address = symbols[name] & ~1
++    def callback(uc, address, size, data):
++        result = fn()
++        if result is not None: uc.reg_write(UC_ARM_REG_R0, result)
++        uc.reg_write(UC_ARM_REG_PC, uc.reg_read(UC_ARM_REG_LR))
++    handles.append(u.hook_add(UC_HOOK_CODE, callback, begin=address, end=address))
++def log_call(name, result=0):
++    def fn(): calls.append(name); return result
++    hook(name, fn)
++for name in ('MotorDriver_Init', 'MotorDriver_Disable', 'LaserRx_Init', 'LaserRx_Poll',
++             'LaserRx_BootLogTask', 'UartDebug_Task', 'LaserRx_Counters', 'UartDebug_SendString'):
++    log_call(name)
++hook('HAL_GetTick', lambda:clock)
++hook('LaserRx_LinkReady', lambda:ready)
++hook('LaserRx_SetEnabled', lambda:ready)
++hook('LaserRx_InitFault', lambda:0 if ready else 7)
++u.mem_write(0x2000e000,b'FRAMES4\0')
++hook('LaserRx_LinkSource', lambda:0x2000e000)
++def printf():
++    fmt = string(u.reg_read(UC_ARM_REG_R0))
++    sp = u.reg_read(UC_ARM_REG_SP)
++    lines.append((fmt, string(get(sp)) if fmt.startswith('LASER DIR=') else None))
++    if fmt.startswith('RANGE DIR='):
++        statistics.append([u.reg_read(UC_ARM_REG_R2),u.reg_read(UC_ARM_REG_R3)] +
++                          [get(sp+4*i) for i in range(8)])
++hook('UartDebug_Printf', printf)
++def call(name, *args):
++    sp = 0x2000d000
++    u.reg_write(UC_ARM_REG_SP, sp)
++    for i, arg in enumerate(args):
++        if i<4: u.reg_write((UC_ARM_REG_R0,UC_ARM_REG_R1,UC_ARM_REG_R2,UC_ARM_REG_R3)[i],arg)
++        else: u.mem_write(sp+4*(i-4), int(arg).to_bytes(4,'little'))
++    u.reg_write(UC_ARM_REG_LR, 0x080ff001)
++    u.emu_start(symbols[name]|1, 0x080ff000, count=100000)
++    assert u.reg_read(UC_ARM_REG_PC)==0x080ff000, name
++
++call('App_LaserRangeTest_Init')
++assert calls[:2] == ['MotorDriver_Init','MotorDriver_Disable']
++for channel in range(4):
++    for distance,confidence in ((900,100),(1000,100),(1100,100),(1500,100),(0,100),(600,0)):
++        call('RangeFrame',channel,distance,confidence,104,1000)
++    assert value(channel,'count')==4
++    assert value(channel,'sum')==4500  # includes >1000; no 0.9 scaling
++    assert value(channel,'minimum')==900 and value(channel,'maximum')==1500
++    assert value(channel,'rejected')==2
++    assert value(channel,'raw')==600 and value(channel,'confidence')==0
++call('RangeFrame',0,0,0,0,1000)
++assert value(0,'frames')==6  # synthetic FIFO loss did not add a frame
++call('RangeFrame',0,1234,100,104,1000)
++clock=1024; call('App_LaserRangeTest_Task')
++assert not any(fmt.startswith('LASER DIR=') for fmt,status in lines)
++clock=1025; call('App_LaserRangeTest_Task')
++assert lines[-1][1]=='RAW' and value(0,'count')==5  # fast output must not clear statistics
++clock=1050; call('App_LaserRangeTest_Task')
++assert lines[-1][1]=='BAD_DATA'
++clock=1750; call('App_LaserRangeTest_Task')
++assert lines[-1][1]=='STALE'
++clock=2000; call('App_LaserRangeTest_Task')
++assert lines[-2][1]=='STALE'
++assert statistics[-1]==[4,1125,900,1500,2,104,0,6,1000,60]
++# Feed real 50 Hz traffic, including invalid ranges, while reporting at 10 Hz.
++call('App_LaserRangeTest_Init'); statistics.clear(); lines.clear()
++for elapsed in range(5,1201,5):
++    clock=2000+elapsed
++    if elapsed%20==0:
++        for channel in range(4): call('RangeFrame',channel,900,100 if channel<3 else 0,104,clock)
++    call('App_LaserRangeTest_Task')
++assert len([fmt for fmt,status in lines if fmt.startswith('LASER DIR=')])==48
++assert len(statistics)==4
++for stat in statistics:
++    assert 490<=stat[-1]<=510  # includes actual elapsed time for staggered windows
++assert statistics[0][0]==0 and statistics[0][-1]==500  # zero-confidence frames still count for Hz
++assert statistics[0][4]==50
++ready=0; call('App_LaserRangeTest_Init')
++clock+=50; call('App_LaserRangeTest_Task')
++assert lines[-1][1]=='LINK_ERROR'
++count=calls.count('LaserRx_Init')
++clock+=3000; ready=1; call('App_LaserRangeTest_Task')
++assert calls.count('LaserRx_Init')==count+1
++assert lines[-2][1]=='WAIT_DATA'
++assert 'MotorDriver_Enable' not in symbols  # linker removes all movement entry points
++result={'result':'PASS','channels':4,'raw_range_and_statistics':True,'timeout_and_retry':True,
++        'display_hz':10,'actual_50_hz_traffic':True,'zero_confidence_counts_for_hz':True,
++        'motor_enable_symbol_absent':True,'hardware_tested':False}
++(ROOT/'Tests/results.json').write_text(json.dumps(result,indent=2))
++print(json.dumps(result))

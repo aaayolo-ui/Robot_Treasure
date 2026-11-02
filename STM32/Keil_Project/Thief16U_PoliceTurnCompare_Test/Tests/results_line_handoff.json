@@ -1,0 +1,13 @@
+{
+  "checks": 63,
+  "cases": {
+    "five_degree_handoff": 4,
+    "rear_width_follow": 2,
+    "rear_width_recovery": 4,
+    "first_unknown_sign_turn": 1
+  },
+  "failures": [],
+  "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "test_sha256": "74f26ed98add4b9c2b20b72035dce008d692659b620ca869356f8f33e3848870",
+  "hardware_tested": false
+}

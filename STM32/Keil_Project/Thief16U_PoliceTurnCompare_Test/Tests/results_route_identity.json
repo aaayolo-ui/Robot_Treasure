@@ -1,0 +1,17 @@
+{
+  "checks": 92,
+  "failures": [],
+  "cases": {
+    "n011_departure": 63,
+    "ambiguous_n006": 1,
+    "n007_observed_reanchor": 4,
+    "exact_log_reversal": 1,
+    "candidates_follow_shape": 2,
+    "ambiguity_laser_priority": 1,
+    "ambiguity_loss_deadline": 1,
+    "observer_control_cadence": 1
+  },
+  "hardware_tested": false,
+  "axf_sha256": "b58e22c80def8c074e22ca5451e963fa6af7f96d8fad2ce5d7415da02cf68750",
+  "test_sha256": "14e3a57dfb93311df08bfdfab63d646e04a2eb9995ce205bac0c67b13f3ec641"
+}

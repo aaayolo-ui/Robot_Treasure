@@ -1,0 +1,160 @@
+--- ROUTE6_SL1/Algorithm/MapRoute/MapRouteNavigator.c
++++ ROUTE9/Algorithm/MapRoute/MapRouteNavigator.c
+@@ -153,7 +153,8 @@
+     return MAP_ACTION_ERROR;
+   }
+   nav->arrived = 1U;
+-  nav->seen_ports = 0U;
++  /* Keep this leg's near-junction observations across the arrival latch.
++   * Start/Advance and the application's new-leg/rearm reset own their scope. */
+   MapRouteNavigator_Observe(nav, raw12);
+   return (MapRouteAction_t)step->action;
+ }
+--- ROUTE6_SL1/User/App_ThiefStrategy.c
++++ ROUTE9/User/App_ThiefStrategy.c
+@@ -164,6 +164,7 @@
+ static uint8_t rearm_valid_count;
+ static uint8_t turn_exit_sensor_armed;
+ static uint8_t turn_stop_stable_count;
++static uint8_t turn_t_valid_count;
+ static int32_t leave_target_rpm_x10;
+ static RouteState_t route_state;
+ static RouteState_t turn_target_state;
+@@ -511,6 +512,7 @@
+   else map_leg_start_counts=MapRoutePosition_ForwardCounts();
+   trace_pass_pending=0U;
+   map_progress_offset_mm=0L;node_centered=0U;node_stop_counts_valid=0U;
++  map_nav.seen_ports=0U;
+   junction_armed=0U;junction_latched=0U;front_was_valid=0U;rearm_valid_count=0U;
+   branch_node=0U;branch_headings=0U;thief_laser_pose_since=now;Thief_ResetLaserEvidence();
+   MapTimingLog_Event(MAP_TIMING_LEG_BEGIN,junction_count,now,0L);
+@@ -901,6 +903,37 @@
+              1U : 0U;
+ }
+ 
++/* At a centered T, the leading board can be past the horizontal stripe on
++ * white while the trailing board remains on the incoming vertical stripe.
++ * This supports the planned turn, but does not invent a gray side port/fix. */
++static void Route_UpdateCenteredT(RouteGraySample_t *sample,uint32_t now)
++{
++  const MapRouteStep_t *step=MapRouteNavigator_Current(&map_nav);
++  const MapRouteNode_t *node;
++  ThiefLocYaw_t yaw;
++  int16_t error;
++  if(!step || !map_nav.arrived || !map_nav.seen_ports ||
++      front_state!=ROUTE_GRAY_NO_LINE)goto missing;
++  node=ThiefMapPlanner_Node(step->to_node);
++  if(node->degree!=3U || ThiefMapPlanner_HasRoad(node->id,step->heading,0,0) ||
++      !ThiefMapPlanner_HasRoad(node->id,(uint8_t)((step->heading+1U)%4U),0,0) ||
++      !ThiefMapPlanner_HasRoad(node->id,(uint8_t)((step->heading+3U)%4U),0,0))goto missing;
++  if(Route_ReadRear(sample)!=ROUTE_GRAY_VALID ||
++      !ThiefRouteTrail_TrackLine(sample->rear_raw12) ||
++      sample->rear_error_x100>150 || sample->rear_error_x100< -150)goto missing;
++  Thief_LocalYaw(&yaw);
++  if(!yaw.valid || (uint32_t)(now-yaw.stamp_ms)>ROUTE_JY61P_STALE_MS ||
++      !thief_localization.yaw_cw_sign)goto missing;
++  error=RoadHeading_AxisError(thief_localization.origin_yaw_x100,
++      thief_localization.origin_heading,route_body_heading,
++      thief_localization.yaw_cw_sign,yaw.yaw_x100);
++  if(error>ROUTE_MAP_GRAY_YAW_TOL_X100 || error< -ROUTE_MAP_GRAY_YAW_TOL_X100)goto missing;
++  if(turn_t_valid_count<2U)turn_t_valid_count++;
++  return;
++missing:
++  turn_t_valid_count=0U;
++}
++
+ static uint8_t Route_HasReachedTurnAngle(int16_t current_angle_x100)
+ {
+   int32_t delta = (int32_t)Route_TurnAngleDeltaX100(current_angle_x100,
+@@ -1040,6 +1073,7 @@
+   turn_stop_frame_count = JY61P_GetFrameCount();
+   turn_exit_sensor_armed = 0U;
+   turn_stop_stable_count = 0U;
++  turn_t_valid_count = 0U;
+   gyro_paused = 0U;
+   route_state = ROUTE_STATE_TURN_STOP;
+   route_state_tick = now;
+@@ -1210,6 +1244,7 @@
+     }
+     if (rearm_valid_count >= ROUTE_REARM_VALID_REQUIRED)
+     {
++      if(!map_nav.arrived && !departure_turn)map_nav.seen_ports=0U;
+       junction_armed = 1U;
+       junction_latched = 0U;
+       UartDebug_Printf("JUNCTION_ARMED=%u\r\n", (unsigned)junction_count);
+@@ -1834,7 +1869,7 @@
+     uint8_t i;
+     for(i=0U;i<LASER_COUNT;i++) thief_laser_allowed_since[i]=thief_laser_pose_since;
+   }
+-  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
++  UartDebug_SendString("BOOT FW=UARTCH4_16V_ROUTE9_T_EXIT_SL1 STAGE=LASER_CONFIG USART2=OFF\r\n");
+   LaserRx_Init();
+   Thief_ResetLaserEvidence();
+   if(!LaserRx_LinkReady() || !LaserRx_SetEnabled(0U)) {
+@@ -1860,7 +1895,7 @@
+     thief_strategy_state = THIEF_STRATEGY_FAULT;
+     route_fault_reason = "INITIAL_PLAN_FAILED";
+   }
+-  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
++  UartDebug_Printf("Thief16V_UARTCh4_RouteOnly_Test FW=UARTCH4_16V_ROUTE9_T_EXIT_SL1 ALGO=16U UARTCH4_READY=1 LINK=%s MAIN=115200 FOUR_LASER DIN2=PB15 USART2=OFF\r\n",LaserRx_LinkSource());
+   {
+     TreasureDIn2PinMap_t pins;
+     TreasureMotorSnapshot_ReadDIn2PinMap(&pins);
+@@ -1909,7 +1944,7 @@
+       thief_strategy_state!=THIEF_STRATEGY_FAULT) || (uint32_t)(now-last)<1000U) return;
+   TreasureMotorSnapshot_ReadEncoderMap(&s);
+   length=snprintf(line,sizeof(line),
+-      "BOOT_STATUS FW=UARTCH4_16V_ROUTE6_SHORT_RETURN_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
++      "BOOT_STATUS FW=UARTCH4_16V_ROUTE9_T_EXIT_SL1 T=%lu STATE=%s UARTCH4_READY=%u LINK=%s FAULT=%u REASON=%s KEY_LOCK=%u PLAN=%u PWM=%u,%u,%u,%u STBY=%u\r\n",
+       (unsigned long)now,Thief_StrategyName(),(unsigned)LaserRx_LinkReady(),
+       LaserRx_LinkSource(),(unsigned)LaserRx_InitFault(),route_fault_reason?route_fault_reason:"NONE",
+       (unsigned)route_key_release_pending,(unsigned)thief_plan.valid,
+@@ -2168,6 +2203,9 @@
+     last_front_watch_tick = now;
+     Route_ResetSample(&sample);
+     front_state = Route_ReadLeadingOnce(&sample, &leading_cache);
++    if(!map_nav.arrived && junction_armed && !junction_latched &&
++        MapRouteNavigator_InArrivalWindow(&map_nav,Route_LegProgress()))
++      MapRouteNavigator_Observe(&map_nav,sample.front_raw12);
+     if(retreat_active && !map_nav.arrived &&
+         Route_LegProgress()>=(int32_t)MapRouteNavigator_Current(&map_nav)->length_mm-100L &&
+         Route_IsJunctionCandidate(front_state)) {
+@@ -2352,6 +2390,9 @@
+       {
+         Route_ConfirmTurnDirection(sample.front_raw12);
+       }
++
++      if(!departure_turn && !reverse_pending && !MapRouteNavigator_ConfirmTurn(&map_nav))
++        Route_UpdateCenteredT(&sample,now);
+ 
+       if (((uint32_t)(now - route_state_tick) >= ROUTE_TURN_STOP_MAX_MS) &&
+           (turn_stop_stable_count < ROUTE_TURN_STOP_STABLE_SAMPLES))
+@@ -2386,7 +2427,14 @@
+          * missing the chosen side must not veto this replan. ExitReady still
+          * requires outgoing gray and YAW alignment before committing the leg.
+          * Moving arrivals retain their normal branch confirmation. */
+-        if (!departure_turn && MapRouteNavigator_ConfirmTurn(&map_nav) == 0U) {
++        if (!departure_turn && MapRouteNavigator_ConfirmTurn(&map_nav) == 0U &&
++            turn_t_valid_count<2U) {
++          const MapRouteStep_t *at=MapRouteNavigator_Current(&map_nav);
++          UartDebug_Printf("TURN_BRANCH_MISSING FROM=N%u AT=N%u NEXT=N%u MODE=%u SEEN=%u LEAD=%03X T_COUNT=%u\r\n",
++              (unsigned)at->from_node,(unsigned)at->to_node,
++              (unsigned)map_nav.steps[map_nav.step+1U].to_node,
++              (unsigned)TravelFrame_IsReverse(),(unsigned)map_nav.seen_ports,
++              (unsigned)sample.front_raw12,(unsigned)turn_t_valid_count);
+           Route_StopFault("MAP_REQUIRED_BRANCH_NOT_SEEN");
+           break;
+         }
+@@ -2403,6 +2451,12 @@
+           }
+           break;
+         }
++        if(!departure_turn && !MapRouteNavigator_ConfirmTurn(&map_nav))
++          UartDebug_Printf("TURN_T_CENTER N=%u MODE=%u RAW=%03X,%03X SEEN=%u ACTION=%d\r\n",
++              (unsigned)MapRouteNavigator_Current(&map_nav)->to_node,
++              (unsigned)TravelFrame_IsReverse(),(unsigned)sample.front_raw12,
++              (unsigned)sample.rear_raw12,(unsigned)map_nav.seen_ports,
++              (int)MapRouteNavigator_Current(&map_nav)->action);
+         /* Keep STBY enabled and transition directly from short brake to the
+          * fixed-PWM turn in this same cycle. The old disable/enable sequence
+          * released the brake and then waited one more 20 ms control period. */

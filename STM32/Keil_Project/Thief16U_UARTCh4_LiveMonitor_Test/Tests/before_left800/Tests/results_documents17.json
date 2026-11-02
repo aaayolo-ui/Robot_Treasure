@@ -1,0 +1,27 @@
+{
+  "checks": 2897,
+  "failures": [],
+  "passed": [
+    "parking_pulses",
+    "turn_visible_resume",
+    "visible_road_speed",
+    "pulse_boundaries"
+  ],
+  "cases": {
+    "parking_pulses": 40,
+    "turn_visible_resume": 32,
+    "visible_road_speed": 4,
+    "pulse_boundaries": null
+  },
+  "hardware_tested": false,
+  "firmware_sha256": "51aef090e1b578d7490351b21ed670ae519b5bfaa02c0e3bf39ae25f18f3a489",
+  "app_source_sha256": "2acbc6a6fc02a6adc24ce2755dab5c013ac455236e039de2dc34d0cf9be75d33",
+  "test_script_sha256": "4bbd6772fb37226a0e872ccb33bce7cda808911d48b2b41b639ad28708763bcc",
+  "helper_sha256": {
+    "test_documents15.py": "956fedafa7ea99b584c1721a9b430c36e9a707161ebf37fb69d28abcbfe957b5",
+    "test_documents16.py": "fd27cd73d91bb136ea13e28d86b4affe50b66e3f8c25bc727cd9ee2bd474416c",
+    "test_app_runtime.py": "d2d3dcd4503a0d14561fdea52540df7904ee0982e9930b785283f96cd042994a",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878",
+    "test_documents13.py": "a80cb0e4dec3b143d96eab7bb1509b748bb882fd62685d7435e6ba52e460976a"
+  }
+}

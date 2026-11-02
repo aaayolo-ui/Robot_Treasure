@@ -1,0 +1,205 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR9",
+  "firmware_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8",
+  "hex_sha256": "d586d984e8d456cbc783783659ad11b064242baa93cdb13a3193dd5b7787d39e",
+  "before_failures": [
+    {
+      "case": "terminal_pwm",
+      "error": "terminal angle reduces actual four-wheel PWM"
+    },
+    {
+      "case": "measured_brake_handoff",
+      "error": "80.58degree sample cannot translate with residual wheel rotation"
+    },
+    {
+      "case": "road_heading_context",
+      "error": "12.17degree yaw cannot become CONTEXT fault after210ms"
+    }
+  ],
+  "new_cases": {
+    "terminal_pwm": 8,
+    "measured_brake_handoff": 8,
+    "road_heading_context": 4
+  },
+  "extra": {
+    "yaw_reference": {
+      "straight_reference": 70,
+      "treasure_turn_handoff": 8,
+      "reference_wrap_reverse": 4
+    },
+    "turn_resume": {
+      "resume_after_brake": 2,
+      "continuous_loop_kept": 1
+    }
+  },
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "96567a974705356d3f45e849952935f9a0d492f9e00ba917068c678c614e6cdf",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "48f8745bae3d4f0c8595a70bdc1493f46ffba6af99b88f6e95864825f1a41bb4",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "7370da68cd38d7595907b0f719c20c4056fe014e3a53e94d882233f368fc485f",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "d4de6ac71185dd8ffcfcf19bc407641945ef7a91aa575e1c90f58f89e735ae57",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "173839104a9df5d610fc800dc67771a7ab35390e4614347f3ffa17b7ef63c8ec",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "c159fb21891dbb58536fc018b885cce60277d36bde4cf9d4ee8aeb1c53e7cf63",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "dc9953ac2208e9442c68d1bee6aeb4fe2639bbd978d5813413c3194370478e93",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "9022131b7eb0c25693dcdeb23507ba393b3b4e350cf7d4146a829b67f015c79f",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "9be98d0400a82cb171d5ec2b3d208c3eaeb4b560d76cf5b1cc63352091df8729",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "a33e4da3721fd3c5fe2c2c77c918e989c7966bbe4445a17445c913fd33354947",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "c16fb4896bc0d14a8947b18cdad85b58adc61b6392184e01d93f003df5e9f501",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "2b5b6b5502af99402afd6112d328e566e6aec4464fd8d85be7fe10bea0b4cfd7",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "f4a77596edfdb040cf11b35faa0a5dca18d3061f8f26d4c0853a6fcc91a0a468",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "55126a30b0c57a7322d7a71c6dd32e0136a6db814cbca08851ba841b4353dd60",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "270e74f89b3dca03e5a7e6162d3577d3763ed43aee76eda2671a00010c3970cb",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "7aa0340abee9041e3603edac90604236c8eb2d60bd64aaee7b39ab562abf209b",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "f1540407f8a34c331213169f69b4ad0f2ee47cfd0c375d396556c1ad900d8027",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "90c3ebd68c9224a0429beaf0b174248ffffd6f6a5299ab6c4dd6a7f253789dfc",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "439d80555fa28554df34e50974ab4e5aa92fd407a1f2f18f51e8c2441aa24991",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "156e9608c5ace9c0d827689c1286a6e27c32b651f80e3bc0145789d870072712",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "37814c55b68c3b3e9851ce41dd1fde4f32996583397726d2867174daff967612",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "569c1bf37a81cfdbfc8f4640582b6228c40c91c2c5f2b4cccf291ad8bff075fa",
+      "axf_sha256": "7853e64aafa42f682afc9f85011595169daea71435150cb8a7fcc1726fc8faf8"
+    }
+  ],
+  "supplemental": {
+    "route_identity": 92,
+    "exit_stall": 988,
+    "road_probe": 1798,
+    "left800": 442
+  },
+  "unchanged_algorithm_checks": 366155,
+  "files": {
+    "User/App_ThiefStrategy.c": "6a82ddb07076ad890e8c0f4c84a5eb03c41b5dbd7ba107f12a2f484a01cd09d4",
+    "Tests/test_turn_coast.py": "b4c41f9c11907163861807e2a0adc2ed5826ff3eacbe86d45830efe8923c80e3",
+    "Tests/test_yaw_reference.py": "6714408cc4541f13f107335450d6a6b83adee55d3663a2969d33c207a9fedda4",
+    "Tests/test_documents14.py": "8b4dfc86e66be24d66bcc7589850915924b73f90b2227d817ba0c7fd4323ecb3",
+    "README.md": "3ee3e383ea99ac4b4d5c1e88ebbd5166b2ed3a6dbce803eda736337fff372fe9",
+    "AGENTS.md": "136fb821548891ade6368d678ec492196a3e3969262f18edbea6d10c691c2e9d",
+    "Docs/修改规范与回归清单.md": "34cc75d838aeb8829f6df18308b3a0d77baad5caaa4b1a88cf7ba902406be3b1",
+    "Tests/validate_monitor9.py": "aeb65184861e179643c366cc3a399705bffd004438a677ce0c73dcf04e58e9ac",
+    "TURN_COAST_CHANGESET.patch": "7da5724b9ebaded30d606812dd7a84d50514ee73431fb12806af2abcc4bf928d",
+    "build_monitor9.log": "d9ca30b76cc65863a693c7c785164056ef725ea4c383495d0a6921e6d4467531",
+    "Tests/results_turn_coast.json": "eaf554997771211d88048bf555522b1c662d7233998a8c5b657bac44a02203b5",
+    "Tests/results_yaw_reference.json": "0fcbc09db1d3658ef37bef3e600be9b22cea6836997fb77b560afb85fc61842f",
+    "Tests/results_turn_resume.json": "de8d9802cee4a89b3830d485684521a5d885077243b29cd62d00526a7137cb14",
+    "Tests/results_monitor_suite.json": "06b9f54a9ff4914d284539479222d0f580ee9ca7d84610c50ce788c6ed14f88b",
+    "Tests/results_route_identity.json": "c31c11b5c6e5b54dbee42b9f17ba2ea67374e2e901785e1bc576187e677cda5a",
+    "Tests/results_exit_stall.json": "61880225a06cc03d9d7d5ca69e1f1c074e01c98ae2291639212e1c0913ead52b",
+    "Tests/results_road_probe.json": "a52a552bdf0678e696cc02fbbfe0e1ab738a1ff23f5a6857b8b74e8be81c4376",
+    "Tests/results_left800.json": "d9a4a5e486becc850decf7646d626406a68e68cc49de0c2027244d2bd565d41a"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "Actual terminal350PWM deceleration, traction, braking time and centering need physical verification.",
+    "Synthetic feedback cannot prove actual overshoot has disappeared; only controller decisions/output are verified.",
+    "A single measured coast brake is retained; no stationary +/-2degree fine alignment stage.",
+    "12.17degree road recovery no longer fails CONTEXT, but genuine identity/hardware/localization faults remain."
+  ]
+}

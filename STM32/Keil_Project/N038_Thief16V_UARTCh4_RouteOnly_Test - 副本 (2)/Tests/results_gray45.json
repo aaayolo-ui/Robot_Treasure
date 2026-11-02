@@ -1,0 +1,19 @@
+{
+  "checks": 84,
+  "failures": [],
+  "watch_offsets_ms": [
+    4,
+    9,
+    13,
+    18,
+    22,
+    27,
+    31,
+    36,
+    40,
+    45
+  ],
+  "axf_sha256": "d36792c04f8723d711e4eabe0038d8dc08fba0376a175aa4ccc3ea024f4a79a8",
+  "hardware_tested": false,
+  "ideal_scheduler": true
+}

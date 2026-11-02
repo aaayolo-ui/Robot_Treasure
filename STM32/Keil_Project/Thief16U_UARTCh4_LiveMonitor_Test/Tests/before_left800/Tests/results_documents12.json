@@ -1,0 +1,22 @@
+{
+  "checks": 3467,
+  "failures": [],
+  "passed": [
+    "early_junction",
+    "noisy_hide",
+    "repeated_side",
+    "rear_pursuit",
+    "brake_credit",
+    "launch_speed",
+    "brake_credit_matrix"
+  ],
+  "hardware_tested": false,
+  "brake_credit_matrix_cases": 240,
+  "helper_sha256": {
+    "test_app_runtime.py": "d2d3dcd4503a0d14561fdea52540df7904ee0982e9930b785283f96cd042994a",
+    "test_escape_completion.py": "62c28c01cc807681f33c6b6d319f30e84a66cbecd043fee9c79d1a6121ef3878"
+  },
+  "firmware_sha256": "51aef090e1b578d7490351b21ed670ae519b5bfaa02c0e3bf39ae25f18f3a489",
+  "app_source_sha256": "2acbc6a6fc02a6adc24ce2755dab5c013ac455236e039de2dc34d0cf9be75d33",
+  "test_script_sha256": "c46ae28bc1353e48b5b0e501941fa50d6c33aee121190d76017ee005210ba8c3"
+}

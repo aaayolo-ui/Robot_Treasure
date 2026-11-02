@@ -1,0 +1,187 @@
+Documents11 root-turn regression passed
+escape N011 body=1 FRONT -> N038 passed
+escape N011 body=1 LEFT -> N038 passed
+escape N011 body=1 RIGHT -> N063 passed
+escape N011 body=1 REAR -> N038 passed
+escape N011 body=3 FRONT -> N038 passed
+escape N011 body=3 LEFT -> N063 passed
+escape N011 body=3 RIGHT -> N038 passed
+escape N011 body=3 REAR -> N038 passed
+escape N038 body=1 FRONT -> N011 passed
+escape N038 body=1 LEFT -> N063 passed
+escape N038 body=1 RIGHT -> N011 passed
+escape N038 body=1 REAR -> N011 passed
+escape N038 body=3 FRONT -> N011 passed
+escape N038 body=3 LEFT -> N011 passed
+escape N038 body=3 RIGHT -> N063 passed
+escape N038 body=3 REAR -> N011 passed
+escape N026 body=0 FRONT -> N038 passed
+escape N026 body=0 LEFT -> N038 passed
+escape N026 body=0 RIGHT -> N038 passed
+escape N026 body=0 REAR -> N011 passed
+escape N026 body=2 FRONT -> N011 passed
+escape N026 body=2 LEFT -> N038 passed
+escape N026 body=2 RIGHT -> N038 passed
+escape N026 body=2 REAR -> N038 passed
+escape N035 body=1 FRONT -> N011 passed
+escape N035 body=1 LEFT -> N038 passed
+escape N035 body=1 RIGHT -> N011 passed
+escape N035 body=1 REAR -> N063 passed
+escape N035 body=3 FRONT -> N063 passed
+escape N035 body=3 LEFT -> N011 passed
+escape N035 body=3 RIGHT -> N038 passed
+escape N035 body=3 REAR -> N011 passed
+escape N063 body=0 FRONT -> N038 passed
+escape N063 body=0 LEFT -> N035 passed
+escape N063 body=0 RIGHT -> N011 passed
+escape N063 body=0 REAR -> N035 passed
+escape N063 body=2 FRONT -> N035 passed
+escape N063 body=2 LEFT -> N011 passed
+escape N063 body=2 RIGHT -> N035 passed
+escape N063 body=2 REAR -> N011 passed
+{
+  "checks": 28768,
+  "escapes": 40,
+  "ignored": 0,
+  "interceptions": [
+    {
+      "laser": "FRONT",
+      "frames": 826,
+      "node": 11,
+      "body": 1,
+      "fixes": [
+        38,
+        37,
+        20,
+        10,
+        1,
+        2,
+        3,
+        4,
+        6,
+        15,
+        14,
+        4,
+        3,
+        13,
+        12,
+        11
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        12,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "REAR",
+      "frames": 938,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        39,
+        40,
+        46,
+        58,
+        68,
+        84,
+        85,
+        76,
+        70,
+        61,
+        49,
+        33,
+        25,
+        15,
+        6,
+        4,
+        3,
+        13,
+        12,
+        11
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "LEFT",
+      "trigger": "departure before translation",
+      "frames": 864,
+      "node": 63,
+      "body": 2,
+      "fixes": [
+        56,
+        57,
+        39,
+        40,
+        46,
+        58,
+        59,
+        75,
+        76,
+        77,
+        78,
+        63
+      ],
+      "states": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        9,
+        11,
+        12,
+        13
+      ],
+      "intercepted": true
+    },
+    {
+      "laser": "RIGHT",
+      "trigger": "departure before translation",
+      "frames": 367,
+      "node": 11,
+      "body": 3,
+      "fixes": [
+        37,
+        20,
+        10,
+        11
+      ],
+      "states": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        7,
+        9,
+        11,
+        12,
+        13
+      ],
+      "intercepted": true
+    }
+  ]
+}

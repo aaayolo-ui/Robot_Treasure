@@ -1,0 +1,187 @@
+{
+  "firmware": "UARTCH4_16U_MONITOR8",
+  "firmware_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691",
+  "hex_sha256": "de6902ac3106260e4269c7fa76cbe38422d4496573fdd05b861c25bf6c9afbea",
+  "before_failures": [
+    {
+      "case": "resume_after_brake",
+      "error": "keep-loop request must restore an actually disabled speed loop"
+    }
+  ],
+  "new_cases": {
+    "resume_after_brake": 2,
+    "continuous_loop_kept": 1
+  },
+  "yaw_cases": {
+    "straight_reference": 70,
+    "treasure_turn_handoff": 8,
+    "reference_wrap_reverse": 4
+  },
+  "suite": [
+    {
+      "name": "test_treasure_fix",
+      "exit_code": 0,
+      "log_sha256": "4ff92734cab1ca980bdb9f17e05e9fe62771a162a3dd80862105f7fae4443ec0",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_live_monitor",
+      "exit_code": 0,
+      "log_sha256": "feed4b123d0824fb71a2b0e2e437bbfd2f52488269abeec39e8ac4bf2e5e26ec",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_right900",
+      "exit_code": 0,
+      "log_sha256": "b7be07dc0057af717b63b76a1df79a712c9bb93efa3cc10f881eb50bdfbeb695",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_gray_priority",
+      "exit_code": 0,
+      "log_sha256": "4b8fa74719dfb8f10979a79bd62742bae2f53f4001c51bb95cce64fd942477f6",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents123154",
+      "exit_code": 0,
+      "log_sha256": "4be7c69d252591b784d51ce4d77ae7a2c8d83d342c4cb7b91ad34204cfa660a5",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents31",
+      "exit_code": 0,
+      "log_sha256": "f8d38c49965d7087eb0010b50d0caef2c8a4573331e3f1500a4af9e4c35605a7",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents29",
+      "exit_code": 0,
+      "log_sha256": "d3c8f060ad35cf8cc88066c2088174a0555ecef8ae00ee388379fce30bf32049",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents24",
+      "exit_code": 0,
+      "log_sha256": "3ef611a863d4cc28c26028bc67e4f2618c266f8cc1f584be8669792677730dfe",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents22",
+      "exit_code": 0,
+      "log_sha256": "8e28b3e60f52d5c5757d2871bbe664a9805c9306917bc43b8bf0f7442cc038fd",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_app_runtime",
+      "exit_code": 0,
+      "log_sha256": "a18ebff910ff6a3079c6ce198ceffc23eb288a54dfbebd475f26f9157e6a4602",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_escape_completion",
+      "exit_code": 0,
+      "log_sha256": "659ba46f2759d7209c5b0f15ef0a7eb9cc02bf776f1e9aa9b1cf0f9b49c28c2f",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents12",
+      "exit_code": 0,
+      "log_sha256": "ac7f7cdd38584d03779cc230dbb2f1b6192c63975a46cc313a243086b7b11e3b",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents13",
+      "exit_code": 0,
+      "log_sha256": "224e10ec4106a0cb0c183bb1c081e3c5639f12a8023bf6db4e4eeff05c69011c",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents14",
+      "exit_code": 0,
+      "log_sha256": "b164b64539f56526369a41797b58a87f1fc5925d4ee2d03a459981eb394737cf",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents15",
+      "exit_code": 0,
+      "log_sha256": "ad1453ca000839a909b4a94dd2de3dc0f71241e5977316ed2258de79f59eb5f1",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents16",
+      "exit_code": 0,
+      "log_sha256": "435d7fb2a2855e112b72d6bb64faffe65f94360455f6693206c244837cfc4c75",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents17",
+      "exit_code": 0,
+      "log_sha256": "47b9ce6f0a55495aa51d17d777b665663e7d1b26907522c334f3a5322ddae55b",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents18",
+      "exit_code": 0,
+      "log_sha256": "fae48946b8ddbcb93abd258ba1f734e961ff1cbc783d74b20249abd799b680b7",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents19",
+      "exit_code": 0,
+      "log_sha256": "90467d88f77a6de8b3da8f1530c64644c075aae92bbcc9de595e23c2781a077f",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents20",
+      "exit_code": 0,
+      "log_sha256": "ba2dbd7f4d6089d2eb39c885792a26e39230c87ba5625405946393b9ab66c80b",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_documents21",
+      "exit_code": 0,
+      "log_sha256": "b212f97ca7ad43ebe5ec8a8ecd1d7a4e54a3381e3c3a0fadeaf037a89bb7203e",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    },
+    {
+      "name": "test_speed16t",
+      "exit_code": 0,
+      "log_sha256": "e88dc8b93442cdb8d86dc753b8a4a0cd51afc5388a6f61fdc9d774c434b63b91",
+      "axf_sha256": "9fedb2bc6778d9d130ae9e5758e4fe56f84b59b43dc9a4b84a334b2403d96691"
+    }
+  ],
+  "supplemental": {
+    "route_identity": 92,
+    "exit_stall": 988,
+    "road_probe": 1798,
+    "left800": 442
+  },
+  "unchanged_algorithm_checks": 366155,
+  "files": {
+    "User/App_ThiefStrategy.c": "ad0e525875701ba8c97305cc17bba0054e4a4b8dd91d9e09c51a44b7dc0438ae",
+    "Tests/test_turn_resume.py": "6f1424e97f96592e3c441502659b03fb3cff77552fe50df650b04dc90fb78acc",
+    "Tests/test_yaw_reference.py": "89c709cef6f418994db92f1e23b96739b8f51c4fbff398acb93ed9dbc2b76a47",
+    "README.md": "1418c9c554f436e254f2da3a7afad13a5bc8c28d56f5d4d4e45557fdfb45555a",
+    "AGENTS.md": "334925d0189de414289d2b9f7c664fff006fe1b390ae287473afcdc2ce245207",
+    "Docs/修改规范与回归清单.md": "74fb001f3a343a1570b1fd3fd15728cc66efc95cb241b56452061315c20f702a",
+    "Tests/validate_monitor8.py": "841704f6444247f725d703d35bb56b3da02d2a47b8ea0454ab48a9ed21341a29",
+    "TURN_RESUME_CHANGESET.patch": "4dbe6d7888b6ff6307d35a857f2ef22fc6abfdb4963fef7d157c3ce3555733af",
+    "build_monitor8.log": "b09b9d176415a6047d2c722b0f6190a671b5a98f618249fd3eb3318ed659fc33",
+    "Tests/results_turn_resume.json": "92e3e48b702833f6dc9bd76900392280eb7a749231c1e1c3fc9793922d9cc2e9",
+    "Tests/results_yaw_reference.json": "bc1ea0d510fae74193fce388398ffd9c31e06c068cccf7bcbbfe4fa8b316b579",
+    "Tests/results_monitor_suite.json": "02e400503c82ab3e66257ff078a3dd95ccba2a91e3dad1e1a8fdc408b775a178",
+    "Tests/results_route_identity.json": "b7b73d90d4ba4f6e11096f38815146b3c40deb201f1183606464900ea40c42b4",
+    "Tests/results_exit_stall.json": "1cd568bafda74ca2561d4c3fb99183a5803416231064fc5a75ca2f0d39441f21",
+    "Tests/results_road_probe.json": "3c3035862a0427a60db56924fb18689e0eab4545f9f4023417bbcfca500cb550",
+    "Tests/results_left800.json": "2d219f649a8489a2036cc2796dda343ec588d9df477ef66c609664cf3014a521"
+  },
+  "hardware_tested": false,
+  "flashed": false,
+  "serial_opened": false,
+  "limitations": [
+    "Real speed-control enable/brake/PI/PWM calculations executed in emulation; physical feedback and PWM pins are mocked.",
+    "No physical motion, traction or obstacle-escape validation. Treasure-exit stationary fine trim has been removed.",
+    "Map yaw reference calibration and normal road/hide recoveries remain. No desktop/helper changes."
+  ]
+}

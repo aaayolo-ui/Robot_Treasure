@@ -1,0 +1,19 @@
+{
+  "firmware": "UARTCH4_16V_N011_MAIN60_SL1",
+  "modified": [
+    "User/App_ThiefStrategy.c",
+    "Tests/test_n038_main60.py",
+    "README.md",
+    "AGENTS.md",
+    "Docs/修改规范与回归清单.md"
+  ],
+  "reports": [
+    "Tests/results_n038_main60.json",
+    "Tests/results_quick350.json"
+  ],
+  "axf_sha256": "e93e69aa682044b08810e90d40f36c69edbbcbfd96476c76a7b702d42c9c0d92",
+  "checks": 132,
+  "other_production_unchanged": true,
+  "hardware_tested": false,
+  "backup": "C:\\Users\\Administrator\\Desktop\\N038_Thief16V_UARTCh4_RouteOnly_Test - 副本 (2)\\Reference\\N002_BRANCH_before_n011_main60"
+}
